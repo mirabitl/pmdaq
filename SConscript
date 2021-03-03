@@ -98,13 +98,13 @@ builderd=env.Program("./bin/pmd",source=["src/baseServer.cc"],LIBPATH=EXE_LIBPAT
 #for x in Glob("include/*.hh"):
 #  myinc.append("include/"+x.name)
 #print plist
-#env.Install("/usr/local/lib",lypack)
-#env.Install("/usr/local/bin",builderd)
+#env.Install("lib",lypack)
+#env.Install("bin",builderd)
 #env.Install("../include",myinc)
 ###env.Install("/opt/dhcal/lib",levbdimdaq)
 
 
-#env.Alias('install', ["/usr/local/lib","/usr/local/bin"])
+env.Alias('install', ["lib","bin"])
 
 
 
