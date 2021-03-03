@@ -80,7 +80,7 @@ LIBRARY_SOURCES=['src/baseServer.cxx','src/fsmw.cxx']
 
 
 #Shared library
-lyname="lib/pmdaq"
+lyname="./lib/pmdaq"
 print "building ",lyname
 lypack=env.SharedLibrary(lyname,LIBRARY_SOURCES)
 
@@ -91,20 +91,20 @@ EXE_LIBS.append("pmdaq")
 
 
 print LIBRARY_SOURCES
-builderd=env.Program("bin/pmd",source=["src/baseServer.cc"],LIBPATH=EXE_LIBPATH,LIBS=EXE_LIBS)
+builderd=env.Program("./bin/pmd",source=["src/baseServer.cc"],LIBPATH=EXE_LIBPATH,LIBS=EXE_LIBS)
 
 
 #myinc=[]
 #for x in Glob("include/*.hh"):
 #  myinc.append("include/"+x.name)
 #print plist
-env.Install("/usr/local/lib",lypack)
-env.Install("/usr/local/bin",builderd)
+#env.Install("/usr/local/lib",lypack)
+#env.Install("/usr/local/bin",builderd)
 #env.Install("../include",myinc)
 ###env.Install("/opt/dhcal/lib",levbdimdaq)
 
 
-env.Alias('install', ["/usr/local/lib","/usr/local/bin"])
+#env.Alias('install', ["/usr/local/lib","/usr/local/bin"])
 
 
 
