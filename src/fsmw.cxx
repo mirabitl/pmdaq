@@ -1,0 +1,204 @@
+#include "fsmw.hh"
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sys/dir.h>  
+#include <sys/param.h>  
+#include <stdio.h>  
+#include <stdlib.h>  
+#include <unistd.h>  
+#include <string.h>
+#include <stdint.h>
+#include <fcntl.h>
+#include <iostream>
+#include <sstream>
+
+fsmw::fsmw() : _p_session(""),_p_name(""),_p_instance(0),_state("CREATED") {
+  _states.clear();
+  _transitions.clear();
+  _commands.clear();
+}
+
+std::vector<std::string> fsmw::getPaths(std::string query)
+{
+  auto querym = uri::split_query(query);
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    {
+      ucout << U("Query") << U(" ")
+	    << it2->first << U(" ") << it2->second << std::endl;
+      if (it2->first.compare("session")==0)
+	_p_session.assign(it2->second);
+      if (it2->first.compare("name")==0)
+	_p_name.assign(it2->second);
+      if (it2->first.compare("instance")==0)
+	_p_instance=std::stoi(it2->second);
+    }
+  std::stringstream sb;
+  sb<<"/"<<_p_session<<"/"<<_p_name<<"/"<<_p_instance<<"/";
+  _basePath=sb.str();
+  this->initialise();
+  this->addCommand("LIST",std::bind(&fsmw::list,this,std::placeholders::_1));
+  // Construct list of commands
+  std::vector<std::string> v;
+  for (auto it=_commands.begin();it!=_commands.end();it++)
+    {v.push_back(it->first);}
+  for (auto it=_transitions.begin();it!=_transitions.end();it++)
+    {v.push_back(it->first);}
+  return v;
+}
+
+void fsmw::processRequest(http_request& message)
+{
+  auto icf=_commands.find(uri::decode(message.relative_uri().path()));
+  if (icf!=_commands.end())
+    icf->second(message);
+  else
+    {
+      
+      auto itf=_transitions.find(uri::decode(message.relative_uri().path()));
+      if (itf==_transitions.end())
+	{
+	  json::value jrep;
+	  jrep["status"]=json::value::string(U("FAILED"));
+	  std::stringstream s0;
+	  s0.str(std::string());  
+	  s0<<uri::decode(message.relative_uri().path()) << "not found in transitions list ";
+	  jrep["comment"]=json::value::string(U(s0.str()));
+	  message.reply(status_codes::BadRequest, jrep);
+	}
+      else
+	{
+	  // loop on vector of transition
+	  std::vector<fsmTransition> &vp=itf->second;
+	  for (auto ift=vp.begin();ift!=vp.end();ift++)
+	    if (ift->initialState().compare(_state)==0)
+	      {
+#ifdef DEBUG
+		std::cout<<"calling callback"<<ift->finalState()<<"\n";
+#endif
+		ift->callback()(message);
+#ifdef DEBUG
+		std::cout<<"Message processed\n";
+#endif
+		_state=ift->finalState();
+		this->publishState();
+		return;
+	      }
+	  // No initialState corresponding to _state
+	  //if (it->second.initialState().compare(_state)!=0)
+	  //  {
+	  json::value jrep;
+	  jrep["status"]=json::value::string(U("FAILED"));
+	  std::stringstream s0;
+	  s0.str(std::string());  
+	  s0<<_state << "invalid intial state  ";
+	  jrep["comment"]=json::value::string(U(s0.str()));
+	  message.reply(status_codes::BadRequest, jrep);
+	  
+	  return;
+	}
+    }
+
+}
+void fsmw::addCommand(std::string s,CMDFunctor f)
+{
+  std::string cmd=_basePath+s;
+  auto itf=_commands.find(cmd);
+  if (itf==_commands.end())
+    {
+      std::pair<std::string,CMDFunctor> p(cmd,f);
+      _commands.insert(p);
+    }
+
+}
+void fsmw::initialise()
+{
+}
+void fsmw::terminate()
+{}
+void fsmw::list(http_request message)
+{
+  auto par = json::value();
+  int np=0;
+  for (auto it=_commands.begin();it!=_commands.end();it++)
+    {par[np]=json::value::string(U(it->first));np++;}
+
+  auto rep = json::value();
+  rep["COMMANDS"]=par;
+  rep["TRANSITIONS"]=transitionsList();
+  rep["ALLOWED"]=allowList();
+  rep["STATE"]=json::value::string(U(_state));
+  message.reply(status_codes::OK,rep);
+}
+
+void fsmw::addState(std::string statename) 
+{
+  _states.push_back(statename);
+}
+  
+void fsmw::addTransition(std::string s,std::string istate,std::string fstate,CMDFunctor f)
+{
+  std::string cmd=_basePath+s;
+  //auto itf=_commands.find(cmd);
+  if (_transitions.find(cmd)!=_transitions.end())
+    {
+      std::map<std::string,std::vector<fsmTransition> >::iterator iv=_transitions.find(cmd);
+      bool found=false;
+      for (std::vector<fsmTransition>::iterator it=iv->second.begin();it!=iv->second.end();it++)
+	{
+	  if (it->initialState().compare(istate)==0)
+	    {/*already stor */ return;}
+	}
+      fsmTransition t(istate,fstate,f);;
+      iv->second.push_back(t);
+
+    }
+  else
+    {
+      fsmTransition t(istate,fstate,f);
+      std::vector<fsmTransition> vp;
+      vp.push_back(t);
+      std::pair<std::string,std::vector<fsmTransition> > p(cmd,vp);
+      _transitions.insert(p);
+    }
+}
+
+void fsmw::setState(std::string s){ _state=s;}
+std::string fsmw::state(){return _state;}
+void fsmw::publishState() {}
+web::json::value fsmw::transitionsList()
+{
+  web::json::value jrep;
+  int np=0;
+  for( std::map<std::string,std::vector<fsmTransition> >::iterator it=_transitions.begin();it!=_transitions.end();it++)
+    {
+      web::json::value jc;
+      jc["name"]=json::value::string(U(it->first));
+      jrep[np]=jc;np++;
+    }
+  return jrep;
+}
+web::json::value fsmw::allowList()
+{
+  int np=0;
+  web::json::value jrep;
+  for( std::map<std::string,std::vector<fsmTransition> >::iterator it=_transitions.begin();it!=_transitions.end();it++)
+    {
+      bool allowed=false;
+      std::vector<fsmTransition> &vp=it->second;
+      for (std::vector<fsmTransition>::iterator ift=vp.begin();ift!=vp.end();ift++)
+	if (ift->initialState().compare(_state)==0)
+	  {allowed=true;break;}
+      if (allowed)
+	{
+	  web::json::value jc;
+	  jc["name"]=json::value::string(U(it->first));
+	  jrep[np]=jc;np++;
+	}
+    }
+  return jrep;
+}
