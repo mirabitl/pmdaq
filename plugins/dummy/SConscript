@@ -82,7 +82,7 @@ print LIBRARY_SOURCES
 
 
 #Shared library
-lyname="./cpp_plug_"+package
+lyname="./app_"+package
 print "building ",lyname
 lypack=env.SharedLibrary(lyname,LIBRARY_SOURCES)
 
@@ -93,12 +93,12 @@ lypack=env.SharedLibrary(lyname,LIBRARY_SOURCES)
 #for x in Glob("include/*.hh"):
 #  myinc.append("include/"+x.name)
 #print plist
-#env.Install("../lib",lypack)
+env.Install("/usr/local/lib",lypack)
 #env.Install("../include",myinc)
 ###env.Install("/opt/dhcal/lib",levbdimdaq)
 
 
-env.Alias('install', ["../lib","../include"])
+env.Alias('install', ["/usr/local/lib"])
 
 
 

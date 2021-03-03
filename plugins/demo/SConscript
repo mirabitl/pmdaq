@@ -96,9 +96,15 @@ lypack=env.SharedLibrary(lyname,LIBRARY_SOURCES)
 #env.Install("../lib",lypack)
 #env.Install("../include",myinc)
 ###env.Install("/opt/dhcal/lib",levbdimdaq)
+env.Install("/usr/local/lib",lypack)
+#env.Install("../include",myinc)
+###env.Install("/opt/dhcal/lib",levbdimdaq)
 
 
-env.Alias('install', ["../lib","../include"])
+env.Alias('install', ["/usr/local/lib"])
+
+
+
 
 
 
