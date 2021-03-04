@@ -47,22 +47,22 @@ std::vector<std::string> pns::getPaths(std::string query)
     }
   // Construct list of commands
   std::vector<std::string> v;
-  v.push_back("/PNS/UPDATE/");
-  v.push_back("/PNS/LIST/");
-  v.push_back("/PNS/REMOVE/");
+  v.push_back("/PNS/UPDATE");
+  v.push_back("/PNS/LIST");
+  v.push_back("/PNS/REMOVE");
   return v;
 }
 
 void pns::processRequest(http_request& message)
 {
   std::string cmd=uri::decode(message.relative_uri().path());
-  if (cmd.compare("/PNS/UPDATE/")==0)
+  if (cmd.compare("/PNS/UPDATE")==0)
     this->update(message);
   else
-    if (cmd.compare("/PNS/LIST/")==0)
+    if (cmd.compare("/PNS/LIST")==0)
       this->list(message);
     else
-      if (cmd.compare("/PNS/REMOVE/")==0)
+      if (cmd.compare("/PNS/REMOVE")==0)
 	this->remove(message);
       else
 	{

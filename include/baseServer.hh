@@ -23,9 +23,11 @@ public:
   pplx::task<void> open() { return m_listener.open(); }
   pplx::task<void> close() { return m_listener.close(); }
   void registerPlugin(std::string name,std::string query);
+  std::string url(){return _url;}
 private:
  void handle_get_or_post(http_request message);
  http_listener m_listener;
   uint32_t req;
   std::map<std::string,handlerPlugin*> _plugins;
+  std::string _url;
 };

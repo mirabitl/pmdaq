@@ -5,7 +5,7 @@ using namespace utility;
 using namespace http::experimental::listener;
 #include <dlfcn.h>
  
-baseServer::baseServer(utility::string_t url) : m_listener(url),req(0)
+baseServer::baseServer(utility::string_t url) : m_listener(url),req(0),_url(url)
 {
  m_listener.support(methods::GET, std::bind(&baseServer::handle_get_or_post, this, std::placeholders::_1));
  m_listener.support(methods::POST, std::bind(&baseServer::handle_get_or_post, this, std::placeholders::_1));
@@ -14,6 +14,8 @@ baseServer::baseServer(utility::string_t url) : m_listener(url),req(0)
 void baseServer::handle_get_or_post(http_request message)
 {
   ucout << "Method: " << message.method() << std::endl;
+  ucout << "URL: " <<_url<<std::endl;
+  ucout << "Absolute host: " <<message.absolute_uri().host() <<std::endl;
   ucout << "URI: " << http::uri::decode(message.relative_uri().path()) << std::endl;
   ucout << "Query: " << http::uri::decode(message.relative_uri().query()) << std::endl << std::endl;
   req++;
@@ -155,6 +157,7 @@ void baseServer::registerPlugin(std::string name,std::string query)
   // Get a new filter object
   handlerPlugin *a = (handlerPlugin *)create();
   ucout<<"4 called"<<s.str()<<std::endl;
+  a->setUrl(url());
   for (auto x:a->getPaths(query) )
     {
       std::pair<std::string,handlerPlugin*> p(x,a);

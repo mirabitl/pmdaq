@@ -41,6 +41,10 @@
     virtual std::vector<std::string> getPaths(std::string query)=0;
     virtual void processRequest(http_request& message)=0;
     virtual void terminate()=0;
+    void setUrl(std::string s){_url.assign(s);}
+    std::string url(){return _url;}
+  private:
+    std::string _url;
     
   };
 

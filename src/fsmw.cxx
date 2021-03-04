@@ -17,7 +17,17 @@
 #include <iostream>
 #include <sstream>
 
-fsmw::fsmw() : _p_session(""),_p_name(""),_p_instance(0),_state("CREATED") {
+std::vector<std::string> split(const std::string &s, char delim) {
+  std::stringstream ss(s);
+  std::string item;
+  std::vector<std::string> elems;
+  while (std::getline(ss, item, delim)) {
+    elems.push_back(item);
+    // elems.push_back(std::move(item)); // if C++11 (based on comment from @mchiasson)
+  }
+  return elems;
+}
+fsmw::fsmw() : _host(""),_port(0),_p_session(""),_p_name(""),_p_instance(0),_state("CREATED") {
   _states.clear();
   _transitions.clear();
   _commands.clear();
@@ -28,6 +38,19 @@ fsmw::fsmw() : _p_session(""),_p_name(""),_p_instance(0),_state("CREATED") {
 
 std::vector<std::string> fsmw::getPaths(std::string query)
 {
+  if (_port==0)
+    {
+      ucout<<url() <<std::endl;
+      // remove http:// and trailing / so 
+      auto v=split(url().substr(7,url().length()-8),':');
+      _host.assign(v[0]);
+      _port=std::stoi(v[1]);
+
+      ucout<<" HOST found "<<_host<<" Port:"<<_port<<std::endl;
+
+    }
+
+  
   auto querym = uri::split_query(query);
   for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
     {
@@ -90,6 +113,7 @@ void fsmw::processRequest(http_request& message)
 	  for (auto ift=vp.begin();ift!=vp.end();ift++)
 	    if (ift->initialState().compare(_state)==0)
 	      {
+#define DEBUG	       
 #ifdef DEBUG
 		std::cout<<"calling callback"<<ift->finalState()<<"\n";
 #endif
@@ -99,6 +123,7 @@ void fsmw::processRequest(http_request& message)
 #endif
 		_state=ift->finalState();
 		this->publishState();
+		std::cout<<"publish called\n";
 		return;
 	      }
 	  // No initialState corresponding to _state
@@ -208,7 +233,24 @@ void fsmw::addTransition(std::string s,std::string istate,std::string fstate,CMD
 
 void fsmw::setState(std::string s){ _state=s;}
 std::string fsmw::state(){return _state;}
-void fsmw::publishState() {}
+void fsmw::publishState() {
+
+  ucout<<"Entering publish \n";
+  utility::string_t address = U("http://lyocmsmu04.in2p3.fr:");
+  address.append("8888");
+  http::uri uri = http::uri(address);
+  web::http::client::http_client_config cfg; cfg.set_timeout(std::chrono::seconds(1));
+  http_client client(http::uri_builder(uri).append_path(U("/PNS/UPDATE")).to_uri(),cfg);
+
+  utility::ostringstream_t buf;
+  buf << U("?host=")<<U(host())
+      << U("&port=")<<U(port())
+      << U("&path=")<<U(path())
+      << U("&state=")<<U(state());
+  ucout<<"calling request \n";  
+  http_response  response = client.request(methods::GET, buf.str()).get();
+  ucout<<"reponse " <<response.to_string()<<std::endl;
+}
 web::json::value fsmw::transitionsList()
 {
   web::json::value jrep;

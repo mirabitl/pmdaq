@@ -98,6 +98,14 @@ class fsmw : public handlerPlugin
      */
     web::json::value allowList();
 
+    std::string host(){return _host;}
+    uint32_t port(){return _port;}
+    std::string path(){return _basePath;}
+    std::string session(){return _p_session;}
+    std::string name(){return _p_name;}
+    uint32_t instance(){return _p_instance;}
+    web::json::value& params(){return _params;}
+
   private:
     std::map<std::string,CMDFunctor> _commands;
     std::vector<std::string> _states;
@@ -105,6 +113,8 @@ class fsmw : public handlerPlugin
     std::map<std::string,std::vector<fsmTransition> > _transitions;
 
   protected:
+    std::string _host;
+    uint32_t _port;
     std::string _basePath;
     std::string _p_session;
     std::string _p_name;
