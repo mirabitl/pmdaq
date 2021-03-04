@@ -54,7 +54,7 @@ class fsmw : public handlerPlugin
     virtual void initialise();
     virtual void end();
     // FSMW web services
-    void list(http_request message);
+    void info(http_request message);
     void getparams(http_request message);
     void setparams(http_request message);
 

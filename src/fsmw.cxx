@@ -75,7 +75,7 @@ std::vector<std::string> fsmw::getPaths(std::string query)
   _basePath=sb.str();
   _params["path"]=json::value::string(U(_basePath));
   this->initialise();
-  this->addCommand("LIST",std::bind(&fsmw::list,this,std::placeholders::_1));
+  this->addCommand("INFO",std::bind(&fsmw::info,this,std::placeholders::_1));
   this->addCommand("PARAMS",std::bind(&fsmw::getparams,this,std::placeholders::_1));
   this->addCommand("SETPARAMS",std::bind(&fsmw::setparams,this,std::placeholders::_1));
   // Construct list of commands
@@ -165,7 +165,7 @@ void fsmw::terminate()
   publishState();
   
 }
-void fsmw::list(http_request message)
+void fsmw::info(http_request message)
 {
   auto par = json::value();
   int np=0;

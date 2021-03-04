@@ -42,6 +42,25 @@ void demo::end()
 
 void demo::configure(http_request message)
 {
+  // Scan the dns
+    utility::string_t address = U("http://");
+  char* wp=getenv("PNS_NAME");
+  if (wp!=NULL)      address.append(std::string(wp));
+  else
+    address.append("localhost");
+  address.append(":8888");
+
+  http::uri uri = http::uri(address);
+  web::http::client::http_client_config cfg; cfg.set_timeout(std::chrono::seconds(1));
+  http_client client(http::uri_builder(uri).append_path(U("/PNS/LIST")).to_uri(),cfg);
+
+  utility::ostringstream_t buf;
+  ucout<<"calling request \n";  
+  http_response  response = client.request(methods::GET, buf.str()).get();
+  //ucout<<"CONFIGURE reponse \n" <<response.to_string()<<std::endl;
+  json::value jdata = json::value::array();
+  jdata = response.extract_json().get();
+  ucout<<"CONFIGURE reponse \n" <<jdata<<std::endl;  
   auto par = json::value::object();
   par["status"] = json::value::string(U("GOOD_STATUS"));
   par["rc"] = json::value::number(1000);
