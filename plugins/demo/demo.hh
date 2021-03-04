@@ -22,7 +22,7 @@ class demo : public fsmw
        \details It creates the file SMM_dayMonthYear_HourMinuteSeconde_run.dat
      */
     virtual void initialise();
-    virtual void terminate();
+    virtual void end();
 
     void readEvent();
     void configure(http_request message);

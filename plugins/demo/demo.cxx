@@ -33,7 +33,7 @@ void demo::initialise()
   _event=0;
   _started=false;
 }
-void demo::terminate()
+void demo::end()
 {
   if (!_started) return;
   _started=false;

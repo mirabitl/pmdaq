@@ -21,6 +21,9 @@ fsmw::fsmw() : _p_session(""),_p_name(""),_p_instance(0),_state("CREATED") {
   _states.clear();
   _transitions.clear();
   _commands.clear();
+  addState("CREATED");
+  addState("DEAD");
+  setState("CREATED");
 }
 
 std::vector<std::string> fsmw::getPaths(std::string query)
@@ -36,12 +39,22 @@ std::vector<std::string> fsmw::getPaths(std::string query)
 	_p_name.assign(it2->second);
       if (it2->first.compare("instance")==0)
 	_p_instance=std::stoi(it2->second);
+      if (it2->first.compare("params")==0)
+	{
+	  std::error_code  errorCode;
+	  auto jval=web::json::value::parse(std::string(it2->second),errorCode);
+	  _params=jval;
+	  ucout<<"Parameters "<<_params<<std::endl;
+	}
     }
   std::stringstream sb;
   sb<<"/"<<_p_session<<"/"<<_p_name<<"/"<<_p_instance<<"/";
   _basePath=sb.str();
+  _params["path"]=json::value::string(U(_basePath));
   this->initialise();
   this->addCommand("LIST",std::bind(&fsmw::list,this,std::placeholders::_1));
+  this->addCommand("PARAMS",std::bind(&fsmw::getparams,this,std::placeholders::_1));
+  this->addCommand("SETPARAMS",std::bind(&fsmw::setparams,this,std::placeholders::_1));
   // Construct list of commands
   std::vector<std::string> v;
   for (auto it=_commands.begin();it!=_commands.end();it++)
@@ -118,8 +131,14 @@ void fsmw::addCommand(std::string s,CMDFunctor f)
 void fsmw::initialise()
 {
 }
+void fsmw::end(){}
 void fsmw::terminate()
-{}
+{
+  this->end();
+  setState("DEAD");
+  publishState();
+  
+}
 void fsmw::list(http_request message)
 {
   auto par = json::value();
@@ -133,6 +152,26 @@ void fsmw::list(http_request message)
   rep["ALLOWED"]=allowList();
   rep["STATE"]=json::value::string(U(_state));
   message.reply(status_codes::OK,rep);
+}
+void fsmw::getparams(http_request message)
+{
+  message.reply(status_codes::OK,_params);
+}
+void fsmw::setparams(http_request message)
+{
+  ucout<<uri::decode(message.relative_uri().query())<<std::endl;
+  auto querym = uri::split_query(uri::decode(message.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    if (it2->first.compare("params")==0)
+      {
+	std::error_code  errorCode;
+	auto p=web::json::value::parse(std::string(it2->second),errorCode);
+	for(auto iter = p.as_object().begin(); iter != p.as_object().end(); ++iter)
+	  _params[iter->first]=iter->second;
+	ucout<<"Parameters sets "<<_params<<std::endl;
+      }
+    
+  message.reply(status_codes::OK,_params);
 }
 
 void fsmw::addState(std::string statename) 

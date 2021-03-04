@@ -49,9 +49,17 @@ class fsmw : public handlerPlugin
      */
     virtual std::vector<std::string> getPaths(std::string query);
     virtual void processRequest(http_request& message);
-    virtual void initialise();
     virtual void terminate();
+    // To be implemented on inheritance
+    virtual void initialise();
+    virtual void end();
+    // FSMW web services
     void list(http_request message);
+    void getparams(http_request message);
+    void setparams(http_request message);
+
+
+    // FSMW commands and transitions managment
     void addCommand(std::string s,CMDFunctor f);
         /**
        \brief Register a new state
@@ -101,7 +109,7 @@ class fsmw : public handlerPlugin
     std::string _p_session;
     std::string _p_name;
     uint32_t _p_instance;
-
+    web::json::value _params;
     
   };
 
