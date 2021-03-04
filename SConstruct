@@ -1,1 +1,1 @@
-SConscript(['SConscript','plugins/demo/SConscript','plugins/dummy/SConscript'])
+SConscript(['SConscript','pns/SConscript','plugins/demo/SConscript','plugins/dummy/SConscript'])
