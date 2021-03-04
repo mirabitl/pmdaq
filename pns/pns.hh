@@ -28,6 +28,7 @@ class pns : public handlerPlugin
     void list(http_request message);
     void update(http_request message);
     void remove(http_request message);
+    void purge(http_request message);
     web::json::value registered();
 
     std::string host(){return _host;}

@@ -50,6 +50,7 @@ std::vector<std::string> pns::getPaths(std::string query)
   v.push_back("/PNS/UPDATE");
   v.push_back("/PNS/LIST");
   v.push_back("/PNS/REMOVE");
+  v.push_back("/PNS/PURGE");
   return v;
 }
 
@@ -64,6 +65,9 @@ void pns::processRequest(http_request& message)
     else
       if (cmd.compare("/PNS/REMOVE")==0)
 	this->remove(message);
+      else
+      if (cmd.compare("/PNS/PURGE")==0)
+	this->purge(message);
       else
 	{
 	  json::value jrep;
@@ -151,6 +155,30 @@ void pns::remove(http_request message)
   for (auto it2 = _services.cbegin(); it2 != _services.cend() /* not hoisted */; /* no increment */)
 	{
 	  if (it2->first.compare(0,cmd.length(),cmd)==0)
+	    {
+	      ucout<<"removing "<<it2->first<<std::endl;
+	      _services.erase(it2++);    // or "it = m.erase(it)" since C++11
+	    }
+	  else
+	    ++it2;
+	}
+  // Return the registered list
+  auto rep = json::value();
+  rep["REGISTERED"]=registered();
+  message.reply(status_codes::OK,rep);
+}
+
+
+
+void pns::purge(http_request message)
+{
+
+  //Decode and build path
+  for (auto it2 = _services.cbegin(); it2 != _services.cend() /* not hoisted */; /* no increment */)
+	{
+	  //auto v=split(it2->second,'?');
+	  ucout<<"path "<<it2->first<<" state "<<it2->second<<std::endl;
+	  if (it2->second.compare("DEAD")==0)
 	    {
 	      ucout<<"removing "<<it2->first<<std::endl;
 	      _services.erase(it2++);    // or "it = m.erase(it)" since C++11
