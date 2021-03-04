@@ -84,6 +84,7 @@ std::vector<std::string> fsmw::getPaths(std::string query)
     {v.push_back(it->first);}
   for (auto it=_transitions.begin();it!=_transitions.end();it++)
     {v.push_back(it->first);}
+  this->publishState();
   return v;
 }
 
@@ -236,8 +237,15 @@ std::string fsmw::state(){return _state;}
 void fsmw::publishState() {
 
   ucout<<"Entering publish \n";
-  utility::string_t address = U("http://lyocmsmu04.in2p3.fr:");
-  address.append("8888");
+
+  
+  utility::string_t address = U("http://");
+  char* wp=getenv("PNS_NAME");
+  if (wp!=NULL)      address.append(std::string(wp));
+  else
+    address.append("localhost");
+  address.append(":8888");
+  ucout<<"Build address :"<<std::endl;
   http::uri uri = http::uri(address);
   web::http::client::http_client_config cfg; cfg.set_timeout(std::chrono::seconds(1));
   http_client client(http::uri_builder(uri).append_path(U("/PNS/UPDATE")).to_uri(),cfg);
