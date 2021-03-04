@@ -48,8 +48,10 @@ int main(int argc, char** argv)
   handler.open().wait();
   ucout << utility::string_t(U("Listening for requests at: ")) << addr << std::endl;
   ucout << U("Press ENTER key to quit...") << std::endl;
-  std::string line;
-  std::getline(std::cin, line);
+  // std::string line;
+  // std::getline(std::cin, line);
+  while (1)
+    ::sleep(100);
   handler.close().wait();
  }
  catch (std::exception& ex)
