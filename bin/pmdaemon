@@ -2,10 +2,10 @@
 
 
 
-DAEMON="/opt/pmdaq/bin/pmd.sh" #ligne de commande du programme
+DAEMON="/opt/pmdaq/bin/pmd" #ligne de commande du programme
 DAEMON_OPT="-H `hostname` -P 7777"  #argument à utiliser par le programme
 DAEMONUSER="root" #utilisateur du programme
-DEAMON_NAME="pmd.sh" #Nom du programme (doit être identique à l'exécutable)
+DEAMON_NAME="pmd" #Nom du programme (doit être identique à l'exécutable)
 PIDFILE="/var/log/pmd.log"
 
 PATH="/sbin:/bin:/usr/sbin:/usr/bin" #Ne pas toucher
@@ -17,6 +17,7 @@ export PYTHONPATH=/opt/zdaq/scripts:$PYTHONPATH
 
 export PNS_NAME=lyocmsmu03
 
+. /etc/pmdaq.conf
 
 test -x $DAEMON || exit 0
 
