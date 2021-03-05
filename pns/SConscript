@@ -80,6 +80,15 @@ lyname="./"+package
 print "building ",lyname
 lypack=env.SharedLibrary(lyname,LIBRARY_SOURCES)
 
+EXE_LIBPATH=LIBRARY_PATHS
+EXE_LIBPATH.append("../lib")
+
+EXE_LIBS=LIBRARIES
+EXE_LIBS.append("pmdaq")
+
+
+print LIBRARY_SOURCES
+builderd=env.Program("./bin/pns",source=["pns.cc"],LIBPATH=EXE_LIBPATH,LIBS=EXE_LIBS)
 
 
 
