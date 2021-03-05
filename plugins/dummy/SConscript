@@ -47,13 +47,14 @@ else:
 package=os.path.basename(os.getcwd())
   
 
-Use_Mongoose=os.path.exists("/usr/local/include/mongoose")
+
 
 # includes
-INCLUDES=['.',"../../include","/usr/include/boost141/","/usr/include/cpprest","/usr/local/include"]
+
+INCLUDES=['../../include',"/usr/include/boost141/","/usr/include/cpprest","/usr/local/include","/usr/include/log4cxx"]
   
 CPPFLAGS=["-pthread","-O2","-std=c++11"]
-LIBRARIES=['cpprest','pthread', 'ssl','crypto',boostsystem]
+LIBRARIES=['cpprest','pthread', 'ssl','crypto',boostsystem,"log4cxx"]
 
 
 #Library path XDAQ,DHCAL and ROOT + Python
@@ -62,11 +63,6 @@ if (Bit64):
 else:
   LIBRARY_PATHS=["/usr/lib","/usr/local/lib"]
 
-if (Use_Mongoose):
-  LIBRARY_PATHS.append('/usr/local/lib')
-  LIBRARIES.append('mongoose')
-  INCLUDES.append('/usr/local/include/')
-  INCLUDES.append('/usr/local/include/mongoose')
 
 #link flags
 LDFLAGS=["-fPIC","-dynamiclib"]

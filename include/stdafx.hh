@@ -28,7 +28,7 @@
 #include "cpprest/asyncrt_utils.h"
 #include "cpprest/http_client.h"
 #include "cpprest/http_msg.h"
-
+#include "pmLogger.hh"
 
 using namespace std;
 using namespace web;

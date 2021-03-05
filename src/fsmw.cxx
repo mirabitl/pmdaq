@@ -10,12 +10,14 @@
 #include <sys/param.h>  
 #include <stdio.h>  
 #include <stdlib.h>  
-#include <unistd.h>  
 #include <string.h>
 #include <stdint.h>
 #include <fcntl.h>
 #include <iostream>
 #include <sstream>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
 
 std::vector<std::string> split(const std::string &s, char delim) {
   std::stringstream ss(s);
@@ -27,6 +29,56 @@ std::vector<std::string> split(const std::string &s, char delim) {
   }
   return elems;
 }
+
+bool checkpns(int port=8888)
+{
+  struct hostent *h;
+  struct sockaddr_in servaddr;
+
+  int sd, rval;
+  std::string address;
+  char* wp=getenv("PNS_NAME");
+  if (wp!=NULL)
+    address.append(std::string(wp));
+  else
+    address.append("localhost");
+
+  h=gethostbyname(address.c_str());
+  if (h== NULL) {
+    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Error when using gethostbyname " <<address);
+    std::exit(-1);
+  }
+        // std::cout << inet_ntoa(*((struct in_addr *)h->h_addr)) << std::endl;
+
+  sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+  if (sd == -1) {
+    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Error when trying to create socket !");
+    return false;
+  }
+
+  memset(&servaddr, 0, sizeof(servaddr));
+  servaddr.sin_family = AF_INET;
+  servaddr.sin_port = htons(port);
+  
+  memcpy(&servaddr.sin_addr, h -> h_addr, h -> h_length);
+      
+  rval = connect(sd, (struct sockaddr *) &servaddr, sizeof(servaddr));
+
+  if (rval == -1) {
+    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Port "<<port<<" is closed for: "<<address);
+    close(sd);
+    return false;
+  }
+
+  else {
+    LOG4CXX_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<"Opened port "<<port <<" :" << inet_ntoa(*((struct in_addr *)h->h_addr)));
+    close(sd);
+    return true;
+  }
+    
+
+}
+
 fsmw::fsmw() : _host(""),_port(0),_p_session(""),_p_name(""),_p_instance(0),_state("CREATED") {
   _states.clear();
   _transitions.clear();
@@ -40,13 +92,13 @@ std::vector<std::string> fsmw::getPaths(std::string query)
 {
   if (_port==0)
     {
-      ucout<<url() <<std::endl;
+      //ucout<<url() <<std::endl;
       // remove http:// and trailing / so 
       auto v=split(url().substr(7,url().length()-8),':');
       _host.assign(v[0]);
       _port=std::stoi(v[1]);
 
-      ucout<<" HOST found "<<_host<<" Port:"<<_port<<std::endl;
+      LOG4CXX_INFO (_logPdaq,__PRETTY_FUNCTION__<<" HOST found "<<_host<<" Port:"<<_port);
 
     }
 
@@ -54,8 +106,8 @@ std::vector<std::string> fsmw::getPaths(std::string query)
   auto querym = uri::split_query(query);
   for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
     {
-      ucout << U("Query") << U(" ")
-	    << it2->first << U(" ") << it2->second << std::endl;
+     LOG4CXX_DEBUG(_logPdaq,__PRETTY_FUNCTION__<< U("Query") << U(" ")
+		   << it2->first << U(" ") << it2->second);
       if (it2->first.compare("session")==0)
 	_p_session.assign(it2->second);
       if (it2->first.compare("name")==0)
@@ -67,7 +119,7 @@ std::vector<std::string> fsmw::getPaths(std::string query)
 	  std::error_code  errorCode;
 	  auto jval=web::json::value::parse(std::string(it2->second),errorCode);
 	  _params=jval;
-	  ucout<<"Parameters "<<_params<<std::endl;
+	  LOG4CXX_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<"Parameters "<<_params);
 	}
     }
   std::stringstream sb;
@@ -185,7 +237,7 @@ void fsmw::getparams(http_request message)
 }
 void fsmw::setparams(http_request message)
 {
-  ucout<<uri::decode(message.relative_uri().query())<<std::endl;
+  LOG4CXX_INFO (_logPdaq,__PRETTY_FUNCTION__<<uri::decode(message.relative_uri().query()));
   auto querym = uri::split_query(uri::decode(message.relative_uri().query()));
   for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
     if (it2->first.compare("params")==0)
@@ -194,7 +246,7 @@ void fsmw::setparams(http_request message)
 	auto p=web::json::value::parse(std::string(it2->second),errorCode);
 	for(auto iter = p.as_object().begin(); iter != p.as_object().end(); ++iter)
 	  _params[iter->first]=iter->second;
-	ucout<<"Parameters sets "<<_params<<std::endl;
+	LOG4CXX_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<"Parameters sets "<<_params);
       }
     
   message.reply(status_codes::OK,_params);
@@ -236,7 +288,9 @@ void fsmw::setState(std::string s){ _state=s;}
 std::string fsmw::state(){return _state;}
 void fsmw::publishState() {
 
-  ucout<<"Entering publish \n";
+  if (!checkpns())
+    {  LOG4CXX_FATAL(_logPdaq,__PRETTY_FUNCTION__<<"Invalid DNS Cannot publish state");return;}
+  LOG4CXX_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<"Entering publishState");
 
   
   utility::string_t address = U("http://");
@@ -245,7 +299,7 @@ void fsmw::publishState() {
   else
     address.append("localhost");
   address.append(":8888");
-  ucout<<"Build address :"<<std::endl;
+  //ucout<<"Build address :"<<std::endl;
   http::uri uri = http::uri(address);
   web::http::client::http_client_config cfg; cfg.set_timeout(std::chrono::seconds(1));
   http_client client(http::uri_builder(uri).append_path(U("/PNS/UPDATE")).to_uri(),cfg);
@@ -255,9 +309,9 @@ void fsmw::publishState() {
       << U("&port=")<<U(port())
       << U("&path=")<<U(path())
       << U("&state=")<<U(state());
-  ucout<<"calling request \n";  
+  
   http_response  response = client.request(methods::GET, buf.str()).get();
-  ucout<<"reponse " <<response.to_string()<<std::endl;
+  LOG4CXX_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<"reponse " <<response.to_string());
 }
 web::json::value fsmw::transitionsList()
 {
