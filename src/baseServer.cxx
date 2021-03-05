@@ -5,10 +5,12 @@ using namespace utility;
 using namespace http::experimental::listener;
 #include <dlfcn.h>
  
-baseServer::baseServer(utility::string_t url) : m_listener(url),req(0),_url(url)
-{
+baseServer::baseServer(utility::string_t urla) : m_listener(urla),req(0),_url(urla) {
+    
  m_listener.support(methods::GET, std::bind(&baseServer::handle_get_or_post, this, std::placeholders::_1));
  m_listener.support(methods::POST, std::bind(&baseServer::handle_get_or_post, this, std::placeholders::_1));
+ _url.assign(urla);
+ LOG4CXX_INFO(_logPdaq,__PRETTY_FUNCTION__<< "Listenig on: " << this->url());
 }
  
 void baseServer::handle_get_or_post(http_request message)
