@@ -152,16 +152,22 @@ void pns::remove(http_request message)
   std::stringstream bpath;
   bpath<<host<<":"<<port<<":"<<path;
   std::string cmd=bpath.str();
-  for (auto it2 = _services.cbegin(); it2 != _services.cend() /* not hoisted */; /* no increment */)
-	{
-	  if (it2->first.compare(0,cmd.length(),cmd)==0)
-	    {
-	      ucout<<"removing "<<it2->first<<std::endl;
-	      _services.erase(it2++);    // or "it = m.erase(it)" since C++11
+  if (path.compare("")!=0)
+    for (auto it2 = _services.cbegin(); it2 != _services.cend() /* not hoisted */; /* no increment */)
+      {
+	auto v =split(it2->first,':');
+	
+	if (v[2].compare(path)==0)
+	  {
+	    ucout<<"removing "<<it2->first<<std::endl;
+	    _services.erase(it2++);    // or "it = m.erase(it)" since C++11
 	    }
-	  else
-	    ++it2;
-	}
+	else
+	  ++it2;
+      }
+  else
+    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<" Missing path parameter");
+
   // Return the registered list
   auto rep = json::value();
   rep["REGISTERED"]=registered();
