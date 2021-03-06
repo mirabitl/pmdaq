@@ -13,6 +13,7 @@ import base64
 import time
 import requests
 import six
+
 try:
     from urllib.parse import urlparse
 except ImportError:
@@ -27,7 +28,7 @@ if (sockport != None):
     socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, "127.0.0.1", sockport)
     socket.socket = socks.socksocket
     # socks.wrapmodule(urllib2)
-def executeRequest(self, url):
+def executeRequest(url):
     """
     Acces to an url
     
@@ -40,12 +41,14 @@ def executeRequest(self, url):
         r1 = six.moves.urllib.request.urlopen(req)
     except URLError as e:
         p_rep = {}
-        p_rep["STATE"] = "DEAD"
+        print(e.code)
+        print(e.reason)
+        p_rep["http_error"] = e.code
         return json.dumps(p_rep, sort_keys=True)
-
+    #print("RC :",r1.status)
     return r1.read()
 
-def executeCMD(self,host,port,path,params):
+def executeCMD(host,port,path,params):
     """
         Access to the CoMmanDs of a zdaq::baseApplication
         
@@ -73,10 +76,15 @@ def executeCMD(self,host,port,path,params):
             r1=six.moves.urllib.request.urlopen(req)
         except URLError as e:
             print(e)
+            print(e.code)
+            print(e.reason)
+
             p_rep={}
             p_rep["STATE"]="DEAD"
+            p_rep["http_error"] = e.code
             return json.dumps(p_rep,sort_keys=True)
         else:
+            #print("RC :",r1.status)
             return r1.read()
 
     else:
@@ -87,10 +95,14 @@ def executeCMD(self,host,port,path,params):
             r1=six.moves.urllib.request.urlopen(req)
         except URLError as e:
             print(e)
+            print(e.code)
+            print(e.reason)
             p_rep={}
             p_rep["STATE"]="DEAD"
+            p_rep["http_error"] = e.code
             return json.dumps(p_rep,sort_keys=True)
         else:
+            #print("RC :",r1.status)
             return r1.read()
     
         
@@ -127,18 +139,24 @@ class serviceAccess:
         if (type(r_pns_list) is bytes):
             r_pns_list=r_pns_list.decode("utf-8")
         pns_list=json.loads(r_pns_list)
+        if ("http_error" in r_pns_list):
+            return
         #print(pns_list)
-        if (pns_list["REGISTERED"]!=None):
+        if ("REGISTERED" in pns_list):
             #print(pns_list["REGISTERED"])
-            for x in pns_list["REGISTERED"]:
-                st=x.split('?')[0].split(':')[2]
-                if (st==self.path):
-                    self.state=x.split('?')[1]
+            if ( pns_list["REGISTERED"]!=None):
+                for x in pns_list["REGISTERED"]:
+                    st=x.split('?')[0].split(':')[2]
+                    if (st==self.path):
+                        self.state=x.split('?')[1]
     def services_request(self):
         r_services=executeCMD(self.host,self.port,"/SERVICES",{})
         if (type(r_services) is bytes):
             r_services=r_services.decode("utf-8")
         services=json.loads(r_services);
+        if ("http_error" in services):
+            return
+
         #print(services)
         for x in services:
             v=x.split(self.path)
@@ -153,6 +171,9 @@ class serviceAccess:
         if (type(r_info) is bytes):
             r_info=r_info.decode("utf-8")
         info=json.loads(r_info);
+        if ("http_error" in info):
+            return
+
         #print(info)
         # test STATE
         if (info["STATE"]!=self.state):
@@ -175,7 +196,10 @@ class serviceAccess:
         r_params=executeCMD(self.host,self.port,"%sPARAMS" % self.path,{})
         if (type(r_params) is bytes):
             r_params=r_params.decode("utf-8")
-        self.params=json.loads(r_params);
+        jpar=json.loads(r_params);
+        if ("http_error" in jpar):
+            return
+        self.params=jpar
         #print(params)
     def create(self,par=None):
         if (self.state=='VOID' or self.state=='DEAD'):
@@ -184,6 +208,12 @@ class serviceAccess:
             par["name"]=self.name
             par["instance"]=self.instance
             r_services=executeCMD(self.host,self.port,"/REGISTER",par)
+            if (type(r_services) is bytes):
+                r_services=r_services.decode("utf-8")
+            jserv=json.loads(r_services);
+            if ("http_error" in jserv):
+                return
+            
             print(r_services)
             self.pns_request()
             if (self.state !="VOID"):
@@ -195,6 +225,11 @@ class serviceAccess:
             par["name"]=self.name
             par["instance"]=self.instance
             r_services=executeCMD(self.host,self.port,"/REMOVE",par)
+            if (type(r_services) is bytes):
+                r_services=r_services.decode("utf-8")
+            jserv=json.loads(r_services);
+            if ("http_error" in jserv):
+                return
             print(r_services)
             self.pns_request()
             print("Removed state is %s \n" % self.state)
@@ -240,7 +275,7 @@ class serviceAccess:
             rep=rep.decode("utf-8")
 
         # update state (published is asynchronous)
-        time.sleep(10000/1000000.0)
+        #time.sleep(10000/1000000.0)
         self.getInfo()
         #print("New State is ",self.state)
         return rep
