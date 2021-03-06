@@ -319,9 +319,10 @@ web::json::value fsmw::transitionsList()
   int np=0;
   for( std::map<std::string,std::vector<fsmTransition> >::iterator it=_transitions.begin();it!=_transitions.end();it++)
     {
-      web::json::value jc;
-      jc["name"]=json::value::string(U(it->first));
-      jrep[np]=jc;np++;
+      //web::json::value jc;
+      //jc["name"]=json::value::string(U(it->first));
+      jrep[np]=json::value::string(U(it->first));
+      np++;
     }
   return jrep;
 }
@@ -338,9 +339,8 @@ web::json::value fsmw::allowList()
 	  {allowed=true;break;}
       if (allowed)
 	{
-	  web::json::value jc;
-	  jc["name"]=json::value::string(U(it->first));
-	  jrep[np]=jc;np++;
+	  jrep[np]=json::value::string(U(it->first));
+	  np++;
 	}
     }
   return jrep;
