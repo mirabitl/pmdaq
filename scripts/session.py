@@ -27,6 +27,9 @@ def create_session(config):
                 if ('params' in x):
                     par=x['params']
                 a.create(par)
+                #par={}
+                #par['params']=x['params']
+                #a.sendCommand("SETPARAMS",par)
     return sessionAccess(vsession)
                 
             
@@ -37,11 +40,12 @@ class sessionAccess:
         """
         self.session = vsession
         self.apps={}
-        pns_host=os.getenv("PNS_NAME","NONE")
-        if (pns_host == "NONE"):
+        self.pns_host=os.getenv("PNS_NAME","NONE")
+        if (self.pns_host == "NONE"):
             print("The ENV varaible PNS_NAME mut be set")
             exit(0)
-        pl=json.loads(sac.executeCMD(pns_host,8888,"/PNS/LIST",{}).decode("utf-8"))
+        pl=json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/LIST",{}))
+        #.decode("utf-8"))
         if ("REGISTERED" in pl):
             if ( pl["REGISTERED"]!=None):
                 for x in pl["REGISTERED"]:
@@ -62,3 +66,14 @@ class sessionAccess:
             print(self.session,"===> ",name)
             for y in app:
                 y.printInfos(True)
+                
+    def remove(self,obj_name=None):
+        for name,app in six.iteritems(self.apps):
+            print(self.session,"===> ",name)
+            if (obj_name!=None and obj_name!=name):
+                continue
+            for y in app:
+                y.remove()
+        # clear PNS
+        sac.executeCMD(self.pns_host,8888,"/PNS/PURGE",{})
+

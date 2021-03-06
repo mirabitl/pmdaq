@@ -35,6 +35,22 @@ def executeRequest(url):
    :param surl: The url
    :return: url answer
    """
+    try:
+        r = requests.get(url)
+    except requests.exceptions.RequestException as e:
+        print(e)
+        p_rep={}
+        p_rep["STATE"]="DEAD"
+        p_rep["http_error"] = e.code
+        return json.dumps(p_rep,sort_keys=True)
+        #print(r.url)
+        #print(r.headers)
+#        if (r.headers['Content-Type']=="application/json"):
+#            print(r.text)
+#            return r.text
+        #print(r.text)
+    return r.text
+
     #print "Access to %s " % url
     req = six.moves.urllib.request.Request(url)
     try:
@@ -65,30 +81,69 @@ def executeCMD(host,port,path,params):
 
         lq={}
         for x,y in six.iteritems(params):
+            if (type(y) is dict):
+                y=json.dumps(y).replace(" ","").encode("utf8")
+                #print("STRING ",y)
             lq[x]=y
-        lqs=six.moves.urllib.parse.urlencode(lq)
-        saction = '%s?%s' % (path,lqs)
-        myurl=myurl+saction
-        #print(myurl)
 
-        req=six.moves.urllib.request.Request(myurl)
+        #lqs=six.moves.urllib.parse.urlencode(lq)
+
+
+        #payload = lq
+        #print(payload)
         try:
-            r1=six.moves.urllib.request.urlopen(req)
-        except URLError as e:
+            r = requests.get(myurl+path, params=lq)
+        except requests.exceptions.RequestException as e:
             print(e)
-            print(e.code)
-            print(e.reason)
-
             p_rep={}
             p_rep["STATE"]="DEAD"
             p_rep["http_error"] = e.code
             return json.dumps(p_rep,sort_keys=True)
-        else:
-            #print("RC :",r1.status)
-            return r1.read()
+        #print(r.url)
+        #print(r.headers)
+#        if (r.headers['Content-Type']=="application/json"):
+#            print(r.text)
+#            return r.text
+        #print(r.text)
+        return r.text
+
+
+
+        
+        #saction = '%s?%s' % (path,lqs)
+        #myurl=myurl+saction
+        #print(myurl)
+        
+
+        
+        #req=six.moves.urllib.request.Request(myurl)
+        #try:
+        #    r1=six.moves.urllib.request.urlopen(req)
+        #except URLError as e:
+        #    print(e)
+        #    print(e.code)
+        #    print(e.reason)
+
+        #    p_rep={}
+        #    p_rep["STATE"]="DEAD"
+        #    p_rep["http_error"] = e.code
+        #    return json.dumps(p_rep,sort_keys=True)
+        #else:
+        #    #print("RC :",r1.status)
+        #    return r1.read()
 
     else:
         myurl = "http://"+host+ ":%d%s" % (port,path)
+
+        try:
+            r = requests.get(myurl)
+        except requests.exceptions.RequestException as e:
+            print(e)
+            p_rep={}
+            p_rep["STATE"]="DEAD"
+            p_rep["http_error"] = e.code
+            return json.dumps(p_rep,sort_keys=True)
+        return r.text
         #print(myurl)
         req=six.moves.urllib.request.Request(myurl)
         try:
@@ -221,14 +276,16 @@ class serviceAccess:
             return
         self.params=jpar
         #print(params)
-    def create(self,params=None):
+    def create(self,param_s=None):
         if (self.state=='VOID' or self.state=='DEAD'):
             par={}
             par["session"]=self.session
             par["name"]=self.name
             par["instance"]=self.instance
-            if (params!=None):
-                par["params"]=params
+            par["params"]=""
+            if (param_s!=None):
+                par["params"]=param_s
+            print(self.host,self.port,par)
             r_services=executeCMD(self.host,self.port,"/REGISTER",par)
             #if (type(r_services) is bytes):
             #    r_services=r_services.decode("utf-8")
