@@ -221,18 +221,20 @@ class serviceAccess:
             return
         self.params=jpar
         #print(params)
-    def create(self,par=None):
+    def create(self,params=None):
         if (self.state=='VOID' or self.state=='DEAD'):
             par={}
             par["session"]=self.session
             par["name"]=self.name
             par["instance"]=self.instance
+            if (params!=None):
+                par["params"]=params
             r_services=executeCMD(self.host,self.port,"/REGISTER",par)
-            if (type(r_services) is bytes):
-                r_services=r_services.decode("utf-8")
-            jserv=json.loads(r_services);
-            if ("http_error" in jserv):
-                return
+            #if (type(r_services) is bytes):
+            #    r_services=r_services.decode("utf-8")
+            #jserv=json.loads(r_services);
+            #if ("http_error" in jserv):
+            #    return
             
             print(r_services)
             self.pns_request()
@@ -245,11 +247,11 @@ class serviceAccess:
             par["name"]=self.name
             par["instance"]=self.instance
             r_services=executeCMD(self.host,self.port,"/REMOVE",par)
-            if (type(r_services) is bytes):
-                r_services=r_services.decode("utf-8")
-            jserv=json.loads(r_services);
-            if ("http_error" in jserv):
-                return
+            #if (type(r_services) is bytes):
+            #    r_services=r_services.decode("utf-8")
+            #jserv=json.loads(r_services);
+            #if ("http_error" in jserv):
+            #    return
             print(r_services)
             self.pns_request()
             print("Removed state is %s \n" % self.state)

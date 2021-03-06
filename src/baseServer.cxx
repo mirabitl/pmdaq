@@ -35,7 +35,8 @@ void baseServer::handle_get_or_post(http_request message)
 	    registerPlugin(it2->second,uri::decode(message.relative_uri().query()));
 	  LOG4CXX_INFO(_logPdaq,__PRETTY_FUNCTION__<< U("Registering Query") << U(" ")<< it2->first << U(" ") << it2->second );
 	}
-      message.reply(status_codes::OK);
+      auto rep = json::value::string(U(uri::decode(message.relative_uri().query())));
+      message.reply(status_codes::OK,rep);
     }
   else if (uri::decode(message.relative_uri().path()).compare("/REMOVE")==0)
       {
@@ -85,8 +86,8 @@ void baseServer::handle_get_or_post(http_request message)
 	      ++it2;
 	    }
 	}
-
-      message.reply(status_codes::OK);
+      auto rep = json::value::string(U(sb.str()));
+      message.reply(status_codes::OK,rep);
     }
   else if (uri::decode(message.relative_uri().path()).compare("/SERVICES")==0)
     {
