@@ -104,10 +104,28 @@ def executeCMD(host,port,path,params):
         else:
             #print("RC :",r1.status)
             return r1.read()
-    
+
         
+def strip_pns_string(pns_string):
+    state=pns_string.split("?")[1]
+    v=pns_string.split("?")[0].split(":")
+    host=v[0];
+    port=int(v[1]);
+    path =v[2]
+    vp=path.split("/")
+    session=vp[1]
+    name=vp[2]
+    instance=int(vp[3])
+    o = type('serviceAccessDescription', (object,), 
+                 {'host':host, 'port':port,'path':path,'session':session,'name':name,'instance':instance,'state':state})()
+    #print(o)
+    #print("=>",o.host,o.port,o.path,o.session,o.name,o.instance,o.state)
+    return o
 
-
+def create_access(pns_string):
+     o=strip_pns_string(pns_string)
+     return serviceAccess(o.host,o.port,o.session,o.name,o.instance)
+    
 
 class serviceAccess:
     def __init__(self, vhost, vport,vsession,vname,vinstance):
@@ -146,9 +164,11 @@ class serviceAccess:
             #print(pns_list["REGISTERED"])
             if ( pns_list["REGISTERED"]!=None):
                 for x in pns_list["REGISTERED"]:
-                    st=x.split('?')[0].split(':')[2]
-                    if (st==self.path):
-                        self.state=x.split('?')[1]
+                    o =strip_pns_string(x)
+                    #print( iho,ipo,ipa,ises,ina,iin)
+                    #st=x.split('?')[0].split(':')[2]
+                    if (o.path==self.path):
+                        self.state=o.state
     def services_request(self):
         r_services=executeCMD(self.host,self.port,"/SERVICES",{})
         if (type(r_services) is bytes):
