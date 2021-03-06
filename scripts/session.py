@@ -77,3 +77,26 @@ class sessionAccess:
         # clear PNS
         sac.executeCMD(self.pns_host,8888,"/PNS/PURGE",{})
 
+    def commands(self,cmd,obj_name,params=None):
+        rep={}
+        for name,app in six.iteritems(self.apps):
+            if (obj_name!=None and obj_name!=name):
+                continue
+            for y in app:
+                r= y.sendCommand(cmd,params)
+                rep[y.path]=r
+        # clear PNS
+        return rep
+    def transitions(self,cmd,obj_name,params=None):
+        rep={}
+        for name,app in six.iteritems(self.apps):
+            if (obj_name!=None and obj_name!=name):
+                continue
+            for y in app:
+                r= y.sendTransition(cmd,params)
+                rep[y.path]=r
+                #print(y.path,r)
+                
+        # clear PNS
+        return rep
+
