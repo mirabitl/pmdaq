@@ -64,14 +64,17 @@ void demo::configure(http_request message)
   auto par = json::value::object();
   par["status"] = json::value::string(U("GOOD_STATUS"));
   par["rc"] = json::value::number(1000);
-  message.reply(status_codes::OK,par);
+  par["pns"]=jdata;
+  //answer().set_status_code(status_codes::OK);
+  //answer().set_body(par);
+  Reply(status_codes::OK,par);
 }
 void demo::status(http_request message)
 {
   auto par = json::value::object();
   par["event"] = json::value::number(_event);
   par["rc"] = json::value::number(1000);
-  message.reply(status_codes::OK,par);
+  Reply(status_codes::OK,par);
 }
 void demo::readEvent()
 {
@@ -96,8 +99,10 @@ void demo::start(http_request message)
   
   par["status"] = json::value::string(U("RUNNING"));
   par["rc"] = json::value::number(2000);
-  message.reply(status_codes::OK,par);
-  
+  Reply(status_codes::OK,par);
+  //answer().set_status_code(status_codes::OK);
+  //answer().set_body(par);
+
 }
 void demo::stop(http_request message)
 {
@@ -107,7 +112,10 @@ void demo::stop(http_request message)
   par["status"] = json::value::string(U("STOPPED"));
   par["rc"] = json::value::number(3000);
   par["event"] = json::value::number(_event);
-  message.reply(status_codes::OK,par);
+  Reply(status_codes::OK,par);
+  //answer().set_status_code(status_codes::OK);
+  //answer().set_body(par);
+
 }
 
 extern "C" 

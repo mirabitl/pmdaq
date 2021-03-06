@@ -142,9 +142,16 @@ std::vector<std::string> fsmw::getPaths(std::string query)
 
 void fsmw::processRequest(http_request& message)
 {
+  _response.set_status_code(status_codes::OK);
+  json::value jrep=json::value::string(U("Not Set"));
+  _response.set_body(jrep);
+
   auto icf=_commands.find(uri::decode(message.relative_uri().path()));
   if (icf!=_commands.end())
-    icf->second(message);
+    {
+      icf->second(message);
+      message.reply(_response);
+    }
   else
     {
       
@@ -155,9 +162,9 @@ void fsmw::processRequest(http_request& message)
 	  jrep["status"]=json::value::string(U("FAILED"));
 	  std::stringstream s0;
 	  s0.str(std::string());  
-	  s0<<uri::decode(message.relative_uri().path()) << "not found in transitions list ";
+	  s0<<uri::decode(message.relative_uri().path()) << "not found in transitions/commands list ";
 	  jrep["comment"]=json::value::string(U(s0.str()));
-	  message.reply(status_codes::BadRequest, jrep);
+	  message.reply(status_codes::NotImplemented, jrep);
 	}
       else
 	{
@@ -166,6 +173,7 @@ void fsmw::processRequest(http_request& message)
 	  for (auto ift=vp.begin();ift!=vp.end();ift++)
 	    if (ift->initialState().compare(_state)==0)
 	      {
+		
 #define DEBUG	       
 #ifdef DEBUG
 		std::cout<<"calling callback"<<ift->finalState()<<"\n";
@@ -177,6 +185,7 @@ void fsmw::processRequest(http_request& message)
 		_state=ift->finalState();
 		this->publishState();
 		std::cout<<"publish called\n";
+		message.reply(_response);
 		return;
 	      }
 	  // No initialState corresponding to _state
@@ -188,7 +197,7 @@ void fsmw::processRequest(http_request& message)
 	  s0.str(std::string());  
 	  s0<<_state << "invalid intial state  ";
 	  jrep["comment"]=json::value::string(U(s0.str()));
-	  message.reply(status_codes::BadRequest, jrep);
+	  message.reply(status_codes::MethodNotAllowed, jrep);
 	  
 	  return;
 	}
@@ -344,4 +353,9 @@ web::json::value fsmw::allowList()
 	}
     }
   return jrep;
+}
+void fsmw::Reply(http::status_code code,const json::value &body_data)
+{
+  _response.set_status_code(code);
+  _response.set_body(body_data);
 }

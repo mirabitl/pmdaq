@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import rcbase
+import serviceAccess as sac
 import MongoJob as mg
 import json
 import time
@@ -93,7 +93,7 @@ class daqControl:
         mh = self._mgConfig['HOSTS'];
         for  key,value in mh.items():
             #print "Host found %s" % key
-            fsm = rcbase.FSMAccess(key, 9999);
+            fsm = sac.serviceAccess(key, 9999);
             self.jobcontrols.append(fsm)
     
         for x in self.jobcontrols:
@@ -119,7 +119,7 @@ class daqControl:
 
                             continue
           
-                        bapp = rcbase.FSMAccess(pcs['HOST'], int(pcs['PORT']))
+                        bapp = sac.serviceAccess(pcs['HOST'], int(pcs['PORT']))
                         bapp.getInfo();
                         #print(bapp.state)
                         if (bapp.state == "DEAD"):

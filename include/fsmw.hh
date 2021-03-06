@@ -105,7 +105,8 @@ class fsmw : public handlerPlugin
     std::string name(){return _p_name;}
     uint32_t instance(){return _p_instance;}
     web::json::value& params(){return _params;}
-
+    web::http::http_response& answer(){return _response;}
+    void Reply(http::status_code code,const json::value &body_data);
   private:
     std::map<std::string,CMDFunctor> _commands;
     std::vector<std::string> _states;
@@ -120,7 +121,7 @@ class fsmw : public handlerPlugin
     std::string _p_name;
     uint32_t _p_instance;
     web::json::value _params;
-    
+    web::http::http_response _response;
   };
 
 
