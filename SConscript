@@ -76,7 +76,7 @@ LDFLAGS=["-fPIC","-dynamiclib"]
 env = Environment(CPPPATH=INCLUDES,CPPFLAGS=CPPFLAGS,LINKFLAGS=LDFLAGS, LIBS=LIBRARIES,LIBPATH=LIBRARY_PATHS)
 
 #print LIBRARY_SOURCES
-LIBRARY_SOURCES=['src/baseServer.cxx','src/fsmw.cxx']
+LIBRARY_SOURCES=['src/baseServer.cxx','src/fsmw.cxx','src/monitor.cxx']
 
 
 #Shared library
