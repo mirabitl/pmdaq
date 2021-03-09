@@ -1,0 +1,112 @@
+import sys,os,commands
+import  os
+import re
+import sys
+
+
+#print "----------------------------------------------"
+Decider('MD5-timestamp')
+
+fres=os.popen('uname -r')
+kl=fres.readline().split(".")
+
+platform="UBUNTU"
+if (kl[len(kl)-1][0:3] == 'el5'):
+    platform="SLC5"
+
+if (kl[len(kl)-2][0:3] == 'el6'):
+    platform="SLC6"
+print kl[len(kl)-2][0:3]
+fres=os.popen('uname -p')
+kp=fres.readline()
+osv=kp[0:len(kp)-1]
+
+print platform,osv
+
+Bit64=False
+Bit64=os.uname()[4]=='x86_64'
+
+kl=os.uname()[2].split(".")
+platform="UBUNTU"
+if (kl[len(kl)-1][0:3] == 'el5'):
+    platform="SLC5"
+
+if (kl[len(kl)-2][0:3] == 'el6'):
+    platform="SLC6"
+
+Arm=os.uname()[4]=='armv7l'
+
+if Arm or platform=="UBUNTU":
+  boostsystem='boost_system'
+  boostthread='boost_thread'
+else:
+  boostsystem='boost_system-mt'
+  boostthread='boost_thread-mt'
+
+
+package=os.path.basename(os.getcwd())
+  
+
+
+
+# includes
+
+INCLUDES=['../../include',"/usr/include/boost141/","/usr/include/cpprest","/usr/local/include","/usr/include/log4cxx"]
+  
+CPPFLAGS=["-pthread","-O2","-std=c++11"]
+LIBRARIES=['cpprest','pthread', 'ssl','crypto',boostsystem,"log4cxx","jsoncpp"]
+
+
+
+#Library path XDAQ,DHCAL and ROOT + Python
+if (Bit64):
+  LIBRARY_PATHS=["/usr/lib64","/usr/local/lib"]
+else:
+  LIBRARY_PATHS=["/usr/lib","/usr/local/lib"]
+
+
+INCLUDES.append("/usr/include/jsoncpp")
+INCLUDES.append("/opt/lydaq/drivers/Wiener/include")
+LIBRARY_PATHS.append("/opt/lydaq/drivers/Wiener/lib")
+LIBRARIES.append("lydaq_Wiener")
+
+#link flags
+LDFLAGS=["-fPIC","-dynamiclib"]
+
+
+# Create the Environment
+env = Environment(CPPPATH=INCLUDES,CPPFLAGS=CPPFLAGS,LINKFLAGS=LDFLAGS, LIBS=LIBRARIES,LIBPATH=LIBRARY_PATHS)
+
+#print LIBRARY_SOURCES
+LIBRARY_SOURCES=['wienerPlugin.cxx']
+
+print LIBRARY_SOURCES
+
+
+#Shared library
+lyname="./app_wiener"
+print "building ",lyname
+lypack=env.SharedLibrary(lyname,LIBRARY_SOURCES)
+
+
+
+
+#myinc=[]
+#for x in Glob("include/*.hh"):
+#  myinc.append("include/"+x.name)
+#print plist
+#env.Install("../lib",lypack)
+#env.Install("../include",myinc)
+###env.Install("/opt/dhcal/lib",levbdimdaq)
+env.Install("../../lib",lypack)
+#env.Install("../include",myinc)
+###env.Install("/opt/dhcal/lib",levbdimdaq)
+
+
+env.Alias('install', ["../../lib"])
+
+
+
+
+
+
