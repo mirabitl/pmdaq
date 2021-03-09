@@ -105,6 +105,45 @@ web::json::value wienerPlugin::status(int32_t first,int32_t last)
   return r;
 }
 
+void wienerPlugin::c_status(http_request m)
+{
+
+ auto par = json::value::object();
+
+ if (_hv==NULL)
+  {
+    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
+    par["status"]=json::value::string(U("Invalid Device"));
+    Reply(status_codes::OK,par);
+    return;
+  }
+
+
+ 
+ uint32_t first = 999;
+ uint32_t last =999;
+
+ auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+ for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+   {
+     if (it2->first.compare("first")==0)
+       first=std::stoi(it2->second);
+     if (it2->first.compare("last")==0)
+       last=std::stoi(it2->second);
+   }
+  if (first==999 || last==999)
+    {
+      LOG4CXX_ERROR(_logPdaq,"Invalid first or last");
+      par["status"]=json::value::string(U("Invalid channels"));
+      Reply(status_codes::OK,par);
+      return;
+    }
+
+
+ 
+  par["status"] = this->status(first,last);
+  Reply(status_codes::OK,par);
+}
 
 
 void wienerPlugin::c_on(http_request m)
@@ -388,6 +427,7 @@ void wienerPlugin::c_rampup(http_request m)
 void wienerPlugin::registerCommands()
 {
 
+ this->addCommand("WP_STATUS",std::bind(&wienerPlugin::c_status,this,std::placeholders::_1));
  this->addCommand("ON",std::bind(&wienerPlugin::c_on,this,std::placeholders::_1));
  this->addCommand("OFF",std::bind(&wienerPlugin::c_off,this,std::placeholders::_1));
  this->addCommand("VSET",std::bind(&wienerPlugin::c_vset,this,std::placeholders::_1));

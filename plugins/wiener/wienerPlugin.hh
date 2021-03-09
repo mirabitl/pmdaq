@@ -29,6 +29,7 @@ using namespace std;
     web::json::value channelStatus(uint32_t channel);
     
     // Commande
+    void c_status(http_request m);
     void c_vset(http_request m);
     void c_iset(http_request m);
     void c_rampup(http_request m);

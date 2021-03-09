@@ -157,7 +157,7 @@ void baseServer::registerPlugin(std::string name,std::string query)
   handlerPlugin *(*create)();
   create = (handlerPlugin * (*)()) dlsym(library, "loadProcessor");
   LOG4CXX_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<" create"<<s.str());
-  //ucout<<" Error " << dlerror() << " file " << s.str() << " loads to processor address " << std::hex << create << std::dec<<endl;
+  ucout<<" Error " << dlerror() << " file " << s.str() << " loads to processor address " << std::hex << create << std::dec<<endl;
   //printf("%s %x \n",dlerror(),(unsigned int) create);
   // printf("%s lods to %x \n",s.str().c_str(),(unsigned int) create);
   //void (*destroy)(Filter*);
