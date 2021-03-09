@@ -1,0 +1,115 @@
+#import commands
+import  os
+import re
+import sys
+
+VCTOP=os.environ['VCPKG_INSTALL']
+#print "----------------------------------------------"
+Decider('MD5-timestamp')
+
+fres=os.popen('uname -r')
+kl=fres.readline().split(".")
+
+platform="UBUNTU"
+if (kl[len(kl)-1][0:3] == 'el5'):
+    platform="SLC5"
+
+if (kl[len(kl)-2][0:3] == 'el6'):
+    platform="SLC6"
+print(kl[len(kl)-2][0:3])
+fres=os.popen('uname -p')
+kp=fres.readline()
+osv=kp[0:len(kp)-1]
+
+print(platform,osv)
+
+Bit64=False
+Bit64=os.uname()[4]=='x86_64'
+
+kl=os.uname()[2].split(".")
+platform="UBUNTU"
+if (kl[len(kl)-1][0:3] == 'el5'):
+    platform="SLC5"
+
+if (kl[len(kl)-2][0:3] == 'el6'):
+    platform="SLC6"
+
+Arm=os.uname()[4]=='armv7l'
+
+if Arm or platform=="UBUNTU":
+  boostsystem='boost_system'
+  boostthread='boost_thread'
+else:
+  boostsystem='boost_system-mt'
+  boostthread='boost_thread-mt'
+
+
+package=os.path.basename(os.getcwd())
+  
+
+Use_Mongoose=os.path.exists("/usr/local/include/mongoose")
+
+# includes
+INCLUDES=['./include']
+INCLUDES.append(VCTOP+"/include")
+INCLUDES.append(VCTOP+"/include/boost")
+INCLUDES.append(VCTOP+"/include/cpprest")
+INCLUDES.append(VCTOP+"/include/log4cxx")
+INCLUDES.append(VCTOP+"/include/openssl")
+
+
+  
+CPPFLAGS=["-pthread","-O2","-std=c++11"]
+LIBRARIES=['cpprest','ssl','crypto','pthread','boost_system','log4cxx']
+
+
+#Library path XDAQ,DHCAL and ROOT + Python
+LIBRARY_PATHS=["/usr/lib","/usr/local/lib"]
+
+LIBRARY_PATHS.append(VCTOP+'/lib')
+
+#link flags
+#LDFLAGS=["-dynamiclib"]
+
+
+# Create the Environment
+LDFLAGS=['-O2']
+
+env = Environment(CPPPATH=INCLUDES,CPPFLAGS=CPPFLAGS,LINKFLAGS=LDFLAGS, LIBS=LIBRARIES,LIBPATH=LIBRARY_PATHS)
+
+#print LIBRARY_SOURCES
+LIBRARY_SOURCES=['src/baseServer.cxx','src/fsmw.cxx']
+
+
+#Shared library
+lyname="./lib/pmdaq"
+print("building ",lyname)
+
+lypack=env.SharedLibrary(lyname,LIBRARY_SOURCES)
+
+EXE_LIBPATH=LIBRARY_PATHS
+EXE_LIBPATH.append("./lib")
+EXE_LIBS=LIBRARIES
+EXE_LIBS.append("pmdaq")
+
+LDFLAGS=['-O2']
+print(LIBRARY_SOURCES)
+env1 = Environment(CPPPATH=INCLUDES,CPPFLAGS=CPPFLAGS, LIBS=LIBRARIES,LIBPATH=LIBRARY_PATHS)
+
+builderd=env1.Program("./bin/pmd",source=["src/baseServer.cc"],LIBPATH=EXE_LIBPATH,LIBS=EXE_LIBS)
+
+
+#myinc=[]
+#for x in Glob("include/*.hh"):
+#  myinc.append("include/"+x.name)
+#print plist
+#env.Install("lib",lypack)
+#env.Install("bin",builderd)
+#env.Install("../include",myinc)
+###env.Install("/opt/dhcal/lib",levbdimdaq)
+
+
+env.Alias('install', ["lib","bin"])
+
+
+
