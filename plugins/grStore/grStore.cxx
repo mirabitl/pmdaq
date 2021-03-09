@@ -113,12 +113,16 @@ void grStore::store(std::string loc,std::string hw,uint32_t ti,web::json::value 
 
 
       float ist=0;
-      if (status["status"].as_string().compare("ON")==0) ist=1;
+      if (status["status"].as_string().compare("ON")==0)
+	{
+	  ist=1;
+	  //LOG4CXX_WARN(_logPdaq,"status "<<status["status"].as_string()<<" "<<ist);
+	}
 	
       spath.str(std::string());
       spath.clear();
       spath<<loc<<"."<<hw<<".ON";
-      graphite_send_plain(spath.str().c_str(),1,ti);
+      graphite_send_plain(spath.str().c_str(),ist,ti);
       return;
     }
 

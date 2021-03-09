@@ -118,7 +118,7 @@ void mgStore::store(std::string loc,std::string hw,uint32_t ti,web::json::value 
   auto  mondoc=web::json::value::object();
   std::stringstream spath("");
   spath<<","<<loc<<","<<hw<<",";
-  mondoc["path"]==json::value::string(U(spath.str()));
+  mondoc["path"]=json::value::string(U(spath.str()));
   mondoc["ctime"]=json::value::number(ti);
   mondoc["status"]=status;
   //Json::FastWriter fastWriter;

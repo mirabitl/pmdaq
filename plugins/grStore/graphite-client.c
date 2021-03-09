@@ -72,8 +72,8 @@ void graphite_send_plain( const char* path, float value, unsigned long timestamp
     snprintf( message, MAX_MSG_LEN_PLAIN, "%s %.2f %lu\n", spath, value, timestamp );
     
     /* send to message to graphite */
-    //graphite_send(message);
-    printf("%s\n",message);
+    graphite_send(message);
+    printf("Sending %s\n",message);
 }
 
 
