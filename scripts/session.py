@@ -61,11 +61,11 @@ class sessionAccess:
                         self.apps[o.name].append(sac.serviceAccess(o.host,o.port,o.session,o.name,o.instance))
 
 
-    def Print(self):
+    def Print(self,verbose=False):
         for name,app in six.iteritems(self.apps):
             print(self.session,"===> ",name)
             for y in app:
-                y.printInfos(True)
+                y.printInfos(verbose)
                 
     def remove(self,obj_name=None):
         for name,app in six.iteritems(self.apps):
@@ -75,6 +75,7 @@ class sessionAccess:
             for y in app:
                 y.remove()
         # clear PNS
+        print("purging PNS")
         sac.executeCMD(self.pns_host,8888,"/PNS/PURGE",{})
 
     def commands(self,cmd,obj_name,params=None):
