@@ -1,7 +1,9 @@
+#
 import sys,os,commands
 import  os
 import re
 import sys
+
 
 
 #print "----------------------------------------------"
@@ -21,6 +23,8 @@ fres=os.popen('uname -p')
 kp=fres.readline()
 osv=kp[0:len(kp)-1]
 
+
+platform =sys.platform
 print platform,osv
 
 Bit64=False
@@ -50,6 +54,7 @@ package=os.path.basename(os.getcwd())
 Use_Mongoose=os.path.exists("/usr/local/include/mongoose")
 
 # includes
+
 INCLUDES=['./include',"/usr/include/boost141/","/usr/include/cpprest","/usr/local/include","/usr/include/log4cxx"]
   
 CPPFLAGS=["-pthread","-O2","-std=c++11"]
