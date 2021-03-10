@@ -31,7 +31,14 @@ target_include_directories(app_zup PRIVATE ${zup_DIR}/include)
 target_include_directories(app_zup PRIVATE /usr/include/jsoncpp)
 ADD_DEFINITIONS(-std=c++11)
 
-SET(cpprestsdk_DIR /usr/lib/x86_64-linux-gnu/cmake)
+#SET(cpprestsdk_DIR /usr/lib/x86_64-linux-gnu/cmake)
+
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+  SET(cpprestsdk_DIR /usr/lib/x86_64-linux-gnu/cmake)
+endif()
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
+  SET(cpprestsdk_DIR /usr/lib/arm-linux-gnueabihf/cmake)
+endif()
 
 find_package(cpprestsdk CONFIG REQUIRED)
 target_link_libraries(app_zup PRIVATE cpprest)
