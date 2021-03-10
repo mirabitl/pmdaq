@@ -13,6 +13,8 @@ set(CPACK_PACKAGE_VERSION_MAJOR 0)
 set(CPACK_PACKAGE_VERSION_MINOR 1)
 set(CPACK_PACKAGE_VERSION_PATCH 0)
 
+set(FAKE_TARGET fakeTarget)
+add_custom_target(fakeTarget  ${CMAKE_CURRENT_SOURCE_DIR}/extras/install_netlink)
 
 
 
@@ -48,6 +50,10 @@ set(HEADERS
 	)
 
 add_library(pmdaq SHARED ${SRCS} ${HEADERS})
+
+add_dependencies(pmdaq ${FAKE_TARGET})
+
+
 
 
 include(CMake.defs)
