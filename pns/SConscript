@@ -82,9 +82,11 @@ lypack=env.SharedLibrary(lyname,LIBRARY_SOURCES)
 
 EXE_LIBPATH=LIBRARY_PATHS
 EXE_LIBPATH.append("../lib")
+EXE_LIBPATH.append(".")
 
 EXE_LIBS=LIBRARIES
 EXE_LIBS.append("pmdaq")
+EXE_LIBS.append("pns")
 
 
 print LIBRARY_SOURCES

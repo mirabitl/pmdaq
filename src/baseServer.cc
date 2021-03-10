@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 printf("parsing the config file \n");
 DOMConfigurator::configure("/etc/Log4cxxConfig.xml");
 //_logger->setLevel(log4cxx::Level::getInfo());
-LOG4CXX_INFO (_logPdaq,__PRETTY_FUNCTION__<< "this is a info message, after parsing configuration file")
+ LOG4CXX_INFO (_logPdaq,__PRETTY_FUNCTION__<< "this is a info message, after parsing configuration file");
 
 
   

@@ -29,17 +29,10 @@ target_link_libraries(app_wiener PUBLIC ${WIENER_LIB})
 target_include_directories(app_wiener PRIVATE ${wiener_DIR}/include)
 
 target_include_directories(app_wiener PRIVATE /usr/include/jsoncpp)
-ADD_DEFINITIONS(-std=c++11)
 
-#SET(cpprestsdk_DIR /usr/lib/x86_64-linux-gnu/cmake)
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
-  SET(cpprestsdk_DIR /usr/lib/x86_64-linux-gnu/cmake)
-endif()
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
-  SET(cpprestsdk_DIR /usr/lib/arm-linux-gnueabihf/cmake)
-endif()
 
-find_package(cpprestsdk CONFIG REQUIRED)
+include(../../CMake.defs)
+
 target_link_libraries(app_wiener PRIVATE cpprest)
 
 

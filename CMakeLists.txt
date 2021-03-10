@@ -23,19 +23,8 @@ set(HEADERS
 add_library(pmdaq SHARED ${SRCS} ${HEADERS})
 
 
+include(CMake.defs)
 
-
-ADD_DEFINITIONS(-std=c++11)
-
-#SET(cpprestsdk_DIR /usr/lib/x86_64-linux-gnu/cmake)
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
-  SET(cpprestsdk_DIR /usr/lib/x86_64-linux-gnu/cmake)
-endif()
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm")
-  SET(cpprestsdk_DIR /usr/lib/arm-linux-gnueabihf/cmake)
-endif()
-
-find_package(cpprestsdk CONFIG REQUIRED)
 target_link_libraries(pmdaq PRIVATE cpprest)
 
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
@@ -55,8 +44,6 @@ add_executable(pmd src/baseServer.cc ${HEADERS})
 
 
 
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
 target_link_libraries(pmd PRIVATE Threads::Threads)
 
 target_include_directories(pmd PRIVATE include)
