@@ -127,7 +127,7 @@ void monitoring::supervisor::registerStore(std::string name)
 
 void monitoring::supervisor::start(http_request m)
 {
-  LOG4CXX_DEBUG(_logPdaq, "Received Start ")
+  LOG4CXX_DEBUG(_logPdaq, "Received Start ");
   auto par = json::value::object();
 
 
