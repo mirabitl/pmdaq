@@ -12,7 +12,7 @@ set(CPACK_VERBATIM_VARIABLES true)
 set(CPACK_PACKAGE_VERSION_MAJOR 0)
 set(CPACK_PACKAGE_VERSION_MINOR 1)
 set(CPACK_PACKAGE_VERSION_PATCH 0)
-include(CPack)
+
 
 
 
@@ -25,14 +25,18 @@ add_subdirectory(plugins/wiener)
 add_subdirectory(plugins/grStore)
 add_subdirectory(plugins/mgStore)
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm")
+  set(CPACK_SYSTEM_NAME "Linux-arm")
+  set(CPACK_TOPLEVEL_TAG "Linux-arm")
   add_subdirectory(plugins/bmp)
   add_subdirectory(plugins/hih)
 endif()
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+  set(CPACK_SYSTEM_NAME "Linux-x86_64")
+  set(CPACK_TOPLEVEL_TAG "Linux-x86_64")
   add_subdirectory(plugins/syx27)
 endif()
-
+include(CPack)
 
 
 set(SRCS
