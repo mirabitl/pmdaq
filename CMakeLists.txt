@@ -3,7 +3,17 @@ cmake_minimum_required(VERSION 3.0)
 
 # Notre projet est étiqueté libhello
 
-project(pmdaq VERSION 0.0.1 DESCRIPTION "PM daq base library")
+project(pmdaq VERSION 0.1.0 DESCRIPTION "PM daq base library")
+#set(CPACK_GENERATOR "DEB")
+#set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Laurent Mirabito")
+set(CPACK_PACKAGE_NAME "pmdaq")
+set(CPACK_PACKAGE_VENDOR "ip2i")
+set(CPACK_VERBATIM_VARIABLES true)
+set(CPACK_PACKAGE_VERSION_MAJOR 0)
+set(CPACK_PACKAGE_VERSION_MINOR 1)
+set(CPACK_PACKAGE_VERSION_PATCH 0)
+include(CPack)
+
 
 
 message(${CMAKE_SYSTEM_PROCESSOR})
