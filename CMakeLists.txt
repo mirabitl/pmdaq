@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.0)
 # Notre projet est étiqueté libhello
 
 project(pmdaq VERSION 0.0.1 DESCRIPTION "PM daq base library")
-
+message(${CMAKE_SYSTEM_PROCESSOR})
 add_subdirectory(pns)
 add_subdirectory(plugins/demo)
 add_subdirectory(plugins/zup)
@@ -31,7 +31,7 @@ ADD_DEFINITIONS(-std=c++11)
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
   SET(cpprestsdk_DIR /usr/lib/x86_64-linux-gnu/cmake)
 endif()
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm")
   SET(cpprestsdk_DIR /usr/lib/arm-linux-gnueabihf/cmake)
 endif()
 

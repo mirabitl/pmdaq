@@ -21,7 +21,13 @@ add_library(grStore SHARED ${SRCS} ${HEADERS})
 
 ADD_DEFINITIONS(-std=c++11)
 
-SET(cpprestsdk_DIR /usr/lib/x86_64-linux-gnu/cmake)
+#SET(cpprestsdk_DIR /usr/lib/x86_64-linux-gnu/cmake)
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+  SET(cpprestsdk_DIR /usr/lib/x86_64-linux-gnu/cmake)
+endif()
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
+  SET(cpprestsdk_DIR /usr/lib/arm-linux-gnueabihf/cmake)
+endif()
 
 find_package(cpprestsdk CONFIG REQUIRED)
 target_link_libraries(grStore PRIVATE cpprest)
