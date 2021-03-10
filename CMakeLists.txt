@@ -11,7 +11,9 @@ add_subdirectory(plugins/zup)
 add_subdirectory(plugins/wiener)
 add_subdirectory(plugins/grStore)
 add_subdirectory(plugins/mgStore)
-
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm")
+  add_subdirectory(plugins/bmp)
+endif()
 set(SRCS
 	src/baseServer.cxx src/fsmw.cxx src/monitor.cxx
 	)
