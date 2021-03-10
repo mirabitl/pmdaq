@@ -14,7 +14,11 @@ set(CPACK_PACKAGE_VERSION_MINOR 1)
 set(CPACK_PACKAGE_VERSION_PATCH 0)
 
 set(FAKE_TARGET fakeTarget)
-add_custom_target(fakeTarget  ${CMAKE_CURRENT_SOURCE_DIR}/extras/install_netlink)
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/include/netlink/config.h )
+  add_custom_target(fakeTarget  echo "netLink already installed")
+else()
+  add_custom_target(fakeTarget  ${CMAKE_CURRENT_SOURCE_DIR}/extras/install_netlink)
+endif()
 
 
 
