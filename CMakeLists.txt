@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 3.0)
 # Notre projet est étiqueté libhello
 
 project(pmdaq VERSION 0.0.1 DESCRIPTION "PM daq base library")
+
+
 message(${CMAKE_SYSTEM_PROCESSOR})
 add_subdirectory(pns)
 add_subdirectory(plugins/demo)
@@ -15,6 +17,13 @@ if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm")
   add_subdirectory(plugins/bmp)
   add_subdirectory(plugins/hih)
 endif()
+
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+  add_subdirectory(plugins/syx27)
+endif()
+
+
+
 set(SRCS
 	src/baseServer.cxx src/fsmw.cxx src/monitor.cxx
 	)
