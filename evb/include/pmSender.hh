@@ -1,8 +1,6 @@
-#ifndef _PMSENDER_HH_
-#define _PMSENDER_HH_
+#pragma once
 #include <zmq.hpp>
 #include "pmBuffer.hh"
-#include <json/json.h>
 
 namespace pm
 {
@@ -82,11 +80,11 @@ public:
   inline uint32_t sourceId(){return _sourceId;}
   /**
      \brief Discover builder application to connact automatically
-     \param config the Json::Value of the configuration
+     \param session the name of the session
      \param appname the name of the Event Builder (zmMeger) application
      \param portname the name of parameter of the appilcation specifying the listening port
    */
-  void autoDiscover(web::json::value config,std::string session,std::string appname,std::string portname);
+  void autoDiscover(std::string session,std::string appname,std::string portname);
 private:
   zmq::context_t* _context;
   uint32_t _detId,_sourceId;
@@ -96,4 +94,3 @@ private:
   bool _compress;
 };
 };
-#endif

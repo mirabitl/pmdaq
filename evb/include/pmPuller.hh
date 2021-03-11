@@ -1,13 +1,12 @@
-#ifndef _ZMPULLER_HH_
-#define _ZMPULLER_HH_
+#pragma once
 #include <zmq.hpp>
 #include <vector>
-namespace zdaq {
+namespace pm {
   /**
-     \class zmPuller
-     \brief The default object to collect data from various zdaq::zmPusher
+     \class pmPuller
+     \brief The default object to collect data from various zdaq::pmPusher
      \details It can
-     - collect data from zmPusher (ZMQ_PULL)
+     - collect data from pmPusher (ZMQ_PULL)
      - forward collected data to other collector
 
      The poll() method should be run in a separate thread since it continously listen on all connected socket.
@@ -19,7 +18,7 @@ namespace zdaq {
      \date      January 2019
      \copyright GNU Public License.
   */
-class zmPuller
+class pmPuller
 {
 public:
   /**
@@ -27,10 +26,10 @@ public:
 
      \param c the ZMQ context
    */
-  zmPuller( zmq::context_t* c);
+  pmPuller( zmq::context_t* c);
 
   /**
-     \brief add an input data stream (zmPusher)
+     \brief add an input data stream (pmPusher)
 
      \param fn Input data stream name, typically 'tcp://*:5555' Where 5555 is the listening port in server mode
      \param server Mode is true when binding connection from data source, non server mode is not deeply tested
@@ -79,4 +78,4 @@ private:
   uint32_t _nregistered;
 };
 };
-#endif
+

@@ -1,5 +1,4 @@
-#ifndef _pm_buffer_h
-#define _pm_buffer_h
+#pragma once
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -132,4 +131,3 @@ namespace pm {
     uint32_t _psize;
   };
 };
-#endif

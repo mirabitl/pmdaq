@@ -1,10 +1,9 @@
-#ifndef _zdaq_zmmerger_h
-#define _zdaq_zmmerger_h
+#pragma once
 
 #include <stdint.h>
 #include <stdlib.h>
-#include "zmBuffer.hh"
-#include "zmPuller.hh"
+#include "pmBuffer.hh"
+#include "pmPuller.hh"
 #include "zPublisher.hh"
 #include <vector>
 #include <map>
@@ -13,12 +12,12 @@
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <json/json.h>
-
+#include "stdafx.hh"
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 #define dskey(d,s) ( (s&0xFFF) | ((d &0xFFF)<<12))
 #define source_id(k) (k&0xFFF)
 #define detector_id(k) ((k>>12)&0xFFF)
-namespace zdaq {
+namespace pm {
     /**
      \class zmprocessor
      \brief Purely virtual interface to process data
@@ -49,7 +48,7 @@ namespace zdaq {
      \date      January 2019
      \copyright GNU Public License.
   */
-  class zmprocessor
+  class pmprocessor
   {
   public:
     /**
@@ -67,7 +66,7 @@ namespace zdaq {
        \param key is the trigger/window id
        \param dss is a completed vector of zdaq::buffer from collected data sources
      */
-    virtual  void processEvent(uint32_t key,std::vector<zdaq::buffer*> dss)=0;
+    virtual  void processEvent(uint32_t key,std::vector<pm::buffer*> dss)=0;
     /**
        \brief  Run header processing
        \param header is an int vetor to be stored
@@ -75,14 +74,14 @@ namespace zdaq {
     virtual  void processRunHeader(std::vector<uint32_t> header)=0;
     /**
        \brief Parameter setting interface
-       \param params is a Json::value where parameters are stored
+       \param params is a web::json::value where parameters are stored
      */
-    virtual  void loadParameters(Json::Value params)=0;
+    virtual  void loadParameters(web::json::value params)=0;
   };
 
   
     /**
-     \class zmMerger
+     \class pmMerger
      \brief The basic Event Builder
      \details It inherits from zmPuller and implements the processData method
      - Based on the trigger id of each buffer, it stores data sources zdaq::buffer in a map until a given trigger id has collected packet from all data sources registered
@@ -94,7 +93,7 @@ namespace zdaq {
      \date      January 2019
      \copyright GNU Public License.
   */
-  class zmMerger : public zmPuller
+  class pmMerger : public pmPuller
   {
   public:
     /**
@@ -102,12 +101,12 @@ namespace zdaq {
 
        \param c the ZMQ context
      */
-    zmMerger(zmq::context_t* c);
+    pmMerger(zmq::context_t* c);
 
     /**
        \brief destructor
      */
-    ~zmMerger();
+    ~pmMerger();
 
     /**
        \brief implementation of the zmPuller method
@@ -170,7 +169,7 @@ namespace zdaq {
     void processRunHeader();
 
     
-    void loadParameters(Json::Value params);///< Loops on processors and calls their loadParameter method
+    void loadParameters(web::json::value params);///< Loops on processors and calls their loadParameter method
 
     /**
        \brief access to the private _runHeader vector
@@ -191,7 +190,7 @@ namespace zdaq {
 
        \details run,event,built event,state, purge, size of the event map,number of data sources, and summary of received buffers
      */
-    Json::Value status();
+    web::json::value status();
 
     /**
        \brief Allow (true) to purge old uncompleted event
@@ -204,8 +203,8 @@ namespace zdaq {
   private:
     bool _useEventId;
     uint32_t _nDifs;
-    std::vector<zmprocessor* > _processors;
-    std::map<uint64_t,std::vector<zdaq::buffer*> > _eventMap;
+    std::vector<pmprocessor* > _processors;
+    std::map<uint64_t,std::vector<pm::buffer*> > _eventMap;
 	
     boost::thread_group _gThread;
     bool _running,_purge,_writeHeader;
@@ -216,7 +215,7 @@ namespace zdaq {
     std::map<std::string,uint64_t> _mReceived;
     // Status publication
 
-    zdaq::mon::zPublisher* _statusPublisher;
+    //zdaq::mon::zPublisher* _statusPublisher;
 
   };
 };
