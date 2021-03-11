@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.0)
 project(evb VERSION 0.0.1 DESCRIPTION "Event builder library")
 
 #add_subdirectory(pns)
-
+add_subdirectory(apps/builder)
 set(SRCS
   src/pmSender.cc
   src/pmPuller.cc
