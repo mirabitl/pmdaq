@@ -20,11 +20,11 @@ add_library(app_demo SHARED ${SRCS} ${HEADERS})
 include(../../CMake.defs)
 
 
-target_link_libraries(app_demo PRIVATE cpprest)
+#target_link_libraries(app_demo PRIVATE cpprest)
 
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
 #find_package(log4cxx CONFIG REQUIRED)
-target_link_libraries(app_demo PRIVATE log4cxx)
+target_link_libraries(app_demo PRIVATE ${PMDAQ_LIBS} )
 
 target_include_directories(app_demo PRIVATE ../../include)
 

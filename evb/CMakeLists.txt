@@ -28,7 +28,7 @@ add_library(evb SHARED ${SRCS} ${HEADERS})
 include(../CMake.defs)
 
 
-target_link_libraries(evb PRIVATE cpprest log4cxx zmq)
+target_link_libraries(evb PRIVATE ${PMDAQ_LIBS} zmq )
 
 
 

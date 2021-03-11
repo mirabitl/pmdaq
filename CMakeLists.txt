@@ -63,7 +63,7 @@ add_dependencies(pmdaq ${FAKE_TARGET})
 
 include(CMake.defs)
 
-target_link_libraries(pmdaq PRIVATE cpprest)
+target_link_libraries(pmdaq PRIVATE ${PMDAQ_LIBS})
 
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
 #find_package(log4cxx CONFIG REQUIRED)
@@ -85,7 +85,7 @@ add_executable(pmd src/baseServer.cc ${HEADERS})
 target_link_libraries(pmd PRIVATE Threads::Threads)
 
 target_include_directories(pmd PRIVATE include)
-target_link_libraries(pmd PRIVATE pmdaq cpprest log4cxx boost_system crypto ssl )
+target_link_libraries(pmd PRIVATE pmdaq ${PMDAQ_LIBS})
 
 
 

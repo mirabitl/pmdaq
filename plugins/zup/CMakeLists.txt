@@ -26,6 +26,7 @@ endif()
 
 
 target_link_libraries(app_zup PUBLIC ${ZUP_LIB})
+target_link_libraries(app_zup PRIVATE ${PMDAQ_LIBS})
 target_include_directories(app_zup PRIVATE ${zup_DIR}/include)
 
 target_include_directories(app_zup PRIVATE /usr/include/jsoncpp)
@@ -33,12 +34,12 @@ target_include_directories(app_zup PRIVATE /usr/include/jsoncpp)
 
 include(../../CMake.defs)
 
-target_link_libraries(app_zup PRIVATE cpprest)
+#target_link_libraries(app_zup PRIVATE cpprest)
 
 
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
 #find_package(log4cxx CONFIG REQUIRED)
-target_link_libraries(app_zup PRIVATE log4cxx)
+#target_link_libraries(app_zup PRIVATE log4cxx)
 target_link_libraries(app_zup PRIVATE jsoncpp)
 
 target_include_directories(app_zup PRIVATE ../../include)

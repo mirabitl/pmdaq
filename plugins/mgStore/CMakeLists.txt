@@ -20,15 +20,15 @@ add_library(mgStore SHARED ${SRCS} ${HEADERS})
 include(../../CMake.defs)
 
 
-target_link_libraries(mgStore PRIVATE cpprest)
-target_link_libraries(mgStore PRIVATE log4cxx)
+target_link_libraries(mgStore PRIVATE mongoc-1.0 bson-1.0 ${PMDAQ_LIBS})
+#target_link_libraries(mgStore PRIVATE log4cxx)
 
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
 #find_package(log4cxx CONFIG REQUIRED)
 
 # Specific Linkage
-target_link_libraries(mgStore PRIVATE mongoc-1.0)
-target_link_libraries(mgStore PRIVATE bson-1.0)
+#target_link_libraries(mgStore PRIVATE mongoc-1.0)
+#target_link_libraries(mgStore PRIVATE bson-1.0)
 target_include_directories(mgStore PRIVATE ../../include)
 target_include_directories(mgStore PRIVATE /usr/include/libmongoc-1.0)
 target_include_directories(mgStore PRIVATE /usr/include/libbson-1.0)

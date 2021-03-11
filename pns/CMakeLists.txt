@@ -21,10 +21,10 @@ add_library(pns SHARED ${SRCS} ${HEADERS})
 include(../CMake.defs)
 
 
-target_link_libraries(pns PRIVATE cpprest)
+target_link_libraries(pns PRIVATE ${PMDAQ_LIBS})
 
 
-target_link_libraries(pns PRIVATE log4cxx)
+#target_link_libraries(pns PRIVATE log4cxx)
 
 target_include_directories(pns PRIVATE ../include)
 
@@ -41,10 +41,10 @@ add_executable(pnse pns.cc ${HEADERS})
 
 #set(THREADS_PREFER_PTHREAD_FLAG ON)
 #find_package(Threads REQUIRED)
-target_link_libraries(pnse PRIVATE Threads::Threads)
+target_link_libraries(pnse PRIVATE Threads::Threads pmdaq ${PMDAQ_LIBS})
 
 target_include_directories(pnse PRIVATE ../include)
-target_link_libraries(pnse PRIVATE pmdaq cpprest log4cxx boost_system crypto ssl )
+#target_link_libraries(pnse PRIVATE pmdaq cpprest log4cxx boost_system crypto ssl )
 
 
 
