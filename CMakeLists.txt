@@ -24,6 +24,7 @@ endif()
 
 message(${CMAKE_SYSTEM_PROCESSOR})
 add_subdirectory(pns)
+add_subdirectory(evb)
 add_subdirectory(plugins/demo)
 add_subdirectory(plugins/zup)
 add_subdirectory(plugins/genesys)
@@ -46,11 +47,11 @@ include(CPack)
 
 
 set(SRCS
-	src/baseServer.cxx src/fsmw.cxx src/monitor.cxx
+	src/baseServer.cxx src/fsmw.cxx src/monitor.cxx src/utils.cxx
 	)
 	
 set(HEADERS
-	include/baseServer.hh include/fsmw.hh include/handlerPlugin.hh include/monitor.hh include/pmLogger.hh include/stdafx.hh
+	include/baseServer.hh include/fsmw.hh include/handlerPlugin.hh include/monitor.hh include/pmLogger.hh include/stdafx.hh include/utils.hh
 	)
 
 add_library(pmdaq SHARED ${SRCS} ${HEADERS})

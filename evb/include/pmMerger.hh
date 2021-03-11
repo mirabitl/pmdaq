@@ -4,16 +4,11 @@
 #include <stdlib.h>
 #include "pmBuffer.hh"
 #include "pmPuller.hh"
-#include "zPublisher.hh"
 #include <vector>
 #include <map>
 #include <string>
-#include <boost/function.hpp>
-#include <boost/thread.hpp>
-#include <boost/bind.hpp>
-#include <json/json.h>
 #include "stdafx.hh"
-#include <boost/interprocess/sync/interprocess_mutex.hpp>
+#include <thread>
 #define dskey(d,s) ( (s&0xFFF) | ((d &0xFFF)<<12))
 #define source_id(k) (k&0xFFF)
 #define detector_id(k) ((k>>12)&0xFFF)
@@ -48,7 +43,7 @@ namespace pm {
      \date      January 2019
      \copyright GNU Public License.
   */
-  class pmprocessor
+  class evbprocessor
   {
   public:
     /**
@@ -141,7 +136,7 @@ namespace pm {
     */
     inline void setNumberOfDataSource(uint32_t k){_nDifs=k;}
     uint32_t numberOfDataPacket(uint32_t k);///< Number of received packet
-    void unregisterProcessor(zdaq::zmprocessor* p);///< remove a processor from the list
+    void unregisterProcessor(pm::evbprocessor* p);///< remove a processor from the list
 
     /**
        \brief Start of run
@@ -203,20 +198,20 @@ namespace pm {
   private:
     bool _useEventId;
     uint32_t _nDifs;
-    std::vector<pmprocessor* > _processors;
+    std::vector<evbprocessor* > _processors;
     std::map<uint64_t,std::vector<pm::buffer*> > _eventMap;
 	
-    boost::thread_group _gThread;
+    std::thread _gThread;
     bool _running,_purge,_writeHeader;
     uint32_t _run,_evt,_build,_totalSize,_compressedSize;
     int32_t _nextEventHeader;
     std::vector<uint32_t> _runHeader;
 
     std::map<std::string,uint64_t> _mReceived;
-    // Status publication
 
-    //zdaq::mon::zPublisher* _statusPublisher;
+
+
 
   };
 };
-#endif
+
