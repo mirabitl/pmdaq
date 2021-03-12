@@ -43,3 +43,4 @@ install(TARGETS evb  LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 
 add_subdirectory(apps/builder)
 add_subdirectory(apps/processors)
+add_subdirectory(apps/dsex)
