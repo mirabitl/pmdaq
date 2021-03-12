@@ -78,7 +78,7 @@ void demo::status(http_request message)
 }
 void demo::readEvent()
 {
-  pid_t  tid=syscall(__NR_gettid);
+  pid_t  tid=1;//syscall(__NR_gettid);
   while (_started)
     {
       _event++;

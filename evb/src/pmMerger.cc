@@ -110,7 +110,7 @@ void pmMerger::processEvent(uint32_t idx)
 
     if (_writeHeader)
     {
-      LOG4CXX_INFO(_logPdaq, "Processing Header " << _evt << " " << _nextEventHeader << " " << idx)
+      LOG4CXX_INFO(_logPdaq, "Processing Header " << _evt << " " << _nextEventHeader << " " << idx);
       if (_nextEventHeader > 0 && _nextEventHeader == idx)
       {
         (*itp)->processRunHeader(_runHeader);

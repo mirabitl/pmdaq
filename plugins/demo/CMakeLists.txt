@@ -24,7 +24,7 @@ include(../../CMake.defs)
 
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
 #find_package(log4cxx CONFIG REQUIRED)
-target_link_libraries(app_demo PRIVATE ${PMDAQ_LIBS} )
+target_link_libraries(app_demo PRIVATE pmdaq ${PMDAQ_LIBS} )
 
 target_include_directories(app_demo PRIVATE ../../include)
 

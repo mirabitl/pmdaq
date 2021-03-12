@@ -22,7 +22,7 @@ add_library(evb_producer SHARED ${SRCS} ${HEADERS})
 include(../../../CMake.defs)
 
 
-target_link_libraries(evb_producer PRIVATE  zmq evb ${PMDAQ_LIBS} )
+target_link_libraries(evb_producer PRIVATE  zmq pmdaq evb ${PMDAQ_LIBS} )
 
 
 

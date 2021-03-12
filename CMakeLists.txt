@@ -17,18 +17,24 @@ set(FAKE_TARGET fakeTarget)
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/include/netlink/config.h )
   add_custom_target(fakeTarget  echo "netLink already installed")
 else()
+  if (NOT APPLE AND UNIX)
   add_custom_target(fakeTarget  ${CMAKE_CURRENT_SOURCE_DIR}/extras/install_netlink)
+  else()
+  add_custom_target(fakeTarget  echo "netLink already installed")
+  endif()
 endif()
 
-
+include(CMake.defs)
 
 message(${CMAKE_SYSTEM_PROCESSOR})
 add_subdirectory(pns)
 add_subdirectory(evb)
 add_subdirectory(plugins/demo)
+if (NOT APPLE)
 add_subdirectory(plugins/zup)
 add_subdirectory(plugins/genesys)
 add_subdirectory(plugins/wiener)
+endif()
 add_subdirectory(plugins/grStore)
 add_subdirectory(plugins/mgStore)
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm")
@@ -41,7 +47,9 @@ endif()
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
   set(CPACK_SYSTEM_NAME "Linux-x86_64")
   set(CPACK_TOPLEVEL_TAG "Linux-x86_64")
+  if (NOT APPLE)
   add_subdirectory(plugins/syx27)
+  endif()
 endif()
 include(CPack)
 
@@ -61,7 +69,7 @@ add_dependencies(pmdaq ${FAKE_TARGET})
 
 
 
-include(CMake.defs)
+
 
 target_link_libraries(pmdaq PRIVATE ${PMDAQ_LIBS})
 
