@@ -37,7 +37,6 @@ void pm::builder::producer::end()
 {
   // Stop possible running thread
   _running=false;
-  ::sleep(1);
 
   for (auto it=_gthr.begin();it!=_gthr.end();it++)
     {
@@ -141,7 +140,7 @@ void pm::builder::producer::fillEvent(uint32_t event,uint64_t bx,pm::pmSender* d
   pld[0]=event;
   pld[eventSize-1]=event;
   // Publish the data source
-  ds->publish(event,bx,eventSize*sizeof(uint32_t));
+  ds->publish(bx,event,eventSize*sizeof(uint32_t));
   // Update statistics
   std::map<uint32_t,uint32_t>::iterator its=_stat.find((ds->buffer()->detectorId()<<16)|ds->buffer()->dataSourceId());
   if (its!=_stat.end())
@@ -153,25 +152,28 @@ void pm::builder::producer::fillEvent(uint32_t event,uint64_t bx,pm::pmSender* d
  */
 void pm::builder::producer::streamdata(pm::pmSender *ds)
 {
-  uint32_t last_evt=0;
+  uint32_t last_evt=0,event=0;
+  uint64_t bx=0;
   std::srand(std::time(0));
+  LOG4CXX_INFO(_logPmex," Start of Thread of: "<<ds->buffer()->dataSourceId()<<" is running "<<_event<<" events and status is "<<_running);
   while (_running)
     {
-      ::usleep(10000);
+      ::usleep(5000);
+      //::sleep(2);
       if (!_running) break;
-      if (_event == last_evt) continue;
-      if (_event%100==0)
-	LOG4CXX_INFO(_logPmex," Thread of: "<<ds->buffer()->dataSourceId()<<" is running "<<_event<<" events and status is "<<_running);
+      //if (event == last_evt && event!=0) continue;
+      if (event%100==0)
+	LOG4CXX_INFO(_logPmex," Thread of: "<<ds->buffer()->dataSourceId()<<" is running "<<event<<" events and status is "<<_running);
       // Just fun 
       // Create a dummy buffer of fix length depending on source id and random data
       // 
       uint32_t psi=1024;
       if (params().as_object().find("paysize")!=params().as_object().end())
 	psi=params()["paysize"].as_integer();
-      this->fillEvent(_event,_bx,ds,psi);
-      last_evt=_event;
-      _event++;
-      _bx++;
+      this->fillEvent(event,bx,ds,psi);
+      last_evt=event;
+      event++;
+      bx++;
     }
   LOG4CXX_INFO(_logPmex," Thread of: "<<ds->buffer()->dataSourceId()<<" is exiting after "<<last_evt<<"events");
 }
@@ -296,4 +298,19 @@ void pm::builder::producer::status(http_request m)
   par["detector"]=json::value::number(_detid);
   par["zmSenders"]=array_keys;
   Reply(status_codes::OK,par);
+}
+extern "C" 
+{
+    // loadDHCALAnalyzer function creates new LowPassDHCALAnalyzer object and returns it.  
+  handlerPlugin* loadProcessor(void)
+    {
+      return (new  pm::builder::producer);
+    }
+    // The deleteDHCALAnalyzer function deletes the LowPassDHCALAnalyzer that is passed 
+    // to it.  This isn't a very safe function, since there's no 
+    // way to ensure that the object provided is indeed a LowPassDHCALAnalyzer.
+  void deleteProcessor(handlerPlugin* obj)
+    {
+      delete obj;
+    }
 }

@@ -89,13 +89,13 @@ void pm::builder::collector::configure(http_request m)
   LOG4CXX_INFO(_logPmex, "Registering " << st.str());
   _merger->registerDataSource(st.str());
   array_keys[0]=json::value::string(U(st.str()));
-
+  LOG4CXX_INFO(_logPmex, "Now processors " << st.str());
   // Register the processors
   json::value parray_keys;uint32_t np=0;
-  for (auto it = params()["processor"].as_array().begin(); it != params()["processor"].as_array().end(); ++it)
+  for (auto it = params()["processor"].as_array().begin(); it != params()["processor"].as_array().end(); it++)
   {
 
-    LOG4CXX_INFO(_logPmex, "registering " << (*it).as_string());
+    LOG4CXX_INFO(_logPmex, "registering processor" << (*it).as_string());
     _merger->registerProcessor((*it).as_string());
     parray_keys[np++]=(*it);
   }
@@ -106,7 +106,7 @@ void pm::builder::collector::configure(http_request m)
   
   // Overwrite msg
   //Prepare complex answer
-  LOG4CXX_DEBUG(_logPmex, "end of configure");
+  LOG4CXX_INFO(_logPmex, "end of configure");
   par["status"]=json::value::string(U("OK"));
   par["sourceRegistered"] = array_keys;
   par["processorRegistered"] = parray_keys;
@@ -257,3 +257,18 @@ void pm::builder::collector::setheader(http_request m)
   return;
 }
 
+extern "C" 
+{
+    // loadDHCALAnalyzer function creates new LowPassDHCALAnalyzer object and returns it.  
+  handlerPlugin* loadProcessor(void)
+    {
+      return (new  pm::builder::collector);
+    }
+    // The deleteDHCALAnalyzer function deletes the LowPassDHCALAnalyzer that is passed 
+    // to it.  This isn't a very safe function, since there's no 
+    // way to ensure that the object provided is indeed a LowPassDHCALAnalyzer.
+  void deleteProcessor(handlerPlugin* obj)
+    {
+      delete obj;
+    }
+}

@@ -126,19 +126,27 @@ void pmSender::autoDiscover(std::string session,std::string appname,std::string 
   for (auto it = serv_list.as_array().begin(); it != serv_list.as_array().end(); ++it)
     {
       std::string rec=(*it).as_string();
+      LOG4CXX_DEBUG(_logPdaq,"PNS Service: "<<rec);
       auto v=utils::split(rec,':');
       std::string phost=v[0];
       uint32_t pport=std::stoi(v[1]);
-      std::string ppath =v[1];
-      auto vp=utils::split(ppath,'/');
+      std::string ppath =v[2];
+      LOG4CXX_DEBUG(_logPdaq,"PNS Service: "<<phost<<" "<<pport<<" "<<ppath);
+      auto vp0=utils::split(ppath,'?');
+      auto vp=utils::split(vp0[0],'/');
+      LOG4CXX_DEBUG(_logPdaq,"VP size: "<<vp.size());
+      LOG4CXX_DEBUG(_logPdaq,"VP :  [1]"<<vp[1]<<" "<<session<<" [2]"<<vp[2]<<" "<<appname);
       if (vp[1].compare(session)!=0) continue;
       if (vp[2].compare(appname)!=0) continue;
       uint32_t instance=std::stoi(vp[3]);
-      http_response repb=utils::request(phost,pport,ppath+"/PARAMS",json::value::null());
-      auto par_list=rep.extract_json().get();
+      http_response repb=utils::request(phost,pport,vp0[0]+"PARAMS",json::value::null());
+      LOG4CXX_ERROR(_logPdaq,repb.to_string());
+      auto par_list=repb.extract_json().get();
+      
       for(auto iter = par_list.as_object().begin(); iter != par_list.as_object().end(); ++iter)
 	if (iter->first.compare(portname)==0)
 	  {
+
 	    std::stringstream ss;
 	    ss<<"tcp://"<<phost<<":"<<iter->second.as_integer();
 	    std::pair<uint32_t,std::string> p(instance,ss.str());
