@@ -303,6 +303,7 @@ class serviceAccess:
             par["session"]=self.session
             par["name"]=self.name
             par["instance"]=self.instance
+            print("Sending remove",par)
             r_services=executeCMD(self.host,self.port,"/REMOVE",par)
             #if (type(r_services) is bytes):
             #    r_services=r_services.decode("utf-8")

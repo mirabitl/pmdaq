@@ -37,13 +37,14 @@ void pm::builder::producer::end()
 {
   // Stop possible running thread
   _running=false;
-
+  LOG4CXX_ERROR(_logPmex, "End method of producer "<<_gthr.size());
   for (auto it=_gthr.begin();it!=_gthr.end();it++)
     {
       std::cout<<"joining"<<std::endl;
       it->join();
     }
   _gthr.clear();
+  LOG4CXX_ERROR(_logPmex, "Exiting end method of producer "<<_gthr.size());
 }
 
 
@@ -222,6 +223,7 @@ void pm::builder::producer::stop(http_request m)
       std::cout<<"joining"<<std::endl;
       it->join();
     }
+  _gthr.clear();
   auto par = json::value::object();
   par["status"]=json::value::string(U("STOPPED"));
   Reply(status_codes::OK,par);
