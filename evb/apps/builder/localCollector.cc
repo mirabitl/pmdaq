@@ -27,13 +27,16 @@ void pm::builder::collector::initialise()
   this->addCommand("STATUS", std::bind(&pm::builder::collector::status, this,std::placeholders::_1));
   this->addCommand("SETHEADER", std::bind(&pm::builder::collector::setheader, this,std::placeholders::_1));
   this->addCommand("PURGE", std::bind(&pm::builder::collector::purge, this,std::placeholders::_1));
-
+  _running=false;
 }
 void pm::builder::collector::end()
 {
   // Stop possible running thread
+  PMF_ERROR(_logPdaq, "Entering end of Builder");
   if (_merger!=NULL)
     {
+        PMF_ERROR(_logPdaq, "Existing merger "<<_running);
+
       if (_running)
 	     _merger->stop();
     delete _merger;
