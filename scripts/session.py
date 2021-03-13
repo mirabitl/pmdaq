@@ -68,9 +68,21 @@ class sessionAccess:
                 y.printInfos(verbose)
                 
     def remove(self,obj_name=None):
+        # First skip event builder (ZMQ issue)
         for name,app in six.iteritems(self.apps):
             print(self.session,"===> ",name)
             if (obj_name!=None and obj_name!=name):
+                continue
+            if (name == "evb_builder"):
+                continue
+            for y in app:
+                y.remove()
+        # Now remove evb_builder
+        for name,app in six.iteritems(self.apps):
+            print(self.session,"===> ",name)
+            if (obj_name!=None and obj_name!=name):
+                continue
+            if (name != "evb_builder"):
                 continue
             for y in app:
                 y.remove()

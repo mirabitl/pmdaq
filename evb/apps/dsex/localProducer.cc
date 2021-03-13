@@ -161,6 +161,8 @@ void pm::builder::producer::streamdata(pm::pmSender *ds)
     {
       ::usleep(5000);
       //::sleep(2);
+      if (event%1000==0)
+        ::sleep(1);
       if (!_running) break;
       //if (event == last_evt && event!=0) continue;
       if (event%100==0)
