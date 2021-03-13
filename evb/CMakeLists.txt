@@ -29,7 +29,7 @@ include(../CMake.defs)
 
 target_link_libraries(evb PRIVATE pmdaq ${PMDAQ_LIBS} zmq )
 
-target_link_directories(evb PRIVATE .. )
+#target_link_directories(evb PRIVATE .. )
 
 
 

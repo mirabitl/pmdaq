@@ -11,7 +11,7 @@ PIDFILE="/var/log/pns.log"
 PATH="/sbin:/bin:/usr/sbin:/usr/bin" #Ne pas toucher
 
 
-export LD_LIBRARY_PATH=/usr/lib:/usr/local/lib:/opt/pmdaq/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/opt/pmdaq/lib:/usr/lib:/usr/local/lib:$LD_LIBRARY_PATH
 export PATH=/opt/zdaq/scripts:$PATH
 export PYTHONPATH=/opt/zdaq/scripts:$PYTHONPATH
 
@@ -25,7 +25,7 @@ test -x $DAEMON || exit 0
 
 d_start () {
         log_daemon_msg "Starting system $DEAMON_NAME Daemon"
-	start-stop-daemon --background --name $DEAMON_NAME --start --quiet --chuid $DAEMONUSER --exec /bin/bash -- -c "$DAEMON  > /var/log/pmd.log 2>&1" 
+	start-stop-daemon --background --name $DEAMON_NAME --start --quiet --chuid $DAEMONUSER --exec /bin/bash -- -c "$DAEMON  > /var/log/pns.log 2>&1" 
 	#start-stop-daemon --background --start --quiet --chuid $DAEMONUSER  --pidfile $PIDFILE --exec $DAEMON -- $DAEMON_OPTS
 	log_end_msg $?
 }
