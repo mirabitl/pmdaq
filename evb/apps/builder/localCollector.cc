@@ -39,6 +39,8 @@ void pm::builder::collector::end()
     delete _merger;
     _merger=NULL;
     }
+    if (_context!=NULL)
+    delete _context;
 }
 void pm::builder::collector::configure(http_request m)
 {

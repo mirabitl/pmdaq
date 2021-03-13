@@ -89,6 +89,8 @@ void pmMerger::registerDataSource(std::string url)
   PM_INFO(_logPdaq, "Adding input Stream " << url);
 
   this->addInputStream(url, true);
+  PM_INFO(_logPdaq, url<<" added");
+
 }
 
 uint32_t pmMerger::numberOfDataPacket(uint32_t k)
