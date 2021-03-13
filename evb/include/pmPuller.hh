@@ -28,6 +28,8 @@ public:
    */
   pmPuller( zmq::context_t* c);
 
+
+  void clearStreams();
   /**
      \brief add an input data stream (pmPusher)
 

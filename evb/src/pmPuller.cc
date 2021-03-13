@@ -13,12 +13,20 @@
 using namespace pm;
 pmPuller::pmPuller( zmq::context_t* c) : _context(c),_publisher(NULL)
 {
+  
+  this->clearStreams();
+  
+}
+void pmPuller::clearStreams()
+{
+  if (_socks.size()!=0)
+    for (auto it=_socks.begin();it!=_socks.end();it++) delete (*it);
+  _socks.clear();
+  if (_publisher!=NULL) delete _publisher;
   _connectStream.clear();
   _bindStream.clear();
-  _socks.clear();
   memset(_items,0,255*sizeof(zmq_pollitem_t));
 }
-
 void  pmPuller::addInputStream(std::string fn,bool server)
 {
   if (server)

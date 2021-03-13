@@ -42,6 +42,7 @@ pmMerger::~pmMerger()
     _running=false;
   }
   this->clear();
+  this->clearStreams();
    PM_INFO(_logPdaq," end of destructor");
 
 }
