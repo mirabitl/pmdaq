@@ -35,7 +35,9 @@ void pm::builder::collector::end()
   if (_merger!=NULL)
     {
       if (_running)
-	_merger->stop();
+	     _merger->stop();
+    delete _merger;
+    _merger=NULL;
     }
 }
 void pm::builder::collector::configure(http_request m)

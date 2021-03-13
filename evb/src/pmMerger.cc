@@ -35,7 +35,13 @@ pmMerger::pmMerger(zmq::context_t *c) : pmPuller(c), _running(false), _nDifs(0),
 }
 pmMerger::~pmMerger()
 {
+  if (_running)
+  {
+    this->stop();
+    _running=false;
+  }
   this->clear();
+
 }
 void pmMerger::clear()
 {
