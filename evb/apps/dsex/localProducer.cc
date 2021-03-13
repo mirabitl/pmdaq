@@ -37,14 +37,14 @@ void pm::builder::producer::end()
 {
   // Stop possible running thread
   _running=false;
-  PM_ERROR(_logPmex, "End method of producer "<<_gthr.size());
+  PMF_ERROR(_logPmex, "End method of producer "<<_gthr.size());
   for (auto it=_gthr.begin();it!=_gthr.end();it++)
     {
       std::cout<<"joining"<<std::endl;
       it->join();
     }
   _gthr.clear();
-  PM_ERROR(_logPmex, "Exiting end method of producer "<<_gthr.size());
+  PMF_ERROR(_logPmex, "Exiting end method of producer "<<_gthr.size());
 }
 
 
@@ -61,21 +61,21 @@ void pm::builder::producer::configure(http_request m)
 
    if (params().as_object().find("detid")==params().as_object().end())
     { 
-      PM_ERROR(_logPmex, "Missing detid");
+      PMF_ERROR(_logPmex, "Missing detid");
       par["status"]=json::value::string(U("Missing detid "));
       Reply(status_codes::OK,par);
       return;  
     }
    if (params().as_object().find("sourceid")==params().as_object().end())
     { 
-      PM_ERROR(_logPmex, "Missing sourceid");
+      PMF_ERROR(_logPmex, "Missing sourceid");
       par["status"]=json::value::string(U("Missing sourceid "));
       Reply(status_codes::OK,par);
       return;  
     }
    if (params().as_object().find("paysize")==params().as_object().end())
     { 
-      PM_ERROR(_logPmex, "Missing paysize");
+      PMF_ERROR(_logPmex, "Missing paysize");
       par["status"]=json::value::string(U("Missing paysize "));
       Reply(status_codes::OK,par);
       return;  
@@ -93,7 +93,7 @@ void pm::builder::producer::configure(http_request m)
       json::value jsitem = *it;
       int32_t sid=(*it).as_integer();
       // rest as before
-      PM_INFO(_logPmex,"Creating data source "<<det<<" "<<sid);
+      PMF_INFO(_logPmex,"Creating data source "<<det<<" "<<sid);
       array_keys[nds++]=json::value::number((det<<16)|sid);
       pm::pmSender* ds= new pm::pmSender(_context,det,sid);
       //ds->connect(this->parameters()["pushdata"].asString());
@@ -156,7 +156,7 @@ void pm::builder::producer::streamdata(pm::pmSender *ds)
   uint32_t last_evt=0,event=0;
   uint64_t bx=0;
   std::srand(std::time(0));
-  PM_INFO(_logPmex," Start of Thread of: "<<ds->buffer()->dataSourceId()<<" is running "<<_event<<" events and status is "<<_running);
+  PMF_INFO(_logPmex," Start of Thread of: "<<ds->buffer()->dataSourceId()<<" is running "<<_event<<" events and status is "<<_running);
   while (_running)
     {
       ::usleep(5000);
@@ -164,7 +164,7 @@ void pm::builder::producer::streamdata(pm::pmSender *ds)
       if (!_running) break;
       //if (event == last_evt && event!=0) continue;
       if (event%100==0)
-	PM_INFO(_logPmex," Thread of: "<<ds->buffer()->dataSourceId()<<" is running "<<event<<" events and status is "<<_running);
+	PMF_INFO(_logPmex," Thread of: "<<ds->buffer()->dataSourceId()<<" is running "<<event<<" events and status is "<<_running);
       // Just fun 
       // Create a dummy buffer of fix length depending on source id and random data
       // 
@@ -176,7 +176,7 @@ void pm::builder::producer::streamdata(pm::pmSender *ds)
       event++;
       bx++;
     }
-  PM_INFO(_logPmex," Thread of: "<<ds->buffer()->dataSourceId()<<" is exiting after "<<last_evt<<"events");
+  PMF_INFO(_logPmex," Thread of: "<<ds->buffer()->dataSourceId()<<" is exiting after "<<last_evt<<"events");
 }
 /**
  * Transition from CONFIGURED to RUNNING, starts one thread per data source in standalone mode

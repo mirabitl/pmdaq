@@ -246,7 +246,7 @@ void fsmw::getparams(http_request message)
 }
 void fsmw::setparams(http_request message)
 {
-  PM_INFO (_logPdaq,uri::decode(message.relative_uri().query()));
+  PMF_INFO (_logPdaq,uri::decode(message.relative_uri().query()));
   auto querym = uri::split_query(uri::decode(message.relative_uri().query()));
   for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
     if (it2->first.compare("params")==0)
@@ -298,7 +298,7 @@ std::string fsmw::state(){return _state;}
 void fsmw::publishState() {
 
   if (!checkpns())
-    {  PM_FATAL(_logPdaq,"Invalid DNS Cannot publish state");return;}
+    {  PMF_FATAL(_logPdaq,"Invalid DNS Cannot publish state");return;}
   PM_DEBUG(_logPdaq,"Entering publishState");
 
   

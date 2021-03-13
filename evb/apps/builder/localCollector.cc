@@ -42,7 +42,7 @@ void pm::builder::collector::configure(http_request m)
 {
   auto par = json::value::object(); 
 
-  PM_INFO(_logPmex, "Received CONFIGURE");
+  PMF_INFO(_logPmex, "Received CONFIGURE");
   // Parse arguments
   // auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
   // for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
@@ -65,14 +65,14 @@ void pm::builder::collector::configure(http_request m)
   // Check that needed parameters exists
   if (params().as_object().find("collectingPort")==params().as_object().end())
     { 
-      PM_ERROR(_logPmex, "Missing collectingPort,no data stream");
+      PMF_ERROR(_logPmex, "Missing collectingPort,no data stream");
       par["status"]=json::value::string(U("Missing collectingPort "));
       Reply(status_codes::OK,par);
       return;  
     }
   if (params().as_object().find("processor")==params().as_object().end())
     { 
-      PM_ERROR(_logPmex, "Missing processor, list of processing pluggins");
+      PMF_ERROR(_logPmex, "Missing processor, list of processing pluggins");
       par["status"]=json::value::string(U("Missing processors "));
       Reply(status_codes::OK,par);
       return;  
@@ -86,27 +86,27 @@ void pm::builder::collector::configure(http_request m)
   json::value array_keys;
   std::stringstream st("");
   st<<"tcp://*:"<<params()["collectingPort"].as_integer();
-  PM_INFO(_logPmex, "Registering " << st.str());
+  PMF_INFO(_logPmex, "Registering " << st.str());
   _merger->registerDataSource(st.str());
   array_keys[0]=json::value::string(U(st.str()));
-  PM_INFO(_logPmex, "Now processors " << st.str());
+  PMF_INFO(_logPmex, "Now processors " << st.str());
   // Register the processors
   json::value parray_keys;uint32_t np=0;
   for (auto it = params()["processor"].as_array().begin(); it != params()["processor"].as_array().end(); it++)
   {
 
-    PM_INFO(_logPmex, "registering processor" << (*it).as_string());
+    PMF_INFO(_logPmex, "registering processor" << (*it).as_string());
     _merger->registerProcessor((*it).as_string());
     parray_keys[np++]=(*it);
   }
 
-  PM_INFO(_logPmex, " Setting parameters for processors and merger ");
+  PMF_INFO(_logPmex, " Setting parameters for processors and merger ");
   _merger->loadParameters(this->params());
 
   
   // Overwrite msg
   //Prepare complex answer
-  PM_INFO(_logPmex, "end of configure");
+  PMF_INFO(_logPmex, "end of configure");
   par["status"]=json::value::string(U("OK"));
   par["sourceRegistered"] = array_keys;
   par["processorRegistered"] = parray_keys;
@@ -119,7 +119,7 @@ void pm::builder::collector::start(http_request m)
 {
  auto par = json::value::object(); 
 
- PM_INFO(_logPmex, __PRETTY_FUNCTION__ << "Received START");
+ PMF_INFO(_logPmex, __PRETTY_FUNCTION__ << "Received START");
  // Parse arguments
  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
  uint32_t run=0;
@@ -129,7 +129,7 @@ void pm::builder::collector::start(http_request m)
  _merger->start(run);
  _running = true;
  
-  PM_INFO(_logPmex, "Builder Run " << run << " is started ");
+  PMF_INFO(_logPmex, "Builder Run " << run << " is started ");
   par["status"] = json::value::string(U("STARTED"));
   par["run"] = json::value::number(run);
   Reply(status_codes::OK,par);
@@ -138,10 +138,10 @@ void pm::builder::collector::start(http_request m)
 void pm::builder::collector::stop(http_request m)
 {
   auto par = json::value::object(); 
-  PM_DEBUG(_logPmex, "Received STOP ");
+  PMF_DEBUG(_logPmex, "Received STOP ");
   _merger->stop();
   _running = false;
-  PM_INFO(_logPmex, "Builder is stopped \n");
+  PMF_INFO(_logPmex, "Builder is stopped \n");
   fflush(stdout);
   par["status"] = json::value::string(U("STOPPED"));
   Reply(status_codes::OK,par);
@@ -151,7 +151,7 @@ void pm::builder::collector::stop(http_request m)
 void pm::builder::collector::halt(http_request m)
 {
   auto par = json::value::object(); 
-  PM_DEBUG(_logPmex, "Received HALT");
+  PMF_DEBUG(_logPmex, "Received HALT");
   if (_running)
     {
       _merger->stop();
@@ -159,7 +159,7 @@ void pm::builder::collector::halt(http_request m)
     }
 
 
-  PM_INFO(_logPmex, "Destroying Builder Sources");
+  PMF_INFO(_logPmex, "Destroying Builder Sources");
   //stop data sources
   _merger->clear();
 
@@ -193,7 +193,7 @@ void pm::builder::collector::purge(http_request m)
       active=std::stoi(it2->second);
   if (_merger != NULL)
     {
-      PM_INFO(_logPmex, "Setting Purge flag to "<<active);
+      PMF_INFO(_logPmex, "Setting Purge flag to "<<active);
       
       _merger->setPurge(active != 0);
       par["answer"]=json::value::number(active);
@@ -240,7 +240,7 @@ void pm::builder::collector::setheader(http_request m)
     return;
   }
 
-  PM_DEBUG(_logPmex, "Header " << jdevs);
+  PMF_DEBUG(_logPmex, "Header " << jdevs);
   std::vector<uint32_t> &v = _merger->runHeader();
   v.clear();
   for (auto jt = jdevs.as_array().begin(); jt != jdevs.as_array().end(); ++jt)
