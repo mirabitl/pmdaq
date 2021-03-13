@@ -4,7 +4,7 @@
 syx27Plugin::syx27Plugin(): _hv(NULL){} 
 void syx27Plugin::open()
 {
-  LOG4CXX_INFO(_logPdaq,__PRETTY_FUNCTION__<<" CMD: Opening");
+  PM_INFO(_logPdaq,__PRETTY_FUNCTION__<<" CMD: Opening");
 
   std::string account;
   if (params().as_object().find("account")!=params().as_object().end())
@@ -13,7 +13,7 @@ void syx27Plugin::open()
     }
   else
     {
-      LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<" No account given");
+      PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<" No account given");
       return;
     }
 
@@ -48,10 +48,10 @@ void syx27Plugin::open()
 }
 void syx27Plugin::close()
 {
-  LOG4CXX_INFO(_logPdaq,__PRETTY_FUNCTION__<<" Closing ");
+  PM_INFO(_logPdaq,__PRETTY_FUNCTION__<<" Closing ");
   if (_hv==NULL)
     {
-       LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<" No HVCaenInterface opened");
+       PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<" No HVCaenInterface opened");
        return;
     }
   _hv->Disconnect();
@@ -65,7 +65,7 @@ web::json::value syx27Plugin::channelStatus(uint32_t channel)
   r["status"]=json::value::string(U("notset"));
    if (_hv==NULL)
     {
-      LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
+      PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
        return r;
     }
    // std::cout<<channel<<" gives "<<_hv->getOutputVoltage(channel/8,channel%8)<<std::endl;
@@ -95,13 +95,13 @@ web::json::value syx27Plugin::status(int32_t first,int32_t last)
 
   if (_hv==NULL)
   {
-    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
+    PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
     return r;
   }
   int32_t fi=0,la=0;
   if (params().as_object().find("first")==params().as_object().end() && first<0)
   {
-    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Please define first channel");
+    PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Please define first channel");
     return r;
   }
   if (first<0)
@@ -110,7 +110,7 @@ web::json::value syx27Plugin::status(int32_t first,int32_t last)
     fi=first;
   if (params().as_object().find("first")==params().as_object().end() && last<0)
   {
-    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Please define last channel");
+    PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Please define last channel");
     return r;
   }
   if (last<0)
@@ -134,7 +134,7 @@ void syx27Plugin::c_status(http_request m)
 
  if (_hv==NULL)
   {
-    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
+    PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
     par["status"]=json::value::string(U("Invalid Device"));
     Reply(status_codes::OK,par);
     return;
@@ -155,7 +155,7 @@ void syx27Plugin::c_status(http_request m)
    }
   if (first==999 || last==999)
     {
-      LOG4CXX_ERROR(_logPdaq,"Invalid first or last");
+      PM_ERROR(_logPdaq,"Invalid first or last");
       par["status"]=json::value::string(U("Invalid channels"));
       Reply(status_codes::OK,par);
       return;
@@ -175,7 +175,7 @@ void syx27Plugin::c_on(http_request m)
 
  if (_hv==NULL)
   {
-    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
+    PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
     par["status"]=json::value::string(U("Invalid Device"));
     Reply(status_codes::OK,par);
     return;
@@ -196,7 +196,7 @@ void syx27Plugin::c_on(http_request m)
    }
   if (first==999 || last==999)
     {
-      LOG4CXX_ERROR(_logPdaq,"Invalid first or last");
+      PM_ERROR(_logPdaq,"Invalid first or last");
       par["status"]=json::value::string(U("Invalid channels"));
       Reply(status_codes::OK,par);
       return;
@@ -217,7 +217,7 @@ void syx27Plugin::c_off(http_request m)
 
   if (_hv==NULL)
     {
-      LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
+      PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
       par["status"]=json::value::string(U("Invalid Device"));
       Reply(status_codes::OK,par);
       return;
@@ -238,7 +238,7 @@ void syx27Plugin::c_off(http_request m)
     }
   if (first==999 || last==999)
     {
-      LOG4CXX_ERROR(_logPdaq,"Invalid first or last");
+      PM_ERROR(_logPdaq,"Invalid first or last");
       par["status"]=json::value::string(U("Invalid channels"));
       Reply(status_codes::OK,par);
       return;
@@ -258,7 +258,7 @@ void syx27Plugin::c_clearalarm(http_request m)
 
   if (_hv==NULL)
     {
-      LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
+      PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
       par["status"]=json::value::string(U("Invalid Device"));
       Reply(status_codes::OK,par);
       return;
@@ -279,7 +279,7 @@ void syx27Plugin::c_clearalarm(http_request m)
     }
   if (first==999 || last==999)
     {
-      LOG4CXX_ERROR(_logPdaq,"Invalid first or last");
+      PM_ERROR(_logPdaq,"Invalid first or last");
       par["status"]=json::value::string(U("Invalid channels"));
       Reply(status_codes::OK,par);
       return;
@@ -298,7 +298,7 @@ void syx27Plugin::c_vset(http_request m)
 
   if (_hv==NULL)
     {
-      LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
+      PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
       par["status"]=json::value::string(U("Invalid Device"));
       Reply(status_codes::OK,par);
       return;
@@ -321,7 +321,7 @@ void syx27Plugin::c_vset(http_request m)
     }
   if (first==999 || last==999 ||vset<0)
     {
-      LOG4CXX_ERROR(_logPdaq,"Invalid first or last or value");
+      PM_ERROR(_logPdaq,"Invalid first or last or value");
       par["status"]=json::value::string(U("Invalid channels"));
       Reply(status_codes::OK,par);
       return;
@@ -343,7 +343,7 @@ void syx27Plugin::c_iset(http_request m)
 
   if (_hv==NULL)
     {
-      LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
+      PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
       par["status"]=json::value::string(U("Invalid Device"));
       Reply(status_codes::OK,par);
       return;
@@ -366,7 +366,7 @@ void syx27Plugin::c_iset(http_request m)
     }
   if (first==999 || last==999 ||iset<0)
     {
-      LOG4CXX_ERROR(_logPdaq,"Invalid first or last or value");
+      PM_ERROR(_logPdaq,"Invalid first or last or value");
       par["status"]=json::value::string(U("Invalid channels"));
       Reply(status_codes::OK,par);
       return;
@@ -389,7 +389,7 @@ void syx27Plugin::c_rampup(http_request m)
 
   if (_hv==NULL)
     {
-      LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
+      PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No HVCaenInterface opened");
       par["status"]=json::value::string(U("Invalid Device"));
       Reply(status_codes::OK,par);
       return;
@@ -412,7 +412,7 @@ void syx27Plugin::c_rampup(http_request m)
     }
   if (first==999 || last==999 ||rup<0)
     {
-      LOG4CXX_ERROR(_logPdaq,"Invalid first or last or value");
+      PM_ERROR(_logPdaq,"Invalid first or last or value");
       par["status"]=json::value::string(U("Invalid channels"));
       Reply(status_codes::OK,par);
       return;

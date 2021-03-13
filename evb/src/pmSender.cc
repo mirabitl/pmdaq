@@ -56,7 +56,7 @@ void pmSender::publish(uint64_t bx, uint32_t gtc,uint32_t len)
 	uint32_t bb=_buffer->size();
 
 	_buffer->compress();
-	LOG4CXX_DEBUG(_logPdaq," Compressing data"<<_buffer->size());
+	PM_DEBUG(_logPdaq," Compressing data"<<_buffer->size());
       }
     zmq::message_t message(_buffer->size());
     memcpy(message.data(),_buffer->ptr(),_buffer->size());
@@ -64,7 +64,7 @@ void pmSender::publish(uint64_t bx, uint32_t gtc,uint32_t len)
   }
   catch (zmq::error_t e)
     {
-      LOG4CXX_ERROR(_logPdaq,e.num()<<" error number");
+      PM_ERROR(_logPdaq,e.num()<<" error number");
       return;
     }
 }
@@ -96,7 +96,7 @@ void pmSender::collectorRegister()
       }
       catch (zmq::error_t e)
 	{
-	  LOG4CXX_ERROR(_logPdaq,e.num()<<" error number");
+	  PM_ERROR(_logPdaq,e.num()<<" error number");
 
 	  return;
 	}
@@ -110,7 +110,7 @@ void pmSender::autoDiscover(std::string session,std::string appname,std::string 
   // Request PNS session process with process name = appname
   if (!utils::checkpns())
     {
-      LOG4CXX_ERROR(_logPdaq,"No Process Name Server found");
+      PM_ERROR(_logPdaq,"No Process Name Server found");
       return;
     }
 
@@ -120,27 +120,27 @@ void pmSender::autoDiscover(std::string session,std::string appname,std::string 
   auto serv_list=reg_list.get().as_object()["REGISTERED"];
   if (serv_list.is_null())
     {
-      LOG4CXX_ERROR(_logPdaq,"No Process registered in PNS");
+      PM_ERROR(_logPdaq,"No Process registered in PNS");
       return;
     }
   for (auto it = serv_list.as_array().begin(); it != serv_list.as_array().end(); ++it)
     {
       std::string rec=(*it).as_string();
-      LOG4CXX_DEBUG(_logPdaq,"PNS Service: "<<rec);
+      PM_DEBUG(_logPdaq,"PNS Service: "<<rec);
       auto v=utils::split(rec,':');
       std::string phost=v[0];
       uint32_t pport=std::stoi(v[1]);
       std::string ppath =v[2];
-      LOG4CXX_DEBUG(_logPdaq,"PNS Service: "<<phost<<" "<<pport<<" "<<ppath);
+      PM_DEBUG(_logPdaq,"PNS Service: "<<phost<<" "<<pport<<" "<<ppath);
       auto vp0=utils::split(ppath,'?');
       auto vp=utils::split(vp0[0],'/');
-      LOG4CXX_DEBUG(_logPdaq,"VP size: "<<vp.size());
-      LOG4CXX_DEBUG(_logPdaq,"VP :  [1]"<<vp[1]<<" "<<session<<" [2]"<<vp[2]<<" "<<appname);
+      PM_DEBUG(_logPdaq,"VP size: "<<vp.size());
+      PM_DEBUG(_logPdaq,"VP :  [1]"<<vp[1]<<" "<<session<<" [2]"<<vp[2]<<" "<<appname);
       if (vp[1].compare(session)!=0) continue;
       if (vp[2].compare(appname)!=0) continue;
       uint32_t instance=std::stoi(vp[3]);
       http_response repb=utils::request(phost,pport,vp0[0]+"PARAMS",json::value::null());
-      LOG4CXX_ERROR(_logPdaq,repb.to_string());
+      PM_ERROR(_logPdaq,repb.to_string());
       auto par_list=repb.extract_json().get();
       
       for(auto iter = par_list.as_object().begin(); iter != par_list.as_object().end(); ++iter)
@@ -151,7 +151,7 @@ void pmSender::autoDiscover(std::string session,std::string appname,std::string 
 	    ss<<"tcp://"<<phost<<":"<<iter->second.as_integer();
 	    std::pair<uint32_t,std::string> p(instance,ss.str());
 	    mStream.insert(p);
-	    LOG4CXX_INFO(_logPdaq," Builder paramaters "<<phost<<" collecting on "<<ss.str());
+	    PM_INFO(_logPdaq," Builder paramaters "<<phost<<" collecting on "<<ss.str());
 	    break;
 	  }
 

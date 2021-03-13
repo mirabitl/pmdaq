@@ -53,7 +53,7 @@ void monitoring::supervisor::end()
 
 void monitoring::supervisor::configure(http_request m)
 {
-  LOG4CXX_INFO(_logPdaq, __PRETTY_FUNCTION__ << "Configure received");
+  PM_INFO(_logPdaq, __PRETTY_FUNCTION__ << "Configure received");
   auto prep = json::value::object();
   // Store message content in paramters
   auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
@@ -67,7 +67,7 @@ void monitoring::supervisor::configure(http_request m)
   
   if (params().as_object().find("period")==params().as_object().end())
     {
-      LOG4CXX_ERROR(_logPdaq, "Missing period, period of monitoring readout");
+      PM_ERROR(_logPdaq, "Missing period, period of monitoring readout");
       prep["error"]=json::value::string(U( "Missing period, period of monitoring readout"));
       Reply(status_codes::BadRequest,prep);
       return;
@@ -81,15 +81,15 @@ void monitoring::supervisor::configure(http_request m)
       auto parray_keys = json::value::array();int ns=0;
       for (auto it = params()["stores"].as_array().begin(); it != params()["stores"].as_array().end(); ++it)
 	{
-	  LOG4CXX_INFO(_logPdaq, "registering " << (*it).as_string());
+	  PM_INFO(_logPdaq, "registering " << (*it).as_string());
 	  this->registerStore((*it).as_string());
 	  parray_keys[ns++]=json::value::string(U((*it).as_string()));
 	}
 
-      LOG4CXX_INFO(_logPdaq, " Setting parameters for stores ");
+      PM_INFO(_logPdaq, " Setting parameters for stores ");
       for (auto x:_stores)
 	x->loadParameters(params());
-      LOG4CXX_INFO(_logPdaq, " Connect stores  ");
+      PM_INFO(_logPdaq, " Connect stores  ");
       for (auto x:_stores)
 	x->connect();
       prep["stores"] = parray_keys;
@@ -99,7 +99,7 @@ void monitoring::supervisor::configure(http_request m)
 
   this->open();
 
-  LOG4CXX_DEBUG(_logPdaq, "end of configure");
+  PM_DEBUG(_logPdaq, "end of configure");
   Reply(status_codes::OK,prep);
   return;
 }
@@ -110,11 +110,11 @@ void monitoring::supervisor::registerStore(std::string name)
   void *library = dlopen(s.str().c_str(), RTLD_NOW);
 
   //printf("%s %x \n",dlerror(),(unsigned int) library);
-  LOG4CXX_INFO(_logPdaq, " Error " << dlerror() << " Library open address " << std::hex << library << std::dec);
+  PM_INFO(_logPdaq, " Error " << dlerror() << " Library open address " << std::hex << library << std::dec);
   // Get the loadFilter function, for loading objects
   monitoring::monStore *(*create)();
   create = (monitoring::monStore * (*)()) dlsym(library, "loadStore");
-  LOG4CXX_INFO(_logPdaq, " Error " << dlerror() << " file " << s.str() << " loads to processor address " << std::hex << create << std::dec);
+  PM_INFO(_logPdaq, " Error " << dlerror() << " file " << s.str() << " loads to processor address " << std::hex << create << std::dec);
   //printf("%s %x \n",dlerror(),(unsigned int) create);
   // printf("%s lods to %x \n",s.str().c_str(),(unsigned int) create);
   //void (*destroy)(Filter*);
@@ -127,7 +127,7 @@ void monitoring::supervisor::registerStore(std::string name)
 
 void monitoring::supervisor::start(http_request m)
 {
-  LOG4CXX_DEBUG(_logPdaq, "Received Start ");
+  PM_DEBUG(_logPdaq, "Received Start ");
   auto par = json::value::object();
 
 
@@ -140,7 +140,7 @@ void monitoring::supervisor::start(http_request m)
 }
 void monitoring::supervisor::stop(http_request m)
 {
-  LOG4CXX_DEBUG(_logPdaq, "Received STOP");
+  PM_DEBUG(_logPdaq, "Received STOP");
   if (_running)
     {
       _running=false;
@@ -153,7 +153,7 @@ void monitoring::supervisor::stop(http_request m)
 }
 void monitoring::supervisor::halt(http_request m)
 {
-  LOG4CXX_DEBUG(_logPdaq, "Received HALT");
+  PM_DEBUG(_logPdaq, "Received HALT");
   if (_running)
     {
       _running=false;
@@ -167,7 +167,7 @@ void monitoring::supervisor::halt(http_request m)
 }
 void monitoring::supervisor::c_status(http_request m)
 {
-  LOG4CXX_DEBUG(_logPdaq, "Received CMD STATUS");
+  PM_DEBUG(_logPdaq, "Received CMD STATUS");
   auto par = json::value::object();
   par["status"] = this->status();
   Reply(status_codes::OK,par);

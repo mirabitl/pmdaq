@@ -6,7 +6,7 @@ hihPlugin::hihPlugin(): _hih(NULL){}
 void hihPlugin::open()
 {
 
-  LOG4CXX_INFO(_logPdaq," CMD: Open ");
+  PM_INFO(_logPdaq," CMD: Open ");
 
   std::cout<<"calling open "<<std::endl;
   if (_hih!=NULL)
@@ -18,10 +18,10 @@ void hihPlugin::open()
 }
 void hihPlugin::close()
 {
-  LOG4CXX_INFO(_logPdaq," CMD: closing Hih");
+  PM_INFO(_logPdaq," CMD: closing Hih");
   if (_hih==NULL)
     {
-       LOG4CXX_ERROR(_logPdaq,"No HVHihInterface opened");
+       PM_ERROR(_logPdaq,"No HVHihInterface opened");
        return;
     }
   
@@ -36,7 +36,7 @@ web::json::value hihPlugin::status()
   r["status"]=json::value::string(U("UNKNOWN"));
    if (_hih==NULL)
     {
-      LOG4CXX_ERROR(_logPdaq,"No Hih Interface opened");
+      PM_ERROR(_logPdaq,"No Hih Interface opened");
        return r;
     }
    _hih->Read();
@@ -57,7 +57,7 @@ void hihPlugin::c_status(http_request m)
   auto par = json::value::object();
   if (_hih==NULL)
   {
-    LOG4CXX_ERROR(_logPdaq,"No Hih opened");
+    PM_ERROR(_logPdaq,"No Hih opened");
     par["status"]=json::value::string(U("No Device"));
     Reply(status_codes::OK,par);
 

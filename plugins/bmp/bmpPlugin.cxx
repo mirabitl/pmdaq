@@ -6,7 +6,7 @@ bmpPlugin::bmpPlugin(): _bmp(NULL){}
 void bmpPlugin::open()
 {
 
-  LOG4CXX_INFO(_logPdaq," CMD: Open ");
+  PM_INFO(_logPdaq," CMD: Open ");
   if (_bmp!=NULL)
     delete _bmp;
   
@@ -21,10 +21,10 @@ void bmpPlugin::open()
 }
 void bmpPlugin::close()
 {
-  LOG4CXX_INFO(_logPdaq," CMD: closing Bmp");
+  PM_INFO(_logPdaq," CMD: closing Bmp");
   if (_bmp==NULL)
     {
-       LOG4CXX_ERROR(_logPdaq,"No HVBmpInterface opened");
+       PM_ERROR(_logPdaq,"No HVBmpInterface opened");
        return;
     }
   
@@ -39,7 +39,7 @@ web::json::value bmpPlugin::status()
   r["status"]=json::value::string(U("UNKNOWN"));
    if (_bmp==NULL)
     {
-      LOG4CXX_ERROR(_logPdaq,"No Bmp Interface opened");
+      PM_ERROR(_logPdaq,"No Bmp Interface opened");
        return r;
     }
 #ifdef BMP183
@@ -63,7 +63,7 @@ void bmpPlugin::c_status(http_request m)
   auto par = json::value::object();
   if (_bmp==NULL)
   {
-    LOG4CXX_ERROR(_logPdaq,"No Bmp opened");
+    PM_ERROR(_logPdaq,"No Bmp opened");
     par["status"]=json::value::string(U("No Device"));
     Reply(status_codes::OK,par);
 

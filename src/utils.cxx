@@ -78,14 +78,14 @@ bool utils::checkpns(int port)
 
   h=gethostbyname(address.c_str());
   if (h== NULL) {
-    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Error when using gethostbyname " <<address);
+    PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Error when using gethostbyname " <<address);
     std::exit(-1);
   }
         // std::cout << inet_ntoa(*((struct in_addr *)h->h_addr)) << std::endl;
 
   sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (sd == -1) {
-    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Error when trying to create socket !");
+    PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Error when trying to create socket !");
     return false;
   }
 
@@ -98,13 +98,13 @@ bool utils::checkpns(int port)
   rval = connect(sd, (struct sockaddr *) &servaddr, sizeof(servaddr));
 
   if (rval == -1) {
-    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Port "<<port<<" is closed for: "<<address);
+    PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Port "<<port<<" is closed for: "<<address);
     close(sd);
     return false;
   }
 
   else {
-    LOG4CXX_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<"Opened port "<<port <<" :" << inet_ntoa(*((struct in_addr *)h->h_addr)));
+    PM_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<"Opened port "<<port <<" :" << inet_ntoa(*((struct in_addr *)h->h_addr)));
     close(sd);
     return true;
   }

@@ -45,14 +45,14 @@ bool checkpns(int port=8888)
 
   h=gethostbyname(address.c_str());
   if (h== NULL) {
-    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Error when using gethostbyname " <<address);
+    PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Error when using gethostbyname " <<address);
     std::exit(-1);
   }
         // std::cout << inet_ntoa(*((struct in_addr *)h->h_addr)) << std::endl;
 
   sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (sd == -1) {
-    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Error when trying to create socket !");
+    PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Error when trying to create socket !");
     return false;
   }
 
@@ -65,13 +65,13 @@ bool checkpns(int port=8888)
   rval = connect(sd, (struct sockaddr *) &servaddr, sizeof(servaddr));
 
   if (rval == -1) {
-    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Port "<<port<<" is closed for: "<<address);
+    PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Port "<<port<<" is closed for: "<<address);
     close(sd);
     return false;
   }
 
   else {
-    LOG4CXX_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<"Opened port "<<port <<" :" << inet_ntoa(*((struct in_addr *)h->h_addr)));
+    PM_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<"Opened port "<<port <<" :" << inet_ntoa(*((struct in_addr *)h->h_addr)));
     close(sd);
     return true;
   }
@@ -98,7 +98,7 @@ std::vector<std::string> fsmw::getPaths(std::string query)
       _host.assign(v[0]);
       _port=std::stoi(v[1]);
 
-      LOG4CXX_INFO (_logPdaq,__PRETTY_FUNCTION__<<" HOST found "<<_host<<" Port:"<<_port);
+      PM_INFO (_logPdaq,__PRETTY_FUNCTION__<<" HOST found "<<_host<<" Port:"<<_port);
 
     }
 
@@ -106,7 +106,7 @@ std::vector<std::string> fsmw::getPaths(std::string query)
   auto querym = uri::split_query(query);
   for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
     {
-     LOG4CXX_DEBUG(_logPdaq,__PRETTY_FUNCTION__<< U("Query") << U(" ")
+     PM_DEBUG(_logPdaq,__PRETTY_FUNCTION__<< U("Query") << U(" ")
 		   << it2->first << U(" ") << it2->second);
       if (it2->first.compare("session")==0)
 	_p_session.assign(it2->second);
@@ -119,7 +119,7 @@ std::vector<std::string> fsmw::getPaths(std::string query)
 	  std::error_code  errorCode;
 	  auto jval=web::json::value::parse(std::string(it2->second),errorCode);
 	  _params=jval;
-	  LOG4CXX_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<"Parameters "<<_params);
+	  PM_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<"Parameters "<<_params);
 	}
     }
   std::stringstream sb;
@@ -246,7 +246,7 @@ void fsmw::getparams(http_request message)
 }
 void fsmw::setparams(http_request message)
 {
-  LOG4CXX_INFO (_logPdaq,__PRETTY_FUNCTION__<<uri::decode(message.relative_uri().query()));
+  PM_INFO (_logPdaq,__PRETTY_FUNCTION__<<uri::decode(message.relative_uri().query()));
   auto querym = uri::split_query(uri::decode(message.relative_uri().query()));
   for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
     if (it2->first.compare("params")==0)
@@ -255,7 +255,7 @@ void fsmw::setparams(http_request message)
 	auto p=web::json::value::parse(std::string(it2->second),errorCode);
 	for(auto iter = p.as_object().begin(); iter != p.as_object().end(); ++iter)
 	  _params[iter->first]=iter->second;
-	LOG4CXX_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<"Parameters sets "<<_params);
+	PM_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<"Parameters sets "<<_params);
       }
     
   message.reply(status_codes::OK,_params);
@@ -298,8 +298,8 @@ std::string fsmw::state(){return _state;}
 void fsmw::publishState() {
 
   if (!checkpns())
-    {  LOG4CXX_FATAL(_logPdaq,__PRETTY_FUNCTION__<<"Invalid DNS Cannot publish state");return;}
-  LOG4CXX_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<"Entering publishState");
+    {  PM_FATAL(_logPdaq,__PRETTY_FUNCTION__<<"Invalid DNS Cannot publish state");return;}
+  PM_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<"Entering publishState");
 
   
   utility::string_t address = U("http://");
@@ -320,7 +320,7 @@ void fsmw::publishState() {
       << U("&state=")<<U(state());
   
   http_response  response = client.request(methods::GET, buf.str()).get();
-  LOG4CXX_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<"reponse " <<response.to_string());
+  PM_DEBUG(_logPdaq,__PRETTY_FUNCTION__<<"reponse " <<response.to_string());
 }
 web::json::value fsmw::transitionsList()
 {

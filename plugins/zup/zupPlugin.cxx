@@ -6,7 +6,7 @@ zupPlugin::zupPlugin(): _lv(NULL){}
 void zupPlugin::open()
 {
 
-  LOG4CXX_INFO(_logPdaq," CMD: Open ");
+  PM_INFO(_logPdaq," CMD: Open ");
 
   std::string device;
   if (params().as_object().find("device")!=params().as_object().end())
@@ -35,10 +35,10 @@ void zupPlugin::open()
 }
 void zupPlugin::close()
 {
-  LOG4CXX_INFO(_logPdaq," CMD: closing Zup");
+  PM_INFO(_logPdaq," CMD: closing Zup");
   if (_lv==NULL)
     {
-       LOG4CXX_ERROR(_logPdaq,"No HVZupInterface opened");
+       PM_ERROR(_logPdaq,"No HVZupInterface opened");
        return;
     }
   
@@ -53,7 +53,7 @@ web::json::value zupPlugin::status()
   r["status"]=json::value::string(U("UNKNOWN"));
    if (_lv==NULL)
     {
-      LOG4CXX_ERROR(_logPdaq,"No Zup Interface opened");
+      PM_ERROR(_logPdaq,"No Zup Interface opened");
        return r;
     }
    Json::Value sr=_lv->Status();
@@ -78,7 +78,7 @@ void zupPlugin::c_status(http_request m)
   auto par = json::value::object();
   if (_lv==NULL)
   {
-    LOG4CXX_ERROR(_logPdaq,"No Zup opened");
+    PM_ERROR(_logPdaq,"No Zup opened");
     par["status"]=json::value::string(U("No Device"));
     Reply(status_codes::OK,par);
 
@@ -94,7 +94,7 @@ void zupPlugin::c_on(http_request m)
   auto par = json::value::object();
   if (_lv==NULL)
   {
-    LOG4CXX_ERROR(_logPdaq,"No Zup opened");
+    PM_ERROR(_logPdaq,"No Zup opened");
     par["status"]=json::value::string(U("No Device"));
     Reply(status_codes::OK,par);
 
@@ -113,7 +113,7 @@ void zupPlugin::c_off(http_request m)
   auto par = json::value::object();
  if (_lv==NULL)
   {
-    LOG4CXX_ERROR(_logPdaq,"No Zup opened");
+    PM_ERROR(_logPdaq,"No Zup opened");
     par["status"]=json::value::string(U("No Device"));
     Reply(status_codes::OK,par);
 
@@ -144,7 +144,7 @@ void zupPlugin::c_setdevice(http_request m)
 
   if (device==999 || address==999)
     {
-      LOG4CXX_ERROR(_logPdaq,"Invalid device or Port");
+      PM_ERROR(_logPdaq,"Invalid device or Port");
       par["status"]=json::value::string(U("Invalid Device"));
       Reply(status_codes::OK,par);
       return;

@@ -24,7 +24,7 @@ void mgStore::connect()
 	login=std::string(wp);
       else
 	{
-	  LOG4CXX_ERROR(_logPdaq," MGDBLOGIN is not set");
+	  PM_ERROR(_logPdaq," MGDBLOGIN is not set");
 	  return;
 	}
     }
@@ -100,12 +100,12 @@ void mgStore::connect()
 
   if (!retval) {
     fprintf (stderr, "%s\n", error.message);
-    LOG4CXX_ERROR(_logPdaq," Cannot ping to dbaccount :"<<error.message);
+    PM_ERROR(_logPdaq," Cannot ping to dbaccount :"<<error.message);
     return;
   }
 
   str = bson_as_json (&reply, NULL);
-  LOG4CXX_INFO(_logPdaq," Ping to "<<login<<" => "<<std::string(str));
+  PM_INFO(_logPdaq," Ping to "<<login<<" => "<<std::string(str));
   bson_destroy (&reply);
   bson_destroy (command);
   bson_free (str);

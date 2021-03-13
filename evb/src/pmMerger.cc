@@ -30,7 +30,7 @@ pmMerger::pmMerger(zmq::context_t *c) : pmPuller(c), _running(false), _nDifs(0),
   /*
   _statusPublisher = new  pm::mon::zPublisher("builder","example",4444,c);
 
-  LOG4CXX_INFO(_logPdaq," Status Publisher created on port 4444");
+  PM_INFO(_logPdaq," Status Publisher created on port 4444");
   */
 }
 pmMerger::~pmMerger()
@@ -57,11 +57,11 @@ void pmMerger::registerProcessor(std::string name)
   void *library = dlopen(s.str().c_str(), RTLD_NOW);
 
   //printf("%s %x \n",dlerror(),(unsigned int) library);
-  LOG4CXX_INFO(_logPdaq, " Error " << dlerror() << " Library open address " << std::hex << library << std::dec);
+  PM_INFO(_logPdaq, " Error " << dlerror() << " Library open address " << std::hex << library << std::dec);
   // Get the loadFilter function, for loading objects
   pm::evbprocessor *(*create)();
   create = (pm::evbprocessor * (*)()) dlsym(library, "loadProcessor");
-  LOG4CXX_INFO(_logPdaq, " Error " << dlerror() << " file " << s.str() << " loads to processor address " << std::hex << create << std::dec);
+  PM_INFO(_logPdaq, " Error " << dlerror() << " file " << s.str() << " loads to processor address " << std::hex << create << std::dec);
   //printf("%s %x \n",dlerror(),(unsigned int) create);
   // printf("%s lods to %x \n",s.str().c_str(),(unsigned int) create);
   //void (*destroy)(Filter*);
@@ -80,7 +80,7 @@ void pmMerger::unregisterProcessor(pm::evbprocessor *p)
 void pmMerger::registerDataSource(std::string url)
 {
 
-  LOG4CXX_INFO(_logPdaq, "Adding input Stream " << url);
+  PM_INFO(_logPdaq, "Adding input Stream " << url);
 
   this->addInputStream(url, true);
 }
@@ -110,7 +110,7 @@ void pmMerger::processEvent(uint32_t idx)
 
     if (_writeHeader)
     {
-      LOG4CXX_INFO(_logPdaq, "Processing Header " << _evt << " " << _nextEventHeader << " " << idx);
+      PM_INFO(_logPdaq, "Processing Header " << _evt << " " << _nextEventHeader << " " << idx);
       if (_nextEventHeader > 0 && _nextEventHeader == idx)
       {
         (*itp)->processRunHeader(_runHeader);
@@ -127,13 +127,13 @@ void pmMerger::processEvent(uint32_t idx)
   // _eventMap.erase(it);
   //printf("End of processing %d Map size %d \n",_evt,_eventMap.size());
   if (_build % 100 == 0)
-    LOG4CXX_DEBUG(_logPdaq, "End of processing of event " << _evt << " remaining map size " << _eventMap.size() << "  built" << _build);
+    PM_DEBUG(_logPdaq, "End of processing of event " << _evt << " remaining map size " << _eventMap.size() << "  built" << _build);
   // Clearing uncompleted event with GTC< 100 current GTC
 
   /*
   if (_build%1000==0)
     {
-      LOG4CXX_DEBUG(_logPdaq,"Publishing status "<<this->status());
+      PM_DEBUG(_logPdaq,"Publishing status "<<this->status());
       _statusPublisher->post(this->status());
     }
   */
@@ -174,7 +174,7 @@ void pmMerger::start(uint32_t nr)
   }
   _eventMap.clear();
 
-  LOG4CXX_INFO(_logPdaq, "run : " << _run << " ZMMERGER START for " << numberOfDataSource() << " sources");
+  PM_INFO(_logPdaq, "run : " << _run << " ZMMERGER START for " << numberOfDataSource() << " sources");
   for (std::vector<pm::evbprocessor *>::iterator itp = _processors.begin(); itp != _processors.end(); itp++)
   {
     (*itp)->start(nr);
@@ -193,18 +193,18 @@ void pmMerger::stop()
 {
   _running = false;
   this->disablePolling();
-  LOG4CXX_INFO(_logPdaq, "Stopping the threads");
+  PM_INFO(_logPdaq, "Stopping the threads");
   //  printf("ZmMeger =>Stopping the threads \n");
   _gThread.join();
 
   // Do the stop of the the processors
-  LOG4CXX_INFO(_logPdaq, "Stopping theprocessors");
+  PM_INFO(_logPdaq, "Stopping theprocessors");
   //printf("ZmMeger =>Stopping the processors \n");
   for (std::vector<pm::evbprocessor *>::iterator itp = _processors.begin(); itp != _processors.end(); itp++)
   {
     (*itp)->stop();
   }
-  LOG4CXX_INFO(_logPdaq, "Leaving Stop method");
+  PM_INFO(_logPdaq, "Leaving Stop method");
 }
 void pmMerger::processData(std::string idd, zmq::message_t *message)
 {
@@ -218,7 +218,7 @@ void pmMerger::processData(std::string idd, zmq::message_t *message)
   //fprintf(stderr,"Message %s DS-%d-%d %d %ld\n",idd.c_str(),detid,sid,gtc,bx);
   std::map<uint64_t, std::vector<pm::buffer *>>::iterator it_gtc = _eventMap.find(gtc);
   if (gtc % 20 == 0)
-    LOG4CXX_INFO(_logPdaq, "Event Map size " << _eventMap.size());
+    PM_INFO(_logPdaq, "Event Map size " << _eventMap.size());
   pm::buffer *b = new pm::buffer(512 * 1024);
   // uint32_t* iptr=(uint32_t*) message->data();
   //   uint8_t* cptr=(uint8_t*) message->data();
@@ -276,7 +276,7 @@ void pmMerger::processData(std::string idd, zmq::message_t *message)
   if (_purge)
   {
     if (gtc % 20 == 0)
-      LOG4CXX_INFO(_logPdaq, "PURGING size " << _eventMap.size());
+      PM_INFO(_logPdaq, "PURGING size " << _eventMap.size());
     for (std::map<uint64_t, std::vector<pm::buffer *>>::iterator it = _eventMap.begin(); it != _eventMap.end();)
     {
 
@@ -294,7 +294,7 @@ void pmMerger::processData(std::string idd, zmq::message_t *message)
     // Force purge if size>200
     if (_eventMap.size() > 200)
     {
-      LOG4CXX_INFO(_logPdaq, "REAL PURGING size " << _eventMap.size());
+      PM_INFO(_logPdaq, "REAL PURGING size " << _eventMap.size());
       for (std::map<uint64_t, std::vector<pm::buffer *>>::iterator it = _eventMap.begin(); it != _eventMap.end();)
       {
 
@@ -309,7 +309,7 @@ void pmMerger::processData(std::string idd, zmq::message_t *message)
         else
           it++;
       }
-      LOG4CXX_INFO(_logPdaq, "END PURGING size " << _eventMap.size());
+      PM_INFO(_logPdaq, "END PURGING size " << _eventMap.size());
     }
   }
   // Fill summary

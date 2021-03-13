@@ -83,7 +83,7 @@ void  pmPuller::poll()
     }
 
 #endif
-  LOG4CXX_INFO(_logPdaq,"start polling on "<<_socks.size()<<" sockets");
+  PM_INFO(_logPdaq,"start polling on "<<_socks.size()<<" sockets");
   zmq::message_t message;
   _nregistered=0;
   while (_running)
@@ -103,7 +103,7 @@ void  pmPuller::poll()
 		if (registering)
 		  {
 		    sscanf(identity.c_str(),"ID-%d-%d %d %ld",&detid,&sid,&gtc,&bx);
-		    LOG4CXX_INFO(_logPdaq," New Source registered:"<<detid<<"-"<<sid);
+		    PM_INFO(_logPdaq," New Source registered:"<<detid<<"-"<<sid);
 		    _nregistered++;
 		  }
 		else 
@@ -114,7 +114,7 @@ void  pmPuller::poll()
 		_socks[i]->recv(&message);
 		if (gtc%1000==0)
 		  {
-		    LOG4CXX_DEBUG(_logPdaq,"Socket ID "<<identity<<" size "<<message.size()<<" "<<detid<<" "<<sid<<" "<<gtc<<" "<<bx);
+		    PM_DEBUG(_logPdaq,"Socket ID "<<identity<<" size "<<message.size()<<" "<<detid<<" "<<sid<<" "<<gtc<<" "<<bx);
 
 		  }
 		//printf("Socket %d ID %s  size %d \n",i,identity.c_str(),message.size());
@@ -131,7 +131,7 @@ void  pmPuller::poll()
 	      }
 	      catch (zmq::error_t e)
 		{
-		  LOG4CXX_ERROR(_logPdaq,"Poll error nb:"<<e.num());
+		  PM_ERROR(_logPdaq,"Poll error nb:"<<e.num());
 		  continue;
 		}
 	    }

@@ -116,7 +116,7 @@ void grStore::store(std::string loc,std::string hw,uint32_t ti,web::json::value 
       if (status["status"].as_string().compare("ON")==0)
 	{
 	  ist=1;
-	  //LOG4CXX_WARN(_logPdaq,"status "<<status["status"].as_string()<<" "<<ist);
+	  //PM_WARN(_logPdaq,"status "<<status["status"].as_string()<<" "<<ist);
 	}
 	
       spath.str(std::string());

@@ -4,7 +4,7 @@
 wienerPlugin::wienerPlugin(): _hv(NULL){} 
 void wienerPlugin::open()
 {
-  LOG4CXX_INFO(_logPdaq,__PRETTY_FUNCTION__<<" CMD: Opening");
+  PM_INFO(_logPdaq,__PRETTY_FUNCTION__<<" CMD: Opening");
 
   std::string address;
   if (params().as_object().find("address")!=params().as_object().end())
@@ -13,7 +13,7 @@ void wienerPlugin::open()
     }
   else
     {
-      LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<" No address given");
+      PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<" No address given");
       return;
     }
 
@@ -31,10 +31,10 @@ void wienerPlugin::open()
 }
 void wienerPlugin::close()
 {
-  LOG4CXX_INFO(_logPdaq,__PRETTY_FUNCTION__<<" Closing ");
+  PM_INFO(_logPdaq,__PRETTY_FUNCTION__<<" Closing ");
   if (_hv==NULL)
     {
-       LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<" No HVWienerInterface opened");
+       PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<" No HVWienerInterface opened");
        return;
     }
   
@@ -48,7 +48,7 @@ web::json::value wienerPlugin::channelStatus(uint32_t channel)
   r["status"]=json::value::string(U("notset"));
    if (_hv==NULL)
     {
-      LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
+      PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
        return r;
     }
    // std::cout<<channel<<" gives "<<_hv->getOutputVoltage(channel/8,channel%8)<<std::endl;
@@ -73,13 +73,13 @@ web::json::value wienerPlugin::status(int32_t first,int32_t last)
 
   if (_hv==NULL)
   {
-    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
+    PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
     return r;
   }
   int32_t fi=0,la=0;
   if (params().as_object().find("first")==params().as_object().end() && first<0)
   {
-    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Please define first channel");
+    PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Please define first channel");
     return r;
   }
   if (first<0)
@@ -88,7 +88,7 @@ web::json::value wienerPlugin::status(int32_t first,int32_t last)
     fi=first;
   if (params().as_object().find("first")==params().as_object().end() && last<0)
   {
-    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Please define last channel");
+    PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"Please define last channel");
     return r;
   }
   if (last<0)
@@ -112,7 +112,7 @@ void wienerPlugin::c_status(http_request m)
 
  if (_hv==NULL)
   {
-    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
+    PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
     par["status"]=json::value::string(U("Invalid Device"));
     Reply(status_codes::OK,par);
     return;
@@ -133,7 +133,7 @@ void wienerPlugin::c_status(http_request m)
    }
   if (first==999 || last==999)
     {
-      LOG4CXX_ERROR(_logPdaq,"Invalid first or last");
+      PM_ERROR(_logPdaq,"Invalid first or last");
       par["status"]=json::value::string(U("Invalid channels"));
       Reply(status_codes::OK,par);
       return;
@@ -153,7 +153,7 @@ void wienerPlugin::c_on(http_request m)
 
  if (_hv==NULL)
   {
-    LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
+    PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
     par["status"]=json::value::string(U("Invalid Device"));
     Reply(status_codes::OK,par);
     return;
@@ -174,7 +174,7 @@ void wienerPlugin::c_on(http_request m)
    }
   if (first==999 || last==999)
     {
-      LOG4CXX_ERROR(_logPdaq,"Invalid first or last");
+      PM_ERROR(_logPdaq,"Invalid first or last");
       par["status"]=json::value::string(U("Invalid channels"));
       Reply(status_codes::OK,par);
       return;
@@ -196,7 +196,7 @@ void wienerPlugin::c_off(http_request m)
 
   if (_hv==NULL)
     {
-      LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
+      PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
       par["status"]=json::value::string(U("Invalid Device"));
       Reply(status_codes::OK,par);
       return;
@@ -217,7 +217,7 @@ void wienerPlugin::c_off(http_request m)
     }
   if (first==999 || last==999)
     {
-      LOG4CXX_ERROR(_logPdaq,"Invalid first or last");
+      PM_ERROR(_logPdaq,"Invalid first or last");
       par["status"]=json::value::string(U("Invalid channels"));
       Reply(status_codes::OK,par);
       return;
@@ -239,7 +239,7 @@ void wienerPlugin::c_clearalarm(http_request m)
 
   if (_hv==NULL)
     {
-      LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
+      PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
       par["status"]=json::value::string(U("Invalid Device"));
       Reply(status_codes::OK,par);
       return;
@@ -260,7 +260,7 @@ void wienerPlugin::c_clearalarm(http_request m)
     }
   if (first==999 || last==999)
     {
-      LOG4CXX_ERROR(_logPdaq,"Invalid first or last");
+      PM_ERROR(_logPdaq,"Invalid first or last");
       par["status"]=json::value::string(U("Invalid channels"));
       Reply(status_codes::OK,par);
       return;
@@ -282,7 +282,7 @@ void wienerPlugin::c_vset(http_request m)
 
   if (_hv==NULL)
     {
-      LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
+      PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
       par["status"]=json::value::string(U("Invalid Device"));
       Reply(status_codes::OK,par);
       return;
@@ -305,7 +305,7 @@ void wienerPlugin::c_vset(http_request m)
     }
   if (first==999 || last==999 ||vset<0)
     {
-      LOG4CXX_ERROR(_logPdaq,"Invalid first or last or value");
+      PM_ERROR(_logPdaq,"Invalid first or last or value");
       par["status"]=json::value::string(U("Invalid channels"));
       Reply(status_codes::OK,par);
       return;
@@ -328,7 +328,7 @@ void wienerPlugin::c_iset(http_request m)
 
   if (_hv==NULL)
     {
-      LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
+      PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
       par["status"]=json::value::string(U("Invalid Device"));
       Reply(status_codes::OK,par);
       return;
@@ -351,7 +351,7 @@ void wienerPlugin::c_iset(http_request m)
     }
   if (first==999 || last==999 ||iset<0)
     {
-      LOG4CXX_ERROR(_logPdaq,"Invalid first or last or value");
+      PM_ERROR(_logPdaq,"Invalid first or last or value");
       par["status"]=json::value::string(U("Invalid channels"));
       Reply(status_codes::OK,par);
       return;
@@ -376,7 +376,7 @@ void wienerPlugin::c_rampup(http_request m)
 
   if (_hv==NULL)
     {
-      LOG4CXX_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
+      PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<"No WienerSnmp opened");
       par["status"]=json::value::string(U("Invalid Device"));
       Reply(status_codes::OK,par);
       return;
@@ -399,7 +399,7 @@ void wienerPlugin::c_rampup(http_request m)
     }
   if (first==999 || last==999 ||rup<0)
     {
-      LOG4CXX_ERROR(_logPdaq,"Invalid first or last or value");
+      PM_ERROR(_logPdaq,"Invalid first or last or value");
       par["status"]=json::value::string(U("Invalid channels"));
       Reply(status_codes::OK,par);
       return;
