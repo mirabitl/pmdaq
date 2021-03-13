@@ -129,9 +129,9 @@ void pm::builder::producer::fillEvent(uint32_t event,uint64_t bx,pm::pmSender* d
   // randomize event size if not set
   if (eventSize==0)
     {
-      eventSize=int(std::rand()*1.*0x10000/(RAND_MAX))-1;
+      eventSize=int(std::rand()*1.*0x15000/(RAND_MAX))-1;
       if (eventSize<10) eventSize=10;
-      if (eventSize>0x10000-10) eventSize=0x10000-10;
+      if (eventSize>0x15000-10) eventSize=0x15000-10;
     }
   // Payload address
   uint32_t* pld=(uint32_t*) ds->payload();
@@ -198,7 +198,7 @@ void pm::builder::producer::start(http_request m)
     {
       //(*ids)->collectorRegister();
       _gthr.push_back(std::thread(std::bind(&pm::builder::producer::streamdata, this,(*ids))));
-      ::usleep(500000);
+      //::usleep(500000);
     }
   auto par = json::value::object();
   par["status"]=json::value::string(U("STARTED"));
