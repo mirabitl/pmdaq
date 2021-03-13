@@ -42,8 +42,10 @@ void pm::builder::collector::end()
     delete _merger;
     _merger=NULL;
     }
+    PMF_ERROR(_logPdaq, "deleting context");
     if (_context!=NULL)
     delete _context;
+    PMF_ERROR(_logPdaq, "exiting end");
 }
 void pm::builder::collector::configure(http_request m)
 {
