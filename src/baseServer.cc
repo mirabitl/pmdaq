@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 printf("parsing the config file \n");
 DOMConfigurator::configure("/etc/Log4cxxConfig.xml");
 //_logger->setLevel(log4cxx::Level::getInfo());
- PM_INFO (_logPdaq,__PRETTY_FUNCTION__<< "this is a info message, after parsing configuration file");
+ PM_INFO (_logPdaq, "this is a info message, after parsing configuration file");
 
 
   
@@ -64,7 +64,7 @@ DOMConfigurator::configure("/etc/Log4cxxConfig.xml");
   auto addr = uri.to_uri().to_string();
   baseServer handler(addr);
   handler.open().wait();
-  PM_INFO (_logPdaq,__PRETTY_FUNCTION__<<utility::string_t(U("Listening for requests at: ")) << addr );
+  PM_INFO (_logPdaq,utility::string_t(U("Listening for requests at: ")) << addr );
   // ucout << U("Press ENTER key to quit...") << std::endl;
   // std::string line;
   // std::getline(std::cin, line);

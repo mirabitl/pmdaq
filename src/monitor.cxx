@@ -53,7 +53,7 @@ void monitoring::supervisor::end()
 
 void monitoring::supervisor::configure(http_request m)
 {
-  PM_INFO(_logPdaq, __PRETTY_FUNCTION__ << "Configure received");
+  PM_INFO(_logPdaq,  "Configure received");
   auto prep = json::value::object();
   // Store message content in paramters
   auto querym = uri::split_query(uri::decode(m.relative_uri().query()));

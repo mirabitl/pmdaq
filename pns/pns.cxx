@@ -166,7 +166,7 @@ void pns::remove(http_request message)
 	  ++it2;
       }
   else
-    PM_ERROR(_logPdaq,__PRETTY_FUNCTION__<<" Missing path parameter");
+    PM_ERROR(_logPdaq," Missing path parameter");
 
   // Return the registered list
   auto rep = json::value();

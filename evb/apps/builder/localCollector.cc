@@ -42,7 +42,7 @@ void pm::builder::collector::configure(http_request m)
 {
   auto par = json::value::object(); 
 
-  PM_INFO(_logPmex, __PRETTY_FUNCTION__ << "Received CONFIGURE");
+  PM_INFO(_logPmex, "Received CONFIGURE");
   // Parse arguments
   // auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
   // for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
