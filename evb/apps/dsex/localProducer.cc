@@ -129,9 +129,9 @@ void pm::builder::producer::fillEvent(uint32_t event,uint64_t bx,pm::pmSender* d
   // randomize event size if not set
   if (eventSize==0)
     {
-      eventSize=int(std::rand()*1.*0x20000/(RAND_MAX))-1;
+      eventSize=int(std::rand()*1.*0x10000/(RAND_MAX))-1;
       if (eventSize<10) eventSize=10;
-      if (eventSize>0x20000-10) eventSize=0x20000-10;
+      if (eventSize>0x10000-10) eventSize=0x10000-10;
     }
   // Payload address
   uint32_t* pld=(uint32_t*) ds->payload();
