@@ -172,8 +172,8 @@ void pm::builder::producer::streamdata(pm::pmSender *ds)
       // 
       uint32_t psi=1024;
       if (params().as_object().find("paysize")!=params().as_object().end())
-	psi=params()["paysize"].as_integer();
-      this->fillEvent(event,bx,ds,psi);
+      	psi=params()["paysize"].as_integer(); 
+      this->fillEvent(event,bx,ds,0);
       last_evt=event;
       event++;
       bx++;
