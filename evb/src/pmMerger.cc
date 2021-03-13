@@ -35,21 +35,26 @@ pmMerger::pmMerger(zmq::context_t *c) : pmPuller(c), _running(false), _nDifs(0),
 }
 pmMerger::~pmMerger()
 {
+   PM_INFO(_logPdaq, "delete PMmerger"<<_running);
   if (_running)
   {
     this->stop();
     _running=false;
   }
   this->clear();
+   PM_INFO(_logPdaq," end of destructor");
 
 }
 void pmMerger::clear()
 {
+   PM_INFO(_logPdaq," Deleting existing buffer");
   for (std::map<uint64_t, std::vector<pm::buffer *>>::iterator it = _eventMap.begin(); it != _eventMap.end(); it++)
   {
     for (std::vector<pm::buffer *>::iterator jt = it->second.begin(); jt != it->second.end(); jt++)
       delete (*jt);
   }
+     PM_INFO(_logPdaq," clearing map");
+
   _eventMap.clear();
   _processors.clear();
 
