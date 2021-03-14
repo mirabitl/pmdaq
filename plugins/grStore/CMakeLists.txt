@@ -8,11 +8,11 @@ project(grStore VERSION 0.0.1 DESCRIPTION "GrStore plugin")
 
 
 set(SRCS
-  grStore.cxx graphite-client.c
+  grStore.cxx 
 	)
 	
 set(HEADERS
-	grStore.hh  graphite-client.h
+	grStore.hh  
 	)
 
 add_library(grStore SHARED ${SRCS} ${HEADERS})
