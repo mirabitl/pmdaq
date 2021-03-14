@@ -35,26 +35,25 @@ pmMerger::pmMerger(zmq::context_t *c) : pmPuller(c), _running(false), _nDifs(0),
 }
 pmMerger::~pmMerger()
 {
-   PM_INFO(_logPdaq, "delete PMmerger"<<_running);
+  PM_INFO(_logPdaq, "delete PMmerger" << _running);
   if (_running)
   {
     this->stop();
-    _running=false;
+    _running = false;
   }
   this->clear();
   this->clearStreams();
-   PM_INFO(_logPdaq," end of destructor");
-
+  PM_INFO(_logPdaq, " end of destructor");
 }
 void pmMerger::clear()
 {
-   PM_INFO(_logPdaq," Deleting existing buffer");
+  PM_INFO(_logPdaq, " Deleting existing buffer");
   for (std::map<uint64_t, std::vector<pm::buffer *>>::iterator it = _eventMap.begin(); it != _eventMap.end(); it++)
   {
     for (std::vector<pm::buffer *>::iterator jt = it->second.begin(); jt != it->second.end(); jt++)
       delete (*jt);
   }
-     PM_INFO(_logPdaq," clearing map");
+  PM_INFO(_logPdaq, " clearing map");
 
   _eventMap.clear();
   _processors.clear();
@@ -95,8 +94,7 @@ void pmMerger::registerDataSource(std::string url)
   PM_INFO(_logPdaq, "Adding input Stream " << url);
 
   this->addInputStream(url, true);
-  PM_INFO(_logPdaq, url<<" added");
-
+  PM_INFO(_logPdaq, url << " added");
 }
 
 uint32_t pmMerger::numberOfDataPacket(uint32_t k)
@@ -195,7 +193,7 @@ void pmMerger::start(uint32_t nr)
   }
 
   _running = true;
-  _gThread=std::thread(&pm::pmMerger::scanMemory, this);
+  _gThread = std::thread(&pm::pmMerger::scanMemory, this);
   //_gThread.create_thread(boost::bind(&pm::pmMerger::processEvents, this));
 }
 void pmMerger::scanMemory()
@@ -357,16 +355,16 @@ web::json::value pmMerger::status()
   jsta["total"] = json::value::number(_totalSize);
 
   jsta["running"] = json::value::number(_running);
-  jsta["purge"] =json::value::number( _purge);
+  jsta["purge"] = json::value::number(_purge);
   jsta["size"] = json::value::number((uint32_t)_eventMap.size());
   jsta["registered"] = json::value::number(this->registered());
-  uint32_t nr=0;
+  uint32_t nr = 0;
   for (auto x : _mReceived)
   {
     json::value jds;
     jds["id"] = json::value::string(U(x.first));
     jds["received"] = json::value::number(x.second);
-    jrep[nr++]=jds;
+    jrep[nr++] = jds;
   }
   jsta["difs"] = jrep;
   return jsta;
