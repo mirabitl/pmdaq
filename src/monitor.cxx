@@ -18,6 +18,7 @@
 #include <sstream>
 #include <dlfcn.h>
 
+static LoggerPtr _logMonitor(Logger::getLogger("PMDAQ_MONITOR"));
 
 
 using namespace monitoring;
@@ -42,7 +43,7 @@ void monitoring::supervisor::initialise()
   this->addCommand("STATUS",std::bind(&monitoring::supervisor::c_status, this,std::placeholders::_1));
 
   this->registerCommands();
-
+  _running=false;
 }
 void monitoring::supervisor::end()
 {
@@ -53,7 +54,7 @@ void monitoring::supervisor::end()
 
 void monitoring::supervisor::configure(http_request m)
 {
-  PMF_INFO(_logPdaq,  "Configure received");
+  PMF_INFO(_logMonitor,  "Configure received");
   auto prep = json::value::object();
   // Store message content in paramters
   auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
@@ -67,7 +68,7 @@ void monitoring::supervisor::configure(http_request m)
   
   if (params().as_object().find("period")==params().as_object().end())
     {
-      PMF_ERROR(_logPdaq, "Missing period, period of monitoring readout");
+      PMF_ERROR(_logMonitor, "Missing period, period of monitoring readout");
       prep["error"]=json::value::string(U( "Missing period, period of monitoring readout"));
       Reply(status_codes::BadRequest,prep);
       return;
@@ -81,15 +82,15 @@ void monitoring::supervisor::configure(http_request m)
       auto parray_keys = json::value::array();int ns=0;
       for (auto it = params()["stores"].as_array().begin(); it != params()["stores"].as_array().end(); ++it)
 	{
-	  PMF_INFO(_logPdaq, "registering " << (*it).as_string());
+	  PMF_INFO(_logMonitor, "registering " << (*it).as_string());
 	  this->registerStore((*it).as_string());
 	  parray_keys[ns++]=json::value::string(U((*it).as_string()));
 	}
 
-      PMF_INFO(_logPdaq, " Setting parameters for stores ");
+      PMF_INFO(_logMonitor, " Setting parameters for stores ");
       for (auto x:_stores)
 	x->loadParameters(params());
-      PMF_INFO(_logPdaq, " Connect stores  ");
+      PMF_INFO(_logMonitor, " Connect stores  ");
       for (auto x:_stores)
 	x->connect();
       prep["stores"] = parray_keys;
@@ -99,7 +100,7 @@ void monitoring::supervisor::configure(http_request m)
 
   this->open();
 
-  PMF_DEBUG(_logPdaq, "end of configure");
+  PMF_DEBUG(_logMonitor, "end of configure");
   Reply(status_codes::OK,prep);
   return;
 }
@@ -110,11 +111,11 @@ void monitoring::supervisor::registerStore(std::string name)
   void *library = dlopen(s.str().c_str(), RTLD_NOW);
 
   //printf("%s %x \n",dlerror(),(unsigned int) library);
-  PMF_INFO(_logPdaq, " Error " << dlerror() << " Library open address " << std::hex << library << std::dec);
+  PMF_INFO(_logMonitor, " Error " << dlerror() << " Library open  " << s.str());
   // Get the loadFilter function, for loading objects
   monitoring::monStore *(*create)();
   create = (monitoring::monStore * (*)()) dlsym(library, "loadStore");
-  PMF_INFO(_logPdaq, " Error " << dlerror() << " file " << s.str() << " loads to processor address " << std::hex << create << std::dec);
+  PMF_INFO(_logMonitor, " Create symlink error: " << dlerror() << " file " << s.str());
   //printf("%s %x \n",dlerror(),(unsigned int) create);
   // printf("%s lods to %x \n",s.str().c_str(),(unsigned int) create);
   //void (*destroy)(Filter*);
@@ -127,7 +128,7 @@ void monitoring::supervisor::registerStore(std::string name)
 
 void monitoring::supervisor::start(http_request m)
 {
-  PMF_DEBUG(_logPdaq, "Received Start ");
+  PMF_DEBUG(_logMonitor, "Received Start ");
   auto par = json::value::object();
 
 
@@ -140,7 +141,7 @@ void monitoring::supervisor::start(http_request m)
 }
 void monitoring::supervisor::stop(http_request m)
 {
-  PMF_DEBUG(_logPdaq, "Received STOP");
+  PMF_DEBUG(_logMonitor, "Received STOP");
   if (_running)
     {
       _running=false;
@@ -153,7 +154,7 @@ void monitoring::supervisor::stop(http_request m)
 }
 void monitoring::supervisor::halt(http_request m)
 {
-  PMF_DEBUG(_logPdaq, "Received HALT");
+  PMF_DEBUG(_logMonitor, "Received HALT");
   if (_running)
     {
       _running=false;
@@ -167,7 +168,7 @@ void monitoring::supervisor::halt(http_request m)
 }
 void monitoring::supervisor::c_status(http_request m)
 {
-  PMF_DEBUG(_logPdaq, "Received CMD STATUS");
+  PMF_DEBUG(_logMonitor, "Received CMD STATUS");
   auto par = json::value::object();
   par["status"] = this->status();
   Reply(status_codes::OK,par);
@@ -189,7 +190,7 @@ void monitoring::supervisor::close(){;}
 
 void monitoring::supervisor::monitor()
 {
-
+ PMF_INFO(_logMonitor, "Starting the monitor thread");
   while (_running)
     {
     
@@ -200,7 +201,10 @@ void monitoring::supervisor::monitor()
       if (!_running) break;
       ::sleep(_period);
 
-      std::cout<<"End of monitoring task"<<std::endl;
+      //std::cout<<"End of monitoring task"<<std::endl;
+       PMF_INFO(_logMonitor, "End of monitoring step");
 
     }
+     PMF_INFO(_logMonitor, "End of the monitor thread");
+
 }
