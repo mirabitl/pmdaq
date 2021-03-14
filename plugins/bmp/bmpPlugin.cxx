@@ -1,12 +1,15 @@
 
 #include "bmpPlugin.hh"
 #include <jsoncpp/json/json.h>
+
+static LoggerPtr _logBmp(Logger::getLogger("PMDAQ_BMP"));
+
 using namespace lydaq;
 bmpPlugin::bmpPlugin(): _bmp(NULL){} 
 void bmpPlugin::open()
 {
 
-  PM_INFO(_logPdaq," CMD: Open ");
+  PMF_INFO(_logBmp," CMD: Open ");
   if (_bmp!=NULL)
     delete _bmp;
   
@@ -21,10 +24,10 @@ void bmpPlugin::open()
 }
 void bmpPlugin::close()
 {
-  PM_INFO(_logPdaq," CMD: closing Bmp");
+  PMF_INFO(_logBmp," CMD: closing Bmp");
   if (_bmp==NULL)
     {
-       PM_ERROR(_logPdaq,"No HVBmpInterface opened");
+       PMF_ERROR(_logBmp,"No HVBmpInterface opened");
        return;
     }
   
@@ -39,7 +42,7 @@ web::json::value bmpPlugin::status()
   r["status"]=json::value::string(U("UNKNOWN"));
    if (_bmp==NULL)
     {
-      PM_ERROR(_logPdaq,"No Bmp Interface opened");
+      PMF_ERROR(_logBmp,"No Bmp Interface opened");
        return r;
     }
 #ifdef BMP183
@@ -63,7 +66,7 @@ void bmpPlugin::c_status(http_request m)
   auto par = json::value::object();
   if (_bmp==NULL)
   {
-    PM_ERROR(_logPdaq,"No Bmp opened");
+    PMF_ERROR(_logBmp,"No Bmp opened");
     par["status"]=json::value::string(U("No Device"));
     Reply(status_codes::OK,par);
 

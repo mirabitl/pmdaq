@@ -1,12 +1,15 @@
 
 #include "hihPlugin.hh"
 #include <jsoncpp/json/json.h>
+static LoggerPtr _logHih(Logger::getLogger("PMDAQ_HIH"));
+
+
 using namespace lydaq;
 hihPlugin::hihPlugin(): _hih(NULL){} 
 void hihPlugin::open()
 {
 
-  PM_INFO(_logPdaq," CMD: Open ");
+  PMF_INFO(_logHih," CMD: Open ");
 
   std::cout<<"calling open "<<std::endl;
   if (_hih!=NULL)
@@ -18,10 +21,10 @@ void hihPlugin::open()
 }
 void hihPlugin::close()
 {
-  PM_INFO(_logPdaq," CMD: closing Hih");
+  PMF_INFO(_logHih," CMD: closing Hih");
   if (_hih==NULL)
     {
-       PM_ERROR(_logPdaq,"No HVHihInterface opened");
+       PMF_ERROR(_logHih,"No HVHihInterface opened");
        return;
     }
   
@@ -36,7 +39,7 @@ web::json::value hihPlugin::status()
   r["status"]=json::value::string(U("UNKNOWN"));
    if (_hih==NULL)
     {
-      PM_ERROR(_logPdaq,"No Hih Interface opened");
+      PMF_ERROR(_logHih,"No Hih Interface opened");
        return r;
     }
    _hih->Read();
@@ -57,7 +60,7 @@ void hihPlugin::c_status(http_request m)
   auto par = json::value::object();
   if (_hih==NULL)
   {
-    PM_ERROR(_logPdaq,"No Hih opened");
+    PMF_ERROR(_logHih,"No Hih opened");
     par["status"]=json::value::string(U("No Device"));
     Reply(status_codes::OK,par);
 

@@ -1,6 +1,8 @@
 
 #include "grStore.hh"
 #include "graphite-client.h"
+static LoggerPtr _logGraphite(Logger::getLogger("PMDAQ_GRAPHITE"));
+
 using namespace monitoring;
 grStore::grStore() {} 
 void grStore::loadParameters(web::json::value params)
@@ -116,7 +118,7 @@ void grStore::store(std::string loc,std::string hw,uint32_t ti,web::json::value 
       if (status["status"].as_string().compare("ON")==0)
 	{
 	  ist=1;
-	  //PM_WARN(_logPdaq,"status "<<status["status"].as_string()<<" "<<ist);
+	  //PMF_WARN(_logGraphite,"status "<<status["status"].as_string()<<" "<<ist);
 	}
 	
       spath.str(std::string());

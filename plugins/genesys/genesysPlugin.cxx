@@ -1,11 +1,13 @@
 
 #include "genesysPlugin.hh"
 using namespace lydaq;
+static LoggerPtr _logGenesys(Logger::getLogger("PMDAQ_GENESYS"));
+
 genesysPlugin::genesysPlugin(): _lv(NULL){} 
 void genesysPlugin::open()
 {
 
-  PM_INFO(_logPdaq," CMD: Open ");
+  PMF_INFO(_logGenesys," CMD: Open ");
 
   std::string device;
   if (params().as_object().find("device")!=params().as_object().end())
@@ -34,10 +36,10 @@ void genesysPlugin::open()
 }
 void genesysPlugin::close()
 {
-  PM_INFO(_logPdaq," CMD: closing Genesys");
+  PMF_INFO(_logGenesys," CMD: closing Genesys");
   if (_lv==NULL)
     {
-       PM_ERROR(_logPdaq,"No HVGenesysInterface opened");
+       PMF_ERROR(_logGenesys,"No HVGenesysInterface opened");
        return;
     }
   
@@ -52,7 +54,7 @@ web::json::value genesysPlugin::status()
   r["status"]=json::value::string(U("UNKNOWN"));
    if (_lv==NULL)
     {
-      PM_ERROR(_logPdaq,"No Genesys Interface opened");
+      PMF_ERROR(_logGenesys,"No Genesys Interface opened");
        return r;
     }
    
@@ -76,7 +78,7 @@ void genesysPlugin::c_status(http_request m)
   auto par = json::value::object();
   if (_lv==NULL)
   {
-    PM_ERROR(_logPdaq,"No Genesys opened");
+    PMF_ERROR(_logGenesys,"No Genesys opened");
     par["status"]=json::value::string(U("No Device"));
     Reply(status_codes::OK,par);
 
@@ -92,7 +94,7 @@ void genesysPlugin::c_on(http_request m)
   auto par = json::value::object();
   if (_lv==NULL)
   {
-    PM_ERROR(_logPdaq,"No Genesys opened");
+    PMF_ERROR(_logGenesys,"No Genesys opened");
     par["status"]=json::value::string(U("No Device"));
     Reply(status_codes::OK,par);
 
@@ -111,7 +113,7 @@ void genesysPlugin::c_off(http_request m)
   auto par = json::value::object();
  if (_lv==NULL)
   {
-    PM_ERROR(_logPdaq,"No Genesys opened");
+    PMF_ERROR(_logGenesys,"No Genesys opened");
     par["status"]=json::value::string(U("No Device"));
     Reply(status_codes::OK,par);
 
@@ -142,7 +144,7 @@ void genesysPlugin::c_setdevice(http_request m)
 
   if (device==999 || address==999)
     {
-      PM_ERROR(_logPdaq,"Invalid device or Port");
+      PMF_ERROR(_logGenesys,"Invalid device or Port");
       par["status"]=json::value::string(U("Invalid Device"));
       Reply(status_codes::OK,par);
       return;
