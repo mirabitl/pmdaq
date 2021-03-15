@@ -51,7 +51,7 @@ void febv1::socketHandler::clear()
 }
 uint32_t febv1::socketHandler::sendMessage(febv1::Message* m)
 {
-  PM_DEBUG(_logFeb,__PRETTY_FUNCTION__<<" Address "<<std::hex<<((m->address()>>32)&0xFFFFFFFF)<<std::dec<<" Port "<<(m->address()&0XFFFF)<<" Length "<<m->length()<<" Transaction "<<_transaction);
+  PM_DEBUG(_logFebv1,__PRETTY_FUNCTION__<<" Address "<<std::hex<<((m->address()>>32)&0xFFFFFFFF)<<std::dec<<" Port "<<(m->address()&0XFFFF)<<" Length "<<m->length()<<" Transaction "<<_transaction);
   // Send the Buffer
   try
   {
@@ -61,7 +61,7 @@ uint32_t febv1::socketHandler::sendMessage(febv1::Message* m)
     _transaction=0;
     _sock->send((const void*) m->ptr(),m->length()*sizeof(uint8_t));
 
-    PM_DEBUG(_logFeb,__PRETTY_FUNCTION__<<" Address "<<std::hex<<((m->address()>>32)&0xFFFFFFFF)<<std::dec<<" Port "<<(m->address()&0XFFFF)<<" Length "<<m->length()<<" Transaction "<<_transaction);
+    PM_DEBUG(_logFebv1,__PRETTY_FUNCTION__<<" Address "<<std::hex<<((m->address()>>32)&0xFFFFFFFF)<<std::dec<<" Port "<<(m->address()&0XFFFF)<<" Length "<<m->length()<<" Transaction "<<_transaction);
 
     return (0);
   }
@@ -88,14 +88,14 @@ int16_t febv1::socketHandler::checkBuffer(uint8_t* b,uint32_t maxidx)
     uint32_t *leb = (uint32_t *)&b[elen - 4];
     if (elen > maxidx)
     {
-      PM_DEBUG(_logFeb,  "CheckBuf header:Not enough data ELEN " << elen << " MAXID " << maxidx);
+      PM_DEBUG(_logFebv1,  "CheckBuf header:Not enough data ELEN " << elen << " MAXID " << maxidx);
       return -5;
     }
     if (ntohl(leb[0]) == 0xdadecafe)
       return elen;
     else
     {
-      PM_WARN(_logFeb,  "CheckBuf header :Missing CAFEDADE end tag ");
+      PM_WARN(_logFebv1,  "CheckBuf header :Missing CAFEDADE end tag ");
       return -1;
     }
   }
@@ -106,12 +106,12 @@ int16_t febv1::socketHandler::checkBuffer(uint8_t* b,uint32_t maxidx)
       elen = ntohs(_sBuf[5]) * CHBYTES + 16; //Channels
       if (elen < 16 || elen > 208)
       {
-        PM_WARN(_logFeb,  "CheckBuf:Wrong size " << elen);
+        PM_WARN(_logFebv1,  "CheckBuf:Wrong size " << elen);
         return -2;
       }
       if (elen > maxidx)
       {
-        PM_DEBUG(_logFeb,  "CheckBuf:Not enough data ELEN" << elen << " MAXID " << maxidx);
+        PM_DEBUG(_logFebv1,  "CheckBuf:Not enough data ELEN" << elen << " MAXID " << maxidx);
         return -3;
       }
       uint32_t *leb = (uint32_t *)&b[elen - 4];
@@ -119,7 +119,7 @@ int16_t febv1::socketHandler::checkBuffer(uint8_t* b,uint32_t maxidx)
         return elen;
       else
       {
-        PM_WARN(_logFeb,  "CheckBuf:Missing CAFEBABE end tag ");
+        PM_WARN(_logFebv1,  "CheckBuf:Missing CAFEBABE end tag ");
         return -4;
       }
     }
@@ -130,7 +130,7 @@ int16_t febv1::socketHandler::checkBuffer(uint8_t* b,uint32_t maxidx)
 
 void febv1::socketHandler::processBuffer(uint64_t id, uint16_t l,char* bb)
 {
-  PM_DEBUG(_logFeb,__PRETTY_FUNCTION__<<"Entering procesBuffer "<<std::hex<<id<<std::dec<<" Length "<<l);
+  PM_DEBUG(_logFebv1,__PRETTY_FUNCTION__<<"Entering procesBuffer "<<std::hex<<id<<std::dec<<" Length "<<l);
 for (uint16_t ibx = 0; ibx < l; ibx++)
   {
     int16_t tag = checkBuffer((uint8_t *)&bb[ibx], l - ibx + 1);
@@ -163,7 +163,7 @@ for (uint16_t ibx = 0; ibx < l; ibx++)
 #endif
       if (tag < 0)
       {
-        PM_DEBUG(_logFeb,  _id << "StructError Tag=" << tag << " ibx=" << ibx << " _idx=" << _idx);
+        PM_DEBUG(_logFebv1,  _id << "StructError Tag=" << tag << " ibx=" << ibx << " _idx=" << _idx);
       }
     }
     _buf[_idx] = bb[ibx];

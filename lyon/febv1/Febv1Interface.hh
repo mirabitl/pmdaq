@@ -9,10 +9,17 @@
 #include "stdafx.hh"
 #define MAX_BUFFER_LEN 0x4000
 #include "pmSender.hh"
+#include "utils.hh"
+#include <thread>
+
 #define C3I_VERSION 145
 #define MBSIZE 0x40000
 #define CHBYTES 6
 #define NREP 8
+
+
+static LoggerPtr _logFebv1(Logger::getLogger("PMDAQ_FEBV1"));
+
 namespace febv1
   {
     class board;
@@ -31,7 +38,7 @@ namespace febv1
       inline uint8_t* ptr(){return _buf;}
       inline void setLength(uint16_t l){_length=l;}
       inline void setAddress(uint64_t a){_address=a;}
-      inline void setAddress(std::string address,uint16_t port){_address=( (uint64_t) mpi::MpiMessageHandler::convertIP(address)<<32)|port;}
+      inline void setAddress(std::string address,uint16_t port){_address=( (uint64_t) utils::convertIP(address)<<32)|port;}
     private:
       uint64_t _address;
       uint16_t _length;
@@ -49,6 +56,7 @@ namespace febv1
       Interface();
       ~Interface(){;}
       void initialise();
+      void terminate();
       void addDevice(std::string address);
       void listen();
 
@@ -66,8 +74,8 @@ namespace febv1
       mpi::OnAccept* _onAccept;
       mpi::OnClientDisconnect* _onClientDisconnect;
       mpi::OnDisconnect* _onDisconnect;
-      boost::thread_group g_store;
-      boost::thread_group g_run;
+      std::thread g_store;
+      std::thread g_run;
       bool _running;
     };
 

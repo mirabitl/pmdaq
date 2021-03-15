@@ -18,6 +18,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include "utils.hh"
+#include <err.h>
 
 
 uint32_t utils::convertIP(std::string hname)
@@ -228,4 +229,73 @@ void utils::graphite_send_plain(const char *path, float value, unsigned long tim
   /* send to message to graphite */
   utils::graphite_send(message);
   printf("Sending %s\n", message);
+}
+
+
+
+
+std::string utils::lmexec(const char* cmd) {
+  FILE* pipe = popen(cmd, "r");
+  if (!pipe) return "ERROR";
+  char buffer[128];
+  std::string result = "";
+  while (!feof(pipe)) {
+    if (fgets(buffer, 128, pipe) != NULL)
+      result += buffer;
+  }
+  pclose(pipe);
+  return result;
+  
+}
+
+
+
+std::map<uint32_t,std::string> utils::scanNetwork(std::string base)
+{
+  std::map<uint32_t,std::string> m;
+  std::stringstream ss;
+  ss<<"echo $(seq 254) | xargs -P255 -I% -d\" \" ping -W 1 -c 1 "<<base<<"% | grep -E \"[0-1].*?:\" | awk '{print $4}' | awk 'BEGIN{FS=\":\"}{print $1}'";
+
+  std::cout<<ss.str()<<std::endl;
+  std::string res= utils::lmexec( ss.str().c_str() );
+
+  std::cout<<"Ethernet board on "<<base <<" \n"<<res;
+  //getchar();
+  std::stringstream ss1(res.c_str());
+  std::string to;
+  std::vector<std::string> host_list;
+  if (res.c_str() != NULL)
+  {
+    while(std::getline(ss1,to,'\n')){
+      host_list.push_back(to);
+    }
+  }
+  
+  
+  //std::cout<<host_list.size()<<std::endl;
+  for (auto x: host_list)
+  {
+    //std::cout<<x<<std::endl;
+    
+    struct in_addr ip;
+    struct hostent *hp;
+    
+    if (!inet_aton(x.c_str(), &ip))
+      errx(1, "can't parse IP address %s", x.c_str());
+    
+    if ((hp = gethostbyaddr((const void *)&ip, sizeof ip, AF_INET)) == NULL)
+      printf("\t  %s is not known on the DNS \n", x.c_str());
+    else
+    {
+      printf("%s is %x  %s\n", x.c_str(),ip.s_addr, hp->h_name);
+      //m.insert(std::pair<uint32_t,std::string>(ip.s_addr,std::string(hp->h_name)));
+      m.insert(std::pair<uint32_t,std::string>(ip.s_addr,x));
+    }
+      
+      
+      
+      
+      
+  }
+  return m;
 }

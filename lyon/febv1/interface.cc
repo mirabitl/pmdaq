@@ -20,7 +20,7 @@ void febv1::Interface::dolisten()
  
   while(!_onClientDisconnect->disconnected()) {
 
-    if (!running) break;
+    if (!_running) break;
     if(!_group->listen(4000))
       std::cout << "\nNo msg recieved during the last 4 seconds";
   }
@@ -85,12 +85,12 @@ void febv1::Interface:: addDevice(std::string address)
   _group->add(b->data()->socket());
 
     fprintf(stderr,"Binding reg  \n");
-  _msh->addHandler(b->reg()->id(),boost::bind(&febv1::socketHandler::processBuffer,b->reg(),_1,_2,_3));
+    _msh->addHandler(b->reg()->id(),std::bind(&febv1::socketHandler::processBuffer,b->reg(),std::placeholders::_1,std::placeholders::_2,std::placeholders::_3));
   fprintf(stderr,"Binding data  \n");
-  _msh->addHandler(b->data()->id(),boost::bind(&febv1::socketHandler::processBuffer,b->data(),_1,_2,_3));
+  _msh->addHandler(b->data()->id(),std::bind(&febv1::socketHandler::processBuffer,b->data(),std::placeholders::_1,std::placeholders::_2,std::placeholders::_3));
 		   
   std::pair<std::string, febv1::board*> p1(address,b);
-  PM_INFO(_logFeb,"Board at address"<<address<<" is added");
+  PM_INFO(_logFebv1,"Board at address"<<address<<" is added");
 
   _boards.insert(p1);
 }

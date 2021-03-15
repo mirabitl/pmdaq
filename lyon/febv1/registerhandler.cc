@@ -56,7 +56,7 @@ void febv1::registerHandler::writeRam(uint16_t* slcAddr,uint16_t *slcBuffer,uint
     memset(name, 0, 2512);
     sprintf(name, "/dev/shm/%s/%d/%s", socket()->hostTo().c_str(), socket()->portTo(), sb.str().c_str());
     int fd = ::open(name, O_CREAT | O_RDWR | O_NONBLOCK, S_IRWXU);
-    PM_DEBUG(_logFeb, " Creating SHM area " << name);
+    PM_DEBUG(_logFebv1, " Creating SHM area " << name);
 
     ::close(fd);
     _msg->setAddress(this->id());
@@ -104,7 +104,7 @@ uint32_t febv1::registerHandler::writeLongWord(uint16_t addr,uint64_t val,bool w
   sb[8] = htons(addr + 3);
   sb[9] = htons((val >> 48) & 0xFFFF);
 
-  //PM_INFO(_logFeb," Sending message "<<this->id());
+  //PM_INFO(_logFebv1," Sending message "<<this->id());
   
   uint32_t tr=this->sendMessage(_msg);
   uint32_t rep=0;
@@ -123,7 +123,7 @@ void febv1::registerHandler::processReply(uint32_t tr,uint32_t* reply)
   uint8_t* rep=this->answer(tr%NREP);
   if (rep==NULL)
     {
-      PM_ERROR(_logFeb," NULL ptr for answ "<<tr);
+      PM_ERROR(_logFebv1," NULL ptr for answ "<<tr);
 
     }
   int cnt=0;
@@ -133,7 +133,7 @@ void febv1::registerHandler::processReply(uint32_t tr,uint32_t* reply)
       cnt++;
       if (cnt>1000)
 	{
-	  PM_ERROR(_logFeb," no return after "<<cnt);
+	  PM_ERROR(_logFebv1," no return after "<<cnt);
 	  break;
 	}
     }
@@ -152,7 +152,7 @@ bool febv1::registerHandler::processPacket()
   uint8_t* rep=this->answer(0);
   if (rep==NULL)
     {
-      PM_ERROR(_logFeb," NULL ptr for answ ");
+      PM_ERROR(_logFebv1," NULL ptr for answ ");
       
     }
   else

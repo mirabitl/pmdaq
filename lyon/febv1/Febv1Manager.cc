@@ -21,7 +21,6 @@ using namespace mpi;
 
 
 
-static LoggerPtr _logFebv1(Logger::getLogger("PMDAQ_FEBV1"));
 
 
 Febv1Manager::Febv1Manager() : _context(NULL),_tca(NULL),_mpi(NULL) {;}

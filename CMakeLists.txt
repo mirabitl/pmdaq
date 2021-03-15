@@ -52,6 +52,8 @@ if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
   endif()
 endif()
 add_subdirectory(lyon/db)
+add_subdirectory(lyon/mpi)
+add_subdirectory(lyon/febv1)
 include(CPack)
 
 

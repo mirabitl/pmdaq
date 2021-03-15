@@ -44,7 +44,7 @@ void febv1::dataHandler::clear()
 }
 
 
-void febv1::dataHandler::autoRegister(zmq::context_t* c,std:;string session,std::string appname,std::string portname)
+void febv1::dataHandler::autoRegister(zmq::context_t* c,std::string session,std::string appname,std::string portname)
 {
   if (_dsData!=NULL)
     delete _dsData;
@@ -69,7 +69,7 @@ bool febv1::dataHandler::processPacket()
       if (_lastABCID != 0)
 	{
 	  // Write Event
-	  PM_INFO(_logFeb,  "Writing completed Event" << _event << " GTC " << _lastGTC << " ABCID " << _lastABCID << " Lines " << _chlines << " ID " << id());
+	  PM_INFO(_logFebv1,  "Writing completed Event" << _event << " GTC " << _lastGTC << " ABCID " << _lastABCID << " Lines " << _chlines << " ID " << id());
 	  // To be done
 	  this->processEventTdc();
 	  // Reset lines number
@@ -81,11 +81,11 @@ bool febv1::dataHandler::processPacket()
       uint64_t abcid = ((uint64_t)_buf[13] | ((uint64_t)_buf[12] << 8) | ((uint64_t)_buf[11] << 16) | ((uint64_t)_buf[10] << 24) | ((uint64_t)_buf[9] << 32));
       if (abcid == _lastABCID)
 	{
-	  PM_ERROR(_logFeb,  id() << " ABCID HEADER ERROR " << abcid << "  last " << _lastABCID);
+	  PM_ERROR(_logFebv1,  id() << " ABCID HEADER ERROR " << abcid << "  last " << _lastABCID);
 	}
       if (gtc == _lastGTC)
 	{
-	  PM_ERROR(_logFeb,  id() << " GTC HEADER ERROR " << gtc << "  last " << _lastGTC);
+	  PM_ERROR(_logFebv1,  id() << " GTC HEADER ERROR " << gtc << "  last " << _lastGTC);
 	}
       _nProcessed++;
       _event++;
@@ -116,7 +116,7 @@ bool febv1::dataHandler::processPacket()
   uint16_t *tmp = (uint16_t *)&_buf[7];
   uint32_t gtc = (_buf[9] | (_buf[8] << 8) | (_buf[7] << 16) | (_buf[6] << 24));
   uint16_t nlines = ntohs(_sBuf[5]);
-  PM_DEBUG(_logFeb,  id() << " Packets=" << _nProcessed << " channel=" << channel << " GTC=" << gtc << " lines=" << nlines << " index=" << _idx);
+  PM_DEBUG(_logFebv1,  id() << " Packets=" << _nProcessed << " channel=" << channel << " GTC=" << gtc << " lines=" << nlines << " index=" << _idx);
   
   uint8_t *cl = (uint8_t *)&_buf[12];
   uint8_t *cdestl = (uint8_t *)&_linesbuf[_chlines * CHBYTES];
@@ -181,6 +181,6 @@ void febv1::dataHandler::processEventTdc()
       memcpy((unsigned char *)_dsData->payload(), temp, idx);
       _dsData->publish(_lastABCID, _lastGTC, idx);
       if (_event % 100 == 0)
-	PM_INFO(_logFeb,  id() << "Publish  Event=" << _event << " GTC=" << _lastGTC << " ABCID=" << _lastABCID << " Lines=" << _chlines << " size=" << idx);
+	PM_INFO(_logFebv1,  id() << "Publish  Event=" << _event << " GTC=" << _lastGTC << " ABCID=" << _lastABCID << " Lines=" << _chlines << " size=" << idx);
     }
 }
