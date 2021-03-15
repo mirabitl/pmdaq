@@ -19,6 +19,51 @@
 #include <arpa/inet.h>
 #include "utils.hh"
 
+
+uint32_t utils::convertIP(std::string hname)
+{
+  struct hostent *he;
+  struct in_addr **addr_list;
+  int i;
+  char ip[100];
+  if ((he = gethostbyname(hname.c_str())) == NULL)
+  {
+    return 0;
+  }
+
+  addr_list = (struct in_addr **)he->h_addr_list;
+
+  for (i = 0; addr_list[i] != NULL; i++)
+  {
+    //Return the first one;
+    strcpy(ip, inet_ntoa(*addr_list[i]));
+    break;
+  }
+
+  in_addr_t ls1 = inet_addr(ip);
+  return (uint32_t)ls1;
+}
+
+uint64_t utils::asicTag(std::string hname,uint32_t header)
+{
+  uint64_t eid = ((uint64_t) utils::convertIP(hname)) << 32 | header;
+  return eid;
+}
+uint64_t utils::asicTag(uint32_t ipa,uint32_t header)
+{
+  uint64_t eid = ((uint64_t) ipa) << 32 | header;
+  return eid;
+}
+
+http_response utils::requesturl(std::string address)
+{
+  http::uri uri = http::uri(address);
+  web::http::client::http_client_config cfg;
+  cfg.set_timeout(std::chrono::seconds(1));
+  http_client client(uri, cfg);
+  return client.request(methods::GET).get();
+}
+
 http_response utils::request(std::string host, uint32_t port, std::string path,
                              web::json::value par)
 {

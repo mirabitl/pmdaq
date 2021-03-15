@@ -7,6 +7,12 @@
 class utils
 {
     public:
+
+  static uint32_t convertIP(std::string hname);
+  static uint64_t asicTag(std::string hname,uint32_t header);
+  static uint64_t asicTag(uint32_t ipa,uint32_t header);
+
+  static http_response requesturl(std::string address);
   static http_response request(std::string host,uint32_t port,std::string path,
 			web::json::value par);
   
