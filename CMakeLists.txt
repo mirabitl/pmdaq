@@ -51,6 +51,7 @@ if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
     add_subdirectory(plugins/syx27)
   endif()
 endif()
+add_subdirectory(lyon/db)
 include(CPack)
 
 
