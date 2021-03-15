@@ -129,7 +129,12 @@ void Febv1Manager::c_set6bdac(http_request m)
   auto par = json::value::object();
   par["STATUS"] = json::value::string(U("DONE"));
 
-  uint32_t nc = atol(request.get("value", "31").c_str());
+  uint32_t nc = 31;
+  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    if (it2->first.compare("value")==0)
+      nc=std::stoi(it2->second);
+    
   PM_INFO(_logFebv1, "Set6bdac called with dac=" << nc);
 
   this->set6bDac(nc & 0xFF);
@@ -141,8 +146,15 @@ void Febv1Manager::c_cal6bdac(http_request m)
   auto par = json::value::object();
   par["STATUS"] = json::value::string(U("DONE"));
 
-  uint32_t mask = atol(request.get("mask", "4294967295").c_str());
-  int32_t shift = atol(request.get("shift", "0").c_str());
+  uint32_t mask = 4294967295;
+  int32_t shift = 0;
+  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    {
+      if (it2->first.compare("mask")==0)  mask=std::stoi(it2->second);
+      if (it2->first.compare("shift")==0)  shift=std::stoi(it2->second);
+    }
+
   PM_INFO(_logFebv1, "cal6bdac called with mask=" << mask << " Shift:" << shift);
 
   this->cal6bDac(mask, shift);
@@ -154,7 +166,11 @@ void Febv1Manager::c_setvthtime(http_request m)
   auto par = json::value::object();
   par["STATUS"] = json::value::string(U("DONE"));
 
-  uint32_t nc = atol(request.get("value", "380").c_str());
+  uint32_t nc = 380.;
+  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    if (it2->first.compare("value")==0)
+      nc=std::stoi(it2->second);
 
   PM_INFO(_logFebv1, "set VThTime called with value=" << nc);
 
@@ -167,10 +183,19 @@ void Febv1Manager::c_set1vthtime(http_request m)
   auto par = json::value::object();
   par["STATUS"] = json::value::string(U("DONE"));
 
-  uint32_t vth = atol(request.get("vth", "550").c_str());
-  uint32_t feb = atol(request.get("feb", "5").c_str());
-  uint32_t asic = atol(request.get("asic", "1").c_str());
+  uint32_t vth = 550;
+  uint32_t feb = 5;
+  uint32_t asic = 1;
+  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    {
+      if (it2->first.compare("vth")==0)  vth=std::stoi(it2->second);
+      if (it2->first.compare("feb")==0)  feb=std::stoi(it2->second);
+      if (it2->first.compare("asic")==0)  asic=std::stoi(it2->second);
+    }
+
   PM_INFO(_logFebv1, " SetOneVthTime called with vth " << vth << " feb " << feb << " asic " << asic);
+  
   this->setSingleVthTime(vth, feb, asic);
   par["VTH"] = json::value::number(vth);
   par["FEB"] = json::value::number(feb);
@@ -185,10 +210,15 @@ void Febv1Manager::c_setMask(http_request m)
   par["STATUS"] = json::value::string(U("DONE"));
 
   //uint32_t nc=atol(request.get("value","4294967295").c_str());
-  uint32_t nc;
-  sscanf(request.get("value", "4294967295").c_str(), "%u", &nc);
+  uint32_t nc=4294967295;
 
-  uint32_t asic = atol(request.get("asic", "255").c_str());
+  uint32_t asic = 255;
+  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    {
+      if (it2->first.compare("value")==0)  nc=std::stoi(it2->second);
+      if (it2->first.compare("asic")==0)  asic=std::stoi(it2->second);
+    }
 
   PM_INFO(_logFebv1, "SetMask called  with mask" << std::hex << nc << std::dec << " and asic mask " << asic);
   this->setMask(nc, asic & 0xFF);
@@ -202,7 +232,11 @@ void Febv1Manager::c_setCalibrationMask(http_request m)
   auto par = json::value::object();
   par["STATUS"] = json::value::string(U("DONE"));
   uint64_t mask = 0;
-  sscanf(request.get("value", "0x0").c_str(), "%llx", &mask);
+  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    if (it2->first.compare("value")==0)
+      mask=std::stoi(it2->second);
+
   PM_INFO(_logFebv1, "SetCalibrationMask called  with mask" << std::hex << mask << std::dec);
   this->setCalibrationMask(mask);
   par["CMASK"] = json::value::number(mask);
@@ -214,8 +248,15 @@ void Febv1Manager::c_setMeasurementMask(http_request m)
   auto par = json::value::object();
   par["STATUS"] = json::value::string(U("DONE"));
   uint64_t mask = 0;
-  sscanf(request.get("value", "0x0").c_str(), "%llx", &mask);
-  uint32_t feb = atol(request.get("feb", "255").c_str());
+  uint32_t feb = 255;
+  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    {
+      if (it2->first.compare("value")==0)  mask=std::stoi(it2->second);
+      if (it2->first.compare("feb")==0)  feb=std::stoi(it2->second);
+    }
+
+ 
   PM_INFO(_logFebv1, "c_setMeasurementMask called  with mask" << std::hex << mask << std::dec<<" On FEB "<<feb);
   this->setMeasurementMask(mask,feb);
   par["MMASK"] = json::value::number(mask);
@@ -226,7 +267,12 @@ void Febv1Manager::c_setDelay(http_request m)
   auto par = json::value::object();
   par["STATUS"] = json::value::string(U("DONE"));
 
-  uint32_t delay = atol(request.get("value", "255").c_str());
+  uint32_t delay =255;
+  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    if (it2->first.compare("value")==0)
+      delay=std::stoi(it2->second);
+
   _delay = delay;
   this->setDelay();
   PM_INFO(_logFebv1, "SetDelay called with " << delay << " " << _delay);
@@ -238,7 +284,12 @@ void Febv1Manager::c_getLUT(http_request m)
   auto par = json::value::object();
   par["STATUS"] = json::value::string(U("DONE"));
 
-  uint32_t chan = atol(request.get("value", "0").c_str());
+  uint32_t chan = 0;
+  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    if (it2->first.compare("value")==0)
+      chan=std::stoi(it2->second);
+
   this->getLUT(chan);
   PM_INFO(_logFebv1, "GETLUT called for " << chan);
   
@@ -260,7 +311,12 @@ void Febv1Manager::c_setDuration(http_request m)
   auto par = json::value::object();
   par["STATUS"] = json::value::string(U("DONE"));
 
-  uint32_t duration = atol(request.get("value", "255").c_str());
+  uint32_t duration = 255;
+  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    if (it2->first.compare("value")==0)
+      duration=std::stoi(it2->second);
+
   _duration = duration;
   this->setDuration();
   PM_INFO(_logFebv1, "Setduration called with " << duration << " " << _duration);
@@ -273,7 +329,12 @@ void Febv1Manager::c_setMode(http_request m)
   auto par = json::value::object();
   par["STATUS"] = json::value::string(U("DONE"));
 
-  uint32_t mode = atol(request.get("value", "2").c_str());
+  uint32_t mode = 2;
+  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    if (it2->first.compare("value")==0)
+      mode=std::stoi(it2->second);
+
   if (mode != 2)
     _type = mode;
   PM_INFO(_logFebv1, "SetMode called with Mode " << mode << "  Type " << _type);
@@ -288,16 +349,23 @@ void Febv1Manager::c_downloadDB(http_request m)
 
 
   
-  std::string dbstate=request.get("state","NONE");
-  uint32_t version=atol(request.get("version","0").c_str());
+  std::string dbstate="NONE";
+  uint32_t version=0;
+  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    {
+      if (it2->first.compare("state")==0)  state=it2->second;
+      if (it2->first.compare("version")==0)  version=std::stoi(it2->second);
+    }
+
   web::json::value jTDC=this->parameters()["febv1"];
   if (jTDC.isMember("db"))
     {
       web::json::value jTDCdb=jTDC["db"];
       _tca->clear();
 
-      if (jTDCdb["mode"].asString().compare("mongo")!=0)
-	_tca->parseDb(dbstate,jTDCdb["mode"].asString());
+      if (jTDCdb["mode"].as_string().compare("mongo")!=0)
+	_tca->parseDb(dbstate,jTDCdb["mode"].as_string());
       else
 	_tca->parseMongoDb(dbstate,version);
 
@@ -314,10 +382,16 @@ void Febv1Manager::c_scurve(http_request m)
   auto par = json::value::object();
   par["STATUS"] = json::value::string(U("DONE"));
 
-  uint32_t first = atol(request.get("first", "420").c_str());
-  uint32_t last = atol(request.get("last", "520").c_str());
-  uint32_t step = atol(request.get("step", "2").c_str());
-  uint32_t mode = atol(request.get("channel", "255").c_str());
+  uint32_t first = 420,last=530,step=2,mode=255;
+  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    {
+      if (it2->first.compare("first")==0)  first=std::stoi(it2->second);
+      if (it2->first.compare("last")==0)  last=std::stoi(it2->second);
+      if (it2->first.compare("step")==0)  step=std::stoi(it2->second);
+      if (it2->first.compare("channel")==0)  mode=std::stoi(it2->second);
+    }
+
   //  PM_INFO(_logFebv1, " SetOneVthTime called with vth " << vth << " feb " << feb << " asic " << asic);
   
   //this->Scurve(mode,first,last,step);
@@ -343,8 +417,8 @@ void Febv1Manager::fsm_initialise(http_request m)
   PM_INFO(_logFebv1,"****** CMD: "<<m->command());
   //  std::cout<<"m= "<<m->command()<<std::endl<<m->content()<<std::endl;
  
-  web::json::value jtype=this->parameters()["type"];
-  _type=jtype.asInt();
+  web::json::value jtype=params()["type"];
+  _type=jtype.as_integer();
   printf ("_type =%d\n",_type); 
 
   // Need a FEBV1 tag
@@ -372,7 +446,7 @@ void Febv1Manager::fsm_initialise(http_request m)
       return;
     }
   // Scan the network
-  std::map<uint32_t,std::string> diflist=mpi::MpiMessageHandler::scanNetwork(jFEBV1["network"].asString());
+  std::map<uint32_t,std::string> diflist=mpi::MpiMessageHandler::scanNetwork(jFEBV1["network"].as_string());
   // Download the configuration
   if (_tca==NULL)
     {
@@ -386,24 +460,24 @@ void Febv1Manager::fsm_initialise(http_request m)
       web::json::value jFEBV1json=jFEBV1["json"];
       if (jFEBV1json.isMember("file"))
 	{
-	  _tca->parseJsonFile(jFEBV1json["file"].asString());
+	  _tca->parseJsonFile(jFEBV1json["file"].as_string());
 	}
       else
 	if (jFEBV1json.isMember("url"))
 	  {
-	    _tca->parseJsonUrl(jFEBV1json["url"].asString());
+	    _tca->parseJsonUrl(jFEBV1json["url"].as_string());
 	  }
     }
   if (jFEBV1.isMember("db"))
     {
       web::json::value jFEBV1db=jFEBV1["db"];
-      PM_ERROR(_logFebv1,"Parsing:"<<jFEBV1db["state"].asString()<<jFEBV1db["mode"].asString());
+      PM_ERROR(_logFebv1,"Parsing:"<<jFEBV1db["state"].as_string()<<jFEBV1db["mode"].as_string());
 
               
-      if (jFEBV1db["mode"].asString().compare("mongo")!=0)	
-	_tca->parseDb(jFEBV1db["state"].asString(),jFEBV1db["mode"].asString());
+      if (jFEBV1db["mode"].as_string().compare("mongo")!=0)	
+	_tca->parseDb(jFEBV1db["state"].as_string(),jFEBV1db["mode"].as_string());
       else
-	_tca->parseMongoDb(jFEBV1db["state"].asString(),jFEBV1db["version"].asUInt());
+	_tca->parseMongoDb(jFEBV1db["state"].as_string(),jFEBV1db["version"].asUInt());
       
     }
   if (_tca->asicMap().size()==0)
@@ -440,7 +514,7 @@ void Febv1Manager::fsm_initialise(http_request m)
   
   for (auto x:_mpi->boards())
     x.second->data()->autoRegister(_context,this->configuration(),"BUILDER","collectingPort");
-  //x->connect(_context,this->parameters()["publish"].asString());
+  //x->connect(_context,this->parameters()["publish"].as_string());
 
   // Listen All Febv1 sockets
   _mpi->listen();
@@ -710,7 +784,7 @@ void Febv1Manager::start(http_request m)
   std::cout<<m->command()<<std::endl<<m->content()<<std::endl;
   // Create run file
   web::json::value jc=m->content();
-  _run=jc["run"].asInt();
+  _run=jc["run"].as_integer();
 
   // Clear buffers
   for (auto x:_mpi->boards())
@@ -876,7 +950,7 @@ fsmwebCaller* Febv1Manager::findMDCC(std::string appname)
       for (web::json::valueConstIterator it = cjsources.begin(); it != cjsources.end(); ++it)
 	{
 	  const web::json::value& process = *it;
-	  std::string p_name=process["NAME"].asString();
+	  std::string p_name=process["NAME"].as_string();
 	  web::json::value p_param=web::json::value::null;
 	  if (process.isMember("PARAMETER")) p_param=process["PARAMETER"];
 	  // Loop on environenemntal variable
@@ -884,7 +958,7 @@ fsmwebCaller* Febv1Manager::findMDCC(std::string appname)
 	  const web::json::value& cenv=process["ENV"];
 	  for (web::json::valueConstIterator iev = cenv.begin(); iev != cenv.end(); ++iev)
 	    {
-	      std::string envp=(*iev).asString();
+	      std::string envp=(*iev).as_string();
 	      //      std::cout<<"Env found "<<envp.substr(0,7)<<std::endl;
 	      //std::cout<<"Env found "<<envp.substr(8,envp.length()-7)<<std::endl;
 	      if (envp.substr(0,7).compare("WEBPORT")==0)
