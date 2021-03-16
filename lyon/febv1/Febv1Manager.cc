@@ -25,7 +25,7 @@ using namespace mpi;
 
 Febv1Manager::Febv1Manager() : _context(NULL),_tca(NULL),_mpi(NULL) {;}
 
-Febc1Manager::initialise()
+void Febv1Manager::initialise()
 {
 
   // Register state
@@ -34,35 +34,35 @@ Febc1Manager::initialise()
   this->addState("CONFIGURED");
   this->addState("RUNNING");
   
-  this->addTransition("INITIALISE","CREATED","INITIALISED",std::bind(&Febv1Manager::fsm_initialise, this,std::placeholders_1));
-  this->addTransition("CONFIGURE","INITIALISED","CONFIGURED",std::bind(&Febv1Manager::configure, this,std::placeholders_1));
-  this->addTransition("CONFIGURE","CONFIGURED","CONFIGURED",std::bind(&Febv1Manager::configure, this,std::placeholders_1));
+  this->addTransition("INITIALISE","CREATED","INITIALISED",std::bind(&Febv1Manager::fsm_initialise, this,std::placeholders::_1));
+  this->addTransition("CONFIGURE","INITIALISED","CONFIGURED",std::bind(&Febv1Manager::configure, this,std::placeholders::_1));
+  this->addTransition("CONFIGURE","CONFIGURED","CONFIGURED",std::bind(&Febv1Manager::configure, this,std::placeholders::_1));
   
-  this->addTransition("START","CONFIGURED","RUNNING",std::bind(&Febv1Manager::start, this,std::placeholders_1));
-  this->addTransition("STOP","RUNNING","CONFIGURED",std::bind(&Febv1Manager::stop, this,std::placeholders_1));
-  this->addTransition("DESTROY","CONFIGURED","CREATED",std::bind(&Febv1Manager::destroy, this,std::placeholders_1));
-  this->addTransition("DESTROY","INITIALISED","CREATED",std::bind(&Febv1Manager::destroy, this,std::placeholders_1));
+  this->addTransition("START","CONFIGURED","RUNNING",std::bind(&Febv1Manager::start, this,std::placeholders::_1));
+  this->addTransition("STOP","RUNNING","CONFIGURED",std::bind(&Febv1Manager::stop, this,std::placeholders::_1));
+  this->addTransition("DESTROY","CONFIGURED","CREATED",std::bind(&Febv1Manager::destroy, this,std::placeholders::_1));
+  this->addTransition("DESTROY","INITIALISED","CREATED",std::bind(&Febv1Manager::destroy, this,std::placeholders::_1));
   
   
 
-  this->addCommand("STATUS", std::bind(&Febv1Manager::c_status, this,std::placeholders_1));
-  this->addCommand("DIFLIST", std::bind(&Febv1Manager::c_diflist, this,std::placeholders_1));
-  this->addCommand("SET6BDAC", std::bind(&Febv1Manager::c_set6bdac, this,std::placeholders_1));
-  this->addCommand("CAL6BDAC", std::bind(&Febv1Manager::c_cal6bdac, this,std::placeholders_1));
-  this->addCommand("SETVTHTIME", std::bind(&Febv1Manager::c_setvthtime, this,std::placeholders_1));
-  this->addCommand("SETONEVTHTIME", std::bind(&Febv1Manager::c_set1vthtime, this,std::placeholders_1));
-  this->addCommand("SETMASK", std::bind(&Febv1Manager::c_setMask, this,std::placeholders_1));
-  this->addCommand("DOWNLOADDB", std::bind(&Febv1Manager::c_downloadDB, this,std::placeholders_1));
-  this->addCommand("ASICS", std::bind(&Febv1Manager::c_asics, this,std::placeholders_1));
+  this->addCommand("STATUS", std::bind(&Febv1Manager::c_status, this,std::placeholders::_1));
+  this->addCommand("DIFLIST", std::bind(&Febv1Manager::c_diflist, this,std::placeholders::_1));
+  this->addCommand("SET6BDAC", std::bind(&Febv1Manager::c_set6bdac, this,std::placeholders::_1));
+  this->addCommand("CAL6BDAC", std::bind(&Febv1Manager::c_cal6bdac, this,std::placeholders::_1));
+  this->addCommand("SETVTHTIME", std::bind(&Febv1Manager::c_setvthtime, this,std::placeholders::_1));
+  this->addCommand("SETONEVTHTIME", std::bind(&Febv1Manager::c_set1vthtime, this,std::placeholders::_1));
+  this->addCommand("SETMASK", std::bind(&Febv1Manager::c_setMask, this,std::placeholders::_1));
+  this->addCommand("DOWNLOADDB", std::bind(&Febv1Manager::c_downloadDB, this,std::placeholders::_1));
+  this->addCommand("ASICS", std::bind(&Febv1Manager::c_asics, this,std::placeholders::_1));
 
-  this->addCommand("SETMODE", std::bind(&Febv1Manager::c_setMode, this,std::placeholders_1));
-  this->addCommand("SETDELAY", std::bind(&Febv1Manager::c_setDelay, this,std::placeholders_1));
-  this->addCommand("SETDURATION", std::bind(&Febv1Manager::c_setDuration, this,std::placeholders_1));
-  this->addCommand("GETLUT", std::bind(&Febv1Manager::c_getLUT, this,std::placeholders_1));
-  this->addCommand("CALIBSTATUS", std::bind(&Febv1Manager::c_getCalibrationStatus, this,std::placeholders_1));
-  this->addCommand("CALIBMASK", std::bind(&Febv1Manager::c_setCalibrationMask, this,std::placeholders_1));
-  this->addCommand("TESTMASK", std::bind(&Febv1Manager::c_setMeasurementMask, this,std::placeholders_1));
-  this->addCommand("SCURVE", std::bind(&Febv1Manager::c_scurve, this,std::placeholders_1));
+  this->addCommand("SETMODE", std::bind(&Febv1Manager::c_setMode, this,std::placeholders::_1));
+  this->addCommand("SETDELAY", std::bind(&Febv1Manager::c_setDelay, this,std::placeholders::_1));
+  this->addCommand("SETDURATION", std::bind(&Febv1Manager::c_setDuration, this,std::placeholders::_1));
+  this->addCommand("GETLUT", std::bind(&Febv1Manager::c_getLUT, this,std::placeholders::_1));
+  this->addCommand("CALIBSTATUS", std::bind(&Febv1Manager::c_getCalibrationStatus, this,std::placeholders::_1));
+  this->addCommand("CALIBMASK", std::bind(&Febv1Manager::c_setCalibrationMask, this,std::placeholders::_1));
+  this->addCommand("TESTMASK", std::bind(&Febv1Manager::c_setMeasurementMask, this,std::placeholders::_1));
+  this->addCommand("SCURVE", std::bind(&Febv1Manager::c_scurve, this,std::placeholders::_1));
 
   //std::cout<<"Service "<<name<<" started on port "<<port<<std::endl;
 
@@ -70,10 +70,17 @@ Febc1Manager::initialise()
 }
 void Febv1Manager::end()
 {
+  // Stop any running process
+  if (_sc_running)
+    {
+      _sc_running=false;
+      g_scurve.join();
+    }
   //Stop listening
   if (_mpi!=NULL)
     _mpi->terminate();
- 
+
+  
 }
 
 void Febv1Manager::c_status(http_request m)
@@ -354,23 +361,25 @@ void Febv1Manager::c_downloadDB(http_request m)
   auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
   for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
     {
-      if (it2->first.compare("state")==0)  state=it2->second;
+      if (it2->first.compare("state")==0)  dbstate=it2->second;
       if (it2->first.compare("version")==0)  version=std::stoi(it2->second);
     }
 
-  web::json::value jTDC=this->parameters()["febv1"];
-  if (jTDC.isMember("db"))
-    {
-      web::json::value jTDCdb=jTDC["db"];
-      _tca->clear();
+  web::json::value jTDC=params()["febv1"];
 
-      if (jTDCdb["mode"].as_string().compare("mongo")!=0)
-	_tca->parseDb(dbstate,jTDCdb["mode"].as_string());
-      else
+ if (jTDC.as_object().find("db")!=jTDC.as_object().end())
+    {
+      web::json::value jFEBV1db=jTDC["db"];
+      PMF_ERROR(_logFebv1,"Parsing:"<<jFEBV1db["state"].as_string()<<jFEBV1db["mode"].as_string());
+      _tca->clear();
+              
+      if (jFEBV1db["mode"].as_string().compare("mongo")==0)
 	_tca->parseMongoDb(dbstate,version);
 
-	 
+
+      
     }
+  
   par["DBSTATE"]=json::value::string(U(dbstate));
   Reply(status_codes::OK,par);
 }
@@ -402,11 +411,11 @@ void Febv1Manager::c_scurve(http_request m)
   _sc_step=step;
   if (_sc_running)
     {
-      par["SCURVE"] ="ALREADY_RUNNING";
+      par["SCURVE"] =json::value::string(U("ALREADY_RUNNING"));
       return;
     }
-  boost::thread_group g;
-  g.create_thread(boost::bind(&Febv1Manager::thrd_scurve, this));
+
+  g_scurve=std::thread(std::bind(&Febv1Manager::thrd_scurve, this));
   par["SCURVE"] =json::value::string(U("RUNNING"));
   Reply(status_codes::OK,par);
 }
@@ -414,7 +423,7 @@ void Febv1Manager::c_scurve(http_request m)
 void Febv1Manager::fsm_initialise(http_request m)
 {
   auto par = json::value::object();
-  PM_INFO(_logFebv1,"****** CMD: "<<m->command());
+  PM_INFO(_logFebv1,"****** CMD: INITIALISING");
   //  std::cout<<"m= "<<m->command()<<std::endl<<m->content()<<std::endl;
  
   web::json::value jtype=params()["type"];
@@ -422,70 +431,73 @@ void Febv1Manager::fsm_initialise(http_request m)
   printf ("_type =%d\n",_type); 
 
   // Need a FEBV1 tag
-  if (m->content().isMember("febv1"))
-    {
-      printf ("found febv1/n");
-      this->parameters()["febv1"]=m->content()["febv1"];
+  if (params().as_object().find("febv1")==params().as_object().end())
+    { 
+      PMF_ERROR(_logFebv1, "No febv1 tag");
+      par["status"]=json::value::string(U("Missing febv1 tag "));
+      Reply(status_codes::OK,par);
+      return;  
     }
-  if (!this->parameters().isMember("febv1"))
-    {
-      PM_ERROR(_logFebv1," No febv1 tag found ");
-      return;
-    }
+  
   // Now create the Message handler
   if (_mpi==NULL)
     _mpi= new febv1::Interface();
   _mpi->initialise();
 
    
-  web::json::value jFEBV1=this->parameters()["febv1"];
+  web::json::value jFEBV1=params()["febv1"];
   //_msh =new MpiMessageHandler("/dev/shm");
-  if (!jFEBV1.isMember("network"))
-    {
-      PM_ERROR(_logFebv1," No febv1:network tag found ");
-      return;
+  if (jFEBV1.as_object().find("network")==jFEBV1.as_object().end())
+    { 
+      PMF_ERROR(_logFebv1, "No febv1:network tag");
+      par["status"]=json::value::string(U("Missing febv1:network tag "));
+      Reply(status_codes::OK,par);
+      return;  
     }
   // Scan the network
-  std::map<uint32_t,std::string> diflist=mpi::MpiMessageHandler::scanNetwork(jFEBV1["network"].as_string());
+  std::map<uint32_t,std::string> diflist=utils::scanNetwork(jFEBV1["network"].as_string());
   // Download the configuration
   if (_tca==NULL)
     {
       std::cout<< "Create config acccess"<<std::endl;
-      _tca=new TdcConfigAccess();
+      _tca=new Febv1ConfigAccess();
       _tca->clear();
     }
   std::cout<< " jFEBV1 "<<jFEBV1<<std::endl;
-  if (jFEBV1.isMember("json"))
+  if (jFEBV1.as_object().find("json")!=jFEBV1.as_object().end())
     {
       web::json::value jFEBV1json=jFEBV1["json"];
-      if (jFEBV1json.isMember("file"))
+      if (jFEBV1json.as_object().find("file")!=jFEBV1json.as_object().end())
 	{
 	  _tca->parseJsonFile(jFEBV1json["file"].as_string());
 	}
       else
-	if (jFEBV1json.isMember("url"))
+	if (jFEBV1json.as_object().find("url")!=jFEBV1json.as_object().end())
 	  {
 	    _tca->parseJsonUrl(jFEBV1json["url"].as_string());
 	  }
     }
-  if (jFEBV1.isMember("db"))
+  if (jFEBV1.as_object().find("db")!=jFEBV1.as_object().end())
     {
       web::json::value jFEBV1db=jFEBV1["db"];
-      PM_ERROR(_logFebv1,"Parsing:"<<jFEBV1db["state"].as_string()<<jFEBV1db["mode"].as_string());
+      PMF_ERROR(_logFebv1,"Parsing:"<<jFEBV1db["state"].as_string()<<jFEBV1db["mode"].as_string());
 
               
-      if (jFEBV1db["mode"].as_string().compare("mongo")!=0)	
-	_tca->parseDb(jFEBV1db["state"].as_string(),jFEBV1db["mode"].as_string());
-      else
-	_tca->parseMongoDb(jFEBV1db["state"].as_string(),jFEBV1db["version"].asUInt());
+      if (jFEBV1db["mode"].as_string().compare("mongo")==0)
+	_tca->parseMongoDb(jFEBV1db["state"].as_string(),jFEBV1db["version"].as_integer());
+
+
       
     }
   if (_tca->asicMap().size()==0)
     {
-      PM_ERROR(_logFebv1," No ASIC found in the configuration ");
+      PMF_ERROR(_logFebv1," No ASIC found in the configuration ");
+      par["status"]=json::value::string(U("NO asic in configuration "));
+      Reply(status_codes::OK,par);
+
       return;
     }
-  PM_INFO(_logFebv1,"ASIC found in the configuration "<<_tca->asicMap().size() );
+  PMF_INFO(_logFebv1,"ASIC found in the configuration "<<_tca->asicMap().size() );
   // Initialise the network
   std::vector<uint32_t> vint;
   vint.clear();
@@ -496,30 +508,24 @@ void Febv1Manager::fsm_initialise(http_request m)
       if (idif==diflist.end()) continue;
       if ( std::find(vint.begin(), vint.end(), eip) != vint.end() ) continue;
       
-      PM_INFO(_logFebv1," New FEBV1 found in db "<<std::hex<<eip<<std::dec<<" IP address "<<idif->second);
+      PMF_INFO(_logFebv1," New FEBV1 found in db "<<std::hex<<eip<<std::dec<<" IP address "<<idif->second);
       vint.push_back(eip);
       _mpi->addDevice(idif->second);
-      PM_INFO(_logFebv1," Registration done for "<<eip);
+      PMF_INFO(_logFebv1," Registration done for "<<eip);
     }
   //std::string network=
   // Connect to the event builder
   if (_context==NULL)
     _context= new zmq::context_t(1);
-
-  if (m->content().isMember("publish"))
-    {
-      this->parameters()["publish"]=m->content()["publish"];
-    }
-
-  
   for (auto x:_mpi->boards())
-    x.second->data()->autoRegister(_context,this->configuration(),"BUILDER","collectingPort");
+    x.second->data()->autoRegister(_context,session(),"evb_builder","collectingPort");
+  //this->configuration(),"BUILDER","collectingPort");
   //x->connect(_context,this->parameters()["publish"].as_string());
 
   // Listen All Febv1 sockets
   _mpi->listen();
 
-  PM_INFO(_logFebv1," Init done  ");
+  PMF_INFO(_logFebv1," Init done  ");
   par["status"]=json::value::string(U("done"));
   Reply(status_codes::OK,par);
   
@@ -528,7 +534,7 @@ void Febv1Manager::fsm_initialise(http_request m)
 
 void Febv1Manager::configurePR2()
 {
-  PM_INFO(_logFebv1," COnfigure the chips ");
+  PMF_INFO(_logFebv1," COnfigure the chips ");
 
   
   fprintf(stderr,"Loop on socket for Sending slow control \n");
@@ -542,7 +548,7 @@ void Febv1Manager::configurePR2()
 void Febv1Manager::configure(http_request m)
 {
   auto par = json::value::object();
-  PM_INFO(_logFebv1," CMD: "<<m->command());
+  PMF_INFO(_logFebv1," CMD: Configuring");
 
   // Now loop on slowcontrol socket
 
@@ -570,7 +576,7 @@ void Febv1Manager::set6bDac(uint8_t dac)
 }
 void Febv1Manager::cal6bDac(uint32_t mask, int32_t dacShift)
 {
-  PM_INFO(_logFebv1, "CAL6BDAC called " << mask << " Shift " << dacShift);
+  PMF_INFO(_logFebv1, "CAL6BDAC called " << mask << " Shift " << dacShift);
   //::usleep(50000);
   std::map<uint64_t, uint16_t *> ascopy;
   // Modify ASIC SLC
@@ -679,7 +685,7 @@ void Febv1Manager::setMask(uint32_t mask, uint8_t asic)
 void Febv1Manager::setVthTime(uint32_t vth)
 {
 
-  PM_DEBUG(_logFebv1, __PRETTY_FUNCTION__ << " Debut ");
+  PMF_DEBUG(_logFebv1, __PRETTY_FUNCTION__ << " Debut ");
   for (auto it = _tca->asicMap().begin(); it != _tca->asicMap().end(); it++)
   {
     int iasic = it->first & 0xFF;
@@ -690,7 +696,7 @@ void Febv1Manager::setVthTime(uint32_t vth)
   }
   this->configurePR2();
  
-  PM_DEBUG(_logFebv1, __PRETTY_FUNCTION__ << " Fin ");
+  PMF_DEBUG(_logFebv1, __PRETTY_FUNCTION__ << " Fin ");
 }
 
 void Febv1Manager::setSingleVthTime(uint32_t vth, uint32_t feb, uint32_t asic)
@@ -699,11 +705,11 @@ void Febv1Manager::setSingleVthTime(uint32_t vth, uint32_t feb, uint32_t asic)
   std::stringstream ip;
   ip << "192.168.10." << feb;
 
-  PM_DEBUG(_logFebv1, __PRETTY_FUNCTION__ << " Debut ");
+  PMF_DEBUG(_logFebv1, __PRETTY_FUNCTION__ << " Debut ");
   for (auto it = _tca->asicMap().begin(); it != _tca->asicMap().end(); it++)
   {
     //  Change VTH time only on specified ASIC
-    uint64_t eid = (((uint64_t) mpi::MpiMessageHandler::convertIP(ip.str())) << 32) | asic;
+    uint64_t eid = (((uint64_t) utils::convertIP(ip.str())) << 32) | asic;
     if (eid != it->first)
       continue;
     it->second.setVthTime(vth);
@@ -711,26 +717,26 @@ void Febv1Manager::setSingleVthTime(uint32_t vth, uint32_t feb, uint32_t asic)
   this->configurePR2();
 
   
-  PM_DEBUG(_logFebv1, __PRETTY_FUNCTION__ << " Fin ");
+  PMF_DEBUG(_logFebv1, __PRETTY_FUNCTION__ << " Fin ");
 }
 
 void Febv1Manager::setDelay()
 {
-  PM_INFO(_logFebv1, "Setting active time " << (int) _delay);
+  PMF_INFO(_logFebv1, "Setting active time " << (int) _delay);
   for (auto x : _mpi->boards())
     x.second->reg()->writeAddress(0x222, _delay);
  
 }
 void Febv1Manager::setDuration()
 {
-  PM_INFO(_logFebv1, " Setting Dead time duration " << (int) _duration);
+  PMF_INFO(_logFebv1, " Setting Dead time duration " << (int) _duration);
   for (auto x : _mpi->boards())
     x.second->reg()->writeAddress(0x223, _duration);
  
 }
 void Febv1Manager::getLUT(int chan)
 {
-  PM_INFO(_logFebv1, " get LUT for " << chan << " on all FEBS");
+  PMF_INFO(_logFebv1, " get LUT for " << chan << " on all FEBS");
   for (auto x : _mpi->boards())
     {
       x.second->reg()->writeAddress(0x224,chan,true);
@@ -739,7 +745,7 @@ void Febv1Manager::getLUT(int chan)
 }
 void Febv1Manager::getCalibrationStatus()
 {
-  PM_INFO(_logFebv1, " get Calibration Status for on all FEBS");
+  PMF_INFO(_logFebv1, " get Calibration Status for on all FEBS");
   for (auto x : _mpi->boards())
     {
       x.second->reg()->writeAddress(0x225,0,true);
@@ -748,13 +754,13 @@ void Febv1Manager::getCalibrationStatus()
 }
 void Febv1Manager::setCalibrationMask(uint64_t mask)
 {
-  PM_INFO(_logFebv1, " setCalibrationMask " << std::hex << mask << std::dec << " on all FEBS");
+  PMF_INFO(_logFebv1, " setCalibrationMask " << std::hex << mask << std::dec << " on all FEBS");
   for (auto x : _mpi->boards())
     x.second->reg()->writeLongWord(0x226, mask);
 }
 void Febv1Manager::setMeasurementMask(uint64_t mask,uint32_t feb)
 {
-  PM_INFO(_logFebv1, " setMeasurementMask " << std::hex << mask << std::dec << " on  FEBS"<<feb);
+  PMF_INFO(_logFebv1, " setMeasurementMask " << std::hex << mask << std::dec << " on  FEBS"<<feb);
   
 
   
@@ -766,7 +772,7 @@ void Febv1Manager::setMeasurementMask(uint64_t mask,uint32_t feb)
 	ip <<params()["febv1"]["network"].as_string()<< feb;
 	if (ip.str().compare(x.second->ipAddress())!=0)
 	  {
-	    PM_INFO(_logFebv1, " setMeasurementMask " <<x.second->ipAddress()<< " skipped for FEB "<<feb);
+	    PMF_INFO(_logFebv1, " setMeasurementMask " <<x.second->ipAddress()<< " skipped for FEB "<<feb);
 	    continue;
 	  }
       }
@@ -780,11 +786,14 @@ void Febv1Manager::setMeasurementMask(uint64_t mask,uint32_t feb)
 void Febv1Manager::start(http_request m)
 {
   auto par = json::value::object();
-  PM_INFO(_logFebv1," CMD: "<<m->command());
-  std::cout<<m->command()<<std::endl<<m->content()<<std::endl;
+  PMF_INFO(_logFebv1," CMD: STARTING");
+
   // Create run file
-  web::json::value jc=m->content();
-  _run=jc["run"].as_integer();
+
+  _run=0;
+  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    if (it2->first.compare("run")==0) _run=std::stoi(it2->second);
 
   // Clear buffers
   for (auto x:_mpi->boards())
@@ -805,7 +814,7 @@ void Febv1Manager::start(http_request m)
 void Febv1Manager::stop(http_request m)
 {
   auto par = json::value::object();
-  PM_INFO(_logFebv1," CMD: "<<m->command());
+  PMF_INFO(_logFebv1," CMD: STOPPING ");
   for (auto x:_mpi->boards())
     {
       // Automatic FSM (bit 1 a 0) , disabled (Bit 0 a 0)
@@ -819,8 +828,8 @@ void Febv1Manager::stop(http_request m)
 void Febv1Manager::destroy(http_request m)
 {
   auto par = json::value::object();
-  PM_INFO(_logFebv1," CMD: "<<m->command());
-  PM_INFO(_logFebv1,"CLOSE called ");
+  PMF_INFO(_logFebv1," CMD: DESTROYING");
+  PMF_INFO(_logFebv1,"CLOSE called ");
   
   _mpi->close();
   for (auto x:_mpi->boards())
@@ -829,7 +838,7 @@ void Febv1Manager::destroy(http_request m)
   delete _mpi;
   _mpi=0;
 
-  PM_INFO(_logFebv1," Data sockets deleted");
+  PMF_INFO(_logFebv1," Data sockets deleted");
   par["status"]=json::value::string(U("done"));
   Reply(status_codes::OK,par);
 
@@ -842,36 +851,39 @@ void Febv1Manager::destroy(http_request m)
 
 
 
-void Febv1Manager::ScurveStep(fsmwebCaller* mdcc,fsmwebCaller* builder,int thmin,int thmax,int step)
+void Febv1Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,int thmax,int step)
 {
 
   int ncon=2000,ncoff=100,ntrg=50;
-  mdcc->sendCommand("PAUSE");
+  utils::sendCommand(mdcc,"PAUSE",json::value::null());
   web::json::value p;
-  p.clear();p["nclock"]=ncon;  mdcc->sendCommand("SPILLON",p);
-  p.clear();p["nclock"]=ncoff;  mdcc->sendCommand("SPILLOFF",p);
+  p["nclock"]=json::value::number(ncon);  utils::sendCommand(mdcc,"SPILLON",p);
+  p["nclock"]=json::value::number(ncoff);  utils::sendCommand(mdcc,"SPILLOFF",p);
   printf("Clock On %d Off %d \n",ncon, ncoff);
-  p.clear();p["value"]=4;  mdcc->sendCommand("SETSPILLREGISTER",p);
-  mdcc->sendCommand("CALIBON");
-  p.clear();p["nclock"]=ntrg;  mdcc->sendCommand("SETCALIBCOUNT",p);
+  p["value"]=json::value::number(4);  utils::sendCommand(mdcc,"SETSPILLREGISTER",p);
+  utils::sendCommand(mdcc,"CALIBON",json::value::null());
+  p["nclock"]=json::value::number(ntrg);  utils::sendCommand(mdcc,"SETCALIBCOUNT",p);
   int thrange=(thmax-thmin+1)/step;
   for (int vth=0;vth<=thrange;vth++)
     {
       if (!_running) break;
-      mdcc->sendCommand("PAUSE");
+      if (!_sc_running) break;
+      utils::sendCommand(mdcc,"PAUSE",json::value::null());
       this->setVthTime(thmax-vth*step);
       int firstEvent=0;
       for (auto x : _mpi->boards())
 	if (x.second->data()->event()>firstEvent) firstEvent=x.second->data()->event();
 
-      p.clear();
+      
+      web::json::value p1;
       web::json::value h;
-      h.append(2);h.append(thmax-vth*step);
-      p["header"]=h;
-      p["nextevent"]=firstEvent+1;
-      builder->sendCommand("SETHEADER",p);
-      mdcc->sendCommand("RELOADCALIB");
-      mdcc->sendCommand("RESUME");
+      h[0]=json::value::number(2);
+      h[1]=json::value::number(thmax-vth*step);
+      p1["header"]=h;
+      p1["nextevent"]=json::value::number(firstEvent+1);
+      utils::sendCommand(builder,"SETHEADER",p1);
+      utils::sendCommand(mdcc,"RELOADCALIB",json::value::null());
+      utils::sendCommand(mdcc,"RESUME",json::value::null());
       int nloop=0,lastEvent=firstEvent;
       while (lastEvent < (firstEvent + ntrg - 20))
 	{
@@ -881,9 +893,9 @@ void Febv1Manager::ScurveStep(fsmwebCaller* mdcc,fsmwebCaller* builder,int thmin
 	  nloop++;if (nloop > 20 || !_running)  break;
 	}
       printf("Step %d Th %d First %d Last %d \n",vth,thmax-vth*step,firstEvent,lastEvent);
-      mdcc->sendCommand("PAUSE");
+      utils::sendCommand(mdcc,"PAUSE",json::value::null());
     }
-  mdcc->sendCommand("CALIBOFF");
+  utils::sendCommand(mdcc,"CALIBOFF",json::value::null());
 }
 
 
@@ -897,10 +909,10 @@ void Febv1Manager::thrd_scurve()
 
 void Febv1Manager::Scurve(int mode,int thmin,int thmax,int step)
 {
-  fsmwebCaller* mdcc=findMDCC("MDCCSERVER");
-  fsmwebCaller* builder=findMDCC("BUILDER");
-  if (mdcc==NULL) return;
-  if (builder==NULL) return;
+  std::string mdccUrl=utils::findUrl(session(),"lyon_mdcc",0);
+  std::string builderUrl=utils::findUrl(session(),"lyon_evb",0);
+  if (mdccUrl.compare("")==0) return;
+  if (builderUrl.compare("")==0) return;
   int firmware[]={0,2,4,6,
 		  8,10,12,14,
 		  16,18,20,22,
@@ -912,7 +924,7 @@ void Febv1Manager::Scurve(int mode,int thmin,int thmax,int step)
 
       //for (int i=0;i<16;i++) mask|=(1<<firmware[i]);
       //this->setMask(mask,0xFF);
-      this->ScurveStep(mdcc,builder,thmin,thmax,step);
+      this->ScurveStep(mdccUrl,builderUrl,thmin,thmax,step);
       return;
       
     }
@@ -924,59 +936,14 @@ void Febv1Manager::Scurve(int mode,int thmin,int thmax,int step)
 	  mask=(1<<firmware[i]);
 	  std::cout<<"Step PR2 "<<i<<" channel "<<firmware[i]<<std::endl;
 	  this->setMask(mask,0xFF);
-	  this->ScurveStep(mdcc,builder,thmin,thmax,step);
+	  this->ScurveStep(mdccUrl,builderUrl,thmin,thmax,step);
 	}
       return;
     }
   mask=(1<<mode);
   this->setMask(mask,0xFF);
-  this->ScurveStep(mdcc,builder,thmin,thmax,step);
+  this->ScurveStep(mdccUrl,builderUrl,thmin,thmax,step);
 
   
 }
 
-fsmwebCaller* Febv1Manager::findMDCC(std::string appname)
-{
-  web::json::value cjs=this->configuration()["HOSTS"];
-  //  std::cout<<cjs<<std::endl;
-  std::vector<std::string> lhosts=this->configuration()["HOSTS"].getMemberNames();
-  // Loop on hosts
-  for (auto host:lhosts)
-    {
-      //std::cout<<" Host "<<host<<" found"<<std::endl;
-      // Loop on processes
-      const web::json::value cjsources=this->configuration()["HOSTS"][host];
-      //std::cout<<cjsources<<std::endl;
-      for (web::json::valueConstIterator it = cjsources.begin(); it != cjsources.end(); ++it)
-	{
-	  const web::json::value& process = *it;
-	  std::string p_name=process["NAME"].as_string();
-	  web::json::value p_param=web::json::value::null;
-	  if (process.isMember("PARAMETER")) p_param=process["PARAMETER"];
-	  // Loop on environenemntal variable
-	  uint32_t port=0;
-	  const web::json::value& cenv=process["ENV"];
-	  for (web::json::valueConstIterator iev = cenv.begin(); iev != cenv.end(); ++iev)
-	    {
-	      std::string envp=(*iev).as_string();
-	      //      std::cout<<"Env found "<<envp.substr(0,7)<<std::endl;
-	      //std::cout<<"Env found "<<envp.substr(8,envp.length()-7)<<std::endl;
-	      if (envp.substr(0,7).compare("WEBPORT")==0)
-		{
-		  port=atol(envp.substr(8,envp.length()-7).c_str());
-		  break;
-		}
-	    }
-	  if (port==0) continue;
-	  if (p_name.compare(appname)==0)
-	    {
-	      
-	      return  new fsmwebCaller(host,port); 
-	    }
-	}
-
-    }
-  
-  return NULL;
-  
-}

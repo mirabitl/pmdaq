@@ -1,68 +1,67 @@
-#ifndef _FEBV1_MANAGER_HH
-#define _FEBV1_MANAGER_HH
+#pragma once
 #include "Febv1Interface.hh"
-#include "TdcConfigAccess.hh"
-#include "baseApplication.hh"
+#include "Febv1ConfigAccess.hh"
+#include "fsmw.hh"
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <zlib.h>
 #include <iostream>
-#include "ReadoutLogger.hh"
+#include "stdafx.hh"
+#include "utils.hh"
 
-namespace lydaq
-{
-
-class Febv1Manager : public zdaq::baseApplication
+class Febv1Manager : public fsmw
 {
 public:
-  Febv1Manager(std::string name);
-  ~Febv1Manager(){;}
+  Febv1Manager();
+
+  virtual void initialise();
+  virtual void end();
 
     /// INITIALISE  handler
-  void initialise(zdaq::fsmmessage *m);
+  void fsm_initialise(http_request m);
   /// CONFIGURE  handler
-  void configure(zdaq::fsmmessage *m);
+  void configure(http_request m);
   /// START  handler
-  void start(zdaq::fsmmessage *m);
+  void start(http_request m);
   /// STOP  handler
-  void stop(zdaq::fsmmessage *m);
+  void stop(http_request m);
   /// DESTROY  handler
-  void destroy(zdaq::fsmmessage *m);
+  void destroy(http_request m);
   /// job log command  (obsolete)
-  void c_joblog(Mongoose::Request &request, Mongoose::JsonResponse &response);
+  void c_joblog(http_request m );
   /// STATUS Command handler
-  void c_status(Mongoose::Request &request, Mongoose::JsonResponse &response);
+  void c_status(http_request m );
   /// DIFLIST Command handler
-  void c_diflist(Mongoose::Request &request, Mongoose::JsonResponse &response);
+  void c_diflist(http_request m );
   /// SET6BDAC Command handler
-  void c_cal6bdac(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_set6bdac(Mongoose::Request &request, Mongoose::JsonResponse &response);
+  void c_cal6bdac(http_request m );
+  void c_set6bdac(http_request m );
   /// SETMASK Command handler
-  void c_setMask(Mongoose::Request &request, Mongoose::JsonResponse &response);
+  void c_setMask(http_request m );
   /// SETMODE Command handler
-  void c_setMode(Mongoose::Request &request, Mongoose::JsonResponse &response);
+  void c_setMode(http_request m );
   /// SETDELAY Command handler
-  void c_setDelay(Mongoose::Request &request, Mongoose::JsonResponse &response);
+  void c_setDelay(http_request m );
   /// SETDURATION Command handler
-  void c_setDuration(Mongoose::Request &request, Mongoose::JsonResponse &response);
+  void c_setDuration(http_request m );
   /// SETVTHTIME Command Handler
-  void c_setvthtime(Mongoose::Request &request, Mongoose::JsonResponse &response);
+  void c_setvthtime(http_request m );
   /// SETONEVTHTIME Command handler
-  void c_set1vthtime(Mongoose::Request &request, Mongoose::JsonResponse &response);
+  void c_set1vthtime(http_request m );
   /// DOWNLOADDB Command handler
-  void c_downloadDB(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_asics(Mongoose::Request &request, Mongoose::JsonResponse &response);
+  void c_downloadDB(http_request m );
+  void c_asics(http_request m );
   /// GETLUT command handler
-  void c_getLUT(Mongoose::Request &request, Mongoose::JsonResponse &response);
+  void c_getLUT(http_request m );
   /// TDC Calibration  command handlers
-  void c_getCalibrationStatus(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_setCalibrationMask(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_setMeasurementMask(Mongoose::Request &request, Mongoose::JsonResponse &response);
+  void c_getCalibrationStatus(http_request m );
+  void c_setCalibrationMask(http_request m );
+  void c_setMeasurementMask(http_request m );
 
   /// PR2 SCurve
-  void c_scurve(Mongoose::Request &request, Mongoose::JsonResponse &response);
+  void c_scurve(http_request m );
 
   /// Change 6BDAC (all FEBs,all Asics)
   void set6bDac(uint8_t dac);
@@ -89,33 +88,32 @@ public:
   /// Set measurement mask
   void setMeasurementMask(uint64_t mask,uint32_t feb);
   /// Scurve
-  void ScurveStep(fsmwebCaller* m,fsmwebCaller* b,int thmin,int thmax,int step);
+  void ScurveStep(std::string mdcc,std::string builder,int thmin,int thmax,int step);
   void Scurve(int mode,int thmin,int thmax,int step);
-  fsmwebCaller* findMDCC(std::string name);
+
   void thrd_scurve();
 
   void configurePR2();
 
 
 private:
-  lydaq::TdcConfigAccess *_tca;
+  Febv1ConfigAccess *_tca;
 
 
-  lydaq::febv1::Interface* _mpi;
+  febv1::Interface* _mpi;
 
 
 
-  zdaq::fsmweb* _fsm;
+  
   uint32_t _run,_type;
   uint8_t _delay;
   uint8_t _duration;
-Json::Value _jControl;
+  json::value _jControl;
 
   zmq::context_t* _context;
    bool _running;
   // Scurve parameters
   int _sc_mode,_sc_thmin,_sc_thmax,_sc_step;
   bool _sc_running;
+  std::thread g_scurve;
 };
-};
-#endif

@@ -299,3 +299,82 @@ std::map<uint32_t,std::string> utils::scanNetwork(std::string base)
   }
   return m;
 }
+
+
+
+std::string  utils::findUrl(std::string session, std::string appname,uint32_t appinstance)
+{
+
+  // Request PNS session process with process name = appname
+  if (!utils::checkpns())
+  {
+    printf("No Process Name Server found\n");
+    return "";
+  }
+
+  http_response rep = utils::request(utils::pns_name(), 8888, "/PNS/LIST", json::value::null());
+
+  auto reg_list = rep.extract_json();
+  auto serv_list = reg_list.get().as_object()["REGISTERED"];
+  if (serv_list.is_null())
+  {
+    printf("No Process registered in PNS\n");
+    return "";
+  }
+  for (auto it = serv_list.as_array().begin(); it != serv_list.as_array().end(); ++it)
+  {
+    std::string rec = (*it).as_string();
+    //PM_DEBUG(_logPdaq, "PNS Service: " << rec);
+    auto v = utils::split(rec, ':');
+    std::string phost = v[0];
+    uint32_t pport = std::stoi(v[1]);
+    std::string ppath = v[2];
+    //PM_DEBUG(_logPdaq, "PNS Service: " << phost << " " << pport << " " << ppath);
+    auto vp0 = utils::split(ppath, '?');
+    auto vp = utils::split(vp0[0], '/');
+    //PM_DEBUG(_logPdaq, "VP size: " << vp.size());
+    //PM_DEBUG(_logPdaq, "VP :  [1]" << vp[1] << " " << session << " [2]" << vp[2] << " " << appname);
+    if (vp[1].compare(session) != 0)
+      continue;
+    if (vp[2].compare(appname) != 0)
+      continue;
+    uint32_t instance = std::stoi(vp[3]);
+    if (instance!=appinstance)
+      continue;
+    std::stringstream surl("");
+    surl<<"http://"<<phost<<":"<<pport<<vp0[0];
+    return surl.str();
+  }
+  // Connect to the specified streams
+  return "";
+}
+
+
+
+http_response utils::sendCommand(std::string url, std::string command,web::json::value par)
+{
+  std::stringstream address("");
+  address << U(url);
+  http::uri uri = http::uri(address.str());
+  web::http::client::http_client_config cfg;
+  cfg.set_timeout(std::chrono::seconds(1));
+  http_client client(http::uri_builder(uri).append_path(U(command)).to_uri(), cfg);
+
+  if (par.is_object())
+  {
+    utility::ostringstream_t buf;
+    uint32_t np = 0;
+    for (auto iter = par.as_object().begin(); iter != par.as_object().end(); ++iter)
+    {
+      if (np == 0)
+        buf << "?" << U(iter->first) << "=" << iter->second;
+      else
+        buf << "&" << U(iter->first) << "=" << iter->second;
+      np++;
+    }
+
+    return client.request(methods::GET, U(buf.str())).get();
+  }
+  else
+    return client.request(methods::GET).get();
+}
