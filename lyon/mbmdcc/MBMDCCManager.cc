@@ -341,6 +341,7 @@ void MbmdccManager::c_pause(http_request m)
 
   this->maskTrigger();
   par["STATUS"]=json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);
 }
 void MbmdccManager::c_resume(http_request m)
 {
