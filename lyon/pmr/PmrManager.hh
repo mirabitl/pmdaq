@@ -30,8 +30,8 @@
 #include "fsmw.hh"
 #include "stdafx.hh"
 #include "utils.hh"
-#include "PMRInterface.hh"
-#include 
+#include "PmrInterface.hh"
+
 #include "HR2ConfigAccess.hh"
 
 using namespace pmr;
@@ -46,7 +46,9 @@ class PmrManager  : public fsmw
        Create a Pmr Manager class
        \param name the name of the process 
     */
-    PmrManager(std::string name);
+    PmrManager();
+    virtual void initialise();
+    virtual void end();
     
     /**
        \brief Transition is CREATED &rarr; SCANNED. It scans the FTDI network to find all Pmr connected
@@ -70,7 +72,7 @@ class PmrManager  : public fsmw
 
        The answer contains a list of Pmr with their status
     */
-    void initialise(http_request  m);
+    void fsm_initialise(http_request  m);
 
     /**
        \brief Transition is INITIALISED &rarr; CONFIGURED. It configures Pmr and associated ASICs
@@ -115,7 +117,7 @@ class PmrManager  : public fsmw
     void setMask(uint32_t level,uint64_t mask);
     void setChannelMask(uint16_t level,uint16_t channel,uint16_t val);
 
-    Json::Value configureHR2();
+    web::json::value configureHR2();
 
     void prepareDevices();
     void startReadoutThread(PmrInterface* d);
@@ -129,10 +131,10 @@ class PmrManager  : public fsmw
 
     void setAllMasks(uint64_t mask);
     void setCTEST(uint64_t mask);
-    void ScurveStep(fsmwebCaller* mdcc,fsmwebCaller* builder,int thmin,int thmax,int step);
+    void ScurveStep(std::string mdcc,std::string builder,int thmin,int thmax,int step);
     void thrd_scurve() ;
     void Scurve(int mode,int thmin,int thmax,int step);
-    fsmwebCaller* findMDCC(std::string appname);
+
     void c_scurve(http_request m );
   private:
     std::map<uint32_t,pmr::FtdiDeviceInfo*> theFtdiDeviceInfoMap_;	

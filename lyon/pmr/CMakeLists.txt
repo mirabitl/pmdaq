@@ -10,12 +10,13 @@ project(lyon_pmr VERSION 0.0.1 DESCRIPTION "Zup plugin")
 set(SRCS
   PmrDriver.cc
   PmrInterface.cc
+  PmrManager.cc
   )
 	
 set(HEADERS
   PmrDriver.hh
   PmrInterface.hh
-
+  PmrManager.hh
   )
 link_directories( ../../lib )
 add_library(lyon_pmr SHARED ${SRCS} ${HEADERS})

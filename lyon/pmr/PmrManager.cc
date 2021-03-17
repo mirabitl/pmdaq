@@ -77,7 +77,7 @@ void PmrManager::prepareDevices()
 void PmrManager::scan(http_request m) 
 {
   auto par = json::value::object();
-  PMF_INFO(_logPmr," CMD: "<<m->command());
+  PMF_INFO(_logPmr," CMD: SCanning");
   // Fill Ftdi Map
   this->prepareDevices();
   std::map<uint32_t,pmr::FtdiDeviceInfo*>& fm=this->getFtdiMap();
@@ -299,7 +299,7 @@ void PmrManager::setChannelMask(uint16_t level,uint16_t channel,uint16_t val)
 
 void PmrManager::setAllMasks(uint64_t mask)
 {
-  PMF_INFO(_logFeb," Changing Mask: "<<std::hex<<mask<<std::dec);
+  PMF_INFO(_logPmr," Changing Mask: "<<std::hex<<mask<<std::dec);
   for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
     {
       it->second.dumpBinary();
@@ -318,14 +318,14 @@ void PmrManager::setAllMasks(uint64_t mask)
 }
 void PmrManager::setCTEST(uint64_t mask)
 {
-  PMF_INFO(_logFeb," Changing CTEST: "<<std::hex<<mask<<std::dec);
+  PMF_INFO(_logPmr," Changing CTEST: "<<std::hex<<mask<<std::dec);
   for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
     {
       for (int i=0;i<64;i++)
 	{
 	  bool on=((mask>>i)&1)==1;
 	  it->second.setCTEST(i,on);
-	  PMF_INFO(_logFeb,"CTEST: "<<std::hex<<mask<<std::dec<<" channel "<<i<<" "<<on);
+	  PMF_INFO(_logPmr,"CTEST: "<<std::hex<<mask<<std::dec<<" channel "<<i<<" "<<on);
 	}
 
     }
@@ -418,9 +418,10 @@ void PmrManager::c_setchannelmask(http_request m)
 void PmrManager::c_external(http_request m)
 {
   auto par = json::value::object();
-  PMF_INFO(_logPmr,"EXTERNAL called "<<request.get("value","0").c_str());
-
   uint32_t external=utils::queryIntValue(m,"value",0);
+  PMF_INFO(_logPmr,"EXTERNAL called "<<external);
+
+
   if (external!=0)
     params()["external"]=external;
   std::map<uint32_t,PmrInterface*> dm=this->getPmrMap();
@@ -475,7 +476,7 @@ void PmrManager::c_status(http_request m)
       
       web::json::value ds;
       ds["detid"]=json::value::number(it->second->detectorId());
-      ds["state"]=json::value::number(it->second->state());
+      ds["state"]=json::value::string(U(it->second->state()));
       ds["id"]=json::value::number(it->second->status()->id);
       ds["status"]=json::value::number(it->second->status()->status);
       ds["slc"]=json::value::number(it->second->status()->slc);
@@ -483,7 +484,7 @@ void PmrManager::c_status(http_request m)
       ds["bcid"]=json::value::number(it->second->status()->bcid);
       ds["bytes"]=json::value::number(it->second->status()->bytes);
       ds["host"]=json::value::string(U(std::string((it->second->status()->host))));
-      array_slc[nd++]=ds
+      array_slc[nd++]=ds;
 
 
 
@@ -636,7 +637,7 @@ void PmrManager::initialise()
   this->addState("RUNNING");
   this->addState("STOPPED");
   this->addTransition("SCAN","CREATED","SCANNED",std::bind(&PmrManager::scan, this,std::placeholders::_1));
-  this->addTransition("INITIALISE","SCANNED","INITIALISED",std::bind(&PmrManager::initialise, this,std::placeholders::_1));
+  this->addTransition("INITIALISE","SCANNED","INITIALISED",std::bind(&PmrManager::fsm_initialise, this,std::placeholders::_1));
   this->addTransition("CONFIGURE","INITIALISED","CONFIGURED",std::bind(&PmrManager::configure, this,std::placeholders::_1));
   this->addTransition("CONFIGURE","CONFIGURED","CONFIGURED",std::bind(&PmrManager::configure, this,std::placeholders::_1));
   this->addTransition("CONFIGURE","STOPPED","CONFIGURED",std::bind(&PmrManager::configure, this,std::placeholders::_1));
@@ -674,6 +675,7 @@ void PmrManager::end()
 
     
     bool running=false;
+    std::map<uint32_t,PmrInterface*> dm=this->getPmrMap();
     for ( std::map<uint32_t,PmrInterface*>::iterator it=dm.begin();it!=dm.end();it++)
       {
 	running=running ||it->second->readoutStarted();
@@ -803,7 +805,7 @@ void PmrManager::Scurve(int mode,int thmin,int thmax,int step)
   // One channel pedestal
 
   mask=(1ULL<<mode);
-  PMF_INFO(_logFeb,"CTEST One "<<mode<<" "<<std::hex<<mask<<std::dec);
+  PMF_INFO(_logPmr,"CTEST One "<<mode<<" "<<std::hex<<mask<<std::dec);
   this->setAllMasks(mask);
   this->setCTEST(mask);
   this->ScurveStep(mdccUrl,builderUrl,thmin,thmax,step);
@@ -814,13 +816,13 @@ void PmrManager::Scurve(int mode,int thmin,int thmax,int step)
 void PmrManager::c_scurve(http_request m)
 {
   auto par = json::value::object();
-  par["STATUS"]=web::json::value::number( "DONE");
+  par["STATUS"]=web::json::value::string(U("DONE"));
 
   uint32_t first = utils::queryIntValue(m,"first",80);
   uint32_t last = utils::queryIntValue(m,"last",250);
   uint32_t step = utils::queryIntValue(m,"step",1);
   uint32_t mode = utils::queryIntValue(m,"channel",255);
-  PMF_INFO(_logFeb, " SCURVE/CTEST "<<mode<<" "<<step<<" "<<first<<" "<<last);
+  PMF_INFO(_logPmr, " SCURVE/CTEST "<<mode<<" "<<step<<" "<<first<<" "<<last);
   
   //this->Scurve(mode,first,last,step);
 
