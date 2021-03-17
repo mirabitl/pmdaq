@@ -378,3 +378,28 @@ http_response utils::sendCommand(std::string url, std::string command,web::json:
   else
     return client.request(methods::GET).get();
 }
+
+uint32_t utils::queryIntValue(http_request m,std::string n,uint32_t def_val)
+{
+
+  uint32_t nc=def_val;
+  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    if (it2->first.compare(n)==0) nc=std::stoi(it2->second);
+  return nc;
+}
+
+std::string utils::queryStringValue(http_request m,std::string n,std::string def_val)
+{
+
+  std::string nc=def_val;
+  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+    if (it2->first.compare(n)==0) nc=it2->second;
+  return nc;
+}
+
+bool utils::isMember(web::json::value p,std::string key)
+{
+  return (p.as_object().find(key)!=p.as_object().end());
+}

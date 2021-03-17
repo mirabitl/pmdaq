@@ -27,5 +27,10 @@ class utils
   static std::string lmexec(const char* cmd);
   static std::string  findUrl(std::string session, std::string appname,uint32_t appinstance);
   static http_response sendCommand(std::string url, std::string command,web::json::value par);
+
+  static uint32_t queryIntValue(http_request m,std::string n,uint32_t def_val);
+  static std::string queryStringValue(http_request m,std::string n,std::string def_val);
+  static bool isMember(web::json::value p,std::string key);
+
 };
 

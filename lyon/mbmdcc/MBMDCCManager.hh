@@ -1,27 +1,26 @@
-#ifndef _MBMDCC_MANAGER_HH
-#define _MBMDCC_MANAGER_HH
+#pragma once
 #include "MBMDCCInterface.hh"
-#include "baseApplication.hh"
+#include "fsmw.hh"
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <zlib.h>
 #include <iostream>
-#include "ReadoutLogger.hh"
+#include "stdafx.hh"
+#include "utils.hh"
 
-namespace lydaq
-{
-
-class MbmdccManager : public zdaq::baseApplication
+class MbmdccManager : public fsmw
 {
 public:
-  MbmdccManager(std::string name);
+  MbmdccManager();
   ~MbmdccManager(){;}
-
-  void initialise(zdaq::fsmmessage* m);
-  void configure(zdaq::fsmmessage* m);
-  void destroy(zdaq::fsmmessage* m);
+  virtual void initialise();
+  virtual void end();
+  
+  void fsm_initialise(http_request m);
+  void configure(http_request m);
+  void destroy(http_request m);
 
   uint32_t version();
   uint32_t id();
@@ -58,42 +57,32 @@ public:
   uint32_t busyCount(uint8_t b);
   uint32_t readRegister(uint32_t adr);
   void writeRegister(uint32_t adr,uint32_t val);
-  void c_readreg(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_writereg(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_pause(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_resume(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_calibon(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_caliboff(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_reloadcalib(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_setcalibcount(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_reset(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_spillon(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_spilloff(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_resettdc(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_channelon(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_sethardreset(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_setspillregister(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_setexternaltrigger(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_setregister(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_getregister(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_setcalibregister(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_settrigext(Mongoose::Request &request, Mongoose::JsonResponse &response);
-  void c_status(Mongoose::Request &request, Mongoose::JsonResponse &response);
+  void c_readreg(http_request m);
+  void c_writereg(http_request m);
+  void c_pause(http_request m);
+  void c_resume(http_request m);
+  void c_calibon(http_request m);
+  void c_caliboff(http_request m);
+  void c_reloadcalib(http_request m);
+  void c_setcalibcount(http_request m);
+  void c_reset(http_request m);
+  void c_spillon(http_request m);
+  void c_spilloff(http_request m);
+  void c_resettdc(http_request m);
+  void c_channelon(http_request m);
+  void c_sethardreset(http_request m);
+  void c_setspillregister(http_request m);
+  void c_setexternaltrigger(http_request m);
+  void c_setregister(http_request m);
+  void c_getregister(http_request m);
+  void c_setcalibregister(http_request m);
+  void c_settrigext(http_request m);
+  void c_status(http_request m);
 
 
 
 
 private:
-  lydaq::mbmdcc::Interface* _mpi;
-
-
-
-  zdaq::fsmweb* _fsm;
-
-
-
-
+  mbmdcc::Interface* _mpi;
   
 };
-};
-#endif

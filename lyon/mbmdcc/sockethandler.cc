@@ -62,17 +62,17 @@ uint32_t mbmdcc::socketHandler::sendMessage(mbmdcc::Message* m)
     
     _sock->send((const void*) m->ptr(),m->length()*sizeof(uint8_t));
 
-    PM_INFO(_logMbmdcc,__PRETTY_FUNCTION__<<" Address "<<std::hex<<((m->address()>>32)&0xFFFFFFFF)<<std::dec<<" Port "<<(m->address()&0XFFFF)<<" Length "<<m->length()<<" Transaction "<<tr);
+    PM_INFO(_logMbmdcc," Address "<<std::hex<<((m->address()>>32)&0xFFFFFFFF)<<std::dec<<" Port "<<(m->address()&0XFFFF)<<" Length "<<m->length()<<" Transaction "<<tr);
 
     return (tr);
   }
   catch (NL::Exception e)
   {
-    PM_FATAL(_logMbmdcc,__PRETTY_FUNCTION__<<"Cannot send message "<<std::hex<<((m->address()>>32)&0xFFFFFFFF)<<std::dec<<" Port "<<(m->address()&0XFFFF)<<" error "<<e.msg());
+    PM_FATAL(_logMbmdcc,"Cannot send message "<<std::hex<<((m->address()>>32)&0xFFFFFFFF)<<std::dec<<" Port "<<(m->address()&0XFFFF)<<" error "<<e.msg());
   }
   printf("Buffer sent %d bytes at Address %lx on port %ld \n",m->length(),(m->address()>>32)&0xFFFFFFF,m->address()&0XFFFF);
 
-
+  return 0;
 }
 int16_t mbmdcc::socketHandler::checkBuffer(uint8_t* b,uint32_t maxidx)
 {
@@ -84,11 +84,11 @@ int16_t mbmdcc::socketHandler::checkBuffer(uint8_t* b,uint32_t maxidx)
      uint16_t* _sBuf= (uint16_t*) &b[1];
      elen=ntohs(_sBuf[0]); // Header
 
-     PM_WARN(_logMbmdcc,__PRETTY_FUNCTION__<<"CheckBuf header ELEN "<<elen<<" MAXID "<<maxidx);
+     PM_WARN(_logMbmdcc,"CheckBuf header ELEN "<<elen<<" MAXID "<<maxidx);
      //fprintf(stderr,"d %d %c\n",__LINE__,b[elen-1]);
      if (elen>maxidx)
        {
-         PM_INFO(_logMbmdcc,__PRETTY_FUNCTION__<<"CheckBuf header:Not enough data ELEN "<<elen<<" MAXID "<<maxidx);
+         PM_INFO(_logMbmdcc,"CheckBuf header:Not enough data ELEN "<<elen<<" MAXID "<<maxidx);
          return -1;
        }
      if (b[elen-1]==')')
@@ -98,7 +98,7 @@ int16_t mbmdcc::socketHandler::checkBuffer(uint8_t* b,uint32_t maxidx)
        }
      else
        {
-         PM_INFO(_logMbmdcc,__PRETTY_FUNCTION__<<"CheckBuf header :Missing  end tag , found "<<b[elen-1] );
+         PM_INFO(_logMbmdcc,"CheckBuf header :Missing  end tag , found "<<b[elen-1] );
 	      for (int i=0;i<elen;i++)
        {
 	 fprintf(stderr,"%.2x ",((uint8_t) b[i]));
