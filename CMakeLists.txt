@@ -62,6 +62,8 @@ add_subdirectory(lyon/febv1)
 add_subdirectory(lyon/mbmdcc)
 add_subdirectory(lyon/gricv1)
 add_subdirectory(lyon/pmr)
+add_subdirectory(lyon/mdcc)
+
 include(CPack)
 
 

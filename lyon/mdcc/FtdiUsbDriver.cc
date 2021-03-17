@@ -198,7 +198,7 @@ void mdcc::FtdiUsbDriver::FT245Purge( void )
     {
       std::stringstream errorMessage;
       errorMessage << "Could not purge  FT245 FIFOs (status: "<< status << ")"<< std::ends;
-      PMF_ERROR(_logFTDI,errorMessage.str());
+      PM_ERROR(_logFTDI,errorMessage.str());
       _rc=mdcc::FtdiUsbDriver::RC::PURGE;;
     }
 }	
@@ -233,7 +233,7 @@ int32_t mdcc::FtdiUsbDriver::read( unsigned char  *resultPtr )
   if( ret<0)
     {
       char errorMessage [100];
-      sprintf (errorMessage,"%s %d usb_bulk_read error = %d",theName_,ret);
+      sprintf (errorMessage,"%s usb_bulk_read error = %d",theName_,ret);
       resultPtr=0;
       _rc=mdcc::FtdiUsbDriver::RC::BULKERROR;
       return ret;
@@ -289,7 +289,7 @@ void mdcc::FtdiUsbDriver::readNb( unsigned char  *resultPtr,int32_t nbbytes )
   if( ret<0)
     {
       char errorMessage [100];
-      sprintf (errorMessage,"%d usb_bulk_read error = %d",ret);
+      sprintf (errorMessage," usb_bulk_read error = %d",ret);
       memset(resultPtr,0,nbbytes);
       _rc=mdcc::FtdiUsbDriver::RC::BULKERROR;
       return;
@@ -338,7 +338,7 @@ void mdcc::FtdiUsbDriver::write( unsigned char  data)
   if( ret<0)
     {
       char errorMessage [100];
-      sprintf (errorMessage,"%d usb_bulk_read error = %d",ret);
+      sprintf (errorMessage," usb_bulk_read error = %d",ret);
       _rc=mdcc::FtdiUsbDriver::RC::BULKERROR;
     }
   if (ret != 1) 
@@ -367,7 +367,7 @@ void mdcc::FtdiUsbDriver::writeNb( unsigned char  *cdata, uint32_t nb)
   if( ret<0)
     {
       char errorMessage [100];
-      sprintf (errorMessage,"%d usb_bulk_read error = %d",ret);
+      sprintf (errorMessage," usb_bulk_read error = %d",ret);
       _rc=mdcc::FtdiUsbDriver::RC::BULKERROR;
     }
 
@@ -504,7 +504,7 @@ int32_t FtdiUsbDriver :: UsbRead22Bytes(unsigned char  *data)
   this->readNb(data,22);
   if (_rc!=mdcc::FtdiUsbDriver::RC::OK)
     {
-      memset(data,0,22)
+      memset(data,0,22);
 
       PM_ERROR(_logFTDI,this->rcMessage());
       return 0;
@@ -514,13 +514,13 @@ int32_t FtdiUsbDriver :: UsbRead22Bytes(unsigned char  *data)
 
 }	
 
-int32_t FtdiUsbDriver :: UsbReadNbBytes(unsigned char  *data, int32_t nbbytes)
+int32_t FtdiUsbDriver::UsbReadnBytes(unsigned char  *data, int32_t nbbytes)
 {
 
   this->readNb(data,nbbytes);
   if (_rc!=mdcc::FtdiUsbDriver::RC::OK)
     {
-      memset(data,0,nbbytes)
+      memset(data,0,nbbytes);
 
       PM_ERROR(_logFTDI,this->rcMessage());
       return 0;
@@ -535,10 +535,10 @@ int32_t FtdiUsbDriver :: UsbRead3Bytes(uint32_t *data)
 //throw (LocalHardwareException)
 {
   unsigned char  ttampon[5];
-  this->readNb(tampon,3);
+  this->readNb(ttampon,3);
   if (_rc!=mdcc::FtdiUsbDriver::RC::OK)
     {
-      memset(data,0,sizeof(uint32_t))
+      memset(data,0,sizeof(uint32_t));
       PM_ERROR(_logFTDI,this->rcMessage());
       return 0;
     }
@@ -554,10 +554,10 @@ int32_t FtdiUsbDriver :: UsbRead2Bytes(uint32_t *data)
 //throw (LocalHardwareException)
 {
   unsigned char  ttampon[5];
-  this->readNb(tampon,1);
+  this->readNb(ttampon,2);
   if (_rc!=mdcc::FtdiUsbDriver::RC::OK)
     {
-      memset(data,0,sizeof(uint32_t))
+      memset(data,0,sizeof(uint32_t));
       PM_ERROR(_logFTDI,this->rcMessage());
       return 0;
     }
@@ -760,7 +760,7 @@ int32_t mdcc::FtdiUsbDriver::GetTestRegister(uint32_t *tvalue)
 std::string mdcc::FtdiUsbDriver::rcMessage()
 {
   std::string msg;
-  switch (rc)
+  switch (_rc)
     {
     case mdcc::FtdiUsbDriver::RC::OK:
       msg.assign("OK");
