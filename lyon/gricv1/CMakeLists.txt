@@ -14,13 +14,13 @@ set(SRCS
   registerhandler.cc
   sockethandler.cc
   slchandler.cc
+  Gricv1Manager.cc
   )
 	
 set(HEADERS
   Gricv1Interface.hh
-
+  Gricv1Manager.hh
   )
-#  Gricv1Manager.hh
 link_directories( ../../lib )
 add_library(lyon_gricv1 SHARED ${SRCS} ${HEADERS})
 

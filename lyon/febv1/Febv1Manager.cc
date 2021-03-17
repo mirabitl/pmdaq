@@ -102,7 +102,7 @@ void Febv1Manager::c_status(http_request m)
     jt["abcid"] = json::value::number(x.second->data()->abcid());
     jt["event"] = json::value::number(x.second->data()->event());
     jt["triggers"] = json::value::number(x.second->data()->triggers());
-    jl[mb]=jt;
+    jl[mb++]=jt;
   }
   par["TDCSTATUS"] = jl;
   Reply(status_codes::OK,par);
@@ -412,6 +412,7 @@ void Febv1Manager::c_scurve(http_request m)
   if (_sc_running)
     {
       par["SCURVE"] =json::value::string(U("ALREADY_RUNNING"));
+      Reply(status_codes::OK,par);
       return;
     }
 
