@@ -12,12 +12,11 @@ set(SRCS
   interface.cc
   registerhandler.cc
   sockethandler.cc
-
+  MBMDCCManager.cc	
   )
-#  MbmdccManager.cc	
 set(HEADERS
   MBMDCCInterface.hh
-
+  MBMDCCManager.hh	
   )
 
 link_directories( ../../lib )

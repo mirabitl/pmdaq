@@ -82,7 +82,8 @@ void MbmdccManager::end()
 
 void MbmdccManager::fsm_initialise(http_request m)
 {
-  PMF_INFO(_logMbmdcc,"****** CMD: "<<m->command());
+  auto par = json::value::object();
+  PMF_INFO(_logMbmdcc,"****** CMD: INITIALISING");
   //  std::cout<<"m= "<<m->command()<<std::endl<<m->content()<<std::endl;
  
 
@@ -90,6 +91,8 @@ void MbmdccManager::fsm_initialise(http_request m)
   if (!utils::isMember(params(),"mbmdcc"))
     {
       PMF_ERROR(_logMbmdcc," No mbmdcc tag found ");
+      par["status"]=json::value::string(U("Missing mbmdcc tag "));
+      Reply(status_codes::OK,par);
       return;
     }
   // Now create the Message handler
@@ -103,11 +106,17 @@ void MbmdccManager::fsm_initialise(http_request m)
   if (!utils::isMember(jMBMDCC,"network"))
     {
       PMF_ERROR(_logMbmdcc," No mbmdcc:network tag found ");
+      par["status"]=json::value::string(U("Missing mbmdcc::network tag "));
+      Reply(status_codes::OK,par);
+
       return;
     }
   if (!utils::isMember(jMBMDCC,"address"))
     {
       PMF_ERROR(_logMbmdcc," No mbmdcc:address tag found ");
+      par["status"]=json::value::string(U("Missing mbmdcc::address tag "));
+      Reply(status_codes::OK,par);
+      
       return;
     }
   uint32_t ipboard= utils::convertIP(jMBMDCC["address"].as_string());
@@ -118,10 +127,15 @@ void MbmdccManager::fsm_initialise(http_request m)
   if (idif==diflist.end())
     {
       PMF_ERROR(_logMbmdcc," No board found at address "<<jMBMDCC["address"].as_string());
+      par["status"]=json::value::string(U("No board at given address "));
+      Reply(status_codes::OK,par);
+
       return;
     }
   PMF_INFO(_logMbmdcc," New MBMDCC found in db "<<std::hex<<ipboard<<std::dec<<" IP address "<<idif->second);
+  
   _mpi->addDevice(idif->second);
+
   PMF_INFO(_logMbmdcc," Registration done for "<<std::hex<<ipboard<<std::dec);
 
 
@@ -140,16 +154,22 @@ void MbmdccManager::fsm_initialise(http_request m)
   // Listen All Mbmdcc sockets
   _mpi->listen();
 
-  PMF_INFO(_logMbmdcc," Init done  "); 
+  PMF_INFO(_logMbmdcc," Init done  ");
+  par["status"]=json::value::string(U("done"));
+  Reply(status_codes::OK,par);
+
 }
 
 void MbmdccManager::configure(http_request m)
 {
-  PMF_INFO(_logMbmdcc," CMD: "<<m->command());
+  auto par = json::value::object();
+  PMF_INFO(_logMbmdcc," CMD: CONFIGURING");
 
   // Now loop on slowcontrol socket
 
 
+  par["status"]=json::value::string(U("done"));
+  Reply(status_codes::OK,par);
 
 
 }
@@ -157,17 +177,24 @@ void MbmdccManager::configure(http_request m)
 
 void MbmdccManager::destroy(http_request m)
 {
-  PMF_INFO(_logMbmdcc," CMD: "<<m->command());
+  auto par = json::value::object();
+  PMF_INFO(_logMbmdcc," CMD: CLOSING");
   PMF_INFO(_logMbmdcc,"CLOSE called ");
-  
-  _mpi->close();
-  for (auto x:_mpi->boards())
-    delete x.second;
-  _mpi->boards().clear();
-  delete _mpi;
-  _mpi=0;
 
+  if (_mpi!=NULL)
+    {
+      _mpi->terminate();
+      
+      _mpi->close();
+      for (auto x:_mpi->boards())
+	delete x.second;
+      _mpi->boards().clear();
+      delete _mpi;
+      _mpi=0;
+    }
   PMF_INFO(_logMbmdcc," Data sockets deleted");
+  par["status"]=json::value::string(U("done"));
+  Reply(status_codes::OK,par);
 
 
 
@@ -268,7 +295,7 @@ void MbmdccManager::c_readreg(http_request m)
   auto par = json::value::object();
 
   PMF_INFO(_logMbmdcc,"Pulse called ");
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
 
   
   uint32_t adr=utils::queryIntValue(m,"adr",0);
@@ -287,8 +314,8 @@ void MbmdccManager::c_readreg(http_request m)
 }
 void MbmdccManager::c_writereg(http_request m)
 {
-
-  par["STATUS"]=json::value:string(U("DONE"));
+  auto par = json::value::object();
+  par["STATUS"]=json::value::string(U("DONE"));
 
   
   uint32_t adr=utils::queryIntValue(m,"adr",0);
@@ -309,147 +336,161 @@ void MbmdccManager::c_writereg(http_request m)
 
 void MbmdccManager::c_pause(http_request m)
 {
+  auto par = json::value::object();
   PMF_INFO(_logMbmdcc," Pause called ");
 
   this->maskTrigger();
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
 }
 void MbmdccManager::c_resume(http_request m)
 {
-    PMF_INFO(_logMbmdcc," Resume called ");
+  auto par = json::value::object();
+  PMF_INFO(_logMbmdcc," Resume called ");
 
   this->unmaskTrigger();
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
   Reply(status_codes::OK,par);
 }
 void MbmdccManager::c_calibon(http_request m)
 {
+  auto par = json::value::object();
   PMF_INFO(_logMbmdcc," Calib On called ");
   this->calibOn();
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
   Reply(status_codes::OK,par);
 }
 void MbmdccManager::c_caliboff(http_request m)
 {
+  auto par = json::value::object();
   PMF_INFO(_logMbmdcc," Calib Off called ");
   this->calibOff();
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
   Reply(status_codes::OK,par);
 }
 void MbmdccManager::c_reloadcalib(http_request m)
 {
+  auto par = json::value::object();
   PMF_INFO(_logMbmdcc," Calib reload called ");
   this->reloadCalibCount();
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
   Reply(status_codes::OK,par);
 }
 
 void MbmdccManager::c_setcalibcount(http_request m)
 {
+  auto par = json::value::object();
   PMF_INFO(_logMbmdcc," Calib count called ");
-   uint32_t nc=utils::queryIntValue(m,"nclock",5000000);
+  uint32_t nc=utils::queryIntValue(m,"nclock",5000000);
   this->setCalibCount(nc);
 
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
   par["NCLOCK"]=json::value::number(nc);
   Reply(status_codes::OK,par);
 } 
 
 void MbmdccManager::c_reset(http_request m)
 {
-   PMF_INFO(_logMbmdcc," RESET called ");
+  auto par = json::value::object();
+  PMF_INFO(_logMbmdcc," RESET called ");
   this->resetCounter();
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
   Reply(status_codes::OK,par);
 }
 
 
 void MbmdccManager::c_spillon(http_request m)
 {
-
+  auto par = json::value::object();
   PMF_INFO(_logMbmdcc," Spill ON called ");
-
+  
   uint32_t nc=utils::queryIntValue(m,"nclock",50);
   this->setSpillOn(nc);
 
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
   par["NCLOCK"]=json::value::number(nc);
   Reply(status_codes::OK,par);
 
 } 
 void MbmdccManager::c_spilloff(http_request m)
 {
+  auto par = json::value::object();
   PMF_INFO(_logMbmdcc," Spill Off called ");
 
   uint32_t nc=utils::queryIntValue(m,"nclock",5000);
   this->setSpillOff(nc);
 
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
   par["NCLOCK"]=json::value::number(nc);
   Reply(status_codes::OK,par);
 
 } 
 void MbmdccManager::c_resettdc(http_request m)
 {
+  auto par = json::value::object();
   PMF_INFO(_logMbmdcc," Reset TDC called ");
 
   uint32_t nc=utils::queryIntValue(m,"value",0);
   this->resetTDC(nc&0xF);
 
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
 
   Reply(status_codes::OK,par);
 } 
 
 void MbmdccManager::c_channelon(http_request m)
 {
+  auto par = json::value::object();
   PMF_INFO(_logMbmdcc," beam on time called ");
 
   uint32_t nc=utils::queryIntValue(m,"value",1023);
   this->setChannels(nc);
 
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
   par["NCLOCK"]=json::value::number(nc);
   Reply(status_codes::OK,par);
 }
 
 void MbmdccManager::c_sethardreset(http_request m)
 {
+  auto par = json::value::object();
   PMF_INFO(_logMbmdcc," Hard reset called ");
 
   uint32_t nc=utils::queryIntValue(m,"value",0);
   this->setHardReset(nc);
 
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
   par["VALUE"]=json::value::number(nc);
   Reply(status_codes::OK,par);
 }
 
 void MbmdccManager::c_setspillregister(http_request m)
 {
+  auto par = json::value::object();
   PMF_INFO(_logMbmdcc,"Spill register called ");
 
   uint32_t nc=utils::queryIntValue(m,"value",0);
   this->setSpillRegister(nc);
 
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
   par["VALUE"]=json::value::number(nc);
   Reply(status_codes::OK,par);
 }
 void MbmdccManager::c_setexternaltrigger(http_request m)
 {
+  auto par = json::value::object();
   PMF_INFO(_logMbmdcc,"Spill register called ");
 
   uint32_t nc=utils::queryIntValue(m,"value",0);
   this->setExternalTrigger(nc);
 
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
   par["VALUE"]=json::value::number(nc);
   Reply(status_codes::OK,par);
 }
 
 void MbmdccManager::c_setregister(http_request m)
 {
+  auto par = json::value::object();
   PMF_INFO(_logMbmdcc,"Set register called ");
 
   uint32_t adr=utils::queryIntValue(m,"address",2);
@@ -458,37 +499,40 @@ void MbmdccManager::c_setregister(http_request m)
 
   this->writeRegister(adr,val);
 
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
   par["VALUE"]=json::value::number(this->readRegister(adr));
   Reply(status_codes::OK,par);
 }
 void MbmdccManager::c_getregister(http_request m)
 {
+  auto par = json::value::object();
   PMF_INFO(_logMbmdcc,"Get register called ");
 
   uint32_t adr=utils::queryIntValue(m,"address",2);
   PMF_INFO(_logMbmdcc,"Get register called with "<<adr);
 
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
   par["VALUE"]=json::value::number(this->readRegister(adr));
   //std::cout<<response<<std::endl;
   Reply(status_codes::OK,par);
 }
 void MbmdccManager::c_setcalibregister(http_request m)
 {
+  auto par = json::value::object();
   PMF_INFO(_logMbmdcc,"Calib register called ");
 
   uint32_t nc=utils::queryIntValue(m,"value",0);
   PMF_INFO(_logMbmdcc,"Calib register called "<<nc);
   this->setCalibRegister(nc);
 
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
   par["VALUE"]=json::value::number(nc);
   Reply(status_codes::OK,par);
 }
 
 void MbmdccManager::c_settrigext(http_request m)
 {
+  auto par = json::value::object();
   PMF_INFO(_logMbmdcc," Trig ext setting called ");
 
   uint32_t delay=utils::queryIntValue(m,"delay",20);
@@ -496,7 +540,7 @@ void MbmdccManager::c_settrigext(http_request m)
   this->setTriggerDelay(delay);
   this->setTriggerBusy(busy);
 
-  par["STATUS"]=json::value:string(U("DONE"));
+  par["STATUS"]=json::value::string(U("DONE"));
   par["DELAY"]=json::value::number(delay);
   par["BUSY"]=json::value::number(busy);
   Reply(status_codes::OK,par);
@@ -504,6 +548,7 @@ void MbmdccManager::c_settrigext(http_request m)
 
 void MbmdccManager::c_status(http_request m)
 {
+  auto par = json::value::object();
   PMF_INFO(_logMbmdcc," Status called ");
 
   web::json::value rc;
