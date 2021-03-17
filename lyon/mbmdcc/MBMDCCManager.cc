@@ -582,3 +582,18 @@ void MbmdccManager::c_status(http_request m)
 } 
 
 
+extern "C" 
+{
+    // loadDHCALAnalyzer function creates new LowPassDHCALAnalyzer object and returns it.  
+  handlerPlugin* loadProcessor(void)
+    {
+      return (new  MbmdccManager);
+    }
+    // The deleteDHCALAnalyzer function deletes the LowPassDHCALAnalyzer that is passed 
+    // to it.  This isn't a very safe function, since there's no 
+    // way to ensure that the object provided is indeed a LowPassDHCALAnalyzer.
+  void deleteProcessor(handlerPlugin* obj)
+    {
+      delete obj;
+    }
+}
