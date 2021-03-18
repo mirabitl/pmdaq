@@ -109,6 +109,10 @@ target_include_directories(pmd PRIVATE include)
 target_link_libraries(pmd PRIVATE pmdaq ${PMDAQ_LIBS})
 
 
-
-
+set(SCRIPT_TARGET ${CMAKE_CURRENT_SOURCE_DIR}/scripts/session.py ${CMAKE_CURRENT_SOURCE_DIR}/scripts/serviceAccess.py     )
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/scripts )
+  install(FILES ${SCRIPT_TARGET}  DESTINATION share )
+  install(FILES etc/pmdaq.conf etc/pns.conf DESTINATION etc)
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/bin/pmdaemon ${CMAKE_CURRENT_SOURCE_DIR}/bin/pnsdaemon DESTINATION bin)
+endif()
 install(TARGETS pmd  DESTINATION bin  ARCHIVE DESTINATION bin)
