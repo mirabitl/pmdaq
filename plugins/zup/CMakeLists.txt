@@ -9,27 +9,29 @@ project(app_zup VERSION 0.0.1 DESCRIPTION "Zup plugin")
 
 set(SRCS
   zupPlugin.cxx
-	)
-	
+  Zup.cxx
+  )
+
 set(HEADERS
-	zupPlugin.hh
-	)
+  Zup.hh
+  zupPlugin.hh
+  )
 
 add_library(app_zup SHARED ${SRCS} ${HEADERS})
 
-set(zup_DIR /opt/lydaq/drivers/Zup )
-find_library(ZUP_LIB lydaq_Zup PATHS /opt/lydaq/drivers/Zup/lib)
-if(NOT ZUP_LIB)
-  message(FATAL_ERROR "ZUP_LIB library not found")
-endif()
+#set(zup_DIR /opt/lydaq/drivers/Zup )
+#find_library(ZUP_LIB lydaq_Zup PATHS /opt/lydaq/drivers/Zup/lib)
+#if(NOT ZUP_LIB)
+#  message(FATAL_ERROR "ZUP_LIB library not found")
+#endif()
 
 
 
-target_link_libraries(app_zup PUBLIC ${ZUP_LIB})
+#target_link_libraries(app_zup PUBLIC ${ZUP_LIB})
 target_link_libraries(app_zup PRIVATE ${PMDAQ_LIBS})
-target_include_directories(app_zup PRIVATE ${zup_DIR}/include)
+#target_include_directories(app_zup PRIVATE ${zup_DIR}/include)
 
-target_include_directories(app_zup PRIVATE /usr/include/jsoncpp)
+#target_include_directories(app_zup PRIVATE /usr/include/jsoncpp)
 
 
 include(../../CMake.defs)
@@ -40,7 +42,7 @@ include(../../CMake.defs)
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
 #find_package(log4cxx CONFIG REQUIRED)
 #target_link_libraries(app_zup PRIVATE log4cxx)
-target_link_libraries(app_zup PRIVATE jsoncpp)
+#target_link_libraries(app_zup PRIVATE jsoncpp)
 
 target_include_directories(app_zup PRIVATE ../../include)
 

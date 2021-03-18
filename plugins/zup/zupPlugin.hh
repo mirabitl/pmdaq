@@ -20,8 +20,7 @@ class zupPlugin : public monitoring::supervisor
     virtual void close();
     virtual void registerCommands();
     // Access to the interface
-    lydaq::Zup* getZupInterface(){  //std::cout<<" get Ptr "<<_hv<<std::endl;
-      return _lv;}
+    zup::Zup* getZupInterface(){  return _lv;}
     // Status
     virtual web::json::value status();
     virtual std::string hardware(){return "ZUP";}
@@ -35,6 +34,6 @@ class zupPlugin : public monitoring::supervisor
 
 
   private:
-    lydaq::Zup* _lv;
+    zup::Zup* _lv;
   };
 

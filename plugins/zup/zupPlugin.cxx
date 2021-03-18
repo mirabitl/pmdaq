@@ -1,9 +1,9 @@
 
 #include "zupPlugin.hh"
-#include <jsoncpp/json/json.h>
-static LoggerPtr _logZup(Logger::getLogger("PMDAQ_ZUP"));
 
-using namespace lydaq;
+
+
+using namespace zup;
 zupPlugin::zupPlugin(): _lv(NULL){} 
 void zupPlugin::open()
 {
@@ -58,14 +58,14 @@ web::json::value zupPlugin::status()
       PMF_ERROR(_logZup,"No Zup Interface opened");
        return r;
     }
-   Json::Value sr=_lv->Status();
+   auto sr=_lv->Status();
 
-   r["vset"]=json::value::number(sr["vset"].asFloat());
-   r["iset"]=json::value::number(sr["iset"].asFloat());
-   r["vout"]=json::value::number(sr["vout"].asFloat());
-   r["iout"]=json::value::number(sr["iout"].asFloat());
-   r["pwrstatus"]=json::value::number(sr["status"].asUInt());
-   int pws=sr["status"].asUInt();
+   r["vset"]=sr["vset"];
+   r["iset"]=sr["iset"];
+   r["vout"]=sr["vout"];
+   r["iout"]=sr["iout"];
+   r["pwrstatus"]=sr["status"];
+   int pws=sr["status"].as_integer();
    if ((pws>>4)&1)
      r["status"]=json::value::string(U("ON"));
    else
