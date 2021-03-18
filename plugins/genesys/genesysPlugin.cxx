@@ -1,7 +1,7 @@
 
 #include "genesysPlugin.hh"
-using namespace lydaq;
-static LoggerPtr _logGenesys(Logger::getLogger("PMDAQ_GENESYS"));
+using namespace genesys;
+
 
 genesysPlugin::genesysPlugin(): _lv(NULL){} 
 void genesysPlugin::open()

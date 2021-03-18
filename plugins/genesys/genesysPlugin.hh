@@ -20,7 +20,7 @@ class genesysPlugin : public monitoring::supervisor
     virtual void close();
     virtual void registerCommands();
     // Access to the interface
-    lydaq::Genesys* getGenesysInterface(){  //std::cout<<" get Ptr "<<_hv<<std::endl;
+    genesys::Genesys* getGenesysInterface(){  //std::cout<<" get Ptr "<<_hv<<std::endl;
       return _lv;}
     // Status
     virtual web::json::value status();
@@ -35,6 +35,6 @@ class genesysPlugin : public monitoring::supervisor
 
 
   private:
-    lydaq::Genesys* _lv;
+    genesys::Genesys* _lv;
   };
 
