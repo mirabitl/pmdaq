@@ -21,7 +21,7 @@ using namespace std;
     virtual void registerCommands();
     // Access to the interface
  
-    lydaq::HVCaenInterface* getHVCaenInterface(){return _hv;}
+    caen::HVCaenInterface* getHVCaenInterface(){return _hv;}
     // Status
     virtual web::json::value status();
     web::json::value status(int32_t f,int32_t l);
@@ -39,7 +39,7 @@ using namespace std;
 
   private:
     //zdaq::fsm* _fsm;
-    lydaq::HVCaenInterface* _hv;
+    caen::HVCaenInterface* _hv;
 
   };
 

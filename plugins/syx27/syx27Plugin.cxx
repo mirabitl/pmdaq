@@ -1,6 +1,6 @@
 
 #include "syx27Plugin.hh"
-static LoggerPtr _logSyx27(Logger::getLogger("PMDAQ_SYX27"));
+
 
 syx27Plugin::syx27Plugin(): _hv(NULL){} 
 void syx27Plugin::open()
@@ -38,7 +38,7 @@ void syx27Plugin::open()
   std::cout<<Host<<"|"<<std::endl;
   
   
-  _hv= new lydaq::HVCaenInterface(Host,Name,Pwd);
+  _hv= new caen::HVCaenInterface(Host,Name,Pwd);
 
 
   _hv->Connect();

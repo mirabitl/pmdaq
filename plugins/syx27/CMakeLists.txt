@@ -17,18 +17,20 @@ set(HEADERS
 
 add_library(app_syx27 SHARED ${SRCS} ${HEADERS})
 
-set(syx27_DIR /opt/lydaq/drivers/Caen )
-find_library(SYX27_LIB lydaq_Caen PATHS ${syx27_DIR}/lib)
+#set(syx27_DIR /opt/lydaq/drivers/Caen )
+find_library(SYX27_LIB caenhvwrapper  PATHS /usr/lib)
+
 if(NOT SYX27_LIB)
-  message(FATAL_ERROR "SYX27_LIB library not found")
+  message(FATAL_ERROR "caenhvwrapper library not found")
 endif()
 
 
 
 target_link_libraries(app_syx27 PUBLIC ${SYX27_LIB})
-target_include_directories(app_syx27 PRIVATE ${syx27_DIR}/include)
 
-target_include_directories(app_syx27 PRIVATE /usr/include/jsoncpp)
+#target_include_directories(app_syx27 PRIVATE ${syx27_DIR}/include)
+
+#target_include_directories(app_syx27 PRIVATE /usr/include/jsoncpp)
 
 
 include(../../CMake.defs)
@@ -39,7 +41,7 @@ target_link_libraries(app_syx27 PRIVATE cpprest)
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
 #find_package(log4cxx CONFIG REQUIRED)
 target_link_libraries(app_syx27 PRIVATE log4cxx)
-target_link_libraries(app_syx27 PRIVATE jsoncpp)
+#target_link_libraries(app_syx27 PRIVATE jsoncpp)
 
 target_include_directories(app_syx27 PRIVATE ../../include)
 
