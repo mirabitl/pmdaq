@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+import os
+import socks
+import socket
+import json
+from copy import deepcopy
+import base64
+import time
+import argparse
+#import requests //tres long
+import MongoJob as mg
+import sys
+
+
+#print("COUCOU")
+parser = argparse.ArgumentParser()
+
+# configure all the actions
+grp_action = parser.add_mutually_exclusive_group()
+grp_action.add_argument('--upload-config',action='store_true',help=' Upload new config with --name=NAME --file=FILE and optional --comment=xxx and --version=num')
+grp_action.add_argument('--configurations', action='store_true',help='List all the available configurations')
+
+grp_action.add_argument('--download', action='store_true',
+                        help='download the configuration specified in --name=config name --version=version')
+
+
+grp_action.add_argument('--runs', action='store_true',help='List all the taken runs')
+grp_action.add_argument('--fsms', action='store_true',help='List all the acquisition status')
+grp_action.add_argument('--new-run', action='store_true',help='Find last run of a given setup (--location setup) and fill the lastrun.sjon with the next runid Optional: --comment=xxxx')
+
+
+# Arguments
+parser.add_argument('--version', action='store',type=int,default=1,dest='version',help='DB configuration version' )
+parser.add_argument('--name', action='store', type=str,
+                    default=None, dest='name', help='Configuration name')
+parser.add_argument('--comment', action='store', type=str,
+                    default=None, dest='comment', help='Comment')
+parser.add_argument('--location', action='store', type=str,
+                    default=None, dest='location', help='Setup name')
+parser.add_argument('--file', action='store', type=str,
+                    default=None, dest='file', help='Configuration file')
+
+if len(sys.argv)==1:
+    parser.print_help(sys.stderr)
+    sys.exit(1)
+
+results = parser.parse_args()
+# create the default access
+#print("COUCOU")
+
+_wdd=mg.instance()
+
+
+# Analyse results
+# analyse the command
+lcgi = {}
+r_cmd = None
+
+if (results.upload_config):
+    r_cmd = 'upload_config'
+    version=1
+    comment="No comment given"
+    if (results.name == None):
+        print('Please specify the name --name=name')
+        exit(0)
+    if (results.file == None):
+        print('Please specify the file --file=ver')
+        exit(0)
+    if (results.version != None):
+       version=results.version
+       #print(version)
+    if (results.comment != None):
+       comment=results.comment
+       #print(comment)
+    _wdd.uploadConfig(results.name,results.file,comment,version)
+    exit(0)
+
+
+
+
+if (results.download):
+    r_cmd = 'download'
+    
+    if (results.name != None):
+        if (results.version == None):
+            print('Please specify the version --version=ver')
+            exit(0)
+        _wdd.downloadConfig(results.name,results.version,True)
+        exit(0)
+    else:
+        print(" Specify  --name for configuration ")
+        exit(0)
+
+if (results.configurations):
+    r_cmd = 'configurations'
+    _wdd.configurations()
+    exit(0)
+
+if (results.runs):
+    _wdd.runs()
+    exit(0)
+
+if (results.fsms):
+    _wdd.fsms()
+    exit(0)
+
+if (results.new_run):
+    comment="No comment given"
+    if (results.location == None):
+        print('Please specify the setup --location=name')
+        exit(0)
+    if (results.comment != None):
+       comment=results.comment
+       #print(comment)
+    _wdd.getRun(results.location,comment)
+    exit(0)

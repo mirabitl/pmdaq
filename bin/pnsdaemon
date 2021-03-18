@@ -2,7 +2,7 @@
 
 
 
-DAEMON="/opt/pmdaq/bin/pnse" #ligne de commande du programme
+DAEMON="/usr/local/pmdaq/bin/pnse" #ligne de commande du programme
 DAEMON_OPT="-H `hostname` -P 7777"  #argument à utiliser par le programme
 DAEMONUSER="root" #utilisateur du programme
 DEAMON_NAME="pnse" #Nom du programme (doit être identique à l'exécutable)
@@ -10,14 +10,13 @@ PIDFILE="/var/log/pns.log"
 
 PATH="/sbin:/bin:/usr/sbin:/usr/bin" #Ne pas toucher
 
+export PYTHONPATH=/usr/local/pmdaq/share:$PYTHONPATH
 
-export LD_LIBRARY_PATH=/opt/pmdaq/lib:/usr/lib:/usr/local/lib:$LD_LIBRARY_PATH
-export PATH=/opt/zdaq/scripts:$PATH
-export PYTHONPATH=/opt/zdaq/scripts:$PYTHONPATH
+export LD_LIBRARY_PATH=/usr/local/pmdaq/lib:/usr/lib:/usr/local/lib:$LD_LIBRARY_PATH
 
 export PNS_NAME=lyocmsmu03
 
-. /etc/pns.conf
+. /usr/local/pmdaq/etc/pns.conf
 
 test -x $DAEMON || exit 0
 
