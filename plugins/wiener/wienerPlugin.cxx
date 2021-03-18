@@ -1,6 +1,5 @@
 
 #include "wienerPlugin.hh"
-static LoggerPtr _logWiener(Logger::getLogger("PMDAQ_WIENER"));
 
 wienerPlugin::wienerPlugin(): _hv(NULL){} 
 void wienerPlugin::open()
@@ -26,7 +25,7 @@ void wienerPlugin::open()
   
   
   
-  _hv= new lydaq::WienerSnmp(address);
+  _hv= new wiener::WienerSnmp(address);
   
 
 }
