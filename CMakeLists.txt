@@ -108,11 +108,23 @@ target_link_libraries(pmd PRIVATE Threads::Threads)
 target_include_directories(pmd PRIVATE include)
 target_link_libraries(pmd PRIVATE pmdaq ${PMDAQ_LIBS})
 
+file(GLOB SCRIPT_TARGET
+     "${CMAKE_CURRENT_SOURCE_DIR}/scripts/*.py"
+     )
+file(GLOB MG_TARGET
+     "${CMAKE_CURRENT_SOURCE_DIR}/scripts/mg*"
+     )
+file(GLOB DAEMON_TARGET
+     "${CMAKE_CURRENT_SOURCE_DIR}/bin/*daemon"
+     )
+   
+file(GLOB ETC_TARGET
+     "${CMAKE_CURRENT_SOURCE_DIR}/etc/*"
+     )
 
-set(SCRIPT_TARGET ${CMAKE_CURRENT_SOURCE_DIR}/scripts/session.py ${CMAKE_CURRENT_SOURCE_DIR}/scripts/serviceAccess.py     )
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/scripts )
-  install(FILES ${SCRIPT_TARGET}  DESTINATION share )
-  install(FILES etc/pmdaq.conf etc/pns.conf DESTINATION etc)
-  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/bin/pmdaemon ${CMAKE_CURRENT_SOURCE_DIR}/bin/pnsdaemon DESTINATION bin)
-endif()
+
+install(FILES ${SCRIPT_TARGET}  DESTINATION share )
+install(FILES ${ETC_TARGET} DESTINATION etc)
+install(FILES ${MG_TARGET} ${DAEMON_TARGET} DESTINATION bin)
+
 install(TARGETS pmd  DESTINATION bin  ARCHIVE DESTINATION bin)
