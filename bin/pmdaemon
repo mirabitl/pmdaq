@@ -17,7 +17,7 @@ export PYTHONPATH=/usr/local/pmdaq/share:$PYTHONPATH
 
 export PNS_NAME=lyocmsmu03
 
-. /usr/local/pmdaq/etc/pmdaq.conf
+. /etc/pmdaq.conf
 
 test -x $DAEMON || exit 0
 

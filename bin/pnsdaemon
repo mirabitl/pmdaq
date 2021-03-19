@@ -16,7 +16,7 @@ export LD_LIBRARY_PATH=/usr/local/pmdaq/lib:/usr/lib:/usr/local/lib:$LD_LIBRARY_
 
 export PNS_NAME=lyocmsmu03
 
-. /usr/local/pmdaq/etc/pns.conf
+. /etc/pns.conf
 
 test -x $DAEMON || exit 0
 
