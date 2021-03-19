@@ -17,7 +17,7 @@ using namespace mpi;
 
 
 
-using namespace lydaq;
+
 
 
 void gricv0::Interface::dolisten()
@@ -33,12 +33,22 @@ void gricv0::Interface::dolisten()
 }
 void gricv0::Interface::listen()
 {
-  g_store.create_thread(boost::bind(&gricv0::Interface::dolisten, this));
   _running=true;
+  g_store=std::thread(std::bind(&gricv0::Interface::dolisten, this));
+
   // Comment out for ZDAQ running
   //g_run.create_thread(boost::bind(&lydaq::TdcManager::doStart, this));
 
 }
+void gricv0::Interface::terminate()
+{
+  if (_running)
+    {
+    _running=false;
+    g_store.join();
+    }
+}
+
 
 gricv0::Interface::Interface() :  _group(NULL)
 {
@@ -81,11 +91,11 @@ void gricv0::Interface:: addDevice(std::string address)
   _group->add(b->data()->socket());
 
     fprintf(stderr,"Binding reg  \n");
-  _msh->addHandler(b->reg()->id(),boost::bind(&gricv0::socketHandler::processBuffer,b->reg(),_1,_2,_3));
+  _msh->addHandler(b->reg()->id(),std::bind(&gricv0::socketHandler::processBuffer,b->reg(),std::placeholders::_1,std::placeholders::_2,std::placeholders::_3));
   fprintf(stderr,"Binding slc  \n");
-  _msh->addHandler(b->sensor()->id(),boost::bind(&gricv0::socketHandler::processBuffer,b->sensor(),_1,_2,_3));
+  _msh->addHandler(b->sensor()->id(),std::bind(&gricv0::socketHandler::processBuffer,b->sensor(),std::placeholders::_1,std::placeholders::_2,std::placeholders::_3));
   fprintf(stderr,"Binding data  \n");
-  _msh->addHandler(b->data()->id(),boost::bind(&gricv0::socketHandler::processBuffer,b->data(),_1,_2,_3));
+  _msh->addHandler(b->data()->id(),std::bind(&gricv0::socketHandler::processBuffer,b->data(),std::placeholders::_1,std::placeholders::_2,std::placeholders::_3));
 		   
   std::pair<std::string, gricv0::board*> p1(address,b);
 

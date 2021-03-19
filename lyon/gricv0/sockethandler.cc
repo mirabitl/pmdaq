@@ -18,11 +18,10 @@
 #include <sstream>
 #include <map>
 #include <bitset>
-#include <boost/format.hpp>
 #include <arpa/inet.h>
 
 
-using namespace lydaq;
+
 
 gricv0::socketHandler::socketHandler(std::string ip,uint32_t port) : _idx(0),_transaction(0)
 {
@@ -36,7 +35,7 @@ gricv0::socketHandler::socketHandler(std::string ip,uint32_t port) : _idx(0),_tr
       _answ.insert(p);
     }
   // Now create the socket
-  _id=( (uint64_t) mpi::MpiMessageHandler::convertIP(ip)<<32)|port;
+  _id=( (uint64_t) utils::convertIP(ip)<<32)|port;
 
   _sock=new NL::Socket(ip,port);
 }
@@ -62,7 +61,7 @@ uint32_t gricv0::socketHandler::sendMessage(gricv0::Message* m)
     
     _sock->send((const void*) m->ptr(),m->length()*sizeof(uint8_t));
 
-    LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" Address "<<std::hex<<((m->address()>>32)&0xFFFFFFFF)<<std::dec<<" Port "<<(m->address()&0XFFFF)<<" Length "<<m->length()<<" Transaction "<<tr);
+    PM_INFO(_logGricv0," Address "<<std::hex<<((m->address()>>32)&0xFFFFFFFF)<<std::dec<<" Port "<<(m->address()&0XFFFF)<<" Length "<<m->length()<<" Transaction "<<tr);
 
     return (tr);
   }
@@ -84,11 +83,11 @@ int16_t gricv0::socketHandler::checkBuffer(uint8_t* b,uint32_t maxidx)
      uint16_t* _sBuf= (uint16_t*) &b[1];
      elen=ntohs(_sBuf[0]); // Header
 
-     LOG4CXX_DEBUG(_logFeb,__PRETTY_FUNCTION__<<"CheckBuf header ELEN "<<elen<<" MAXID "<<maxidx);
+     PM_DEBUG(_logGricv0,"CheckBuf header ELEN "<<elen<<" MAXID "<<maxidx);
      //fprintf(stderr,"d %d %c\n",__LINE__,b[elen-1]);
      if (elen>maxidx)
        {
-         LOG4CXX_DEBUG(_logFeb,__PRETTY_FUNCTION__<<"CheckBuf header:Not enough data ELEN "<<elen<<" MAXID "<<maxidx);
+         PM_DEBUG(_logGricv0,"CheckBuf header:Not enough data ELEN "<<elen<<" MAXID "<<maxidx);
          return -1;
        }
      if (b[elen-1]==')')
@@ -98,7 +97,7 @@ int16_t gricv0::socketHandler::checkBuffer(uint8_t* b,uint32_t maxidx)
        }
      else
        {
-         LOG4CXX_DEBUG(_logFeb,__PRETTY_FUNCTION__<<"CheckBuf header :Missing  end tag ");
+         PM_DEBUG(_logGricv0,"CheckBuf header :Missing  end tag ");
          return -1;
        }
    }
@@ -108,7 +107,7 @@ int16_t gricv0::socketHandler::checkBuffer(uint8_t* b,uint32_t maxidx)
 
 void gricv0::socketHandler::processBuffer(uint64_t id, uint16_t l,char* bb)
 {
-  LOG4CXX_DEBUG(_logFeb,__PRETTY_FUNCTION__<<"Entering procesBuffer "<<std::hex<<id<<std::dec<<" Length "<<l);
+  PM_DEBUG(_logGricv0,"Entering procesBuffer "<<std::hex<<id<<std::dec<<" Length "<<l);
   //if (l>16) getchar();
   //memcpy(_b,bb,l);
   memcpy(&_buf[_idx],bb,l);

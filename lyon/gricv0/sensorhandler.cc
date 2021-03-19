@@ -22,7 +22,7 @@
 #include <arpa/inet.h>
 
 
-using namespace lydaq;
+
 
 gricv0::sensorHandler::sensorHandler(std::string ip) : socketHandler(ip,gricv0::Interface::PORT::SENSOR)
 {
@@ -38,7 +38,7 @@ bool gricv0::sensorHandler::processPacket()
   uint8_t transaction=_buf[gricv0::Message::Fmt::TRANS];
 
   
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<this->sourceid()<<"SENSOR data answer="<<transaction<<" length="<<length);
+  PM_INFO(_logGricv0,this->sourceid()<<"SENSOR data answer="<<transaction<<" length="<<length);
   fprintf(stderr,"\nSENSOR RC ==> ");
   for (int i=0;i<_idx;i++)
     {

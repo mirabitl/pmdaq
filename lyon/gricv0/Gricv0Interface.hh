@@ -1,5 +1,4 @@
-#ifndef _GRICV0_INTERFACE_HH
-#define _GRICV0_INTERFACE_HH
+#pragma once
 
 #include "MpiMessageHandler.hh"
 #include <stdint.h>
@@ -8,15 +7,16 @@
 #include <string.h>
 #include <zlib.h>
 #include <iostream>
-#include "ReadoutLogger.hh"
+#include <thread>
+#include "stdafx.hh"
+#include "utils.hh"
 #define MAX_BUFFER_LEN 0x4000
-#include "zmSender.hh"
+#include "pmSender.hh"
 #define C3I_VERSION 145
 #define MBSIZE 0x40000
 
-namespace lydaq
-{
-  namespace gricv0
+static LoggerPtr _logGricv0(Logger::getLogger("PMDAQ_GRICV0"));
+namespace gricv0
   {
     class board;
     class Message {
@@ -29,7 +29,7 @@ namespace lydaq
       inline uint8_t* ptr(){return _buf;}
       inline void setLength(uint16_t l){_length=l;}
       inline void setAddress(uint64_t a){_address=a;}
-      inline void setAddress(std::string address,uint16_t port){_address=( (uint64_t) mpi::MpiMessageHandler::convertIP(address)<<32)|port;}
+      inline void setAddress(std::string address,uint16_t port){_address=( (uint64_t) utils::convertIP(address)<<32)|port;}
     private:
       uint64_t _address;
       uint16_t _length;
@@ -47,6 +47,7 @@ namespace lydaq
       Interface();
       ~Interface(){;}
       void initialise();
+      void terminate();
       void addDevice(std::string address);
       void listen();
 
@@ -64,8 +65,8 @@ namespace lydaq
       mpi::OnAccept* _onAccept;
       mpi::OnClientDisconnect* _onClientDisconnect;
       mpi::OnDisconnect* _onDisconnect;
-      boost::thread_group g_store;
-      boost::thread_group g_run;
+      std::thread g_store;
+      std::thread g_run;
       bool _running;
     };
 
@@ -149,12 +150,12 @@ namespace lydaq
       inline uint32_t triggers(){return _ntrg;}
       void clear();
       void connect(zmq::context_t* c,std::string dest);
-      void autoRegister(zmq::context_t* c,Json::Value config,std::string appname,std::string portname);
+      void autoRegister(zmq::context_t* c,std::string session,std::string appname,std::string portname);
     private:
       uint64_t _lastABCID;
       uint32_t _lastGTC,_lastBCID,_event,_detid,_ntrg,_expectedLength;
       uint32_t _nProcessed;
-      zdaq::zmSender* _dsData;
+      pm::pmSender* _dsData;
       uint8_t _triggerId;
       uint32_t _detId;
 
@@ -179,5 +180,3 @@ namespace lydaq
     };
 
   };
-};
-#endif

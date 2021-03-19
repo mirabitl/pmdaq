@@ -21,7 +21,7 @@
 #include <boost/format.hpp>
 #include <arpa/inet.h>
 
-using namespace lydaq;
+
 
 gricv0::dataHandler::dataHandler(std::string ip) : socketHandler(ip,gricv0::Interface::PORT::DATA),_ntrg(0),_dsData(NULL),_triggerId(0),_detId(140)
 {
@@ -31,7 +31,7 @@ void gricv0::dataHandler::connect(zmq::context_t* c,std::string dest)
 {
   if (_dsData!=NULL)
     delete _dsData;
-  _dsData = new zdaq::zmSender(c,_detId,this->sourceid());
+  _dsData = new pm::pmSender(c,_detId,this->sourceid());
   _dsData->connect(dest);
 }
 void gricv0::dataHandler::clear()
@@ -48,12 +48,12 @@ void gricv0::dataHandler::clear()
 }
 
 
-void gricv0::dataHandler::autoRegister(zmq::context_t* c,Json::Value config,std::string appname,std::string portname)
+void gricv0::dataHandler::autoRegister(zmq::context_t* c,std::string session,std::string appname,std::string portname)
 {
   if (_dsData!=NULL)
     delete _dsData;
-  _dsData = new zdaq::zmSender(c,_detId,this->sourceid());
-  _dsData->autoDiscover(config,appname,portname);//
+  _dsData = new pm::pmSender(c,_detId,this->sourceid());
+  _dsData->autoDiscover(session,appname,portname);//
   //for (uint32_t i=0;i<_mStream.size();i++)
   //        ds->connect(_mStream[i]);
   _dsData->collectorRegister();
@@ -73,7 +73,7 @@ bool gricv0::dataHandler::processPacket()
   _lastGTC=((uint32_t) _buf[5] <<24)|((uint32_t) _buf[6] <<16)|((uint32_t) _buf[7] <<8)|((uint32_t) _buf[8]);
   _lastABCID = ((uint64_t) _buf[9] <<48)|((uint64_t) _buf[10] <<32)|((uint64_t) _buf[11] <<24)|((uint64_t) _buf[12] <<16)|((uint64_t) _buf[13] <<8)|((uint64_t) _buf[14]);
 
-  LOG4CXX_DEBUG(_logFeb,__PRETTY_FUNCTION__<<id()<<" Command answer="<<command<<" length="<<length<<" trame id="<<trame<<" buffer length "<<_idx);
+  PM_DEBUG(_logGricv0,id()<<" Command answer="<<command<<" length="<<length<<" trame id="<<trame<<" buffer length "<<_idx);
 
 #define DEBUGEVENTN
 #ifdef DEBUGEVENT  
@@ -109,7 +109,7 @@ bool gricv0::dataHandler::processPacket()
       memcpy((unsigned char*) _dsData->payload(),_buf,length);
       _dsData->publish(_lastABCID,_lastGTC,idx);
       if (_event%100==0)
-	LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<id()<<"Publish  Event="<<_event<<" GTC="<<_lastGTC<<" ABCID="<<_lastABCID<<" size="<<idx);
+	PM_INFO(_logGricv0,id()<<"Publish  Event="<<_event<<" GTC="<<_lastGTC<<" ABCID="<<_lastABCID<<" size="<<idx);
     }
   _event++;
   return true;

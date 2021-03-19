@@ -1,9 +1,9 @@
 #include "Gricv0Interface.hh"
-using namespace lydaq;
+
 
 /// Board
 
-lydaq::gricv0::board::board(std::string ip) : _ip(ip)
+gricv0::board::board(std::string ip) : _ip(ip)
 {
   fprintf(stderr,"Creating registeraccess at address %s  \n",ip.c_str());
 

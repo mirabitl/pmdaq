@@ -17,362 +17,415 @@ using namespace mpi;
 
 
 
-#include "fsmwebCaller.hh"
-
-using namespace zdaq;
-using namespace lydaq;
+using namespace gricv0;
 
 
-lydaq::Gricv0Manager::Gricv0Manager(std::string name) : zdaq::baseApplication(name),_context(NULL),_hca(NULL),_mpi(NULL),_running(false)
+Gricv0Manager::Gricv0Manager() : _context(NULL),_hca(NULL),_mpi(NULL),_running(false)
+{;}
+void Gricv0Manager::initialise()
 {
-  _fsm=this->fsm();
+
   // Register state
 
-  _fsm->addState("INITIALISED");
-  _fsm->addState("CONFIGURED");
-  _fsm->addState("RUNNING");
+  this->addState("INITIALISED");
+  this->addState("CONFIGURED");
+  this->addState("RUNNING");
   
-  _fsm->addTransition("INITIALISE","CREATED","INITIALISED",boost::bind(&lydaq::Gricv0Manager::initialise, this,_1));
-  _fsm->addTransition("CONFIGURE","INITIALISED","CONFIGURED",boost::bind(&lydaq::Gricv0Manager::configure, this,_1));
-  _fsm->addTransition("CONFIGURE","CONFIGURED","CONFIGURED",boost::bind(&lydaq::Gricv0Manager::configure, this,_1));
+  this->addTransition("INITIALISE","CREATED","INITIALISED",std::bind(&Gricv0Manager::fsm_initialise, this,std::placeholders::_1));
+  this->addTransition("CONFIGURE","INITIALISED","CONFIGURED",std::bind(&Gricv0Manager::configure, this,std::placeholders::_1));
+  this->addTransition("CONFIGURE","CONFIGURED","CONFIGURED",std::bind(&Gricv0Manager::configure, this,std::placeholders::_1));
   
-  _fsm->addTransition("START","CONFIGURED","RUNNING",boost::bind(&lydaq::Gricv0Manager::start, this,_1));
-  _fsm->addTransition("STOP","RUNNING","CONFIGURED",boost::bind(&lydaq::Gricv0Manager::stop, this,_1));
-  _fsm->addTransition("DESTROY","CONFIGURED","CREATED",boost::bind(&lydaq::Gricv0Manager::destroy, this,_1));
-  _fsm->addTransition("DESTROY","INITIALISED","CREATED",boost::bind(&lydaq::Gricv0Manager::destroy, this,_1));
+  this->addTransition("START","CONFIGURED","RUNNING",std::bind(&Gricv0Manager::start, this,std::placeholders::_1));
+  this->addTransition("STOP","RUNNING","CONFIGURED",std::bind(&Gricv0Manager::stop, this,std::placeholders::_1));
+  this->addTransition("DESTROY","CONFIGURED","CREATED",std::bind(&Gricv0Manager::destroy, this,std::placeholders::_1));
+  this->addTransition("DESTROY","INITIALISED","CREATED",std::bind(&Gricv0Manager::destroy, this,std::placeholders::_1));
   
   
   
-  //_fsm->addCommand("JOBLOG",boost::bind(&lydaq::Gricv0Manager::c_joblog,this,_1,_2));
-  _fsm->addCommand("STATUS",boost::bind(&lydaq::Gricv0Manager::c_status,this,_1,_2));
-  _fsm->addCommand("RESET",boost::bind(&lydaq::Gricv0Manager::c_reset,this,_1,_2));
-  _fsm->addCommand("STARTACQ",boost::bind(&lydaq::Gricv0Manager::c_startacq,this,_1,_2));
-  _fsm->addCommand("STOPACQ",boost::bind(&lydaq::Gricv0Manager::c_stopacq,this,_1,_2));
-  _fsm->addCommand("RESET",boost::bind(&lydaq::Gricv0Manager::c_reset,this,_1,_2));
-  _fsm->addCommand("STORESC",boost::bind(&lydaq::Gricv0Manager::c_storesc,this,_1,_2));
-  _fsm->addCommand("LOADSC",boost::bind(&lydaq::Gricv0Manager::c_loadsc,this,_1,_2));
-  _fsm->addCommand("READSC",boost::bind(&lydaq::Gricv0Manager::c_readsc,this,_1,_2));
-  _fsm->addCommand("LASTABCID",boost::bind(&lydaq::Gricv0Manager::c_lastabcid,this,_1,_2));
-  _fsm->addCommand("LASTGTC",boost::bind(&lydaq::Gricv0Manager::c_lastgtc,this,_1,_2));
-  _fsm->addCommand("SETTHRESHOLDS",boost::bind(&lydaq::Gricv0Manager::c_setthresholds,this,_1,_2));
-  _fsm->addCommand("SETPAGAIN",boost::bind(&lydaq::Gricv0Manager::c_setpagain,this,_1,_2));
-  _fsm->addCommand("SETMASK",boost::bind(&lydaq::Gricv0Manager::c_setmask,this,_1,_2));
-  _fsm->addCommand("SETCHANNELMASK",boost::bind(&lydaq::Gricv0Manager::c_setchannelmask,this,_1,_2));
-  _fsm->addCommand("DOWNLOADDB",boost::bind(&lydaq::Gricv0Manager::c_downloadDB,this,_1,_2));
-  _fsm->addCommand("SCURVE",boost::bind(&lydaq::Gricv0Manager::c_scurve,this,_1,_2));
+  //this->addCommand("JOBLOG",std::bind(&Gricv0Manager::c_joblog,this,std::placeholders::_1));
+  this->addCommand("STATUS",std::bind(&Gricv0Manager::c_status,this,std::placeholders::_1));
+  this->addCommand("RESET",std::bind(&Gricv0Manager::c_reset,this,std::placeholders::_1));
+  this->addCommand("STARTACQ",std::bind(&Gricv0Manager::c_startacq,this,std::placeholders::_1));
+  this->addCommand("STOPACQ",std::bind(&Gricv0Manager::c_stopacq,this,std::placeholders::_1));
+  this->addCommand("RESET",std::bind(&Gricv0Manager::c_reset,this,std::placeholders::_1));
+  this->addCommand("STORESC",std::bind(&Gricv0Manager::c_storesc,this,std::placeholders::_1));
+  this->addCommand("LOADSC",std::bind(&Gricv0Manager::c_loadsc,this,std::placeholders::_1));
+  this->addCommand("READSC",std::bind(&Gricv0Manager::c_readsc,this,std::placeholders::_1));
+  this->addCommand("LASTABCID",std::bind(&Gricv0Manager::c_lastabcid,this,std::placeholders::_1));
+  this->addCommand("LASTGTC",std::bind(&Gricv0Manager::c_lastgtc,this,std::placeholders::_1));
+  this->addCommand("SETTHRESHOLDS",std::bind(&Gricv0Manager::c_setthresholds,this,std::placeholders::_1));
+  this->addCommand("SETPAGAIN",std::bind(&Gricv0Manager::c_setpagain,this,std::placeholders::_1));
+  this->addCommand("SETMASK",std::bind(&Gricv0Manager::c_setmask,this,std::placeholders::_1));
+  this->addCommand("SETCHANNELMASK",std::bind(&Gricv0Manager::c_setchannelmask,this,std::placeholders::_1));
+  this->addCommand("DOWNLOADDB",std::bind(&Gricv0Manager::c_downloadDB,this,std::placeholders::_1));
+  this->addCommand("SCURVE",std::bind(&Gricv0Manager::c_scurve,this,std::placeholders::_1));
   //std::cout<<"Service "<<name<<" started on port "<<port<<std::endl;
  
-  char* wp=getenv("WEBPORT");
-  if (wp!=NULL)
-    {
-      LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" Service "<<name<<" is starting on "<<atoi(wp));
-
-      
-      _fsm->start(atoi(wp));
-    }
-    
   
  
   // Initialise NetLink
 
 
 }
-void lydaq::Gricv0Manager::c_status(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void Gricv0Manager::end()
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"Status CMD called ");
-  response["STATUS"]="DONE";
+  // Stop any running process
+  if (_sc_running)
+    {
+      _sc_running=false;
+      g_scurve.join();
+    }
+  //Stop listening
+  if (_mpi!=NULL)
+    _mpi->terminate();
 
-  Json::Value jl;
+  
+}
+
+
+void Gricv0Manager::c_status(http_request m)
+{
+
+  auto par = json::value::object();
+
+  PMF_INFO(_logGricv0,"Status CMD called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
+
+  web::json::value jl;uint32_t mb=0;
   for (auto x:_mpi->boards())
     {
 
-      Json::Value jt;
-      jt["detid"]=x.second->data()->detectorId();
+      web::json::value jt;
+      jt["detid"]=web::json::value::number(x.second->data()->detectorId());
       std::stringstream sid;
       sid<<std::hex<<x.second->data()->difId()<<std::dec;
-      jt["sourceid"]=sid.str();
-      jt["SLC"]=x.second->reg()->slcStatus();
-      jt["gtc"]=x.second->data()->gtc();
-      jt["abcid"]=(Json::Value::UInt64)x.second->data()->abcid();
-      jt["event"]=x.second->data()->event();
-      jt["triggers"]=x.second->data()->triggers();
-      jl.append(jt);
+      jt["sourceid"]=web::json::value::string(U(sid.str()));
+      jt["SLC"]=web::json::value::number(x.second->reg()->slcStatus());
+      jt["gtc"]=web::json::value::number(x.second->data()->gtc());
+      jt["abcid"]=web::json::value::number(x.second->data()->abcid());
+      jt["event"]=web::json::value::number(x.second->data()->event());
+      jt["triggers"]=web::json::value::number(x.second->data()->triggers());
+      jl[mb++]=jt;
     }
-  response["GRICSTATUS"]=jl;
+  par["GRICSTATUS"]=jl;
+  
+  Reply(status_codes::OK,par);
+
 }
 
 
 
-void lydaq::Gricv0Manager::c_startacq(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void Gricv0Manager::c_startacq(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"STARTACQ CMD called ");
+  auto par = json::value::object();
+
+  PMF_INFO(_logGricv0,"STARTACQ CMD called ");
 
  for (auto x:_mpi->boards())
     {
-      x.second->reg()->sendCommand(lydaq::gricv0::Message::command::STARTACQ);
+      x.second->reg()->sendCommand(gricv0::Message::command::STARTACQ);
     }
-  response["STATUS"]="DONE";
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);
 }
 
-void lydaq::Gricv0Manager::c_stopacq(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void Gricv0Manager::c_stopacq(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"STOPACQ CMD called ");
+  auto par = json::value::object();
+    
+  PMF_INFO(_logGricv0,"STOPACQ CMD called ");
  for (auto x:_mpi->boards())
     {
-      x.second->reg()->sendCommand(lydaq::gricv0::Message::command::STOPACQ);
+      x.second->reg()->sendCommand(gricv0::Message::command::STOPACQ);
     }
-  response["STATUS"]="DONE";  
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);
 }
 
-void lydaq::Gricv0Manager::c_reset(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void Gricv0Manager::c_reset(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"RESET CMD called ");
+  auto par = json::value::object();
+    
+  PMF_INFO(_logGricv0,"RESET CMD called ");
  for (auto x:_mpi->boards())
     {
-      x.second->reg()->sendCommand(lydaq::gricv0::Message::command::RESET);
+      x.second->reg()->sendCommand(gricv0::Message::command::RESET);
     }
-  response["STATUS"]="DONE"; 
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);
 }
 
-void lydaq::Gricv0Manager::c_storesc(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void Gricv0Manager::c_storesc(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"STORESC CMD called ");
+  auto par = json::value::object();
+    
+  PMF_INFO(_logGricv0,"STORESC CMD called ");
 
   for (auto x:_mpi->boards())
     {
       _hca->prepareSlowControl(x.second->ipAddress());
       x.second->reg()->sendSlowControl(_hca->slcBuffer());
     }
-  response["STATUS"]="DONE";
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);
 }
 
-void lydaq::Gricv0Manager::c_loadsc(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void Gricv0Manager::c_loadsc(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"LOADSC CMD called ");
+  auto par = json::value::object();
+
+  PMF_INFO(_logGricv0,"LOADSC CMD called ");
  for (auto x:_mpi->boards())
     {
-      x.second->reg()->sendCommand(lydaq::gricv0::Message::command::LOADSC);
+      x.second->reg()->sendCommand(gricv0::Message::command::LOADSC);
     }
-  response["STATUS"]="DONE";
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);
 }
-void lydaq::Gricv0Manager::c_close(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void Gricv0Manager::c_close(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"CLOSE CMD called ");
+  auto par = json::value::object();
+
+  PMF_INFO(_logGricv0,"CLOSE CMD called ");
  for (auto x:_mpi->boards())
     {
-      x.second->reg()->sendCommand(lydaq::gricv0::Message::command::CLOSE);
+      x.second->reg()->sendCommand(gricv0::Message::command::CLOSE);
     }
-  response["STATUS"]="DONE";
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);
 }
 
-void lydaq::Gricv0Manager::c_readsc(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void Gricv0Manager::c_readsc(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"READSC CMD called ");
+  auto par = json::value::object();
+
+  PMF_INFO(_logGricv0,"READSC CMD called ");
  for (auto x:_mpi->boards())
     {
-      x.second->reg()->sendCommand(lydaq::gricv0::Message::command::READSC);
+      x.second->reg()->sendCommand(gricv0::Message::command::READSC);
     }
-  response["STATUS"]="DONE";
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);
 }
 
-void lydaq::Gricv0Manager::c_lastabcid(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void Gricv0Manager::c_lastabcid(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"LOADSC CMD called ");
+  auto par = json::value::object();
+    
+  PMF_INFO(_logGricv0,"LOADSC CMD called ");
  for (auto x:_mpi->boards())
     {
-      x.second->reg()->sendCommand(lydaq::gricv0::Message::command::LASTABCID);
+      x.second->reg()->sendCommand(gricv0::Message::command::LASTABCID);
     }
-  response["STATUS"]="DONE";
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);
 }
 
-void lydaq::Gricv0Manager::c_lastgtc(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void Gricv0Manager::c_lastgtc(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"LOADSC CMD called ");
+  auto par = json::value::object();
+    
+  PMF_INFO(_logGricv0,"LOADSC CMD called ");
  for (auto x:_mpi->boards())
     {
-      x.second->reg()->sendCommand(lydaq::gricv0::Message::command::LASTGTC);
+      x.second->reg()->sendCommand(gricv0::Message::command::LASTGTC);
     }
-  response["STATUS"]="DONE";
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);
 }
 
 
-void lydaq::Gricv0Manager::c_setthresholds(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void Gricv0Manager::c_setthresholds(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"Set6bdac called ");
-  response["STATUS"]="DONE";
+    auto par = json::value::object();
+
+  PMF_INFO(_logGricv0,"Set6bdac called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
 
   
-  uint32_t b0=atol(request.get("B0","250").c_str());
-  uint32_t b1=atol(request.get("B1","250").c_str());
-  uint32_t b2=atol(request.get("B2","250").c_str());
-  uint32_t idif=atol(request.get("DIF","0").c_str());
+  uint32_t b0=utils::queryIntValue(m,"B0",250);
+  uint32_t b1=utils::queryIntValue(m,"B1",250);
+  uint32_t b2=utils::queryIntValue(m,"B2",250);
+  uint32_t idif=utils::queryIntValue(m,"DIF",0);
   
   this->setThresholds(b0,b1,b2,idif);
-  response["THRESHOLD0"]=b0;
-  response["THRESHOLD1"]=b1;
-  response["THRESHOLD2"]=b2;
+  par["THRESHOLD0"]=web::json::value::number(b0);
+  par["THRESHOLD1"]=web::json::value::number(b1);
+  par["THRESHOLD2"]=web::json::value::number(b2);
+  Reply(status_codes::OK,par);
 }
-void lydaq::Gricv0Manager::c_pulse(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void Gricv0Manager::c_pulse(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"Pulse called ");
-  response["STATUS"]="DONE";
-  uint32_t p0=atol(request.get("value","0").c_str());
+    auto par = json::value::object();
+
+  PMF_INFO(_logGricv0,"Pulse called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  uint32_t p0=utils::queryIntValue(m,"value",0);
  for (auto x:_mpi->boards())
     {
-      x.second->reg()->sendParameter(lydaq::gricv0::Message::command::PULSE,p0);
+      x.second->reg()->sendParameter(gricv0::Message::command::PULSE,p0);
     }
   
 
-  response["NPULSE"]=p0&0xFF;
-
+  par["NPULSE"]=web::json::value::number(p0&0xFF);
+  Reply(status_codes::OK,par);
 }
 
-void lydaq::Gricv0Manager::c_setpagain(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void Gricv0Manager::c_setpagain(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"Set6bdac called ");
-  response["STATUS"]="DONE";
+    auto par = json::value::object();
+
+  PMF_INFO(_logGricv0,"Set6bdac called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
 
   
-  uint32_t gain=atol(request.get("gain","128").c_str());
+  uint32_t gain=utils::queryIntValue(m,"gain",128);
   this->setGain(gain);
-  response["GAIN"]=gain;
-
+  par["GAIN"]=web::json::value::number(gain);
+  Reply(status_codes::OK,par);
 }
 
-void lydaq::Gricv0Manager::c_setmask(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void Gricv0Manager::c_setmask(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"SetMask called ");
-  response["STATUS"]="DONE";
+    auto par = json::value::object();
+
+  PMF_INFO(_logGricv0,"SetMask called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
 
   
-  //uint32_t nc=atol(request.get("value","4294967295").c_str());
+  //uint32_t nc=utils::queryIntValue(m,"value",4294967295);
   uint64_t mask;
-  sscanf(request.get("mask","0XFFFFFFFFFFFFFFFF").c_str(),"%lx",&mask);
-  uint32_t level=atol(request.get("level","0").c_str());
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"SetMask called "<<std::hex<<mask<<std::dec<<" level "<<level);
+  sscanf(utils::queryStringValue(m,"mask","0XFFFFFFFFFFFFFFFF").c_str(),"%lx",&mask);
+  uint32_t level=utils::queryIntValue(m,"level",0);
+  PMF_INFO(_logGricv0,"SetMask called "<<std::hex<<mask<<std::dec<<" level "<<level);
   this->setMask(level,mask);
-  response["MASK"]=(Json::UInt64) mask;
-  response["LEVEL"]=level;
+  par["MASK"]=web::json::value::number(mask);
+  par["LEVEL"]=web::json::value::number(level);
+    Reply(status_codes::OK,par);
 }
 
 
 
-void lydaq::Gricv0Manager::c_setchannelmask(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void Gricv0Manager::c_setchannelmask(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"SetMask called ");
-  response["STATUS"]="DONE";
+    auto par = json::value::object();
+
+  PMF_INFO(_logGricv0,"SetMask called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
 
   
-  //uint32_t nc=atol(request.get("value","4294967295").c_str());
-  uint32_t level=atol(request.get("level","0").c_str());
-  uint32_t channel=atol(request.get("channel","0").c_str());
-  bool on=atol(request.get("value","1").c_str())==1;
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"SetMaskChannel called "<<channel<<std::dec<<" level "<<level);
+  //uint32_t nc=utils::queryIntValue(m,"value",4294967295);
+  uint32_t level=utils::queryIntValue(m,"level",0);
+  uint32_t channel=utils::queryIntValue(m,"channel",0);
+  bool on=utils::queryIntValue(m,"value",1)==1;
+  PMF_INFO(_logGricv0,"SetMaskChannel called "<<channel<<std::dec<<" level "<<level);
   this->setChannelMask(level,channel,on);
-  response["CHANNEL"]=channel;
-  response["LEVEL"]=level;
-  response["ON"]=on;
+  par["CHANNEL"]=web::json::value::number(channel);
+  par["LEVEL"]=web::json::value::number(level);
+  par["ON"]=web::json::value::number(on);
+    Reply(status_codes::OK,par);
 }
 
-void lydaq::Gricv0Manager::c_downloadDB(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void Gricv0Manager::c_downloadDB(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"downloadDB called ");
-  response["STATUS"]="DONE";
+    auto par = json::value::object();
+
+  PMF_INFO(_logGricv0,"downloadDB called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
 
 
-  
-  std::string dbstate=request.get("state","NONE");
-  uint32_t version=atol(request.get("version","0").c_str());
-  Json::Value jTDC=this->parameters()["gricv0"];
-  if (jTDC.isMember("db"))
+  std::string dbstate=utils::queryStringValue(m,"state","NONE");
+
+
+  uint32_t version=utils::queryIntValue(m,"version",0);
+  web::json::value jTDC=params()["gricv0"];
+  if (utils::isMember(jTDC,"db"))
     {
-      Json::Value jTDCdb=jTDC["db"];
+      web::json::value jTDCdb=jTDC["db"];
       _hca->clear();
 
-      if (jTDCdb["mode"].asString().compare("mongo")!=0)
-	_hca->parseDb(dbstate,jTDCdb["mode"].asString());
-      else
+      if (jTDCdb["mode"].as_string().compare("mongo")==0)
 	_hca->parseMongoDb(dbstate,version);
 
 	 
     }
-  response["DBSTATE"]=dbstate;
+  par["DBSTATE"]=web::json::value::string(U(dbstate));
+  Reply(status_codes::OK,par);
 }
 
-void lydaq::Gricv0Manager::initialise(zdaq::fsmmessage* m)
+void Gricv0Manager::fsm_initialise(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"****** CMD: "<<m->command());
+  auto par = json::value::object();
+
+  PMF_INFO(_logGricv0,"****** CMD: INITIALISING");
   //  std::cout<<"m= "<<m->command()<<std::endl<<m->content()<<std::endl;
  
-  Json::Value jtype=this->parameters()["type"];
-  _type=jtype.asInt();
+  web::json::value jtype=params()["type"];
+  _type=jtype.as_integer();
   printf ("_type =%d\n",_type); 
 
   // Need a GRICV0 tag
-  if (m->content().isMember("gricv0"))
+  if (!utils::isMember(params(),"gricv0"))
     {
-      printf ("found gricv0/n");
-      this->parameters()["gricv0"]=m->content()["gricv0"];
-    }
-  if (!this->parameters().isMember("gricv0"))
-    {
-      LOG4CXX_ERROR(_logFeb,__PRETTY_FUNCTION__<<" No gricv0 tag found ");
+      PMF_ERROR(_logGricv0," No gricv0 tag found ");
+      par["STATUS"]=web::json::value::string(U("Missing gricv0 tag"));
+      Reply(status_codes::OK,par);
       return;
     }
   // Now create the Message handler
   if (_mpi==NULL)
-    _mpi= new lydaq::gricv0::Interface();
+    _mpi= new gricv0::Interface();
   _mpi->initialise();
 
    
-  Json::Value jGRICV0=this->parameters()["gricv0"];
-  //_msh =new lydaq::MpiMessageHandler("/dev/shm");
-  if (!jGRICV0.isMember("network"))
+  web::json::value jGRICV0=params()["gricv0"];
+  //_msh =new MpiMessageHandler("/dev/shm");
+  if (!utils::isMember(jGRICV0,"network"))
     {
-      LOG4CXX_ERROR(_logFeb,__PRETTY_FUNCTION__<<" No gricv0:network tag found ");
+      PMF_ERROR(_logGricv0," No gricv0:network tag found ");
+      par["STATUS"]=web::json::value::string(U("Missing network tag"));
+      Reply(status_codes::OK,par);
       return;
     }
   // Scan the network
-  std::map<uint32_t,std::string> diflist=mpi::MpiMessageHandler::scanNetwork(jGRICV0["network"].asString());
+  std::map<uint32_t,std::string> diflist=utils::scanNetwork(jGRICV0["network"].as_string());
   // Download the configuration
   if (_hca==NULL)
     {
       std::cout<< "Create config acccess"<<std::endl;
-      _hca=new lydaq::HR2ConfigAccess();
+      _hca=new HR2ConfigAccess();
       _hca->clear();
     }
   std::cout<< " jGRICV0 "<<jGRICV0<<std::endl;
-  if (jGRICV0.isMember("json"))
+  if (utils::isMember(jGRICV0,"json"))
     {
-      Json::Value jGRICV0json=jGRICV0["json"];
-      if (jGRICV0json.isMember("file"))
+      web::json::value jGRICV0json=jGRICV0["json"];
+      if (utils::isMember(jGRICV0json,"file"))
 	{
-	  _hca->parseJsonFile(jGRICV0json["file"].asString());
+	  _hca->parseJsonFile(jGRICV0json["file"].as_string());
 	}
       else
-	if (jGRICV0json.isMember("url"))
+	if (utils::isMember(jGRICV0json,"url"))
 	  {
-	    _hca->parseJsonUrl(jGRICV0json["url"].asString());
+	    _hca->parseJsonUrl(jGRICV0json["url"].as_string());
 	  }
     }
-  if (jGRICV0.isMember("db"))
+  if (utils::isMember(jGRICV0,"db"))
     {
-      Json::Value jGRICV0db=jGRICV0["db"];
-      LOG4CXX_ERROR(_logFeb,__PRETTY_FUNCTION__<<"Parsing:"<<jGRICV0db["state"].asString()<<jGRICV0db["mode"].asString());
+      web::json::value jGRICV0db=jGRICV0["db"];
+      PMF_ERROR(_logGricv0,"Parsing:"<<jGRICV0db["state"].as_string()<<jGRICV0db["mode"].as_string());
 
               
-      if (jGRICV0db["mode"].asString().compare("mongo")!=0)	
-	_hca->parseDb(jGRICV0db["state"].asString(),jGRICV0db["mode"].asString());
-      else
-	_hca->parseMongoDb(jGRICV0db["state"].asString(),jGRICV0db["version"].asUInt());
+      if (jGRICV0db["mode"].as_string().compare("mongo")==0)	
+	_hca->parseMongoDb(jGRICV0db["state"].as_string(),jGRICV0db["version"].as_integer());
       
     }
   if (_hca->asicMap().size()==0)
     {
-      LOG4CXX_ERROR(_logFeb,__PRETTY_FUNCTION__<<" No ASIC found in the configuration ");
+      PMF_ERROR(_logGricv0," No ASIC found in the configuration ");
       return;
     }
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"ASIC found in the configuration "<<_hca->asicMap().size() );
+  PMF_INFO(_logGricv0,"ASIC found in the configuration "<<_hca->asicMap().size() );
   // Initialise the network
   std::vector<uint32_t> vint;
   vint.clear();
@@ -381,41 +434,33 @@ void lydaq::Gricv0Manager::initialise(zdaq::fsmmessage* m)
       uint32_t eip= ((x.first)>>32)&0XFFFFFFFF;
       std::map<uint32_t,std::string>::iterator idif=diflist.find(eip);
       if (idif==diflist.end()) continue;
-      if ( std::find(vint.begin(), vint.end(), eip) != vint.end() ) continue;
+      if (std::find(vint.begin(), vint.end(), eip) != vint.end() ) continue;
       
-      LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" New GRICV0 found in db "<<std::hex<<eip<<std::dec<<" IP address "<<idif->second);
+      PMF_INFO(_logGricv0," New GRICV0 found in db "<<std::hex<<eip<<std::dec<<" IP address "<<idif->second);
       vint.push_back(eip);
       _mpi->addDevice(idif->second);
-      LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" Registration done for "<<eip);
+      PMF_INFO(_logGricv0," Registration done for "<<eip);
     }
   //std::string network=
   // Connect to the event builder
   if (_context==NULL)
     _context= new zmq::context_t(1);
 
-  if (m->content().isMember("publish"))
-    {
-      this->parameters()["publish"]=m->content()["publish"];
-    }
-  if (!this->parameters().isMember("publish"))
-    {
-      
-      LOG4CXX_ERROR(_logFeb,__PRETTY_FUNCTION__<<" No publish tag found ");
-      return;
-    }
   for (auto x:_mpi->boards())
-    x.second->data()->autoRegister(_context,this->configuration(),"BUILDER","collectingPort");
-  //x->connect(_context,this->parameters()["publish"].asString());
+    x.second->data()->autoRegister(_context,session(),"evb_builder","collectingPort");
+  //x->connect(_context,params()["publish"].as_string());
 
   // Listen All Gricv0 sockets
   _mpi->listen();
 
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" Init done  "); 
+  PMF_INFO(_logGricv0," Init done  ");
+  par["status"]=json::value::string(U("done"));
+  Reply(status_codes::OK,par);
 }
 
-void lydaq::Gricv0Manager::configureHR2()
+void Gricv0Manager::configureHR2()
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" COnfigure the chips ");
+  PMF_INFO(_logGricv0," COnfigure the chips ");
 
   
   // Now loop on slowcontrol socket
@@ -426,29 +471,32 @@ void lydaq::Gricv0Manager::configureHR2()
       x.second->reg()->sendSlowControl(_hca->slcBuffer());
     }
   
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" Maintenant on charge ");
+  PMF_INFO(_logGricv0," Maintenant on charge ");
   for (auto x:_mpi->boards())
     {
-      uint32_t status=x.second->reg()->sendCommand(lydaq::gricv0::Message::command::LOADSC);
+      uint32_t status=x.second->reg()->sendCommand(gricv0::Message::command::LOADSC);
       x.second->reg()->setSlcStatus(status);
     }
 
 }
-void lydaq::Gricv0Manager::configure(zdaq::fsmmessage* m)
+void Gricv0Manager::configure(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" CMD: "<<m->command());
+  auto par = json::value::object();
+
+  PMF_INFO(_logGricv0," CMD: CONFIGURING");
 
   // Now loop on slowcontrol socket
 
 
   this->configureHR2();
-
+  par["status"]=json::value::string(U("done"));
+  Reply(status_codes::OK,par);
 }
 
-void lydaq::Gricv0Manager::setThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t idif)
+void Gricv0Manager::setThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t idif)
 {
 
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" Changin thresholds: "<<b0<<","<<b1<<","<<b2);
+  PMF_INFO(_logGricv0," Changin thresholds: "<<b0<<","<<b1<<","<<b2);
   for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
     {
       if (idif!=0)
@@ -467,9 +515,9 @@ void lydaq::Gricv0Manager::setThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uin
   ::usleep(10000);
 
 }
-void lydaq::Gricv0Manager::setAllMasks(uint64_t mask)
+void Gricv0Manager::setAllMasks(uint64_t mask)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" Changing Mask: "<<std::hex<<mask<<std::dec);
+  PMF_INFO(_logGricv0," Changing Mask: "<<std::hex<<mask<<std::dec);
   for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
     {
       it->second.dumpBinary();
@@ -486,9 +534,9 @@ void lydaq::Gricv0Manager::setAllMasks(uint64_t mask)
   ::usleep(1);
 
 }
-void lydaq::Gricv0Manager::setCTEST(uint64_t mask)
+void Gricv0Manager::setCTEST(uint64_t mask)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" Changing CTEST: "<<std::hex<<mask<<std::dec);
+  PMF_INFO(_logGricv0," Changing CTEST: "<<std::hex<<mask<<std::dec);
   for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
     {
       for (int i=0;i<64;i++)
@@ -503,10 +551,10 @@ void lydaq::Gricv0Manager::setCTEST(uint64_t mask)
 
 }
 
-void lydaq::Gricv0Manager::setGain(uint16_t gain)
+void Gricv0Manager::setGain(uint16_t gain)
 {
 
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" Changing Gain: "<<gain);
+  PMF_INFO(_logGricv0," Changing Gain: "<<gain);
   for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
     {
       for (int i=0;i<64;i++)
@@ -518,9 +566,9 @@ void lydaq::Gricv0Manager::setGain(uint16_t gain)
 
 }
 
-void lydaq::Gricv0Manager::setMask(uint32_t level,uint64_t mask)
+void Gricv0Manager::setMask(uint32_t level,uint64_t mask)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" Changing Mask: "<<level<<" "<<std::hex<<mask<<std::dec);
+  PMF_INFO(_logGricv0," Changing Mask: "<<level<<" "<<std::hex<<mask<<std::dec);
   for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
     {
       
@@ -533,9 +581,9 @@ void lydaq::Gricv0Manager::setMask(uint32_t level,uint64_t mask)
   ::sleep(1);
 
 }
-void lydaq::Gricv0Manager::setChannelMask(uint16_t level,uint16_t channel,uint16_t val)
+void Gricv0Manager::setChannelMask(uint16_t level,uint16_t channel,uint16_t val)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" Changing Mask: "<<level<<" "<<std::hex<<channel<<std::dec);
+  PMF_INFO(_logGricv0," Changing Mask: "<<level<<" "<<std::hex<<channel<<std::dec);
   for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
     {
       
@@ -549,13 +597,14 @@ void lydaq::Gricv0Manager::setChannelMask(uint16_t level,uint16_t channel,uint16
 
 }
 
-void lydaq::Gricv0Manager::start(zdaq::fsmmessage* m)
+void Gricv0Manager::start(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" CMD: "<<m->command());
-  std::cout<<m->command()<<std::endl<<m->content()<<std::endl;
+  auto par = json::value::object();
+
+  PMF_INFO(_logGricv0," CMD: STARTING");
+ 
   // Create run file
-  Json::Value jc=m->content();
-  _run=jc["run"].asInt();
+  _run=utils::queryIntValue(m,"run",0);
 
   // Clear buffers
   for (auto x:_mpi->boards())
@@ -567,34 +616,47 @@ void lydaq::Gricv0Manager::start(zdaq::fsmmessage* m)
   for (auto x:_mpi->boards())
     {
       // Automatic FSM (bit 1 a 0) , enabled (Bit 0 a 1)
-      x.second->reg()->sendCommand(lydaq::gricv0::Message::command::STARTACQ);
+      x.second->reg()->sendCommand(gricv0::Message::command::STARTACQ);
     }
    _running=true;
+ par["status"]=json::value::string(U("done"));
+  Reply(status_codes::OK,par);
 
+   
 }
-void lydaq::Gricv0Manager::stop(zdaq::fsmmessage* m)
+void Gricv0Manager::stop(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" CMD: "<<m->command());
+
+  auto par = json::value::object();
+  PMF_INFO(_logGricv0," CMD: STOPPING");
+
   for (auto x:_mpi->boards())
     {
       // Automatic FSM (bit 1 a 0) , disabled (Bit 0 a 0)
-      x.second->reg()->sendCommand(lydaq::gricv0::Message::command::STOPACQ);
+      x.second->reg()->sendCommand(gricv0::Message::command::STOPACQ);
     }
   ::sleep(2);
  _running=false;
+ par["status"]=json::value::string(U("done"));
+  Reply(status_codes::OK,par);
 
 
 }
-void lydaq::Gricv0Manager::destroy(zdaq::fsmmessage* m)
+void Gricv0Manager::destroy(http_request m)
 {
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" CMD: "<<m->command());
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<"CLOSE called ");
+  
+  auto par = json::value::object();
+
+  PMF_INFO(_logGricv0,"CLOSE called ");
 
   for (auto x:_mpi->boards())
     {
       // Automatic FSM (bit 1 a 0) , disabled (Bit 0 a 0)
-      x.second->reg()->sendCommand(lydaq::gricv0::Message::command::CLOSE);
+      x.second->reg()->sendCommand(gricv0::Message::command::CLOSE);
     }
+if (_mpi!=NULL)
+    {
+      _mpi->terminate();
 
   _mpi->close();
   for (auto x:_mpi->boards())
@@ -602,52 +664,56 @@ void lydaq::Gricv0Manager::destroy(zdaq::fsmmessage* m)
   _mpi->boards().clear();
   delete _mpi;
   _mpi=0;
+    }
 
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" Data sockets deleted");
+  PMF_INFO(_logGricv0," Data sockets deleted");
+    par["status"]=json::value::string(U("done"));
 
+  Reply(status_codes::OK,par);
 
 
   // To be done: _gricv0->clear();
 }
 
 
-void lydaq::Gricv0Manager::ScurveStep(fsmwebCaller* mdcc,fsmwebCaller* builder,int thmin,int thmax,int step)
+void Gricv0Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,int thmax,int step)
 {
 
   int ncon=2000,ncoff=100,ntrg=20;
-  mdcc->sendCommand("PAUSE");
-  Json::Value p;
-  p.clear();p["nclock"]=ncon;  mdcc->sendCommand("SPILLON",p);
-  p.clear();p["nclock"]=ncoff;  mdcc->sendCommand("SPILLOFF",p);
+  utils::sendCommand(mdcc,"PAUSE",json::value::null());
+  web::json::value p;
+  p["nclock"]=ncon;  utils::sendCommand(mdcc,"SPILLON",p);
+  p["nclock"]=ncoff;  utils::sendCommand(mdcc,"SPILLOFF",p);
   printf("Clock On %d Off %d \n",ncon, ncoff);
-  p.clear();p["value"]=4;  mdcc->sendCommand("SETSPILLREGISTER",p);
+  p["value"]=4;  utils::sendCommand(mdcc,"SETSPILLREGISTER",p);
   //::sleep(20);
-  mdcc->sendCommand("CALIBON");
-  p.clear();p["nclock"]=ntrg;  mdcc->sendCommand("SETCALIBCOUNT",p);
+  utils::sendCommand(mdcc,"CALIBON",json::value::null());
+  p["nclock"]=ntrg;  utils::sendCommand(mdcc,"SETCALIBCOUNT",p);
   int thrange=(thmax-thmin+1)/step;
   for (int vth=0;vth<=thrange;vth++)
     {
       if (!_running) break;
-      mdcc->sendCommand("PAUSE");
+      utils::sendCommand(mdcc,"PAUSE",json::value::null());
       for (auto x:_mpi->boards())
 	{
 	  // Automatic FSM (bit 1 a 0) , disabled (Bit 0 a 0)
-	  x.second->reg()->sendCommand(lydaq::gricv0::Message::command::STOPACQ);
+	  x.second->reg()->sendCommand(gricv0::Message::command::STOPACQ);
 	}
 
       usleep(1000);
       this->setThresholds(thmax-vth*step,512,512);
-      p.clear();
-      Json::Value h;
-      h.append(2);h.append(thmax-vth*step);
-      p["header"]=h;
-      p["nextevent"]=1;
-      builder->sendCommand("SETHEADER",p);
+      
+      web::json::value h;
+      h[0]=2;h[1]=json::value::number(thmax-vth*step);
+      web::json::value ph;
+      ph["header"]=h;
+      ph["nextevent"]=1;
+      utils::sendCommand(builder,"SETHEADER",ph);
       printf("SETHEADER executed\n");
       int firstEvent=0;
       for (auto x : _mpi->boards())
 	if (x.second->data()->event()>firstEvent) firstEvent=x.second->data()->event();
-      mdcc->sendCommand("RELOADCALIB");
+      utils::sendCommand(mdcc,"RELOADCALIB",json::value::null());
       for (auto x:_mpi->boards())
 	{
 	  x.second->data()->clear();
@@ -657,10 +723,10 @@ void lydaq::Gricv0Manager::ScurveStep(fsmwebCaller* mdcc,fsmwebCaller* builder,i
       for (auto x:_mpi->boards())
 	{
 	  // Automatic FSM (bit 1 a 0) , enabled (Bit 0 a 1)
-	  x.second->reg()->sendCommand(lydaq::gricv0::Message::command::STARTACQ);
+	  x.second->reg()->sendCommand(gricv0::Message::command::STARTACQ);
 	}
       
-      mdcc->sendCommand("RESUME");
+      utils::sendCommand(mdcc,"RESUME",json::value::null());
       int nloop=0,lastEvent=0;firstEvent=0;
       while (lastEvent < (firstEvent + ntrg - 1))
 	{
@@ -670,13 +736,13 @@ void lydaq::Gricv0Manager::ScurveStep(fsmwebCaller* mdcc,fsmwebCaller* builder,i
 	  nloop++;if (nloop > 600 || !_running)  break;
 	}
       printf("Step %d Th %d First %d Last %d loops %d \n",vth,thmax-vth*step,firstEvent,lastEvent,nloop);
-      mdcc->sendCommand("PAUSE");
+      utils::sendCommand(mdcc,"PAUSE",json::value::null());
     }
-  mdcc->sendCommand("CALIBOFF");
+  utils::sendCommand(mdcc,"CALIBOFF",json::value::null());
 }
 
 
-void lydaq::Gricv0Manager::thrd_scurve()
+void Gricv0Manager::thrd_scurve()
 {
   _sc_running=true;
   this->Scurve(_sc_mode,_sc_thmin,_sc_thmax,_sc_step);
@@ -684,12 +750,13 @@ void lydaq::Gricv0Manager::thrd_scurve()
 }
 
 
-void lydaq::Gricv0Manager::Scurve(int mode,int thmin,int thmax,int step)
+void Gricv0Manager::Scurve(int mode,int thmin,int thmax,int step)
 {
-  fsmwebCaller* mdcc=findMDCC("MDCCSERVER");
-  fsmwebCaller* builder=findMDCC("BUILDER");
-  if (mdcc==NULL) return;
-  if (builder==NULL) return;
+  std::string mdcc=utils::findUrl(session(),"lyon_mdcc",0);
+  std::string builder=utils::findUrl(session(),"lyon_evb",0);
+  if (mdcc.compare("")==0) return;
+  if (builder.compare("")==0) return;
+
   uint64_t mask=0;
 
   // All channel pedestal
@@ -728,60 +795,17 @@ void lydaq::Gricv0Manager::Scurve(int mode,int thmin,int thmax,int step)
   
 }
 
-fsmwebCaller* lydaq::Gricv0Manager::findMDCC(std::string appname)
+void Gricv0Manager::c_scurve(http_request m)
 {
-  Json::Value cjs=this->configuration()["HOSTS"];
-  //  std::cout<<cjs<<std::endl;
-  std::vector<std::string> lhosts=this->configuration()["HOSTS"].getMemberNames();
-  // Loop on hosts
-  for (auto host:lhosts)
-    {
-      //std::cout<<" Host "<<host<<" found"<<std::endl;
-      // Loop on processes
-      const Json::Value cjsources=this->configuration()["HOSTS"][host];
-      //std::cout<<cjsources<<std::endl;
-      for (Json::ValueConstIterator it = cjsources.begin(); it != cjsources.end(); ++it)
-	{
-	  const Json::Value& process = *it;
-	  std::string p_name=process["NAME"].asString();
-	  Json::Value p_param=Json::Value::null;
-	  if (process.isMember("PARAMETER")) p_param=process["PARAMETER"];
-	  // Loop on environenemntal variable
-	  uint32_t port=0;
-	  const Json::Value& cenv=process["ENV"];
-	  for (Json::ValueConstIterator iev = cenv.begin(); iev != cenv.end(); ++iev)
-	    {
-	      std::string envp=(*iev).asString();
-	      //      std::cout<<"Env found "<<envp.substr(0,7)<<std::endl;
-	      //std::cout<<"Env found "<<envp.substr(8,envp.length()-7)<<std::endl;
-	      if (envp.substr(0,7).compare("WEBPORT")==0)
-		{
-		  port=atol(envp.substr(8,envp.length()-7).c_str());
-		  break;
-		}
-	    }
-	  if (port==0) continue;
-	  if (p_name.compare(appname)==0)
-	    {
-	      
-	      return  new fsmwebCaller(host,port); 
-	    }
-	}
+  auto par = json::value::object();
 
-    }
-  
-  return NULL;
-  
-}
-void lydaq::Gricv0Manager::c_scurve(Mongoose::Request &request, Mongoose::JsonResponse &response)
-{
-  response["STATUS"] = "DONE";
+  par["STATUS"]=web::json::value::string(U("DONE"));
 
-  uint32_t first = atol(request.get("first", "80").c_str());
-  uint32_t last = atol(request.get("last", "250").c_str());
-  uint32_t step = atol(request.get("step", "1").c_str());
-  uint32_t mode = atol(request.get("channel", "255").c_str());
-  //  LOG4CXX_INFO(_logFeb, " SetOneVthTime called with vth " << vth << " feb " << feb << " asic " << asic);
+  uint32_t first = utils::queryIntValue(m,"first",80);
+  uint32_t last = utils::queryIntValue(m,"last",250);
+  uint32_t step = utils::queryIntValue(m,"step",1);
+  uint32_t mode = utils::queryIntValue(m,"channel",255);
+  //  PMF_INFO(_logGricv0, " SetOneVthTime called with vth " << vth << " feb " << feb << " asic " << asic);
   
   //this->Scurve(mode,first,last,step);
 
@@ -791,11 +815,29 @@ void lydaq::Gricv0Manager::c_scurve(Mongoose::Request &request, Mongoose::JsonRe
   _sc_step=step;
   if (_sc_running)
     {
-      response["SCURVE"] ="ALREADY_RUNNING";
+      par["SCURVE"]=web::json::value::string(U("ALREADY_RUNNING"));
       return;
     }
-  boost::thread_group g;
-  g.create_thread(boost::bind(&lydaq::Gricv0Manager::thrd_scurve, this));
-  response["SCURVE"] ="RUNNING";
+ 
+  g_scurve=std::thread(std::bind(&Gricv0Manager::thrd_scurve, this));
+  par["SCURVE"]=web::json::value::string(U("RUNNING"));
+  Reply(status_codes::OK,par);
+
+
+}
+extern "C" 
+{
+    // loadDHCALAnalyzer function creates new LowPassDHCALAnalyzer object and returns it.  
+  handlerPlugin* loadProcessor(void)
+    {
+      return (new Gricv0Manager);
+    }
+    // The deleteDHCALAnalyzer function deletes the LowPassDHCALAnalyzer that is passed 
+    // to it.  This isn't a very safe function, since there's no 
+    // way to ensure that the object provided is indeed a LowPassDHCALAnalyzer.
+  void deleteProcessor(handlerPlugin* obj)
+    {
+      delete obj;
+    }
 }
 

@@ -1,3 +1,4 @@
+
 #include "Gricv0Interface.hh"
 #include <time.h>
 #include <sys/types.h>
@@ -18,11 +19,10 @@
 #include <sstream>
 #include <map>
 #include <bitset>
-#include <boost/format.hpp>
 #include <arpa/inet.h>
 
 
-using namespace lydaq;
+
 
 gricv0::registerHandler::registerHandler(std::string ip) : socketHandler(ip,gricv0::Interface::PORT::CTRL),_noTransReply(true)
 
@@ -56,7 +56,7 @@ void  gricv0::registerHandler::sendParameter(uint8_t command,uint8_t par)
   _msg->ptr()[gricv0::Message::Fmt::PAYLOAD]=par;
   _msg->ptr()[len-1]=')';
 
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" SENDING ="<<(int) command<<" length="<<len<<" parameter="<<(int) par<<" address="<<id());
+  PM_INFO(_logGricv0," SENDING ="<<(int) command<<" length="<<len<<" parameter="<<(int) par<<" address="<<id());
   uint32_t tr=this->sendMessage(_msg);
   this->processReply(tr);
 }
@@ -71,7 +71,7 @@ void gricv0::registerHandler::sendSlowControl(uint8_t* slc,uint16_t lenbytes)
   uint16_t* sp=(uint16_t*) &(_msg->ptr()[gricv0::Message::Fmt::LEN]);
   _msg->ptr()[gricv0::Message::Fmt::HEADER]='(';
   sp[0]=htons(len);
-  _msg->ptr()[gricv0::Message::Fmt::CMD]=lydaq::gricv0::Message::command::STORESC;
+  _msg->ptr()[gricv0::Message::Fmt::CMD]=gricv0::Message::command::STORESC;
   memcpy(&(_msg->ptr()[gricv0::Message::Fmt::PAYLOAD]),slc,lenbytes);
   _msg->ptr()[len-1]=')';
   uint32_t tr=this->sendMessage(_msg);
@@ -86,7 +86,7 @@ void gricv0::registerHandler::processReply(uint32_t tr,uint32_t* reply)
   uint8_t* rep=this->answer(tr%255);
   if (rep==NULL)
     {
-      LOG4CXX_ERROR(_logFeb,__PRETTY_FUNCTION__<<" NULL ptr for answ "<<tr);
+      PM_ERROR(_logGricv0," NULL ptr for answ "<<tr);
 
     }
   int cnt=0;
@@ -97,7 +97,7 @@ void gricv0::registerHandler::processReply(uint32_t tr,uint32_t* reply)
       cnt++;
       if (cnt>1000)
 	{
-	  LOG4CXX_ERROR(_logFeb,__PRETTY_FUNCTION__<<" no return after "<<cnt);
+	  PM_ERROR(_logGricv0," no return after "<<cnt);
 	  break;
 	}
     }
@@ -108,7 +108,7 @@ void gricv0::registerHandler::processReply(uint32_t tr,uint32_t* reply)
   uint16_t length=ntohs(_sBuf[0]); // Header
   uint8_t trame=b[gricv0::Message::Fmt::TRANS];
   uint8_t command=b[gricv0::Message::Fmt::CMD];
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<" REPLY command ="<<(int) command<<" length="<<length<<" trame id="<<(int) trame);
+  PM_INFO(_logGricv0," REPLY command ="<<(int) command<<" length="<<length<<" trame id="<<(int) trame);
   fflush(stdout);
   /*
   fprintf(stderr,">>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
@@ -141,13 +141,13 @@ bool gricv0::registerHandler::processPacket()
   _sBuf=(uint16_t*) &_buf[gricv0::Message::Fmt::PAYLOAD];
   uint16_t address=ntohs(_sBuf[0]);
   uint32_t* lBuf=(uint32_t*) &_sBuf[1];
-  LOG4CXX_INFO(_logFeb,__PRETTY_FUNCTION__<<sourceid()<<" Command answer="<<
+  PM_INFO(_logGricv0,sourceid()<<" Command answer="<<
                std::hex<<(int) address<<":"<<(int) ntohl(lBuf[0])<<std::dec
                <<" length="<<length<<" trame id="<<(int) transaction<<" buffer length "<<_idx<<std::hex<<" address of transaction "<<answer(transaction%255)<<std::dec);
   uint8_t* rep=this->answer(transaction%255);
   if (rep==NULL)
     {
-      LOG4CXX_ERROR(_logFeb,__PRETTY_FUNCTION__<<" NULL ptr for answ "<<transaction);
+      PM_ERROR(_logGricv0," NULL ptr for answ "<<transaction);
       
     }
   else
