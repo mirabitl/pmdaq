@@ -128,3 +128,4 @@ install(FILES ${ETC_TARGET} DESTINATION etc)
 install(FILES ${MG_TARGET} ${DAEMON_TARGET} DESTINATION bin)
 
 install(TARGETS pmd  DESTINATION bin  ARCHIVE DESTINATION bin)
+install(CODE "execute_process(COMMAND chmod -R +x ${CMAKE_INSTALL_PREFIX}/bin/)")
