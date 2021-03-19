@@ -6,6 +6,7 @@ using namespace wiener;
 #include <unistd.h>
 #include <string>
 #include <fstream>
+#include "utils.hh"
 
 std::string wiener::WienerSnmp::exec(const char* cmd) {
   FILE* pipe = popen(cmd, "r");
@@ -44,9 +45,10 @@ float wiener::WienerSnmp::getOutputVoltage(uint32_t module,uint32_t voie)
   sc<<_ip<<" outputVoltage.u"<<100*module+voie;
   std::string res=exec(sc.str().c_str());
   //std::cout<<__PRETTY_FUNCTION__<<res<<std::endl;
-  std::vector<std::string> strs;
-  boost::split(strs,res, boost::is_any_of(" "));
-  return atof(strs[4].c_str());
+  //  std::vector<std::string> strs;
+  //boost::split(strs,res, boost::is_any_of(" "));
+  auto strs=utils::split(res,' ');
+  return std::stof(strs[4]);
 }
 std::string wiener::WienerSnmp::setOutputVoltageRiseRate(uint32_t module,uint32_t voie,float val)
 {
@@ -63,9 +65,12 @@ float wiener::WienerSnmp::getOutputVoltageRiseRate(uint32_t module,uint32_t voie
   sc<<_ip<<" outputVoltageRiseRate.u"<<100*module+voie;
   std::string res=exec(sc.str().c_str());
   //std::cout<<__PRETTY_FUNCTION__<<res<<std::endl;
-  std::vector<std::string> strs;
-  boost::split(strs,res, boost::is_any_of(" "));
-  return atof(strs[4].c_str());
+  //std::vector<std::string> strs;
+  //boost::split(strs,res, boost::is_any_of(" "));
+  //return atof(strs[4].c_str());
+  auto strs=utils::split(res,' ');
+  return std::stof(strs[4]);
+
 }
 std::string wiener::WienerSnmp::setOutputCurrentLimit(uint32_t module,uint32_t voie,float cur )
 {
@@ -82,9 +87,12 @@ float wiener::WienerSnmp::getOutputCurrentLimit(uint32_t module,uint32_t voie)
   sc<<_ip<<" outputCurrent.u"<<100*module+voie;
   std::string res=exec(sc.str().c_str());
   //std::cout<<__PRETTY_FUNCTION__<<res<<std::endl;
-  std::vector<std::string> strs;
-  boost::split(strs,res, boost::is_any_of(" "));
-  return atof(strs[4].c_str());
+  //std::vector<std::string> strs;
+  //boost::split(strs,res, boost::is_any_of(" "));
+  //return atof(strs[4].c_str());
+  auto strs=utils::split(res,' ');
+  return std::stof(strs[4]);
+
 }
 float wiener::WienerSnmp::getOutputMeasurementSenseVoltage(uint32_t module,uint32_t voie)
 {
@@ -93,9 +101,12 @@ float wiener::WienerSnmp::getOutputMeasurementSenseVoltage(uint32_t module,uint3
   sc<<_ip<<" outputMeasurementSenseVoltage.u"<<100*module+voie;
   std::string res=exec(sc.str().c_str());
   //std::cout<<__PRETTY_FUNCTION__<<res<<std::endl;
-  std::vector<std::string> strs;
-  boost::split(strs,res, boost::is_any_of(" "));
-  return atof(strs[4].c_str());
+  //std::vector<std::string> strs;
+  //boost::split(strs,res, boost::is_any_of(" "));
+  //return atof(strs[4].c_str());
+  auto strs=utils::split(res,' ');
+  return std::stof(strs[4]);
+  
 }
 float wiener::WienerSnmp::getOutputMeasurementCurrent(uint32_t module,uint32_t voie)
 {
@@ -109,9 +120,12 @@ float wiener::WienerSnmp::getOutputMeasurementCurrent(uint32_t module,uint32_t v
   sc<<_ip<<" outputMeasurementCurrent.u"<<100*module+voie;
   std::string res=exec(sc.str().c_str());
   //std::cout<<__PRETTY_FUNCTION__<<res<<std::endl;
-  std::vector<std::string> strs;
-  boost::split(strs,res, boost::is_any_of(" "));
-  return atof(strs[4].c_str());
+  //std::vector<std::string> strs;
+  //boost::split(strs,res, boost::is_any_of(" "));
+  //return atof(strs[4].c_str());
+  auto strs=utils::split(res,' ');
+  return std::stof(strs[4]);
+
 }
 std::string wiener::WienerSnmp::setOutputSwitch(uint32_t module,uint32_t voie,uint32_t val )
 {
@@ -128,9 +142,12 @@ std::string wiener::WienerSnmp::getOutputSwitch(uint32_t module,uint32_t voie)
   sc<<_ip<<" outputSwitch.u"<<100*module+voie;
   std::string res=exec(sc.str().c_str());
   //std::cout<<__PRETTY_FUNCTION__<<res<<std::endl;
-  std::vector<std::string> strs;
-  boost::split(strs,res, boost::is_any_of(" "));
+  //std::vector<std::string> strs;
+  //boost::split(strs,res, boost::is_any_of(" "));
+  //return strs[3];
+  auto strs=utils::split(res,' ');
   return strs[3];
+
 }
 std::string wiener::WienerSnmp::getOutputStatus(uint32_t module,uint32_t voie)
 {
