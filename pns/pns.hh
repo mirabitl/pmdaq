@@ -29,7 +29,7 @@ class pns : public handlerPlugin
     void update(http_request message);
     void remove(http_request message);
     void purge(http_request message);
-    web::json::value registered();
+    web::json::value registered(std::string r_session="NONE");
 
     std::string host(){return _host;}
     uint32_t port(){return _port;}

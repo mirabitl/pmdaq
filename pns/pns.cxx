@@ -16,19 +16,19 @@
 #include <fcntl.h>
 #include <iostream>
 #include <sstream>
-
-std::vector<std::string> split(const std::string &s, char delim)
-{
-  std::stringstream ss(s);
-  std::string item;
-  std::vector<std::string> elems;
-  while (std::getline(ss, item, delim))
-  {
-    elems.push_back(item);
-    // elems.push_back(std::move(item)); // if C++11 (based on comment from @mchiasson)
-  }
-  return elems;
-}
+#include "utils.hh"
+// std::vector<std::string> split(const std::string &s, char delim)
+// {
+//   std::stringstream ss(s);
+//   std::string item;
+//   std::vector<std::string> elems;
+//   while (std::getline(ss, item, delim))
+//   {
+//     elems.push_back(item);
+//     // elems.push_back(std::move(item)); // if C++11 (based on comment from @mchiasson)
+//   }
+//   return elems;
+// }
 
 pns::pns() : _host(""), _port(0)
 {
@@ -40,7 +40,7 @@ std::vector<std::string> pns::getPaths(std::string query)
   {
     ucout << url() << std::endl;
     // remove http:// and trailing / so
-    auto v = split(url().substr(7, url().length() - 8), ':');
+    auto v = utils::split(url().substr(7, url().length() - 8), ':');
     _host.assign(v[0]);
     _port = std::stoi(v[1]);
 
@@ -80,12 +80,17 @@ void pns::processRequest(http_request &message)
 void pns::terminate()
 {
 }
-json::value pns::registered()
+json::value pns::registered(std::string r_session)
 {
   auto par = json::value();
   int np = 0;
   for (auto it = _services.begin(); it != _services.end(); it++)
   {
+    auto v = utils::split(it->first, ':');
+    auto vp= utils::split(v[2],'/');
+    if (r_session.compare("NONE")!=0)
+      if (vp[3].compare(r_session)!=0) continue;
+
     utility::ostringstream_t buf;
     buf << U(it->first) << U("?") << U(it->second);
     par[np] = json::value::string(buf.str());
@@ -96,7 +101,8 @@ json::value pns::registered()
 void pns::list(http_request message)
 {
   auto rep = json::value();
-  rep["REGISTERED"] = registered();
+  auto r_session=utils::queryStringValue(message,"session","NONE");
+  rep["REGISTERED"] = registered(r_session);
   message.reply(status_codes::OK, rep);
 }
 void pns::update(http_request message)
@@ -154,7 +160,7 @@ void pns::remove(http_request message)
   if (path.compare("") != 0)
     for (auto it2 = _services.cbegin(); it2 != _services.cend() /* not hoisted */; /* no increment */)
     {
-      auto v = split(it2->first, ':');
+      auto v = utils::split(it2->first, ':');
 
       if (v[2].compare(path) == 0)
       {
