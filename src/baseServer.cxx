@@ -157,16 +157,16 @@ void baseServer::registerPlugin(std::string name, std::string query)
 {
   std::stringstream s;
   s << "lib" << name << ".so";
-  PM_DEBUG(_logPdaq, "1" << s.str());
+  PM_INFO(_logPdaq, "1" << s.str());
   void *library = dlopen(s.str().c_str(), RTLD_NOW);
-  PM_DEBUG(_logPdaq, "2 open" << s.str());
+  PM_INFO(_logPdaq, "2 open" << s.str());
   //printf("%s %x \n",dlerror(),(unsigned int) library);
   //PM_INFO(_logPdaq,s.str()<<" Error " << dlerror() << " Library open address " << std::hex << library << std::dec<<endl;
 
   // Get the loadFilter function, for loading objects
   handlerPlugin *(*create)();
   create = (handlerPlugin * (*)()) dlsym(library, "loadProcessor");
-  PM_DEBUG(_logPdaq, " create" << s.str());
+  PM_INFO(_logPdaq, " create" << s.str());
   ucout << " Error " << dlerror() << " file " << s.str() << " loads to processor address " << std::hex << create << std::dec << endl;
   //printf("%s %x \n",dlerror(),(unsigned int) create);
   // printf("%s lods to %x \n",s.str().c_str(),(unsigned int) create);

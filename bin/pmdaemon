@@ -11,11 +11,11 @@ PIDFILE="/var/log/pmd.log"
 PATH="/sbin:/bin:/usr/sbin:/usr/bin" #Ne pas toucher
 
 
-export LD_LIBRARY_PATH=/usr/lib:/usr/local/lib:/usr/local/pmdaq/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/usr/local/pmdaq/lib:/usr/local/lib:/usr/lib:$LD_LIBRARY_PATH
 #export PATH=/opt/zdaq/scripts:$PATH
 export PYTHONPATH=/usr/local/pmdaq/share:$PYTHONPATH
 
-export PNS_NAME=lyocmsmu03
+
 
 . /etc/pmdaq.conf
 

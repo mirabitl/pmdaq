@@ -47,7 +47,7 @@ include(../../CMake.defs)
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
 #find_package(log4cxx CONFIG REQUIRED)
 #target_link_libraries(lyon_gricv0 PRIVATE log4cxx)
-target_link_libraries(lyon_gricv0 PRIVATE netLink lyon_mpi lyon_db evb)
+target_link_libraries(lyon_gricv0 PRIVATE netLink lyon_mpi lyon_db evb pthread)
 
 target_include_directories(lyon_gricv0 PRIVATE ../../include ../mpi ../db ../../evb/include )
 

@@ -360,10 +360,6 @@ void Gricv0Manager::fsm_initialise(http_request m)
   PMF_INFO(_logGricv0,"****** CMD: INITIALISING");
   //  std::cout<<"m= "<<m->command()<<std::endl<<m->content()<<std::endl;
  
-  web::json::value jtype=params()["type"];
-  _type=jtype.as_integer();
-  printf ("_type =%d\n",_type); 
-
   // Need a GRICV0 tag
   if (!utils::isMember(params(),"gricv0"))
     {
@@ -373,11 +369,12 @@ void Gricv0Manager::fsm_initialise(http_request m)
       return;
     }
   // Now create the Message handler
+  PMF_INFO(_logGricv0,"Starting MPI ");
   if (_mpi==NULL)
     _mpi= new gricv0::Interface();
   _mpi->initialise();
 
-   
+  PMF_INFO(_logGricv0,"Go thru parameters ");
   web::json::value jGRICV0=params()["gricv0"];
   //_msh =new MpiMessageHandler("/dev/shm");
   if (!utils::isMember(jGRICV0,"network"))
@@ -388,6 +385,7 @@ void Gricv0Manager::fsm_initialise(http_request m)
       return;
     }
   // Scan the network
+  PMF_INFO(_logGricv0," Scanning gricv0:network  "<<jGRICV0["network"].as_string());
   std::map<uint32_t,std::string> diflist=utils::scanNetwork(jGRICV0["network"].as_string());
   // Download the configuration
   if (_hca==NULL)

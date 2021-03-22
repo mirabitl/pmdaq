@@ -408,6 +408,8 @@ void MdccManager::c_status(http_request m)
 
 MdccManager::MdccManager() : _mdcc(NULL)
 {;}
+void MdccManager::end()
+{;}
 void MdccManager::initialise()			   
 {
   
@@ -465,6 +467,7 @@ extern "C"
   // loadDHCALAnalyzer function creates new LowPassDHCALAnalyzer object and returns it.  
   handlerPlugin* loadProcessor(void)
   {
+    fprintf(stderr,"Creating MdccManager \n");
     return (new  MdccManager);
   }
   // The deleteDHCALAnalyzer function deletes the LowPassDHCALAnalyzer that is passed 
