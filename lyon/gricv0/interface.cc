@@ -24,7 +24,7 @@ void gricv0::Interface::dolisten()
 {
  
   while(!_onClientDisconnect->disconnected()) {
-
+    if (!_running) break;
                 if(!_group->listen(4000))
 		  std::cout << "\nNo msg recieved during the last 4 seconds";
         }

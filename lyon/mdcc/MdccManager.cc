@@ -409,7 +409,10 @@ void MdccManager::c_status(http_request m)
 MdccManager::MdccManager() : _mdcc(NULL)
 {;}
 void MdccManager::end()
-{;}
+{
+
+  if (_mdcc!=NULL)
+    _mdcc->close();}
 void MdccManager::initialise()			   
 {
   

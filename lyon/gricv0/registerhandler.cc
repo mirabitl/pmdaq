@@ -95,7 +95,7 @@ void gricv0::registerHandler::processReply(uint32_t tr,uint32_t* reply)
     {
       usleep(1000);
       cnt++;
-      if (cnt>1000)
+      if (cnt>300)
 	{
 	  PM_ERROR(_logGricv0," no return after "<<cnt);
 	  break;

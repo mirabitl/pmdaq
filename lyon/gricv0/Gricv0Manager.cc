@@ -77,8 +77,33 @@ void Gricv0Manager::end()
     }
   //Stop listening
   if (_mpi!=NULL)
-    _mpi->terminate();
+    {
+      if (_running)
+	{
+	  PMF_INFO(_logGricv0," CMD: STOPPING");
+	  
+	  for (auto x:_mpi->boards())
+	    {
+	      // Automatic FSM (bit 1 a 0) , disabled (Bit 0 a 0)
+	      x.second->reg()->sendCommand(gricv0::Message::command::STOPACQ);
+	    }
+	  ::sleep(1);
+	  _running=false;
+	}
+  // Close sockets
+          // Terminate listening
 
+      PMF_INFO(_logGricv0,"CLOSE CMD called ");
+      for (auto x=_mpi->boards().begin();x!=_mpi->boards().end();x++)
+      {
+	(*x).second->reg()->sendCommand(gricv0::Message::command::CLOSE);
+      }
+      PMF_INFO(_logGricv0,"CLOSE DONE called ");
+    PMF_INFO(_logGricv0,"TERMINATE CMD called ");
+    _mpi->terminate();
+    PMF_INFO(_logGricv0,"TERMINATE DONE called ");
+    _mpi=NULL;
+    }
   
 }
 

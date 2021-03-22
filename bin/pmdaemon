@@ -14,7 +14,7 @@ PATH="/sbin:/bin:/usr/sbin:/usr/bin" #Ne pas toucher
 export LD_LIBRARY_PATH=/usr/local/pmdaq/lib:/usr/local/lib:/usr/lib:$LD_LIBRARY_PATH
 #export PATH=/opt/zdaq/scripts:$PATH
 export PYTHONPATH=/usr/local/pmdaq/share:$PYTHONPATH
-
+export PATH=/usr/local/pmdaq/bin:$PATH
 
 
 . /etc/pmdaq.conf

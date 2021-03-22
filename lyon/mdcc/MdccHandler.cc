@@ -31,7 +31,11 @@ void mdcc::MdccHandler::open()
 void mdcc::MdccHandler::close()
 {
   if (_driver!=NULL)
+    {
+     this->maskTrigger();
     delete _driver;
+    _driver=NULL;
+    }
 }
 
 /*
