@@ -72,8 +72,22 @@ void Gricv1Manager::end()
     }
   //Stop listening
   if (_mpi!=NULL)
-    _mpi->terminate();
+    {
+      if (_running)
+	{
+	  PMF_INFO(_logGricv1," CMD: STOPPING");
+	  for (auto x:_mpi->boards())
+	    {
+	      // Automatic FSM (bit 1 a 0) , disabled (Bit 0 a 0)
+	      x.second->reg()->writeRegister(gricv1::Message::Register::ACQ_CTRL,0);
+	    }
+	  ::sleep(1);
+	  _running=false;
+	}
 
+    _mpi->terminate();
+    _mpi=0;
+    }
   
 }
 
