@@ -73,9 +73,9 @@ void pns::processRequest(http_request &message)
     this->purge(message);
   else if (cmd.compare("/PNS/SESSION/LIST") == 0)
     this->session_list(message);
-  else if (cmd.compare("/PNS/SESSION_UPDATE") == 0)
+  else if (cmd.compare("/PNS/SESSION/UPDATE") == 0)
     this->session_update(message);
-  else if (cmd.compare("/PNS/SESSION_PURGE") == 0)
+  else if (cmd.compare("/PNS/SESSION/PURGE") == 0)
     this->session_purge(message);
   else
   {
