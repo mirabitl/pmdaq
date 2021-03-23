@@ -25,11 +25,18 @@ class pns : public handlerPlugin
     virtual void processRequest(http_request& message);
     virtual void terminate();
     // PNS web services
+    web::json::value registered(std::string r_session="NONE");
     void list(http_request message);
     void update(http_request message);
     void remove(http_request message);
     void purge(http_request message);
-    web::json::value registered(std::string r_session="NONE");
+
+
+    web::json::value session_registered(std::string r_session="NONE");
+    void session_update(http_request message);
+    void session_list(http_request message);
+    void session_purge(http_request message);
+
 
     std::string host(){return _host;}
     uint32_t port(){return _port;}
@@ -37,6 +44,7 @@ class pns : public handlerPlugin
 
   private:
     std::map<std::string,std::string> _services;
+    std::map<std::string,std::string> _sessions;
 
   protected:
     std::string _host;

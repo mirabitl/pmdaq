@@ -32,6 +32,8 @@
 
 pns::pns() : _host(""), _port(0)
 {
+  _services.clear();
+  _sessions.clear();
 }
 
 std::vector<std::string> pns::getPaths(std::string query)
@@ -52,6 +54,9 @@ std::vector<std::string> pns::getPaths(std::string query)
   v.push_back("/PNS/LIST");
   v.push_back("/PNS/REMOVE");
   v.push_back("/PNS/PURGE");
+  v.push_back("/PNS/SESSION/UPDATE");
+  v.push_back("/PNS/SESSION/LIST");
+  v.push_back("/PNS/SESSION/PURGE");
   return v;
 }
 
@@ -66,6 +71,12 @@ void pns::processRequest(http_request &message)
     this->remove(message);
   else if (cmd.compare("/PNS/PURGE") == 0)
     this->purge(message);
+  else if (cmd.compare("/PNS/SESSION/LIST") == 0)
+    this->session_list(message);
+  else if (cmd.compare("/PNS/SESSION_UPDATE") == 0)
+    this->session_update(message);
+  else if (cmd.compare("/PNS/SESSION_PURGE") == 0)
+    this->session_purge(message);
   else
   {
     json::value jrep;
@@ -198,6 +209,80 @@ void pns::purge(http_request message)
   // Return the registered list
   auto rep = json::value();
   rep["REGISTERED"] = registered();
+  message.reply(status_codes::OK, rep);
+}
+web::json::value pns::session_registered(std::string r_session)
+{
+  auto par = json::value();
+  int np = 0;
+  for (auto it = _sessions.begin(); it != _sessions.end(); it++)
+    {
+    if (r_session.compare("NONE")!=0)
+      if (it->first.compare(r_session)!=0) continue;
+    utility::ostringstream_t buf;
+    buf << U(it->first) << U(":") << U(it->second);
+    par[np] = json::value::string(buf.str());
+    np++;
+  }
+  return par;
+
+}
+void pns::session_list(http_request message)
+{
+  auto rep = json::value();
+  auto r_session=utils::queryStringValue(message,"session","NONE");
+ 
+  rep["REGISTERED"] = session_registered(r_session);
+  message.reply(status_codes::OK, rep);
+}
+void pns::session_update(http_request message)
+{
+  auto rep = json::value();
+  //Decode and build path
+  auto r_session=utils::queryStringValue(message,"session","NONE");
+  if (r_session.compare("NONE")==0)
+    {
+      rep["status"]=json::value::string(U("Missing session"));
+      message.reply(status_codes::OK, rep);
+    }
+  auto r_state=utils::queryStringValue(message,"state","NONE");
+  if (r_state.compare("NONE")==0)
+    {
+      rep["status"]=json::value::string(U("Missing state"));
+      message.reply(status_codes::OK, rep);
+    }
+
+  auto itf = _sessions.find(r_session);
+  if (itf == _sessions.end())
+  {
+    std::pair<std::string, std::string> p(r_session,r_state);
+    _sessions.insert(p);
+  }
+  else
+    itf->second.assign(r_state);
+  // Return the registered list
+  rep["REGISTERED"] =session_registered(r_session);
+  message.reply(status_codes::OK, rep);
+}
+void pns::session_purge(http_request message)
+{
+
+  //Decode and build path
+  for (auto it2 = _sessions.cbegin(); it2 != _sessions.cend() /* not hoisted */; /* no increment */)
+  {
+    //auto v=split(it2->second,'?');
+    ucout << "Session " << it2->first << " state " << it2->second << std::endl;
+    if (it2->second.compare("DEAD") == 0)
+    {
+      ucout << "removing " << it2->first << std::endl;
+      _sessions.erase(it2++); // or "it = m.erase(it)" since C++11
+    }
+    else
+      ++it2;
+  }
+  // Return the registered list
+  auto rep = json::value();
+  rep["REGISTERED"] = session_registered();
   message.reply(status_codes::OK, rep);
 }
 
