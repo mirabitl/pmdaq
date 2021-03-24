@@ -9,13 +9,14 @@ import math
 from six.moves import range
 
 
-class combRC(lydaqrc.lydaqControl):
+class combRC(pmdaqrc.pmdaqControl):
     def __init__(self,config):
         super().__init__(config)
         self.reset=0
         self.comment="Not yet set"
         self.location="UNKNOWN"
         self.md_name="lyon_mdcc"
+        self.db=mg.instance()
     # daq
     # Initialising implementation
     def daq_initialising(self):
@@ -42,20 +43,17 @@ class combRC(lydaqrc.lydaqControl):
         if ("lyon_mdcc" in self.session.apps):
             s = json.loads(self.session.apps['lyon_mdcc'][0].sendTransition("OPEN", m))
             r["lyon_mdcc"] = s
-        if ("MBlyon_mdcc" in self.session.apps):
-            s = json.loads(self.session.apps['MBlyon_mdcc'][0].sendTransition("INITIALISE", m))
-            r["MBlyon_mdcc"] = s
-            self.md_name="MBlyon_mdcc"
+        if ("lyon_mbmdcc" in self.session.apps):
+            s = json.loads(self.session.apps['lyon_mbmdcc'][0].sendTransition("INITIALISE", m))
+            r["lyon_mbmdcc"] = s
+            self.md_name="lyon_mbmdcc"
         # evb_builder
         for x in self.session.apps["evb_builder"]:
             s = json.loads(x.sendTransition("CONFIGURE", m))
             r["evb_builder_%d" % x.instance] = s
         # Reset for FEB V1
         if (self.reset != 0):
-            if ("MBlyon_mdcc" in self.session.apps):
-                self.md_name="MBlyon_mdcc"
-
-            self.mdcc_resetTdc((self.reset>0),ptrgname=self.md_name)
+            self.mdcc_resetTdc((self.reset>0),)
             time.sleep(abs(self.reset)/1000.)
 
         if ("lyon_febv1" in self.session.apps):
@@ -190,10 +188,10 @@ class combRC(lydaqrc.lydaqControl):
                 s = json.loads(x.sendTransition("DESTROY", m))
                 r["lyon_DIF_%d" % x.instance] = s
 
-        if ("MBlyon_mdcc" in self.session.apps):
-            for x in self.session.apps["MBlyon_mdcc"]:
+        if ("lyon_mbmdcc" in self.session.apps):
+            for x in self.session.apps["lyon_mbmdcc"]:
                 s = json.loads(x.sendTransition("DESTROY", m))
-                r["MBlyon_mdcc_%d" % x.instance] = s
+                r["lyon_mbmdcc_%d" % x.instance] = s
 
         self.daq_answer=json.dumps(r)
         self.storeState()
@@ -255,7 +253,7 @@ class combRC(lydaqrc.lydaqControl):
 
     def SourceStatus(self, verbose=False):
         rep = {}
-        for k, v in self.appMap.items():
+        for k, v in self.session.apps.items():
             if (k != "lyon_febv1" ):
                 continue
             for s in v:
@@ -266,7 +264,7 @@ class combRC(lydaqrc.lydaqControl):
                 else:
                     rep["%s_%d" % (s.host, s.infos['instance'])] = mr
 
-        for k, v in self.appMap.items():
+        for k, v in self.session.apps.items():
             if (k != "lyon_pmr" ):
                 continue
             for s in v:
@@ -278,7 +276,7 @@ class combRC(lydaqrc.lydaqControl):
                     rep["%s_%d" % (s.host, s.infos['instance'])] = mr
 
                     #rep["%s_%d" % (s.host, s.infos['instance'])] = r
-        for k, v in self.appMap.items():
+        for k, v in self.session.apps.items():
             if (k != "lyon_gricv0" ):
                 continue
             for s in v:
@@ -290,7 +288,7 @@ class combRC(lydaqrc.lydaqControl):
                     rep["%s_%d" % (s.host, s.infos['instance'])] = mr
 
                     #rep["%s_%d" % (s.host, s.infos['instance'])] = r
-        for k, v in self.appMap.items():
+        for k, v in self.session.apps.items():
             if (k != "lyon_gricv1" ):
                 continue
             for s in v:
@@ -302,7 +300,7 @@ class combRC(lydaqrc.lydaqControl):
                     rep["%s_%d" % (s.host, s.infos['instance'])] = mr
 
                     #rep["%s_%d" % (s.host, s.infos['instance'])] = r
-        for k, v in self.appMap.items():
+        for k, v in self.session.apps.items():
             if (k != "lyon_DIF"):
                 continue
             for s in v:
@@ -354,8 +352,7 @@ class combRC(lydaqrc.lydaqControl):
         param = {}
         param["value"] = active
         r = {}
-        r["active"] = json.loads(self.processCommand(
-            "SETDELAY", "lyon_febv1", param))
+        r["active"] = json.loads(self.processCommand("SETDELAY", "lyon_febv1", param))
 
     def setTdcMask(self, channelmask, asicmask):
         param = {}
@@ -364,7 +361,7 @@ class combRC(lydaqrc.lydaqControl):
         return self.processCommand("SETMASK", "lyon_febv1", param)
 
     def tdcLUTCalib(self, instance, channel):
-        if (not "lyon_febv1" in self.appMap):
+        if (not "lyon_febv1" in self.session.apps):
             return '{"answer":"NOlyon_febv1","status":"FAILED"}'
         if (len(self.session.apps["lyon_febv1"]) <= instance):
             return '{"answer":"InvalidInstance","status":"FAILED"}'
@@ -379,7 +376,7 @@ class combRC(lydaqrc.lydaqControl):
         return json.dumps(r)
 
     def tdcLUTDump(self, instance, channel):
-        if (not "lyon_febv1" in self.appMap):
+        if (not "lyon_febv1" in self.session.apps):
             return '{"answer":"NOlyon_febv1","status":"FAILED"}'
         if (len(self.session.apps["lyon_febv1"]) <= instance):
             return '{"answer":"InvalidInstance","status":"FAILED"}'
@@ -392,7 +389,7 @@ class combRC(lydaqrc.lydaqControl):
         return json.dumps(r)
 
     def tdcLUTMask(self, instance, mask,feb):
-        if (not "lyon_febv1" in self.appMap):
+        if (not "lyon_febv1" in self.session.apps):
             return '{"answer":"NOlyon_febv1","status":"FAILED"}'
         if (len(self.session.apps["lyon_febv1"]) <= instance):
             return '{"answer":"InvalidInstance","status":"FAILED"}'
@@ -408,22 +405,20 @@ class combRC(lydaqrc.lydaqControl):
 
     def febScurve(self, ntrg, ncon, ncoff, thmin, thmax, step):
         r = {}
-        if ("MBlyon_mdcc" in self.session.apps):
-            self.md_name="MBlyon_mdcc"
-        self.mdcc_Pause(ptrgname=self.md_name)
-        self.mdcc_setSpillOn(ncon,ptrgname=self.md_name)
+        self.mdcc_Pause()
+        self.mdcc_setSpillOn(ncon,)
         print(" Clock On %d Off %d" % (ncon, ncoff))
-        self.mdcc_setSpillOff(ncoff,ptrgname=self.md_name)
-        self.mdcc_setSpillRegister(4,ptrgname=self.md_name)
-        self.mdcc_CalibOn(1,ptrgname=self.md_name)
-        self.mdcc_setCalibCount(ntrg,ptrgname=self.md_name)
-        self.mdcc_Status(ptrgname=self.md_name)
+        self.mdcc_setSpillOff(ncoff,)
+        self.mdcc_setSpillRegister(4,)
+        self.mdcc_CalibOn(1,)
+        self.mdcc_setCalibCount(ntrg,)
+        self.mdcc_Status()
         thrange = (thmax - thmin + 1) // step
         for vth in range(0, thrange+1):
-            self.mdcc_Pause(ptrgname=self.md_name)
+            self.mdcc_Pause()
             self.setVthTime(thmax - vth * step)
             time.sleep(0.2)
-            self.evb_builder_setHeader(2, thmax - vth * step, 0xFF)
+            self.builder_setHeader(2, thmax - vth * step, 0xFF)
 
             # Check Last built event
             sr = json.loads(self.evb_builderStatus())
@@ -434,9 +429,9 @@ class combRC(lydaqrc.lydaqControl):
                     firstEvent = v["event"]
             # print sr,firstEvent
             # Resume Calibration
-            self.mdcc_ReloadCalibCount(ptrgname=self.md_name)
-            self.mdcc_Resume(ptrgname=self.md_name)
-            self.mdcc_Status(ptrgname=self.md_name)
+            self.mdcc_ReloadCalibCount()
+            self.mdcc_Resume()
+            self.mdcc_Status()
 
             # Wait for ntrg events capture
             lastEvent = firstEvent
@@ -457,9 +452,9 @@ class combRC(lydaqrc.lydaqControl):
             r["TH_%d" % (thmax-vth*step)] = lastEvent - firstEvent + 1
 
             # End Point
-            self.mdcc_CalibOn(0,ptrgname=self.md_name)
-            self.mdcc_CalibOff(ptrgname=self.md_name)
-            self.mdcc_Pause(ptrgname=self.md_name)
+            self.mdcc_CalibOn(0,)
+            self.mdcc_CalibOff()
+            self.mdcc_Pause()
         return json.dumps(r)
 
     def runScurve(self, run, ch, spillon, spilloff, beg, las, step=2, asic=255, Comment="PR2 Calibration", Location="UNKNOWN", nevmax=50):
