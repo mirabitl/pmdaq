@@ -106,7 +106,10 @@ class sessionAccess:
         # clear PNS
         print("purging PNS")
         sac.executeCMD(self.pns_host,8888,"/PNS/PURGE",{})
-
+        # removing session
+        print("purging PNS/SESSION")
+        sac.executeCMD(self.pns_host,8888,"/PNS/SESSION/UPDATE",{"session":self.name(),"state":"DEAD"})
+        sac.executeCMD(self.pns_host,8888,"/PNS/SESSION/PURGE",{})
     def commands(self,cmd,obj_name,params=None):
         rep={}
         for name,app in six.iteritems(self.apps):
