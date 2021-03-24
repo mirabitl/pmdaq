@@ -15,6 +15,7 @@ import time
 import argparse
 import requests
 import combrc
+import MongoJob as mg
 import sys
 from six.moves import range
 from six.moves import input
@@ -25,22 +26,10 @@ parser = argparse.ArgumentParser()
 grp_action = parser.add_mutually_exclusive_group()
 # JOB Control
 
-grp_action.add_argument('--jc-create', action='store_true',
-                        help='Loads configuration in all jobcontrol process ')
-grp_action.add_argument('--jc-kill', action='store_true',
-                        help='kill all running processes')
 grp_action.add_argument('--jc-destroy', action='store_true',
-                        help='delete all jobcontrol configuration')
-grp_action.add_argument('--jc-start', action='store_true',
-                        help='start all controled processes described in $DAQCONFIG jsonfile variable')
-grp_action.add_argument('--jc-restart', action='store_true',
-                        help='restart one job with --jobname=name --jobpid=pid --host=hostname')
-grp_action.add_argument('--jc-status', action='store_true',
-                        help='show the status all controled processes or of the process specified in --name=PROC')
+                        help='delete all registered services and the session')
 grp_action.add_argument('--jc-info', action='store_true',
-                        help='show the status all controled processesof the host specified in --host=Host')
-grp_action.add_argument('--jc-appcreate', action='store_true',
-                        help='Create all ZDAQ app on all hosts')
+                        help='List all services and parameters')
 
 # DAQ preparation
 # Running
@@ -205,12 +194,17 @@ if (account == "NONE"):
     exit(0)
 
 config = os.getenv("DAQMONGO", "NONE")
+file_config=None
 if (config == "NONE"):
     print("The ENV varaible DAQMONGO=name:version must be set")
     exit(0)
+else:
+    w=mg.instance()
+    w.downloadConfig(config.split(':')[0],config.split(':')[1],True)
+    file_config="/dev/shm/mgjob/%s_%s.json" % (config.split(':')[0],config.split(':')[1])
 
-fdc = combrc.combRC(account, config)
-fdc.Connect()
+fdc = combrc.combRC(file_config)
+
 # fdc.updateInfo(True,True)
 
 if len(sys.argv) == 1:
@@ -222,30 +216,12 @@ results = parser.parse_args()
 lcgi = {}
 r_cmd = None
 
-if(results.jc_create):
-    fdc.jc.initialise()
-    exit(0)
-elif(results.jc_kill):
-    fdc.jc.kill()
-    exit(0)
-elif(results.jc_start):
-    fdc.jc.start()
-    exit(0)
-elif(results.jc_destroy):
-    fdc.jc.destroy()
-    exit(0)
-elif(results.jc_appcreate):
-    sr = fdc.jc.configure()
-    print(sr)
-    exit(0)
-elif(results.jc_status):
-    sr = fdc.jc_status()
-    print(sr)
+if(results.jc_destroy):
+    fdc.session.remove()
     exit(0)
 elif(results.jc_info):
-    fdc.updateInfo(True, results.verbose)
+    fdc.session.Print(True)
     exit(0)
-
 # DAQ
 elif(results.daq_initialise):
     delay=0
@@ -259,9 +235,10 @@ elif(results.daq_configure):
     fdc.configure()
     exit(0)
 elif(results.daq_status):
-    fdc.BuilderStatus(True)
-    fdc.SourceStatus(True)
-    fdc.TriggerStatus(True)
+    if (fdc.state!="CREATED"):
+        fdc.BuilderStatus(True)
+        fdc.SourceStatus(True)
+        fdc.TriggerStatus(True)
     exit(0)
 elif(results.daq_tdcstatus):
     sr = fdc.SourceStatus(results.verbose)
@@ -298,7 +275,7 @@ elif(results.daq_downloaddb):
     if (results.dbversion != None):
         version = results.dbversion
     lcgi['version'] = version
-    name = "TDCSERVER"
+    name = "lyon_febv1"
     if (results.name != None):
         name = results.name
     print(fdc.processCommand("DOWNLOADDB", name, lcgi))

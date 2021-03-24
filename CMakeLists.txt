@@ -115,6 +115,9 @@ file(GLOB SCRIPT_TARGET
 file(GLOB MG_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/mg*"
      )
+file(GLOB RC_TARGET
+     "${CMAKE_CURRENT_SOURCE_DIR}/scripts/combdaq*"
+     )
 file(GLOB DAEMON_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/bin/*daemon"
      )
@@ -126,7 +129,8 @@ file(GLOB ETC_TARGET
 
 install(FILES ${SCRIPT_TARGET}  DESTINATION share )
 install(FILES ${ETC_TARGET} DESTINATION etc)
-install(FILES ${MG_TARGET} ${DAEMON_TARGET} DESTINATION bin)
+install(FILES ${MG_TARGET} ${RC_TARGET} ${DAEMON_TARGET} DESTINATION bin)
+
 
 install(TARGETS pmd  DESTINATION bin  ARCHIVE DESTINATION bin)
 install(CODE "execute_process(COMMAND chmod -R +x ${CMAKE_INSTALL_PREFIX}/bin/)")
