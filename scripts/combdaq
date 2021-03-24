@@ -1,0 +1,514 @@
+#!/usr/bin/env python3
+from __future__ import absolute_import
+from __future__ import print_function
+import os
+import socks
+import socket
+import six.moves.http_client
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
+from six.moves.urllib.error import URLError, HTTPError
+import json
+from copy import deepcopy
+import base64
+import time
+import argparse
+import requests
+import combrc
+import sys
+from six.moves import range
+from six.moves import input
+
+parser = argparse.ArgumentParser()
+
+# configure all the actions
+grp_action = parser.add_mutually_exclusive_group()
+# JOB Control
+
+grp_action.add_argument('--jc-create', action='store_true',
+                        help='Loads configuration in all jobcontrol process ')
+grp_action.add_argument('--jc-kill', action='store_true',
+                        help='kill all running processes')
+grp_action.add_argument('--jc-destroy', action='store_true',
+                        help='delete all jobcontrol configuration')
+grp_action.add_argument('--jc-start', action='store_true',
+                        help='start all controled processes described in $DAQCONFIG jsonfile variable')
+grp_action.add_argument('--jc-restart', action='store_true',
+                        help='restart one job with --jobname=name --jobpid=pid --host=hostname')
+grp_action.add_argument('--jc-status', action='store_true',
+                        help='show the status all controled processes or of the process specified in --name=PROC')
+grp_action.add_argument('--jc-info', action='store_true',
+                        help='show the status all controled processesof the host specified in --host=Host')
+grp_action.add_argument('--jc-appcreate', action='store_true',
+                        help='Create all ZDAQ app on all hosts')
+
+# DAQ preparation
+# Running
+grp_action.add_argument('--daq-initialise', action='store_true',
+                        help='Initialise DAQ, data source discovery and Builder final configuration')
+grp_action.add_argument('--daq-configure', action='store_true',
+                        help=' Configure FDAQ, front end ASICs configuration')
+grp_action.add_argument('--daq-startrun', action='store_true',
+                        help=' start the run')
+grp_action.add_argument('--daq-stoprun', action='store_true',
+                        help=' stop the run')
+grp_action.add_argument('--daq-destroy', action='store_true',
+                        help='destroy the readout, back to the CREATED state')
+# Status
+grp_action.add_argument('--daq-status', action='store_true',
+                        help=' display DAQ status of all processes')
+grp_action.add_argument('--daq-tdcstatus', action='store_true',
+                        help=' display DAQ status of all FEBCMS TDC')
+grp_action.add_argument('--daq-evbstatus', action='store_true',
+                        help=' display event builder status')
+# Actions
+grp_action.add_argument('--daq-downloaddb', action='store_true',
+                        help='download the dbstate specified in --dbstate=state --version=num')
+
+grp_action.add_argument('--dif-ctrlreg', action='store_true',
+                        help=' Send CTRLREG to DIFMANAGER --ctrlreg=ctrl')
+# FEBV1 actions
+grp_action.add_argument('--feb-resettdc', action='store_true',
+                        help=' Send Reset to all FEB TDC')
+grp_action.add_argument('--feb-calibdac', action='store_true',
+                        help='Start a PETIROC calibdac run')
+grp_action.add_argument('--feb-scurve', action='store_true',
+                        help='Start a PETIROC scurve run')
+grp_action.add_argument('--feb-setvth', action='store_true',
+                        help='change the VTHTIME threshold of PETIROC2 and reconfigure chips with -vth=xxx')
+grp_action.add_argument('--feb-setmask', action='store_true',
+                        help='change the MASK of PETIROC2reconfigure chips with -mask=xxx')
+grp_action.add_argument('--feb-settdcmode', action='store_true',
+                        help='change the trigger mode before starting the run with --value=1/0')
+grp_action.add_argument('--feb-settdcdelays', action='store_true',
+                        help='change the PETIROC mode before starting the run with --active=1-255, --dead=1-255 ')
+grp_action.add_argument('--feb-lutcalib', action='store_true',
+                        help='Calibrate --tdc=i --channel=k  is the total number of channels')
+grp_action.add_argument('--feb-lutmask', action='store_true',
+                        help='Set the LUT mask --tdc=i --mask=Hexadecimal mask --feb=febid')
+grp_action.add_argument('--feb-lutdump', action='store_true',
+                        help='Dump lut --tdc=i --channel=k ')
+# grp_action.add_argument('--histo-draw', action='store_true',
+#                        help='Draw histo --name=histo ')
+
+
+# TRIGGER MDCC
+grp_action.add_argument('--trig-status', action='store_true',
+                        help=' display trigger (MDCC) counter status')
+grp_action.add_argument('--trig-reset', action='store_true',
+                        help=' reset trigger (MDCC) counter')
+grp_action.add_argument('--trig-pause', action='store_true',
+                        help=' trigger (MDCC) soft veto')
+grp_action.add_argument('--trig-resume', action='store_true',
+                        help=' release trigger (MDCC) soft veto ')
+grp_action.add_argument('--ecal-pause', action='store_true',
+                        help=' (Obsolete) Ecal soft veto')
+grp_action.add_argument('--ecal-resume', action='store_true',
+                        help=' (Obsolete) release Ecal soft veto')
+grp_action.add_argument('--trig-spillregister', action='store_true',
+                        help=' set spill register  with --value=nc ')
+grp_action.add_argument('--trig-spillon', action='store_true',
+                        help=' set spill nclock on with --clock=nc (20ns)')
+grp_action.add_argument('--trig-spilloff', action='store_true',
+                        help=' set spill nclock off with --clock=nc (20ns)')
+grp_action.add_argument('--trig-calibcount', action='store_true',
+                        help=' set the value of the calibcount (FEB calibration) register --value=xx ')
+grp_action.add_argument('--trig-beam', action='store_true',
+                        help=' reload calib (FEB calibration)  ')
+
+grp_action.add_argument('--trig-rearm', action='store_true',
+                        help=' reload calib (FEB calibration)  ')
+grp_action.add_argument('--trig-setregister', action='store_true',
+                        help=' set the value of the MDCC register --value=xx --address=yy')
+grp_action.add_argument('--trig-getregister', action='store_true',
+                        help=' get the value of the MDCC register  --address=yy')
+grp_action.add_argument('--trig-tdcreset', action='store_true',
+                        help=' hard reset of TDC (FEB) counters')
+
+
+# Arguments
+parser.add_argument('--config', action='store', dest='config',
+                    default=None, help='json config file')
+parser.add_argument('--dbstate', action='store', default=None,
+                    dest='dbstate', help='set the dbstate')
+parser.add_argument('--dbversion', action='store', type=int,
+                    dest='dbversion', default=None, help='DB state version')
+
+parser.add_argument('--clock', action='store', type=int, default=None,
+                    dest='clock', help='set the number of 20 ns clock')
+parser.add_argument('--directory', action='store', type=str,
+                    dest='directory', default=None, help='shm publisher directory')
+parser.add_argument('--vth', action='store', type=int,
+                    default=None, dest='vth', help='set the vth for chips')
+parser.add_argument('--gain', action='store', type=int,
+                    default=None, dest='gain', help='set the gain for chips')
+
+parser.add_argument('--tdc', action='store', type=int,
+                    default=None, dest='tdc', help='set the tdc instance')
+
+parser.add_argument('--channel', action='store', type=int,
+                    default=None, dest='channel', help='set the channel number')
+
+parser.add_argument('--spillon', action='store', type=int,
+                    default=None, dest='spillon', help='spill on')
+parser.add_argument('--spilloff', action='store', type=int,
+                    default=None, dest='spilloff', help='spill off')
+parser.add_argument('--step', action='store', type=int,
+                    default=None, dest='step', help='Scurve step')
+parser.add_argument('--first', action='store', type=int,
+                    default=None, dest='first', help='Scurve low vth')
+parser.add_argument('--last', action='store', type=int,
+                    default=None, dest='last', help='Scurve high vth')
+
+# Job
+parser.add_argument('--lines', action='store', type=int, default=None,
+                    dest='lines', help='set the number of lines to be dump')
+parser.add_argument('--host', action='store', dest='host',
+                    default=None, help='host for log')
+parser.add_argument('--name', action='store', dest='name',
+                    default=None, help='application name')
+parser.add_argument('--jobname', action='store',
+                    dest='jobname', default=None, help='job name')
+parser.add_argument('--jobpid', action='store', type=int,
+                    dest='jobpid', default=None, help='job pid')
+parser.add_argument('--value', action='store', type=int,
+                    dest='value', default=None, help='value to pass')
+parser.add_argument('--address', action='store', type=int,
+                    dest='address', default=None, help='address to pass')
+parser.add_argument('--active', action='store', type=int,
+                    dest='active', default=None, help='active time of Petiroc')
+parser.add_argument('--dead', action='store', type=int,
+                    dest='dead', default=None, help='dead time of Petiroc')
+parser.add_argument('--asic', action='store', type=int,
+                    dest='asic', default=None, help='asic header of Petiroc')
+parser.add_argument('--feb', action='store', type=int,
+                    dest='feb', default=None, help='FEB id')
+parser.add_argument('-v', '--verbose', action='store_true', dest='verbose',
+                    default=False, help='Raw Json output')
+
+parser.add_argument('--comment', action='store', default=None,
+                    dest='comment', help=' Comment for start run')
+
+parser.add_argument('--mask', action='store', dest='mask',
+                    default=None, help='Hexadecimal string mask')
+
+parser.add_argument('-M', '--Method', action='store', dest='method',
+                    default=None, help='Command name')
+parser.add_argument('-A', '--Application', action='store', dest='application',
+                    default=None, help='Application name')
+parser.add_argument('-P', '--Parameter', action='store', dest='parameter',
+                    default=None, help='parameter set')
+
+account = os.getenv("MGDBLOGIN", "NONE")
+if (account == "NONE"):
+    print("The ENV varaible MGDBLOGIN=user/pwd@host:port@dbname mut be set")
+    exit(0)
+
+config = os.getenv("DAQMONGO", "NONE")
+if (config == "NONE"):
+    print("The ENV varaible DAQMONGO=name:version must be set")
+    exit(0)
+
+fdc = combrc.combRC(account, config)
+fdc.Connect()
+# fdc.updateInfo(True,True)
+
+if len(sys.argv) == 1:
+    parser.print_help(sys.stderr)
+    sys.exit(1)
+results = parser.parse_args()
+
+# analyse the command
+lcgi = {}
+r_cmd = None
+
+if(results.jc_create):
+    fdc.jc.initialise()
+    exit(0)
+elif(results.jc_kill):
+    fdc.jc.kill()
+    exit(0)
+elif(results.jc_start):
+    fdc.jc.start()
+    exit(0)
+elif(results.jc_destroy):
+    fdc.jc.destroy()
+    exit(0)
+elif(results.jc_appcreate):
+    sr = fdc.jc.configure()
+    print(sr)
+    exit(0)
+elif(results.jc_status):
+    sr = fdc.jc_status()
+    print(sr)
+    exit(0)
+elif(results.jc_info):
+    fdc.updateInfo(True, results.verbose)
+    exit(0)
+
+# DAQ
+elif(results.daq_initialise):
+    delay=0
+    if (results.dead!=None):
+        fdc.reset=results.dead
+        fdc.initialise()
+    else:
+        fdc.initialise()
+    exit(0)
+elif(results.daq_configure):
+    fdc.configure()
+    exit(0)
+elif(results.daq_status):
+    fdc.BuilderStatus(True)
+    fdc.SourceStatus(True)
+    fdc.TriggerStatus(True)
+    exit(0)
+elif(results.daq_tdcstatus):
+    sr = fdc.SourceStatus(results.verbose)
+    if (not results.verbose):
+        print(sr)
+    exit(0)
+elif(results.daq_startrun):
+    if (results.comment != None):
+        fdc.comment=results.comment
+        fdc.start()
+    else:
+        fdc.start()
+    exit(0)
+elif(results.daq_stoprun):
+    fdc.stop()
+    exit(0)
+elif(results.daq_destroy):
+    fdc.destroy()
+    exit(0)
+
+elif(results.daq_evbstatus):
+    sr = fdc.BuilderStatus()
+    if (not results.verbose):
+        print(sr)
+    exit(0)
+elif(results.daq_downloaddb):
+    lcgi = {}
+    if (results.dbstate != None):
+        lcgi['state'] = results.dbstate
+    else:
+        print('Please specify the state --dbstate=STATE')
+        exit(0)
+    version = 0
+    if (results.dbversion != None):
+        version = results.dbversion
+    lcgi['version'] = version
+    name = "TDCSERVER"
+    if (results.name != None):
+        name = results.name
+    print(fdc.processCommand("DOWNLOADDB", name, lcgi))
+    exit(0)
+
+
+# FEB
+
+elif(results.feb_resettdc):
+    sr = fdc.mdcc_resetTdc()
+    print(sr)
+    exit(0)
+elif(results.feb_lutcalib):
+    if (results.tdc == None):
+        print('Please specify the tdc process --tdc=#')
+        exit(0)
+    if (results.channel == None):
+        print('Please specify the channel --channel=#')
+        exit(0)
+    for i in range(0, results.channel):
+        fdc.tdcLUTCalib(results.tdc, i)
+    exit(0)
+elif(results.feb_lutmask):
+
+    if (results.tdc == None):
+        print('Please specify the tdc process --tdc=#')
+        exit(0)
+
+    if (results.mask == None):
+        print('Please specify the vth --mask=value')
+        exit(0)
+
+    feb=255
+    if (results.feb != None):
+        feb=results.feb
+    fdc.tdcLUTMask(results.tdc, results.mask,feb)
+    exit(0)
+
+
+elif(results.feb_lutdump):
+    r_cmd = 'lutdraw'
+    if (results.tdc == None):
+        print('Please specify the tdc process --tdc=#')
+        exit(0)
+    if (results.channel == None):
+        print('Please specify the channel --channel=#')
+        exit(0)
+
+    print(fdc.tdcLUTDump(results.tdc, results.channel))
+    exit(0)
+
+elif(results.feb_setvth):
+    r_cmd = 'SETVTH'
+    if (results.vth == None):
+        print('Please specify the vth --vth=value')
+        exit(0)
+    fdc.setVthTime(results.vth)
+    exit(0)
+elif(results.feb_settdcmode):
+    r_cmd = 'SETTDCMODE'
+    if (results.value == None):
+        print('Please specify the mode --value=XX')
+        exit(0)
+    fdc.setTdcMode(results.value)
+    exit(0)
+
+elif(results.feb_settdcdelays):
+    r_cmd = 'SETTDCDELAYS'
+    if (results.active == None):
+        print('Please specify the active time --active=XX')
+        exit(0)
+    if (results.dead == None):
+        print('Please specify the dead time --dead=XX')
+        exit(0)
+    fdc.setTdcDelays(results.active, results.dead)
+    exit(0)
+
+elif(results.feb_scurve):
+    r_cmd = 'scurve'
+    first = 300
+    last = 600
+    chan = 255
+    step = 2
+    spillon = 200
+    spilloff = 1000
+    mask = 255
+    if (results.first != None):
+        first = results.first
+    if (results.last != None):
+        last = results.last
+    if (results.channel != None):
+        chan = results.channel
+    if (results.step != None):
+        step = results.step
+    if (results.spillon != None):
+        spillon = results.spillon
+    if (results.spilloff != None):
+        spilloff = results.spilloff
+
+    print("Mode %d from %d to %d with step %d Spill On %d Off %d ASIC mask %d" % (chan, first, last, step, spillon, spilloff, mask))
+    val = input()
+
+    fdc.runScurve(0, chan, spillon, spilloff,
+                  first, last, step=step, asic=mask)
+    exit(0)
+
+# DIF old firmware
+elif(results.dif_ctrlreg):
+
+
+    if (results.ctrlreg == None):
+        print('Please specify the control register --ctrlreg=value')
+        exit(0)
+    fdc.setControlRegister(results.ctrlreg)
+    exit(0)
+
+
+# MDCC
+
+elif(results.trig_status):
+    res = fdc.TriggerStatus(results.verbose)
+    exit(0)
+
+elif(results.trig_beam):
+    if (results.clock != None):
+        fdc.mdcc_setBeamOn(results.clock)
+    else:
+        print('Please specify the number of clock --clock=xx')
+    exit(0)
+
+
+elif(results.trig_spillon):
+    if (results.clock != None):
+        fdc.mdcc_setSpillOn(results.clock)
+    else:
+        print('Please specify the number of clock --clock=xx')
+    exit(0)
+
+
+elif(results.trig_spilloff):
+    if (results.clock != None):
+        fdc.mdcc_setSpillOff(results.clock)
+    else:
+        print('Please specify the number of clock --clock=xx')
+    exit(0)
+
+elif(results.trig_spillregister):
+    if (results.value != None):
+        fdc.mdcc_setSpillRegister(results.value)
+    else:
+        print('Please specify the value --value=xx')
+    exit(0)
+elif(results.trig_setregister):
+
+    if (results.value == None):
+        print('Please specify the value --value=xx')
+        exit(0)
+    if (results.address == None):
+        print('Please specify the address --address=xx')
+        exit(0)
+    sr = fdc.mdcc_WriteRegister(results.address, results.value)
+    print(sr)
+    exit(0)
+elif(results.trig_getregister):
+    if (results.address == None):
+        print('Please specify the address --address=xx')
+        exit(0)
+    sr = fdc.mdcc_ReadRegister(results.address)
+    print(sr)
+    exit(0)
+elif(results.trig_tdcreset):
+    sr = fdc.mdcc_resetTdc()
+    print(sr)
+    exit(0)
+elif(results.trig_rearm):
+    fdc.mdcc_reloadCalibCount()
+    exit(0)
+elif(results.ecal_pause):
+    fdc.mdcc_EcalPause()
+    exit(0)
+
+elif(results.ecal_resume):
+    fdc.mdcc_EcalResume()
+    exit(0)
+
+elif(results.trig_reset):
+    fdc.mdcc_Reset()
+    exit(0)
+elif(results.trig_pause):
+    fdc.mdcc_Pause()
+    exit(0)
+elif(results.trig_resume):
+    fdc.mdcc_Resume()
+    exit(0)
+elif (results.method!=None):
+    param=json.loads(results.parameter)
+    rep =fdc.processCommand(results.method,results.application,param)
+    if (results.verbose):
+        print(rep)
+    exit(0)
+elif(results.trig_calibon):
+
+    if (results.value != None):
+        fdc.mdcc_CalibOn(results.value)
+    else:
+        print('Please specify the value --value=xx')
+    exit(0)
+elif(results.trig_calibcount):
+    if (results.value != None):
+        fdc.mdcc_setCalibCount(results.value)
+    else:
+        print('Please specify the value --value=xx')
+    exit(0)
