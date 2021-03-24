@@ -9,27 +9,27 @@ class pmdaqControl(daqrc.daqControl):
 
 
     def BuilderStatus(self, verbose=False):
+        if (not "evb_builder") in self.session.apps):
+            print("No Event builder found in thi session "),self.session.name())
         rep = {}
-        for k, v in self.session.apps.items():
-            if (k != "evb_builder"):
-                continue
-            for s in v:
-                r = {}
-                r['run'] = -1
-                r['event'] = -1
-                r['url'] = s.host
-                mr = json.loads(self.session.Command("STATUS",s, {}))
-                if (mr['status'] != "FAILED"):
-                    r["run"] = mr["answer"]["answer"]["run"]
-                    r["event"] = mr["answer"]["answer"]["event"]
-                    r["builder"] = mr["answer"]["answer"]["difs"]
-                    r["built"] = mr["answer"]["answer"]["build"]
-                    r["total"] = mr["answer"]["answer"]["total"]
-                    r["compressed"] = mr["answer"]["answer"]["compressed"]
-                    r["time"] = time.time()
-                    rep["%s_%d" % (s.host, s.infos['instance'])] = r
-                else:
-                    rep["%s_%d" % (s.host, s.infos['instance'])] = mr
+        
+        for s in self.session.apps["evb_builder"]:
+            r = {}
+            r['run'] = -1
+            r['event'] = -1
+            r['url'] = s.host
+            mr = json.loads(s.sendCommand("STATUS",{}))
+            if (mr['status'] != "FAILED"):
+                r["run"] = mr["answer"]["answer"]["run"]
+                r["event"] = mr["answer"]["answer"]["event"]
+                r["builder"] = mr["answer"]["answer"]["difs"]
+                r["built"] = mr["answer"]["answer"]["build"]
+                r["total"] = mr["answer"]["answer"]["total"]
+                r["compressed"] = mr["answer"]["answer"]["compressed"]
+                r["time"] = time.time()
+                rep["%s%s" % (s.host, s.path)] = r
+            else:
+                rep["%s%s" % (s.host, s.path)] = mr
         if (not verbose):
             return json.dumps(rep)
         print("""
@@ -49,12 +49,10 @@ class pmdaqControl(daqrc.daqControl):
                                 print("\t \t ID %x => %d " % (int(y['id'].split('-')[2]), y['received']))
 
     def TriggerStatus(self,verbose=False):
-        pn="lyon_mdcc"  
-        for k, v in self.session.apps.items():
-            if (k == "lyon_mbmdcc"):
-                pn="lyon_mbmdcc"
-                break
-        mr = json.loads(self.mdcc_Status(ptrgname=pn))
+        pn="lyon_mdcc"
+        if ("lyon_mbmdcc" in self.session.apps) 
+            pn="lyon_mbmdcc"
+        mr = json.loads(self.mdcc_Status())
         #print("ON DEBUG ",mr)
         #print("ON DEBUG ",mr)
         if (not verbose):
