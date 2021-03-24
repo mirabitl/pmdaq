@@ -19,6 +19,7 @@ class pmdaqControl(daqrc.daqControl):
             r['event'] = -1
             r['url'] = s.host
             mr = json.loads(s.sendCommand("STATUS",{}))
+            print("Event Builder",mr)
             if (mr['status'] != "FAILED"):
                 r["run"] = mr["answer"]["run"]
                 r["event"] = mr["answer"]["event"]
@@ -53,18 +54,22 @@ class pmdaqControl(daqrc.daqControl):
         if ("lyon_mbmdcc" in self.session.apps): 
             pn="lyon_mbmdcc"
         mr = json.loads(self.mdcc_Status())
+        #print(mr)
         #print("ON DEBUG ",mr)
         #print("ON DEBUG ",mr)
         if (not verbose):
-            return json.dumps(mr["%s_0" % pn]["answer"])
+            return json.dumps(mr)
         else:
             print("""
             \t \t *************************    
             \t \t ** Trigger information **
             \t \t *************************
             """)
-            for k,v in mr["%s_0" % pn]["answer"]["COUNTERS"].items():
-                print("\t \t ",k,v)
+            for tk,tv in mr.items():
+                print("\t ",tk)
+                if ("COUNTERS" in tv):
+                    for k,v in tv["COUNTERS"].items():
+                        print("\t \t ",k,v)
     # Builder
 
     def builder_setHeader(self, rtype, rval, mask):

@@ -17,6 +17,7 @@ class combRC(pmdaqrc.pmdaqControl):
         self.location="UNKNOWN"
         self.md_name="lyon_mdcc"
         self.db=mg.instance()
+        self.state=self.getStoredState()
     # daq
     # Initialising implementation
     def daq_initialising(self):

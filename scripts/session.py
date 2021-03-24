@@ -114,7 +114,7 @@ class sessionAccess:
                 continue
             for y in app:
                 r= y.sendCommand(cmd,params)
-                rep[y.path]=r
+                rep[y.path]=json.loads(r)
         # clear PNS
         return rep
     def transitions(self,cmd,obj_name,params=None):
