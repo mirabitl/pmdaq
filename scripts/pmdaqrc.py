@@ -5,15 +5,8 @@ import daqrc
 import time
 
 
-class lydaqControl(daqrc.daqControl):
+class pmdaqControl(daqrc.daqControl):
 
-    def Connect(self):
-        self.pn="lyon_mdcc"  
-        for k, v in self.session.apps.items():
-            if (k == "lyon_mbmdcc"):
-                self.pn="lyon_mbmdcc"
-                break
-    # Status
 
     def BuilderStatus(self, verbose=False):
         rep = {}
@@ -85,68 +78,72 @@ class lydaqControl(daqrc.daqControl):
         param["header"] = l
         return self.processCommand("SETHEADER", "evb_builder", param)
     # MDCC
+    def mdcc_command(self,cmd,par):
+        self.pn="lyon_mbmdcc"
+        if ("lyon_mdcc" in self.session.apps):
+            self.pn="lyon_mdcc"
+        return self.processCommand(cmd,  self.pn,par)      
+    def mdcc_Status(self):
+        return self.mdcc_command("STATUS",{})
 
-    def mdcc_Status(self,ptrgname="lyon_mdcc"):
-        return self.processCommand("STATUS", self.pn, {})
+    def mdcc_Pause(self):
+       return self.mdcc_command("PAUSE",  {})
 
-    def mdcc_Pause(self,ptrgname="lyon_mdcc"):
-        return self.processCommand("PAUSE", self.pn, {})
+    def mdcc_Resume(self):
+        return self.mdcc_command("RESUME",  {})
 
-    def mdcc_Resume(self,ptrgname="lyon_mdcc"):
-        return self.processCommand("RESUME", self.pn, {})
+    def mdcc_EcalPause(self):
+        return self.mdcc_command("ECALPAUSE",  {})
 
-    def mdcc_EcalPause(self,ptrgname="lyon_mdcc"):
-        return self.processCommand("ECALPAUSE", self.pn, {})
+    def mdcc_EcalResume(self):
+        return self.mdcc_command("ECALRESUME",  {})
 
-    def mdcc_EcalResume(self,ptrgname="lyon_mdcc"):
-        return self.processCommand("ECALRESUME", self.pn, {})
-
-    def mdcc_CalibOn(self, value,ptrgname="lyon_mdcc"):
+    def mdcc_CalibOn(self, value):
         param = {}
         param["value"] = value
-        return self.processCommand("CALIBON", self.pn, param)
+        return self.mdcc_command("CALIBON",  param)
 
-    def mdcc_CalibOff(self,ptrgname="lyon_mdcc"):
-        return self.processCommand("CALIBOFF", self.pn, {})
+    def mdcc_CalibOff(self):
+        return self.mdcc_command("CALIBOFF",  {})
 
-    def mdcc_ReloadCalibCount(self,ptrgname="lyon_mdcc"):
-        return self.processCommand("RELOADCALIB", self.pn, {})
+    def mdcc_ReloadCalibCount(self):
+        return self.mdcc_command("RELOADCALIB",  {})
 
-    def mdcc_setCalibCount(self, value,ptrgname="lyon_mdcc"):
+    def mdcc_setCalibCount(self, value):
         param = {}
         param["nclock"] = value
-        return self.processCommand("SETCALIBCOUNT", self.pn, param)
+        return self.mdcc_command("SETCALIBCOUNT",  param)
 
-    def mdcc_Reset(self,ptrgname="lyon_mdcc"):
-        return self.processCommand("RESET", self.pn, {})
+    def mdcc_Reset(self):
+        return self.mdcc_command("RESET",  {})
 
-    def mdcc_ReadRegister(self, address,ptrgname="lyon_mdcc"):
+    def mdcc_ReadRegister(self, address):
         param = {}
         param["address"] = address
-        return self.processCommand("READREG", self.pn, param)
+        return self.mdcc_command("READREG",  param)
 
-    def mdcc_WriteRegister(self, address, value,ptrgname="lyon_mdcc"):
+    def mdcc_WriteRegister(self, address, value):
         param = {}
         param["address"] = address
         param["value"] = value
-        return self.processCommand("READREG", self.pn, param)
+        return self.mdcc_command("READREG",  param)
 
-    def mdcc_setSpillOn(self, value,ptrgname="lyon_mdcc"):
+    def mdcc_setSpillOn(self, value):
         param = {}
         param["nclock"] = value
-        return self.processCommand("SPILLON", self.pn, param)
+        return self.mdcc_command("SPILLON",  param)
 
-    def mdcc_setSpillOff(self, value,ptrgname="lyon_mdcc"):
+    def mdcc_setSpillOff(self, value):
         param = {}
         param["nclock"] = value
-        return self.processCommand("SPILLOFF", self.pn, param)
+        return self.mdcc_command("SPILLOFF",  param)
 
-    def mdcc_setResetTdcBit(self, value,ptrgname="lyon_mdcc"):
+    def mdcc_setResetTdcBit(self, value):
         param = {}
         param["value"] = value
-        return self.processCommand("RESETTDC", self.pn, param)
+        return self.mdcc_command("RESETTDC",  param)
 
-    def mdcc_resetTdc(self,bar=True,ptrgname="lyon_mdcc"):
+    def mdcc_resetTdc(self,bar=True):
         if (bar):
             self.mdcc_setResetTdcBit(0)
             return self.mdcc_setResetTdcBit(0XFFF)
@@ -155,38 +152,38 @@ class lydaqControl(daqrc.daqControl):
             return self.mdcc_setResetTdcBit(0)
             
 
-    def mdcc_setBeamOn(self, value,ptrgname="lyon_mdcc"):
+    def mdcc_setBeamOn(self, value):
         param = {}
         param["nclock"] = value
-        return self.processCommand("BEAMON", self.pn, param)
+        return self.mdcc_command("BEAMON",  param)
     
-    def mdcc_setChannelOn(self, value,ptrgname="lyon_mdcc"):
+    def mdcc_setChannelOn(self, value):
         param = {}
         param["value"] = value
-        return self.processCommand("CHANNELON", self.pn, param)
+        return self.mdcc_command("CHANNELON",  param)
 
-    def mdcc_setHardReset(self, value,ptrgname="lyon_mdcc"):
+    def mdcc_setHardReset(self, value):
         param = {}
         param["value"] = value
-        return self.processCommand("SETHARDRESET", self.pn, param)
+        return self.mdcc_command("SETHARDRESET",  param)
 
-    def mdcc_setSpillRegister(self, value,ptrgname="lyon_mdcc"):
+    def mdcc_setSpillRegister(self, value):
         param = {}
         param["value"] = value
-        return self.processCommand("SETSPILLREGISTER", self.pn, param)
+        return self.mdcc_command("SETSPILLREGISTER",  param)
 
-    def mdcc_setExternal(self, value,ptrgname="lyon_mdcc"):
+    def mdcc_setExternal(self, value):
         param = {}
         param["value"] = value
-        return self.processCommand("SETEXTERNAL", self.pn, param)
+        return self.mdcc_command("SETEXTERNAL",  param)
 
-    def mdcc_setCalibRegister(self, value,ptrgname="lyon_mdcc"):
+    def mdcc_setCalibRegister(self, value):
         param = {}
         param["value"] = value
-        return self.processCommand("SETCALIBREGISTER", self.pn, param)
+        return self.mdcc_command("SETCALIBREGISTER",  param)
 
-    def mdcc_setTriggerDelays(self, delay, busy,ptrgname="lyon_mdcc"):
+    def mdcc_setTriggerDelays(self, delay, busy):
         param = {}
         param["delay"] = delay
         param["busy"] = busy
-        return self.processCommand("SETTRIGEXT", self.pn, param)
+        return self.mdcc_command("SETTRIGEXT",  param)

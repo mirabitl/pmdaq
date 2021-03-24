@@ -44,7 +44,8 @@ class sessionAccess:
         if (self.pns_host == "NONE"):
             print("The ENV varaible PNS_NAME mut be set")
             exit(0)
-        pl=json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/LIST",{}))
+        pl= self.pns_list()
+        #json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/LIST",{}))
         #.decode("utf-8"))
         if ("REGISTERED" in pl):
             if ( pl["REGISTERED"]!=None):
@@ -59,8 +60,17 @@ class sessionAccess:
                     else:
                         self.apps[o.name]=[]
                         self.apps[o.name].append(sac.serviceAccess(o.host,o.port,o.session,o.name,o.instance))
-
-
+    def name(self):
+        return self.session
+    def pns_list(self,session="NONE"):
+        pl=json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/LIST",{"session":session}))
+        return pl
+    def pns_session_list(self,session="NONE"):
+        pl=json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/SESSION/LIST",{"session":session}))
+        return pl
+    def pns_session_update(self,new_state):
+        pl=json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/SESSION/UPDATE",{"session":self.session,"state":new_state}))
+        return pl
     def Print(self,verbose=False):
         for name,app in six.iteritems(self.apps):
             print(self.session,"===> ",name)
