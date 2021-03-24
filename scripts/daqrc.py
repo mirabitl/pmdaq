@@ -37,18 +37,24 @@ class daqControl:
         # print(" FSM Status:",x["name"],x["version"],x["location"],time.ctime(x["time"]),x["job"],x["daq"])
 
     def getStoredState(self):
-         pl = self.session.pns_list(session=self.session.name())
-         for x in pl["REGISTERED"]:
-             if (x.split(':')[0] == self.session.name()):
-                 return x.split(":")[1]
+        pl = self.session.pns_session_list(req_session=self.session.name())
+        print(pl)
+        if ("REGISTERED" in pl):
+            if (pl["REGISTERED"] !=None):
+                for x in pl["REGISTERED"]:
+                    print(x)
+                    if (x.split(':')[0] == self.session.name()):
+                        return x.split(":")[1]
 
-
+        print("On cree le state ")
         self.to_CREATED()
-        self.storeState()
+        self.session.pns_session_update(self.state)
+        self.stored_state=self.state
         return "CREATED"
 
     def storeState(self):
         # register to PNS/SESSION
+        print("Storing state ",self.state)
         pl=self.session.pns_session_update(self.state)
         print(pl)
         self.stored_state=self.getStoredState()
@@ -57,11 +63,11 @@ class daqControl:
 
     def isConfigured(self):
         self.getStoredState()
-        return (self.jc.state=="CONFIGURED" )
+        return True
     
     def updateInfo(self,printout,vverbose):
         self.session.Print(versbose)
     def processCommand(self,cmd,appname,param):
-        r=self.session.commands(cmd,appname,par)
+        r=self.session.commands(cmd,appname,param)
         return json.dumps(r)
   

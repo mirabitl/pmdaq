@@ -97,10 +97,12 @@ json::value pns::registered(std::string r_session)
   int np = 0;
   for (auto it = _services.begin(); it != _services.end(); it++)
   {
-    auto v = utils::split(it->first, ':');
-    auto vp= utils::split(v[2],'/');
+    auto varg = utils::split(it->first, ':');
+    auto vparg= utils::split(varg[2],'/');
+    std::cout<<" path "<<varg[2]<<" "<<vparg[3]<<std::endl;
+    //fprintf(stderr," Path %s session %s\n",varg[2].c_str(),vparg[1].c_str());
     if (r_session.compare("NONE")!=0)
-      if (vp[3].compare(r_session)!=0) continue;
+      if (vparg[1].compare(r_session)!=0) continue;
 
     utility::ostringstream_t buf;
     buf << U(it->first) << U("?") << U(it->second);
@@ -113,6 +115,7 @@ void pns::list(http_request message)
 {
   auto rep = json::value();
   auto r_session=utils::queryStringValue(message,"session","NONE");
+  //fprintf(stderr," List for %s\n",r_session.c_str());
   rep["REGISTERED"] = registered(r_session);
   message.reply(status_codes::OK, rep);
 }

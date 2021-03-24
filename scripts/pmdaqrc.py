@@ -9,8 +9,8 @@ class pmdaqControl(daqrc.daqControl):
 
 
     def BuilderStatus(self, verbose=False):
-        if (not "evb_builder") in self.session.apps):
-            print("No Event builder found in thi session "),self.session.name())
+        if (not "evb_builder" in self.session.apps):
+            print("No Event builder found in thi session ",self.session.name())
         rep = {}
         
         for s in self.session.apps["evb_builder"]:
@@ -20,12 +20,12 @@ class pmdaqControl(daqrc.daqControl):
             r['url'] = s.host
             mr = json.loads(s.sendCommand("STATUS",{}))
             if (mr['status'] != "FAILED"):
-                r["run"] = mr["answer"]["answer"]["run"]
-                r["event"] = mr["answer"]["answer"]["event"]
-                r["builder"] = mr["answer"]["answer"]["difs"]
-                r["built"] = mr["answer"]["answer"]["build"]
-                r["total"] = mr["answer"]["answer"]["total"]
-                r["compressed"] = mr["answer"]["answer"]["compressed"]
+                r["run"] = mr["answer"]["run"]
+                r["event"] = mr["answer"]["event"]
+                r["builder"] = mr["answer"]["difs"]
+                r["built"] = mr["answer"]["build"]
+                r["total"] = mr["answer"]["total"]
+                r["compressed"] = mr["answer"]["compressed"]
                 r["time"] = time.time()
                 rep["%s%s" % (s.host, s.path)] = r
             else:
@@ -50,7 +50,7 @@ class pmdaqControl(daqrc.daqControl):
 
     def TriggerStatus(self,verbose=False):
         pn="lyon_mdcc"
-        if ("lyon_mbmdcc" in self.session.apps) 
+        if ("lyon_mbmdcc" in self.session.apps): 
             pn="lyon_mbmdcc"
         mr = json.loads(self.mdcc_Status())
         #print("ON DEBUG ",mr)

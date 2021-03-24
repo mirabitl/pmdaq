@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import lydaqrc
+import pmdaqrc
 import time
 import MongoJob as mg
 import json
@@ -41,7 +41,7 @@ class combRC(pmdaqrc.pmdaqControl):
             r["lyon_ccc"] = s
         # Mdcc 
         if ("lyon_mdcc" in self.session.apps):
-            s = json.loads(self.session.apps['lyon_mdcc'][0].sendTransition("OPEN", m))
+            s = json.loads(self.session.apps['lyon_mdcc'][0].sendTransition("INITIALISE", m))
             r["lyon_mdcc"] = s
         if ("lyon_mbmdcc" in self.session.apps):
             s = json.loads(self.session.apps['lyon_mbmdcc'][0].sendTransition("INITIALISE", m))
@@ -281,11 +281,10 @@ class combRC(pmdaqrc.pmdaqControl):
                 continue
             for s in v:
                 mr = json.loads(s.sendCommand("STATUS", {}))
-                if (mr['status'] != "FAILED"):
-                    rep["%s_%d" % (s.host, s.infos['instance'])
-                        ] = mr["answer"]["GRICSTATUS"]
+                if (mr['STATUS'] != "FAILED"):
+                    rep["%s_%d" % (s.host, s.instance)] = mr["GRICSTATUS"]
                 else:
-                    rep["%s_%d" % (s.host, s.infos['instance'])] = mr
+                    rep["%s_%d" % (s.host, s.instance)] = mr
 
                     #rep["%s_%d" % (s.host, s.infos['instance'])] = r
         for k, v in self.session.apps.items():

@@ -21,7 +21,7 @@ namespace mdcc
 {
   class FtdiUsbDriver {
   public:
-    enum RC {OK=0,TESTREG=1,CLOSE=2,PURGE=3,UNAVAILABLE=4,BULKERROR=5,TOOMANYTRIALS=6,TIMEOUT=7,EEPROMREAD=8,EEPROMWRITE=9,EEPROMERASE=10,RESETBUS=11};
+    enum RC {OK=0,TESTREG=1,CLOSE=2,PURGE=3,UNAVAILABLE=4,BULKERROR=5,TOOMANYTRIALS=6,TIMEOUT=7,EEPROMREAD=8,EEPROMWRITE=9,EEPROMERASE=10,RESETBUS=11,OPENFAILED=12};
     FtdiUsbDriver(char * deviceIdentifier ,uint32_t productid=0x6001);
     ~FtdiUsbDriver();
     void checkReadWrite(uint32_t start,uint32_t count);

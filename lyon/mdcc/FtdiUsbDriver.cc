@@ -54,6 +54,7 @@ uint16_t mdcc::FtdiUsbDriver::CrcTable[256] =
 
 mdcc::FtdiUsbDriver::FtdiUsbDriver(char * deviceIdentifier, uint32_t productid )    
 {
+  _rc=mdcc::FtdiUsbDriver::RC::OK;
   int ret;
   int ntry=0;
   theProduct_=productid;
@@ -61,6 +62,7 @@ mdcc::FtdiUsbDriver::FtdiUsbDriver(char * deviceIdentifier, uint32_t productid )
  start:
   if (ftdi_init(&theFtdi) < 0)
     {
+      _rc=RC::OPENFAILED;
       fprintf(stderr, "ftdi_init failed\n");
       PM_FATAL(_logFTDI,"ftdi_init failed "<<deviceIdentifier);
       return;
@@ -76,6 +78,7 @@ mdcc::FtdiUsbDriver::FtdiUsbDriver(char * deviceIdentifier, uint32_t productid )
 
   if ((ret = ftdi_usb_open_desc(&theFtdi, 0x0403,theProduct_,NULL,sn.str().c_str())) < 0)
     {
+      _rc=RC::OPENFAILED;
       fprintf(stderr, "unable to open ftdi device: %d (%s)\n", ret, ftdi_get_error_string(&theFtdi));
       PM_FATAL(_logFTDI,"unable to open device "<<deviceIdentifier<<" Name:"<<sn.str().c_str()<<"| Product:"<<std::hex<<theProduct_<<std::dec);
       return;

@@ -62,14 +62,21 @@ class sessionAccess:
                         self.apps[o.name].append(sac.serviceAccess(o.host,o.port,o.session,o.name,o.instance))
     def name(self):
         return self.session
-    def pns_list(self,session="NONE"):
-        pl=json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/LIST",{"session":session}))
+    def pns_list(self,req_session="NONE"):
+        par={}
+        par["session"]=req_session
+        #print(par)
+        pl=json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/LIST",par))
         return pl
-    def pns_session_list(self,session="NONE"):
-        pl=json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/SESSION/LIST",{"session":session}))
+    def pns_session_list(self,req_session="NONE"):
+        pl=json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/SESSION/LIST",{"session":req_session}))
         return pl
     def pns_session_update(self,new_state):
-        pl=json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/SESSION/UPDATE",{"session":self.session,"state":new_state}))
+        par={}
+        par["session"]=self.session
+        par["state"]=new_state
+        print("Updating session ",par)
+        pl=json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/SESSION/UPDATE",par))
         return pl
     def Print(self,verbose=False):
         for name,app in six.iteritems(self.apps):

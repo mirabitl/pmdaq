@@ -184,13 +184,15 @@ void pm::builder::collector::status(http_request m)
   auto par = json::value::object(); 
 
   if (_merger != NULL)
-  {
-    par["answer"] = _merger->status();
-
-
-  }
+    {
+      par["status"]=json::value::string(U("done"));
+      par["answer"] = _merger->status();	  
+    }
   else
-    par["answer"] = json::value::string(U("NO merger created yet"));
+    {
+      par["status"]=json::value::string(U("FAILED"));
+      par["answer"] = json::value::string(U("NO merger created yet"));
+    }
   Reply(status_codes::OK,par);
 }
 
