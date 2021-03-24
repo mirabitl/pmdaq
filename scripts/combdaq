@@ -200,9 +200,10 @@ if (config == "NONE"):
     exit(0)
 else:
     w=mg.instance()
-    w.downloadConfig(config.split(':')[0],config.split(':')[1],True)
+    #print(config.split(':')[0],config.split(':')[1],True)
+    w.downloadConfig(config.split(':')[0],int(config.split(':')[1]),True)
     file_config="/dev/shm/mgjob/%s_%s.json" % (config.split(':')[0],config.split(':')[1])
-
+    #exit(0)
 fdc = combrc.combRC(file_config)
 
 # fdc.updateInfo(True,True)
