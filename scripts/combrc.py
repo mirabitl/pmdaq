@@ -10,86 +10,86 @@ from six.moves import range
 
 
 class combRC(lydaqrc.lydaqControl):
-    def __init__(self,account,config):
-        super().__init__(account,config)
+    def __init__(self,config):
+        super().__init__(config)
         self.reset=0
         self.comment="Not yet set"
         self.location="UNKNOWN"
-        self.md_name="MDCCSERVER"
+        self.md_name="lyon_mdcc"
     # daq
     # Initialising implementation
     def daq_initialising(self):
         m = {}
         r = {}
         # old DIF Fw
-        if ("GPIOSERVER" in self.appMap.keys()):
-            s = json.loads(self.appMap['GPIOSERVER'][0].sendTransition("CONFIGURE", m))
-            r["GPIOSERVER"] = s
-            json.loads(self.appMap['GPIOSERVER'][0].sendCommand("VMEON", {}))
-            json.loads(self.appMap['GPIOSERVER'][0].sendCommand("VMEOFF", {}))
-            json.loads(self.appMap['GPIOSERVER'][0].sendCommand("VMEON", {}))
+        if ("lyon_gpio" in self.session.apps):
+            s = json.loads(self.session.apps['lyon_gpio'][0].sendTransition("CONFIGURE", m))
+            r["lyon_gpio"] = s
+            json.loads(self.session.apps['lyon_gpio'][0].sendCommand("VMEON", {}))
+            json.loads(self.session.apps['lyon_gpio'][0].sendCommand("VMEOFF", {}))
+            json.loads(self.session.apps['lyon_gpio'][0].sendCommand("VMEON", {}))
             time.sleep(5)
-        if ("CCCSERVER" in self.appMap.keys()):
-            s = json.loads(self.appMap['CCCSERVER'][0].sendTransition("OPEN", m))
-            s = json.loads(self.appMap['CCCSERVER'][0].sendTransition("INITIALISE", m))
-            s = json.loads(self.appMap['CCCSERVER'][0].sendTransition("CONFIGURE", m))
-            json.loads(self.appMap['CCCSERVER'][0].sendTransition("STOP", m))
+        if ("lyon_ccc" in self.session.apps):
+            s = json.loads(self.session.apps['lyon_ccc'][0].sendTransition("OPEN", m))
+            s = json.loads(self.session.apps['lyon_ccc'][0].sendTransition("INITIALISE", m))
+            s = json.loads(self.session.apps['lyon_ccc'][0].sendTransition("CONFIGURE", m))
+            json.loads(self.session.apps['lyon_ccc'][0].sendTransition("STOP", m))
             time.sleep(1.);
-            json.loads(self.appMap['CCCSERVER'][0].sendCommand("CCCRESET", {}))
-            json.loads(self.appMap['CCCSERVER'][0].sendCommand("DIFRESET", {}))
-            r["CCCSERVER"] = s
+            json.loads(self.session.apps['lyon_ccc'][0].sendCommand("CCCRESET", {}))
+            json.loads(self.session.apps['lyon_ccc'][0].sendCommand("DIFRESET", {}))
+            r["lyon_ccc"] = s
         # Mdcc 
-        if ("MDCCSERVER" in self.appMap.keys()):
-            s = json.loads(self.appMap['MDCCSERVER'][0].sendTransition("OPEN", m))
-            r["MDCCSERVER"] = s
-        if ("MBMDCCSERVER" in self.appMap.keys()):
-            s = json.loads(self.appMap['MBMDCCSERVER'][0].sendTransition("INITIALISE", m))
-            r["MBMDCCSERVER"] = s
-            self.md_name="MBMDCCSERVER"
-        # Builder
-        for x in self.appMap["BUILDER"]:
+        if ("lyon_mdcc" in self.session.apps):
+            s = json.loads(self.session.apps['lyon_mdcc'][0].sendTransition("OPEN", m))
+            r["lyon_mdcc"] = s
+        if ("MBlyon_mdcc" in self.session.apps):
+            s = json.loads(self.session.apps['MBlyon_mdcc'][0].sendTransition("INITIALISE", m))
+            r["MBlyon_mdcc"] = s
+            self.md_name="MBlyon_mdcc"
+        # evb_builder
+        for x in self.session.apps["evb_builder"]:
             s = json.loads(x.sendTransition("CONFIGURE", m))
-            r["BUILDER_%d" % x.appInstance] = s
+            r["evb_builder_%d" % x.instance] = s
         # Reset for FEB V1
         if (self.reset != 0):
-            if ("MBMDCCSERVER" in self.appMap.keys()):
-                self.md_name="MBMDCCSERVER"
+            if ("MBlyon_mdcc" in self.session.apps):
+                self.md_name="MBlyon_mdcc"
 
             self.mdcc_resetTdc((self.reset>0),ptrgname=self.md_name)
             time.sleep(abs(self.reset)/1000.)
 
-        if ("TDCSERVER" in self.appMap.keys()):
-            for x in self.appMap["TDCSERVER"]:
+        if ("lyon_febv1" in self.session.apps):
+            for x in self.session.apps["lyon_febv1"]:
                 s = json.loads(x.sendTransition("INITIALISE", m))
-                r["TDCSERVER_%d" % x.appInstance] = s
+                r["lyon_febv1_%d" % x.instance] = s
         
-        if ("PMRMANAGER" in self.appMap.keys()):
-            for x in self.appMap["PMRMANAGER"]:
+        if ("lyon_pmr" in self.session.apps):
+            for x in self.session.apps["lyon_pmr"]:
                 s = json.loads(x.sendTransition("SCAN", m))
-                r["PMRMANAGER_%d" % x.appInstance] = s
+                r["lyon_pmr_%d" % x.instance] = s
 
-            for x in self.appMap["PMRMANAGER"]:
+            for x in self.session.apps["lyon_pmr"]:
                 s = json.loads(x.sendTransition("INITIALISE", m))
-                r["PMRMANAGER_%d" % x.appInstance] = s
+                r["lyon_pmr_%d" % x.instance] = s
 
-        if ("GRICSERVER" in self.appMap.keys()):
-            for x in self.appMap["GRICSERVER"]:
+        if ("lyon_gricv0" in self.session.apps):
+            for x in self.session.apps["lyon_gricv0"]:
                 s = json.loads(x.sendTransition("INITIALISE", m))
-                r["GRICSERVER_%d" % x.appInstance] = s
+                r["lyon_gricv0_%d" % x.instance] = s
                 
-        if ("C3ISERVER" in self.appMap.keys()):
-            for x in self.appMap["C3ISERVER"]:
+        if ("lyon_gricv1" in self.session.apps):
+            for x in self.session.apps["lyon_gricv1"]:
                 s = json.loads(x.sendTransition("INITIALISE", m))
-                r["C3ISERVER_%d" % x.appInstance] = s
+                r["lyon_gricv1_%d" % x.instance] = s
         # Old DIF Fw
-        if ("DIFMANAGER" in self.appMap.keys()):
-            for x in self.appMap["DIFMANAGER"]:
+        if ("lyon_DIF" in self.session.apps):
+            for x in self.session.apps["lyon_DIF"]:
                 s = json.loads(x.sendTransition("SCAN", m))
-                r["DIFMANAGER_SCAN_%d" % x.appInstance] = s
+                r["lyon_DIF_SCAN_%d" % x.instance] = s
 
-            for x in self.appMap["DIFMANAGER"]:
+            for x in self.session.apps["lyon_DIF"]:
                 s = json.loads(x.sendTransition("INITIALISE", m))
-                r["DIFMANAGER_INIT_%d" % x.appInstance] = s
+                r["lyon_DIF_INIT_%d" % x.instance] = s
 
         self.daq_answer=json.dumps(r)
         self.storeState()
@@ -97,76 +97,70 @@ class combRC(lydaqrc.lydaqControl):
     def daq_configuring(self):
         m = {}
         r = {}
-        if ("TDCSERVER" in self.appMap.keys()):
-            for x in self.appMap["TDCSERVER"]:
+        if ("lyon_febv1" in self.session.apps):
+            for x in self.session.apps["lyon_febv1"]:
                 s = json.loads(x.sendTransition("CONFIGURE", m))
-                r["TDCSERVER_%d" % x.appInstance] = s
-        if ("PMRMANAGER" in self.appMap.keys()):
-            for x in self.appMap["PMRMANAGER"]:
+                r["lyon_febv1_%d" % x.instance] = s
+        if ("lyon_pmr" in self.session.apps):
+            for x in self.session.apps["lyon_pmr"]:
                 s = json.loads(x.sendTransition("CONFIGURE", m))
-                r["PMRMANAGER_%d" % x.appInstance] = s
-        if ("GRICSERVER" in self.appMap.keys()):
-            for x in self.appMap["GRICSERVER"]:
+                r["lyon_pmr_%d" % x.instance] = s
+        if ("lyon_gricv0" in self.session.apps):
+            for x in self.session.apps["lyon_gricv0"]:
                 s = json.loads(x.sendTransition("CONFIGURE", m))
-                r["GRICSERVER_%d" % x.appInstance] = s
-        if ("C3ISERVER" in self.appMap.keys()):
-            for x in self.appMap["C3ISERVER"]:
+                r["lyon_gricv0_%d" % x.instance] = s
+        if ("lyon_gricv1" in self.session.apps):
+            for x in self.session.apps["lyon_gricv1"]:
                 s = json.loads(x.sendTransition("CONFIGURE", m))
-                r["C3ISERVER_%d" % x.appInstance] = s
+                r["lyon_gricv1_%d" % x.instance] = s
         #Old DIF Firmware
-        if ("CCCSERVER" in self.appMap.keys()):
-            json.loads(self.appMap['CCCSERVER'][0].sendCommand("CCCRESET", {}))
-            s=json.loads(self.appMap['CCCSERVER'][0].sendCommand("DIFRESET", {}))
-            r["CCCSERVER"] = s
-        if ("DIFMANAGER" in self.appMap.keys()):
-            for x in self.appMap["DIFMANAGER"]:
+        if ("lyon_ccc" in self.session.apps):
+            json.loads(self.session.apps['lyon_ccc'][0].sendCommand("CCCRESET", {}))
+            s=json.loads(self.session.apps['lyon_ccc'][0].sendCommand("DIFRESET", {}))
+            r["lyon_ccc"] = s
+        if ("lyon_DIF" in self.session.apps):
+            for x in self.session.apps["lyon_DIF"]:
                 s = json.loads(x.sendTransition("CONFIGURE", m))
-                r["DIFMANAGER_%d" % x.appInstance] = s
+                r["lyon_DIF_%d" % x.instance] = s
         self.daq_answer= json.dumps(r)
         self.storeState()
        
     def daq_stopping(self):
         m = {}
         r = {}
-        if ("MDCCSERVER" in self.appMap.keys()):
-            s = json.loads(self.appMap['MDCCSERVER'][0].sendTransition("PAUSE", m))
-            r["MDCCSERVER"] = s
             
-        if ("MBMDCCSERVER" in self.appMap.keys()):
-            self.md_name="MBMDCCSERVER"
-    
-        self.mdcc_Pause(ptrgname=self.md_name);
+        self.mdcc_Pause();
         
-        if ("TDCSERVER" in self.appMap.keys()):
-            for x in self.appMap["TDCSERVER"]:
+        if ("lyon_febv1" in self.session.apps):
+            for x in self.session.apps["lyon_febv1"]:
                 s = json.loads(x.sendTransition("STOP", m))
-                r["TDCSERVER_%d" % x.appInstance] = s
+                r["lyon_febv1_%d" % x.instance] = s
                 
-        if ("PMRMANAGER" in self.appMap.keys()):
-            for x in self.appMap["PMRMANAGER"]:
+        if ("lyon_pmr" in self.session.apps):
+            for x in self.session.apps["lyon_pmr"]:
                 s = json.loads(x.sendTransition("STOP", m))
-                r["PMRMANAGER_%d" % x.appInstance] = s
+                r["lyon_pmr_%d" % x.instance] = s
 
-        if ("GRICSERVER" in self.appMap.keys()):
-            for x in self.appMap["GRICSERVER"]:
+        if ("lyon_gricv0" in self.session.apps):
+            for x in self.session.apps["lyon_gricv0"]:
                 s = json.loads(x.sendTransition("STOP", m))
-                r["GRICSERVER_%d" % x.appInstance] = s
-        if ("C3ISERVER" in self.appMap.keys()):
-            for x in self.appMap["C3ISERVER"]:
+                r["lyon_gricv0_%d" % x.instance] = s
+        if ("lyon_gricv1" in self.session.apps):
+            for x in self.session.apps["lyon_gricv1"]:
                 s = json.loads(x.sendTransition("STOP", m))
-                r["C3ISERVER_%d" % x.appInstance] = s
+                r["lyon_gricv1_%d" % x.instance] = s
         #Old DIF fw
-        if ("CCCSERVER" in self.appMap.keys()):
-            s=json.loads(self.appMap['CCCSERVER'][0].sendTransition("STOP", m))
-            r["CCCSERVER"] = s
-        if ("DIFMANAGER" in self.appMap.keys()):
-            for x in self.appMap["DIFMANAGER"]:
+        if ("lyon_ccc" in self.session.apps):
+            s=json.loads(self.session.apps['lyon_ccc'][0].sendTransition("STOP", m))
+            r["lyon_ccc"] = s
+        if ("lyon_DIF" in self.session.apps):
+            for x in self.session.apps["lyon_DIF"]:
                 s = json.loads(x.sendTransition("STOP", m))
-                r["DIFMANAGER_%d" % x.appInstance] = s
+                r["lyon_DIF_%d" % x.instance] = s
         
-        for x in self.appMap["BUILDER"]:
+        for x in self.session.apps["evb_builder"]:
             s = json.loads(x.sendTransition("STOP", m))
-            r["BUILDER_%d" % x.appInstance] = s
+            r["evb_builder_%d" % x.instance] = s
 
         self.daq_answer= json.dumps(r)
         self.storeState()
@@ -174,32 +168,32 @@ class combRC(lydaqrc.lydaqControl):
     def daq_destroying(self):
         m = {}
         r = {}
-        if ("TDCSERVER" in self.appMap.keys()):
-            for x in self.appMap["TDCSERVER"]:
+        if ("lyon_febv1" in self.session.apps):
+            for x in self.session.apps["lyon_febv1"]:
                 s = json.loads(x.sendTransition("DESTROY", m))
-                r["TDCSERVER_%d" % x.appInstance] = s
-        if ("PMRMANAGER" in self.appMap.keys()):
-            for x in self.appMap["PMRMANAGER"]:
+                r["lyon_febv1_%d" % x.instance] = s
+        if ("lyon_pmr" in self.session.apps):
+            for x in self.session.apps["lyon_pmr"]:
                 s = json.loads(x.sendTransition("DESTROY", m))
-                r["PMRMANAGER_%d" % x.appInstance] = s
-        if ("GRICSERVER" in self.appMap.keys()):
-            for x in self.appMap["GRICSERVER"]:
+                r["lyon_pmr_%d" % x.instance] = s
+        if ("lyon_gricv0" in self.session.apps):
+            for x in self.session.apps["lyon_gricv0"]:
                 s = json.loads(x.sendTransition("DESTROY", m))
-                r["GRICSERVER_%d" % x.appInstance] = s
-        if ("C3ISERVER" in self.appMap.keys()):
-            for x in self.appMap["C3ISERVER"]:
+                r["lyon_gricv0_%d" % x.instance] = s
+        if ("lyon_gricv1" in self.session.apps):
+            for x in self.session.apps["lyon_gricv1"]:
                 s = json.loads(x.sendTransition("DESTROY", m))
-                r["C3ISERVER_%d" % x.appInstance] = s
+                r["lyon_gricv1_%d" % x.instance] = s
         #old DIF Fw
-        if ("DIFMANAGER" in self.appMap.keys()):
-            for x in self.appMap["DIFMANAGER"]:
+        if ("lyon_DIF" in self.session.apps):
+            for x in self.session.apps["lyon_DIF"]:
                 s = json.loads(x.sendTransition("DESTROY", m))
-                r["DIFMANAGER_%d" % x.appInstance] = s
+                r["lyon_DIF_%d" % x.instance] = s
 
-        if ("MBMDCCSERVER" in self.appMap.keys()):
-            for x in self.appMap["MBMDCCSERVER"]:
+        if ("MBlyon_mdcc" in self.session.apps):
+            for x in self.session.apps["MBlyon_mdcc"]:
                 s = json.loads(x.sendTransition("DESTROY", m))
-                r["MBMDCCSERVER_%d" % x.appInstance] = s
+                r["MBlyon_mdcc_%d" % x.instance] = s
 
         self.daq_answer=json.dumps(r)
         self.storeState()
@@ -212,50 +206,49 @@ class combRC(lydaqrc.lydaqControl):
         jnrun = self.db.getRun(self.location, self.comment)
         r = {}
         m = {}
-        # print "EVENT BUILDER",jnrun['run']
+        # print "EVENT evb_builder",jnrun['run']
         m['run'] = jnrun['run']
-        for x in self.appMap["BUILDER"]:
-            print("Sending Start to vent builder")
+        for x in self.session.apps["evb_builder"]:
+            print("Sending Start to vent evb_builder")
             s = json.loads(x.sendTransition("START", m))
-            r["BUILDER_%d" % x.appInstance] = s
+            r["evb_builder_%d" % x.instance] = s
 
         m = {}
-        if ("TDCSERVER" in self.appMap.keys()):
-            for x in self.appMap["TDCSERVER"]:
+        if ("lyon_febv1" in self.session.apps):
+            for x in self.session.apps["lyon_febv1"]:
                 s = json.loads(x.sendTransition("START", m))
-                r["TDCSERVER_%d" % x.appInstance] = s
-        if ("PMRMANAGER" in self.appMap.keys()):
-            for x in self.appMap["PMRMANAGER"]:
+                r["lyon_febv1_%d" % x.instance] = s
+        if ("lyon_pmr" in self.session.apps):
+            for x in self.session.apps["lyon_pmr"]:
                 s = json.loads(x.sendTransition("START", m))
-                r["PMRMANAGER_%d" % x.appInstance] = s
-        if ("GRICSERVER" in self.appMap.keys()):
-            for x in self.appMap["GRICSERVER"]:
+                r["lyon_pmr_%d" % x.instance] = s
+        if ("lyon_gricv0" in self.session.apps):
+            for x in self.session.apps["lyon_gricv0"]:
                 s = json.loads(x.sendTransition("START", m))
-                r["GRICSERVER_%d" % x.appInstance] = s
-        if ("C3ISERVER" in self.appMap.keys()):
-            for x in self.appMap["C3ISERVER"]:
+                r["lyon_gricv0_%d" % x.instance] = s
+        if ("lyon_gricv1" in self.session.apps):
+            for x in self.session.apps["lyon_gricv1"]:
                 s = json.loads(x.sendTransition("START", m))
-                r["C3ISERVER_%d" % x.appInstance] = s
-        if ("MDCCSERVER" in self.appMap.keys()):
-            s = json.loads(self.appMap['MDCCSERVER'][0].sendTransition("RESET", m))
-            s = json.loads(self.appMap['MDCCSERVER']
-                           [0].sendTransition("ECALRESUME", m))
-            r["MDCCSERVER"] = s
+                r["lyon_gricv1_%d" % x.instance] = s
+        if ("lyon_mdcc" in self.session.apps):
+            s = json.loads(self.session.apps['lyon_mdcc'][0].sendCommand("RESET", m))
+            s = json.loads(self.session.apps['lyon_mdcc'][0].sendCommand("ECALRESUME", m))
+            r["lyon_mdcc"] = s
             
-        if ("MBMDCCSERVER" in self.appMap.keys()):
-            s = json.loads(self.appMap['MBMDCCSERVER'][0].sendTransition("RESET", m))
-            r["MBMDCCSERVER"] = s
+        if ("lyon_mbmdcc" in self.session.apps):
+            s = json.loads(self.session.apps['lyon_mbmdcc'][0].sendCommand("RESET", m))
+            r["lyon_mbmdcc"] = s
 
 
         #old firmware
-        if ("DIFMANAGER" in self.appMap.keys()):
-            for x in self.appMap["DIFMANAGER"]:
+        if ("lyon_DIF" in self.session.apps):
+            for x in self.session.apps["lyon_DIF"]:
                 s = json.loads(x.sendTransition("START", m))
-                r["DIFMANAGER_%d" % x.appInstance] = s
+                r["lyon_DIF_%d" % x.instance] = s
 
-        if ("CCCSERVER" in self.appMap.keys()):
-            s=json.loads(self.appMap['CCCSERVER'][0].sendTransition("START", m))
-            r["CCCSERVER"] = s
+        if ("lyon_ccc" in self.session.apps):
+            s=json.loads(self.session.apps['lyon_ccc'][0].sendTransition("START", m))
+            r["lyon_ccc"] = s
 
         self.daq_answer= json.dumps(r)
         self.storeState()
@@ -263,7 +256,7 @@ class combRC(lydaqrc.lydaqControl):
     def SourceStatus(self, verbose=False):
         rep = {}
         for k, v in self.appMap.items():
-            if (k != "TDCSERVER" ):
+            if (k != "lyon_febv1" ):
                 continue
             for s in v:
                 mr = json.loads(s.sendCommand("STATUS", {}))
@@ -274,7 +267,7 @@ class combRC(lydaqrc.lydaqControl):
                     rep["%s_%d" % (s.host, s.infos['instance'])] = mr
 
         for k, v in self.appMap.items():
-            if (k != "PMRMANAGER" ):
+            if (k != "lyon_pmr" ):
                 continue
             for s in v:
                 mr = json.loads(s.sendCommand("STATUS", {}))
@@ -286,7 +279,7 @@ class combRC(lydaqrc.lydaqControl):
 
                     #rep["%s_%d" % (s.host, s.infos['instance'])] = r
         for k, v in self.appMap.items():
-            if (k != "GRICSERVER" ):
+            if (k != "lyon_gricv0" ):
                 continue
             for s in v:
                 mr = json.loads(s.sendCommand("STATUS", {}))
@@ -298,7 +291,7 @@ class combRC(lydaqrc.lydaqControl):
 
                     #rep["%s_%d" % (s.host, s.infos['instance'])] = r
         for k, v in self.appMap.items():
-            if (k != "C3ISERVER" ):
+            if (k != "lyon_gricv1" ):
                 continue
             for s in v:
                 mr = json.loads(s.sendCommand("STATUS", {}))
@@ -310,7 +303,7 @@ class combRC(lydaqrc.lydaqControl):
 
                     #rep["%s_%d" % (s.host, s.infos['instance'])] = r
         for k, v in self.appMap.items():
-            if (k != "DIFMANAGER"):
+            if (k != "lyon_DIF"):
                 continue
             for s in v:
                 mr = json.loads(s.sendCommand("STATUS", {}))
@@ -339,44 +332,44 @@ class combRC(lydaqrc.lydaqControl):
     def set6BDac(self, dac):
         param = {}
         param["value"] = dac
-        return self.processCommand("SET6BDAC", "TDCSERVER", param)
+        return self.processCommand("SET6BDAC", "lyon_febv1", param)
 
     def cal6BDac(self, mask, shift):
         param = {}
         param["shift"] = shift
         param["mask"] = int(mask, 16)
-        return self.processCommand("CAL6BDAC", "TDCSERVER", param)
+        return self.processCommand("CAL6BDAC", "lyon_febv1", param)
 
     def setVthTime(self, Threshold):
         param = {}
         param["value"] = Threshold
-        return self.processCommand("SETVTHTIME", "TDCSERVER", param)
+        return self.processCommand("SETVTHTIME", "lyon_febv1", param)
 
     def setTdcMode(self, mode):
         param = {}
         param["value"] = mode
-        return self.processCommand("SETMODE", "TDCSERVER", param)
+        return self.processCommand("SETMODE", "lyon_febv1", param)
 
     def setTdcDelays(self, active, dead):
         param = {}
         param["value"] = active
         r = {}
         r["active"] = json.loads(self.processCommand(
-            "SETDELAY", "TDCSERVER", param))
+            "SETDELAY", "lyon_febv1", param))
 
     def setTdcMask(self, channelmask, asicmask):
         param = {}
         param["value"] = channelmask
         param["asic"] = asicmask
-        return self.processCommand("SETMASK", "TDCSERVER", param)
+        return self.processCommand("SETMASK", "lyon_febv1", param)
 
     def tdcLUTCalib(self, instance, channel):
-        if (not "TDCSERVER" in self.appMap):
-            return '{"answer":"NOTDCSERVER","status":"FAILED"}'
-        if (len(self.appMap["TDCSERVER"]) <= instance):
+        if (not "lyon_febv1" in self.appMap):
+            return '{"answer":"NOlyon_febv1","status":"FAILED"}'
+        if (len(self.session.apps["lyon_febv1"]) <= instance):
             return '{"answer":"InvalidInstance","status":"FAILED"}'
 
-        tdc = self.appMap["TDCSERVER"][instance]
+        tdc = self.session.apps["lyon_febv1"][instance]
         n = (1 << channel)
         param = {}
         param["value"] = "%x" % n
@@ -386,12 +379,12 @@ class combRC(lydaqrc.lydaqControl):
         return json.dumps(r)
 
     def tdcLUTDump(self, instance, channel):
-        if (not "TDCSERVER" in self.appMap):
-            return '{"answer":"NOTDCSERVER","status":"FAILED"}'
-        if (len(self.appMap["TDCSERVER"]) <= instance):
+        if (not "lyon_febv1" in self.appMap):
+            return '{"answer":"NOlyon_febv1","status":"FAILED"}'
+        if (len(self.session.apps["lyon_febv1"]) <= instance):
             return '{"answer":"InvalidInstance","status":"FAILED"}'
 
-        tdc = self.appMap["TDCSERVER"][instance]
+        tdc = self.session.apps["lyon_febv1"][instance]
         param = {}
         param["value"] = channel
         r = {}
@@ -399,12 +392,12 @@ class combRC(lydaqrc.lydaqControl):
         return json.dumps(r)
 
     def tdcLUTMask(self, instance, mask,feb):
-        if (not "TDCSERVER" in self.appMap):
-            return '{"answer":"NOTDCSERVER","status":"FAILED"}'
-        if (len(self.appMap["TDCSERVER"]) <= instance):
+        if (not "lyon_febv1" in self.appMap):
+            return '{"answer":"NOlyon_febv1","status":"FAILED"}'
+        if (len(self.session.apps["lyon_febv1"]) <= instance):
             return '{"answer":"InvalidInstance","status":"FAILED"}'
 
-        tdc = self.appMap["TDCSERVER"][instance]
+        tdc = self.session.apps["lyon_febv1"][instance]
         param = {}
         param["value"] = mask
         param["feb"] = feb
@@ -415,8 +408,8 @@ class combRC(lydaqrc.lydaqControl):
 
     def febScurve(self, ntrg, ncon, ncoff, thmin, thmax, step):
         r = {}
-        if ("MBMDCCSERVER" in self.appMap.keys()):
-            self.md_name="MBMDCCSERVER"
+        if ("MBlyon_mdcc" in self.session.apps):
+            self.md_name="MBlyon_mdcc"
         self.mdcc_Pause(ptrgname=self.md_name)
         self.mdcc_setSpillOn(ncon,ptrgname=self.md_name)
         print(" Clock On %d Off %d" % (ncon, ncoff))
@@ -430,10 +423,10 @@ class combRC(lydaqrc.lydaqControl):
             self.mdcc_Pause(ptrgname=self.md_name)
             self.setVthTime(thmax - vth * step)
             time.sleep(0.2)
-            self.builder_setHeader(2, thmax - vth * step, 0xFF)
+            self.evb_builder_setHeader(2, thmax - vth * step, 0xFF)
 
             # Check Last built event
-            sr = json.loads(self.BuilderStatus())
+            sr = json.loads(self.evb_builderStatus())
 
             firstEvent = 0
             for k, v in sr.items():
@@ -449,7 +442,7 @@ class combRC(lydaqrc.lydaqControl):
             lastEvent = firstEvent
             nloop = 0
             while (lastEvent < (firstEvent + ntrg - 20)):
-                sr = json.loads(self.BuilderStatus())
+                sr = json.loads(self.evb_builderStatus())
                 lastEvent = 0
                 for k, v in sr.items():
                     if (v["event"] > lastEvent):
@@ -515,4 +508,4 @@ class combRC(lydaqrc.lydaqControl):
     def setControlRegister(self,ctrlreg):
         param = {}
         param["value"] = int(ctrlreg, 16)
-        return self.processCommand("CTRLREG", "DIFMANAGER", param)
+        return self.processCommand("CTRLREG", "lyon_DIF", param)
