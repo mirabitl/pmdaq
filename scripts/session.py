@@ -17,7 +17,7 @@ import serviceAccess as sac
 
 def create_session(config):
     j_sess=json.loads(open(config).read())
-    print(j_sess)
+    #print(j_sess)
     vsession=j_sess['session']
     if ('apps' in j_sess):
         for x in j_sess['apps']:

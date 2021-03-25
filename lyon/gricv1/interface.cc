@@ -25,8 +25,8 @@ void gricv1::Interface::dolisten()
  
   while(!_onClientDisconnect->disconnected()) {
     if (!_running) break;
-    if(!_group->listen(4000))
-      std::cout << "\nNo msg recieved during the last 4 seconds";
+    if(!_group->listen(1000))
+      std::cout << "\nNo msg recieved during the last 1 seconds";
   }
 
     
@@ -45,6 +45,7 @@ void gricv1::Interface::terminate()
   if (_running)
     {
     _running=false;
+    ::sleep(2);
     g_store.join();
     }
 }

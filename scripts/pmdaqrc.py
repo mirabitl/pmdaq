@@ -19,7 +19,7 @@ class pmdaqControl(daqrc.daqControl):
             r['event'] = -1
             r['url'] = s.host
             mr = json.loads(s.sendCommand("STATUS",{}))
-            print("Event Builder",mr)
+            #print("Event Builder",mr)
             if (mr['status'] != "FAILED"):
                 r["run"] = mr["answer"]["run"]
                 r["event"] = mr["answer"]["event"]

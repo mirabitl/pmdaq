@@ -38,11 +38,11 @@ class daqControl:
 
     def getStoredState(self):
         pl = self.session.pns_session_list(req_session=self.session.name())
-        print(pl)
+        #print(pl)
         if ("REGISTERED" in pl):
             if (pl["REGISTERED"] !=None):
                 for x in pl["REGISTERED"]:
-                    print(x)
+                    #print(x)
                     if (x.split(':')[0] == self.session.name()):
                         return x.split(":")[1]
 
