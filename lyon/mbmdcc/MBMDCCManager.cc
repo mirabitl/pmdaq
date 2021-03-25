@@ -67,7 +67,7 @@ void MbmdccManager::initialise()
 
  
   // Initialise NetLink
-
+  _mpi=NULL;
 
 }
 void MbmdccManager::end()
@@ -83,7 +83,7 @@ if (_mpi!=NULL)
 	delete x.second;
       _mpi->boards().clear();
       delete _mpi;
-      _mpi=0;
+      _mpi=NULL;
     }
   
 }
@@ -107,6 +107,7 @@ void MbmdccManager::fsm_initialise(http_request m)
   // Now create the Message handler
   if (_mpi==NULL)
     _mpi= new mbmdcc::Interface();
+  PMF_INFO(_logMbmdcc,"MPI: INITIALISING");
   _mpi->initialise();
 
    
@@ -160,6 +161,8 @@ void MbmdccManager::fsm_initialise(http_request m)
     {
       this->setSpillRegister(params()["spillregister"].as_integer());
     }
+    PMF_INFO(_logMbmdcc,"START Listenning");
+
   // Listen All Mbmdcc sockets
   _mpi->listen();
 
