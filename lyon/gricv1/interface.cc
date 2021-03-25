@@ -44,10 +44,15 @@ void gricv1::Interface::terminate()
 {
   if (_running)
     {
+      PM_INFO(_logGricv1,"TERMINATEING");
+
     _running=false;
     ::sleep(2);
     g_store.join();
     }
+  PM_INFO(_logGricv1,"CLOSING");
+  this->close();
+
 }
 
 gricv1::Interface::Interface() :  _group(NULL)
