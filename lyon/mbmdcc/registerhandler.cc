@@ -67,7 +67,7 @@ uint32_t mbmdcc::registerHandler::readRegister(uint16_t address)
   // memset(repa,0,0x4000);  
   uint32_t tr=this->sendMessage(_msg);
   uint32_t rep=0;
- fprintf(stderr,"Waiting PROCESSREPLY\n");
+ PM_DEBUG(_logMbmdcc,"Waiting PROCESSREPLY");
  if (_noTransReply) tr=0;
   this->processReply(tr,&rep);
   return ntohl(rep);
@@ -101,21 +101,21 @@ void mbmdcc::registerHandler::processReply(uint32_t tr,uint32_t* reply)
   uint16_t length=ntohs(_sBuf[0]); // Header
   uint8_t trame=b[mbmdcc::Message::Fmt::TRANS];
   uint8_t command=b[mbmdcc::Message::Fmt::CMD];
-  PM_INFO(_logMbmdcc," REPLY command ="<<(int) command<<" length="<<length<<" trame id="<<(int) trame);
+  PM_DEBUG(_logMbmdcc," REPLY command ="<<(int) command<<" length="<<length<<" trame id="<<(int) trame);
   fflush(stdout);
   /*
-  fprintf(stderr,">>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+  PM_INFO(_logMbmdcc,">>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
   
   for (int i=mbmdcc::Message::Fmt::PAYLOAD;i<length-1;i++)
     {
-      fprintf(stderr,"%.2x ",(b[i]));
+      PM_INFO(_logMbmdcc,"%.2x ",(b[i]));
       
       if ((i-4)%16==15)
 	{
-	  fprintf(stderr,"\n");
+	  PM_INFO(_logMbmdcc,"\n");
 	}
     }
-  fprintf(stderr,"\n<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
+  PM_INFO(_logMbmdcc,"\n<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
   */
   if (reply!=0) //special case for read register
     {
@@ -133,7 +133,7 @@ bool mbmdcc::registerHandler::processPacket()
   _sBuf=(uint16_t*) &_buf[mbmdcc::Message::Fmt::PAYLOAD];
   uint16_t address=ntohs(_sBuf[0]);
   uint32_t* lBuf=(uint32_t*) &_sBuf[1];
-  PM_INFO(_logMbmdcc,sourceid()<<" Command answer="<<
+  PM_DEBUG(_logMbmdcc,sourceid()<<" Command answer="<<
                std::hex<<(int) address<<":"<<(int) ntohl(lBuf[0])<<std::dec
                <<" length="<<length<<" trame id="<<(int) transaction<<" buffer length "<<_idx<<std::hex<<" address of transaction "<<answer(transaction%255)<<std::dec);
   uint8_t* rep=this->answer(transaction%255);
@@ -145,19 +145,19 @@ bool mbmdcc::registerHandler::processPacket()
   else
     memcpy(rep,_buf,length);
 
-#define DUMPREGREP
+#undef DUMPREGREP
 #ifdef DUMPREGREP
-  fprintf(stderr,"\n REGISTER RC ==> ");
+  PM_INFO(_logMbmdcc,"\n REGISTER RC ==> ");
   for (int i=0;i<_idx-1;i++)
     {
       fprintf(stderr,"%.2x ",(_buf[i]));
          
       if (i%16==15)
 	{
-	  fprintf(stderr,"\n REGISTER RC ==> ");
+	  PM_INFO(_logMbmdcc,"\n REGISTER RC ==> ");
 	}
     }
-  fprintf(stderr,"\n");
+  PM_INFO(_logMbmdcc,"\n");
 #endif
   return true;
 }
