@@ -57,6 +57,8 @@ bool gricv1::slcHandler::processPacket()
 
   
   PM_INFO(_logGricv1,this->sourceid()<<"SLC data answer="<<transaction<<" length="<<length);
+#undef DEBUGSLCPACKET
+#ifdef DEBUGSLCPACKET
   fprintf(stderr,"\nSLC RC ==> ");
   for (int i=0;i<_idx;i++)
     {
@@ -68,5 +70,6 @@ bool gricv1::slcHandler::processPacket()
 	}
     }
   fprintf(stderr,"\n");
+#endif
   return true;
 }
