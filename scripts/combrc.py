@@ -293,11 +293,10 @@ class combRC(pmdaqrc.pmdaqControl):
                 continue
             for s in v:
                 mr = json.loads(s.sendCommand("STATUS", {}))
-                if (mr['status'] != "FAILED"):
-                    rep["%s_%d" % (s.host, s.infos['instance'])
-                        ] = mr["answer"]["C3ISTATUS"]
+                if (mr['STATUS'] != "FAILED"):
+                    rep["%s_%d" % (s.host, s.instance)] = mr["C3ISTATUS"]
                 else:
-                    rep["%s_%d" % (s.host, s.infos['instance'])] = mr
+                    rep["%s_%d" % (s.host, s.instance)] = mr
 
                     #rep["%s_%d" % (s.host, s.infos['instance'])] = r
         for k, v in self.session.apps.items():

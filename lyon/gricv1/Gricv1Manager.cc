@@ -86,6 +86,10 @@ void Gricv1Manager::end()
 	}
 
     _mpi->terminate();
+    _mpi->close();
+    for (auto x:_mpi->boards())
+      delete x.second;
+    _mpi->boards().clear();
     _mpi=0;
     }
   
