@@ -302,9 +302,9 @@ void Gricv1Manager::fsm_initialise(http_request m)
   PMF_INFO(_logGricv1,"****** CMD: INITIALISING");
   //  std::cout<<"m= "<<m->command()<<std::endl<<m->content()<<std::endl;
  
-  web::json::value jtype=params()["type"];
-  _type=jtype.as_integer();
-  printf ("_type =%d\n",_type); 
+  // web::json::value jtype=params()["type"];
+  //_type=jtype.as_integer();
+  //printf ("_type =%d\n",_type); 
 
   // Need a C4I tag
   if (!utils::isMember(params(),"gricv1"))
