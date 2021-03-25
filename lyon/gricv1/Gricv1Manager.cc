@@ -66,12 +66,12 @@ void Gricv1Manager::initialise()
 
 void Gricv1Manager::end()
 {
-  PMF_INFO(_logGricv1," Entering end()"<<std::flush);
+  PMF_DEBUG(_logGricv1," Entering end()"<<std::flush);
 
   // Stop any running process
   if (_sc_running)
     {
-      PMF_INFO(_logGricv1,"Stopping scurve"<<std::flush);
+      PMF_DEBUG(_logGricv1,"Stopping scurve"<<std::flush);
       _sc_running=false;
       g_scurve.join();
     }
@@ -80,7 +80,7 @@ void Gricv1Manager::end()
     {
       if (_running)
 	{
-	  PMF_INFO(_logGricv1," CMD: STOPPING"<<std::flush);
+	  PMF_DEBUG(_logGricv1," CMD: STOPPING"<<std::flush);
 	  for (auto x:_mpi->boards())
 	    {
 	      // Automatic FSM (bit 1 a 0) , disabled (Bit 0 a 0)
