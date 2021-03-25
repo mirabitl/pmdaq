@@ -73,9 +73,18 @@ void MbmdccManager::initialise()
 void MbmdccManager::end()
 {
   //Stop listening
-  if (_mpi!=NULL)
-    _mpi->terminate();
-
+ 
+if (_mpi!=NULL)
+    {
+      _mpi->terminate();
+      
+      _mpi->close();
+      for (auto x:_mpi->boards())
+	delete x.second;
+      _mpi->boards().clear();
+      delete _mpi;
+      _mpi=0;
+    }
   
 }
 
