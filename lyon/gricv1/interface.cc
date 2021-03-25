@@ -42,15 +42,16 @@ void gricv1::Interface::listen()
 }
 void gricv1::Interface::terminate()
 {
+  PM_INFO(_logGricv1,"Entering terminate "<<std::flush);
   if (_running)
     {
-      PM_INFO(_logGricv1,"TERMINATEING");
-
+      PM_INFO(_logGricv1,"STOPPING the thread "<<std::flush);
+      
     _running=false;
     ::sleep(2);
     g_store.join();
     }
-  PM_INFO(_logGricv1,"CLOSING");
+  PM_INFO(_logGricv1,"CLOSING"<<std::flush);
   this->close();
 
 }
@@ -114,11 +115,17 @@ void gricv1::Interface::close()
 {
   for (auto x=_boards.begin();x!=_boards.end();x++)
     {
+      PM_INFO(_logGricv1,"Remove data socket "<<std::flush);
       _group->remove(x->second->data()->socket());
+      PM_INFO(_logGricv1,"disconnect data socket "<<std::flush);
       x->second->data()->socket()->disconnect();
+      PM_INFO(_logGricv1,"Remove slc socket "<<std::flush);
       _group->remove(x->second->slc()->socket());
+      PM_INFO(_logGricv1,"disconnect slc socket "<<std::flush);
       x->second->slc()->socket()->disconnect();
+      PM_INFO(_logGricv1,"Remove reg socket "<<std::flush);
       _group->remove(x->second->reg()->socket());
+      PM_INFO(_logGricv1,"disconnect reg socket "<<std::flush);
       x->second->reg()->socket()->disconnect();
 
     }
