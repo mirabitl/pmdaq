@@ -84,7 +84,7 @@ int16_t gricv1::socketHandler::checkBuffer(uint8_t* b,uint32_t maxidx)
      uint16_t* _sBuf= (uint16_t*) &b[1];
      elen=ntohs(_sBuf[0]); // Header
 
-     PM_WARN(_logGricv1,"CheckBuf header ELEN "<<elen<<" MAXID "<<maxidx);
+     PM_DEBUG(_logGricv1,"CheckBuf header ELEN "<<elen<<" MAXID "<<maxidx);
      //fprintf(stderr,"d %d %c\n",__LINE__,b[elen-1]);
      if (elen>maxidx)
        {
