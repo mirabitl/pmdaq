@@ -285,7 +285,7 @@ class serviceAccess:
             par["params"]=""
             if (param_s!=None):
                 par["params"]=param_s
-            print(self.host,self.port,par)
+            #print(self.host,self.port,par)
             r_services=executeCMD(self.host,self.port,"/REGISTER",par)
             #if (type(r_services) is bytes):
             #    r_services=r_services.decode("utf-8")
@@ -293,7 +293,7 @@ class serviceAccess:
             #if ("http_error" in jserv):
             #    return
             
-            print(r_services)
+            #print(r_services)
             self.pns_request()
             if (self.state !="VOID"):
                 self.services_request()
@@ -310,7 +310,7 @@ class serviceAccess:
             #jserv=json.loads(r_services);
             #if ("http_error" in jserv):
             #    return
-            print(r_services)
+            #print(r_services)
             self.pns_request()
             print("Removed state is %s \n" % self.state)
 
