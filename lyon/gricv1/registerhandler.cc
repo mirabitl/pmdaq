@@ -67,7 +67,7 @@ uint32_t gricv1::registerHandler::readRegister(uint16_t address)
   // memset(repa,0,0x4000);  
   uint32_t tr=this->sendMessage(_msg);
   uint32_t rep=0;
- fprintf(stderr,"Waiting PROCESSREPLY\n");
+  PM_DEBUG(_logGricv1,"Waiting PROCESSREPLY");
  if (_noTransReply) tr=0;
   this->processReply(tr,&rep);
   return ntohl(rep);
@@ -101,7 +101,7 @@ void gricv1::registerHandler::processReply(uint32_t tr,uint32_t* reply)
   uint16_t length=ntohs(_sBuf[0]); // Header
   uint8_t trame=b[gricv1::Message::Fmt::TRANS];
   uint8_t command=b[gricv1::Message::Fmt::CMD];
-  PM_INFO(_logGricv1," REPLY command ="<<(int) command<<" length="<<length<<" trame id="<<(int) trame);
+  PM_DEBUG(_logGricv1," REPLY command ="<<(int) command<<" length="<<length<<" trame id="<<(int) trame);
   fflush(stdout);
   /*
   fprintf(stderr,">>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
@@ -133,7 +133,7 @@ bool gricv1::registerHandler::processPacket()
   _sBuf=(uint16_t*) &_buf[gricv1::Message::Fmt::PAYLOAD];
   uint16_t address=ntohs(_sBuf[0]);
   uint32_t* lBuf=(uint32_t*) &_sBuf[1];
-  PM_INFO(_logGricv1,sourceid()<<" Command answer="<<
+  PM_DEBUG(_logGricv1,sourceid()<<" Command answer="<<
                std::hex<<(int) address<<":"<<(int) ntohl(lBuf[0])<<std::dec
                <<" length="<<length<<" trame id="<<(int) transaction<<" buffer length "<<_idx<<std::hex<<" address of transaction "<<answer(transaction%255)<<std::dec);
   uint8_t* rep=this->answer(transaction%255);
@@ -145,7 +145,7 @@ bool gricv1::registerHandler::processPacket()
   else
     memcpy(rep,_buf,length);
 
-#define DUMPREGREP
+#define DUMPREGREPN
 #ifdef DUMPREGREP
   fprintf(stderr,"\n REGISTER RC ==> ");
   for (int i=0;i<_idx-1;i++)

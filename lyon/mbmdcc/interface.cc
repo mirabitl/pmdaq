@@ -78,17 +78,17 @@ void mbmdcc::Interface::initialise()
 }
 void mbmdcc::Interface:: addDevice(std::string address)
 {
-  fprintf(stderr,"Creating Board at address %s  \n",address.c_str());
+  PM_INFO(_logMbmdcc,"Creating Board at address "<<address.c_str());
 
   mbmdcc::board* b= new mbmdcc::board(address);
 
-  fprintf(stderr,"Adding registeraccess socket  \n");
+  PM_INFO(_logMbmdcc,"Adding registeraccess socket");
   _group->add(b->reg()->socket());
-    fprintf(stderr,"Binding reg  \n");
+    PM_INFO(_logMbmdcc,"Binding registers ");
     _msh->addHandler(b->reg()->id(),std::bind(&mbmdcc::socketHandler::processBuffer,b->reg(),std::placeholders::_1,std::placeholders::_2,std::placeholders::_3));
   std::pair<std::string, mbmdcc::board*> p1(address,b);
 
-  printf("Board at address %s added \n",address.c_str());
+  //printf("Board at address %s added \n",address.c_str());
   _boards.insert(p1);
 }
 

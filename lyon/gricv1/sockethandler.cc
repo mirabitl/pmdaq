@@ -61,7 +61,7 @@ uint32_t gricv1::socketHandler::sendMessage(gricv1::Message* m)
     
     _sock->send((const void*) m->ptr(),m->length()*sizeof(uint8_t));
 
-    PM_INFO(_logGricv1," Address "<<std::hex<<((m->address()>>32)&0xFFFFFFFF)<<std::dec<<" Port "<<(m->address()&0XFFFF)<<" Length "<<m->length()<<" Transaction "<<tr);
+    PM_DEBUG(_logGricv1," Address "<<std::hex<<((m->address()>>32)&0xFFFFFFFF)<<std::dec<<" Port "<<(m->address()&0XFFFF)<<" Length "<<m->length()<<" Transaction "<<tr);
 
     return (tr);
   }
@@ -69,7 +69,7 @@ uint32_t gricv1::socketHandler::sendMessage(gricv1::Message* m)
   {
     PM_FATAL(_logGricv1,"Cannot send message "<<std::hex<<((m->address()>>32)&0xFFFFFFFF)<<std::dec<<" Port "<<(m->address()&0XFFFF)<<" error "<<e.msg());
   }
-  printf("Buffer sent %d bytes at Address %lx on port %ld \n",m->length(),(m->address()>>32)&0xFFFFFFF,m->address()&0XFFFF);
+  //printf("Buffer sent %d bytes at Address %lx on port %ld \n",m->length(),(m->address()>>32)&0xFFFFFFF,m->address()&0XFFFF);
 
   return 0;
 
@@ -122,7 +122,7 @@ void gricv1::socketHandler::processBuffer(uint64_t id, uint16_t l,char* bb)
   //memcpy(_b,bb,l);
   memcpy(&_buf[_idx],bb,l);
   _idx+=l;
-#define DEBUGPACKET
+#define DEBUGPACKETN
 #ifdef DEBUGPACKET
   fprintf(stderr,"\n DEBUG PACKET IDX %d L %d  ID %lx \n",_idx,l,id);
      for (int i=0;i<_idx;i++)
@@ -164,5 +164,5 @@ void gricv1::socketHandler::processBuffer(uint64_t id, uint16_t l,char* bb)
 }
 void gricv1::socketHandler::purgeBuffer()
 {
-  fprintf(stderr,"Entering PURGEBUFFER %d \n",_idx);
+  PM_DEBUG(_logGricv1,"Entering PURGEBUFFER "<<_idx);
 }

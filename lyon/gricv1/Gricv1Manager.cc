@@ -345,11 +345,11 @@ void Gricv1Manager::fsm_initialise(http_request m)
   // Download the configuration
   if (_hca==NULL)
     {
-      std::cout<< "Create config acccess"<<std::endl;
+      PMF_INFO(_logGricv1,"Create config acccess");
       _hca=new HR2ConfigAccess();
       _hca->clear();
     }
-  std::cout<< " jC4I "<<jC4I<<std::endl;
+  //std::cout<< " jC4I "<<jC4I<<std::endl;
   if (utils::isMember(jC4I,"json"))
     {
       web::json::value jC4Ijson=jC4I["json"];
@@ -366,7 +366,7 @@ void Gricv1Manager::fsm_initialise(http_request m)
   if (utils::isMember(jC4I,"db"))
     {
       web::json::value jC4Idb=jC4I["db"];
-      PMF_ERROR(_logGricv1,"Parsing:"<<jC4Idb["state"].as_string()<<jC4Idb["mode"].as_string());
+      PMF_INFO(_logGricv1,"Parsing:"<<jC4Idb["state"].as_string()<<jC4Idb["mode"].as_string());
 
               
       if (jC4Idb["mode"].as_string().compare("mongo")==0)	
@@ -416,7 +416,7 @@ void Gricv1Manager::fsm_initialise(http_request m)
 
 void Gricv1Manager::configureHR2()
 {
-  PMF_INFO(_logGricv1," COnfigure the chips ");
+  PMF_INFO(_logGricv1," Configure the chips ");
 
   // Turn Off/ On SLC Mode
   for (auto x:_mpi->boards())
@@ -426,14 +426,14 @@ void Gricv1Manager::configureHR2()
     x.second->reg()->writeRegister(gricv1::Message::Register::SLC_CTRL,1);
 
   // Now loop on slowcontrol socket
-  fprintf(stderr,"Loop on socket for Sending slow control \n");
+  PMF_DEBUG(_logGricv1,"Loop on socket for Sending slow control");
   for (auto x:_mpi->boards())
     {
       _hca->prepareSlowControl(x.second->ipAddress(),true);
       x.second->slc()->sendSlowControl(_hca->slcBuffer());
     }
   
-  PMF_INFO(_logGricv1," Maintenant on charge ");
+  PMF_DEBUG(_logGricv1," Maintenant on charge ");
   for (auto x:_mpi->boards())
     x.second->reg()->writeRegister(gricv1::Message::Register::SLC_SIZE,109);
   for (auto x:_mpi->boards())
@@ -455,7 +455,7 @@ void Gricv1Manager::configureHR2()
 	  cnt++;
 	  if (cnt>1000)
 	    {
-	      PMF_INFO(_logGricv1," DIFSTATUS NULL after 1 s ");
+	      PMF_ERROR(_logGricv1," DIFSTATUS NULL after 1 s ");
 	    break;
 	    }
 
@@ -488,7 +488,7 @@ void Gricv1Manager::setThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t i
       if (idif!=0)
 	{
 	  uint32_t ip=(((it->first)>>32&0XFFFFFFFF)>>16)&0xFFFF;
-	  printf("%lx %x %x \n",(it->first>>32),ip,idif);
+	  //printf("%lx %x %x \n",(it->first>>32),ip,idif);
 	  if (idif!=ip) continue;
 	}
       it->second.setB0(b0);
@@ -705,7 +705,8 @@ void Gricv1Manager::ScurveStep(std::string mdccUrl,std::string builderUrl,int th
 	    if (x.second->data()->event()>lastEvent) lastEvent=x.second->data()->event();
 	  nloop++;if (nloop > 60000 || !_running)  break;
 	}
-      printf("Step %d Th %d First %d Last %d \n",vth,thmax-vth*step,firstEvent,lastEvent);
+  PMF_INFO(_logGricv1,"Step:"<<vth<<" Threshold:"<<thmax-vth*step<<" First:"<<firstEvent<<" Last:"<<lastEvent)
+      //printf("Step %d Th %d First %d Last %d \n",vth,thmax-vth*step,firstEvent,lastEvent);
       utils::sendCommand(mdccUrl,"PAUSE",json::value::null());
     }
   utils::sendCommand(mdccUrl,"CALIBOFF",json::value::null());
@@ -747,7 +748,9 @@ void Gricv1Manager::Scurve(int mode,int thmin,int thmax,int step)
       for (int i=0;i<64;i++)
 	{
 	  mask=(1ULL<<i);
-	  std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
+    PMF_INFO(_logGricv1,"Step HR2 "<<i<<"  channel"<<i<<std::dec);
+
+	  //std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
 	  this->setAllMasks(mask);
 	  this->setCTEST(mask);
 	  this->ScurveStep(mdcc,builder,thmin,thmax,step);
