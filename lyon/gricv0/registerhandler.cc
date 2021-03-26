@@ -78,7 +78,7 @@ void gricv0::registerHandler::sendSlowControl(uint8_t* slc,uint16_t lenbytes)
   this->processReply(tr);
 }
 
-
+#define REPLY_MAX_RETRY 400
 void gricv0::registerHandler::processReply(uint32_t tr,uint32_t* reply)
 {
   uint8_t b[0x4000];
@@ -95,7 +95,7 @@ void gricv0::registerHandler::processReply(uint32_t tr,uint32_t* reply)
     {
       usleep(1000);
       cnt++;
-      if (cnt>300)
+      if (cnt>REPLY_MAX_RETRY)
 	{
 	  PM_ERROR(_logGricv0," no return after "<<cnt);
 	  break;

@@ -72,7 +72,7 @@ uint32_t mbmdcc::registerHandler::readRegister(uint16_t address)
   this->processReply(tr,&rep);
   return ntohl(rep);
 }
-
+#define REPLY_MAX_RETRY 400
 void mbmdcc::registerHandler::processReply(uint32_t tr,uint32_t* reply)
 {
   uint8_t b[0x4000];
@@ -88,7 +88,7 @@ void mbmdcc::registerHandler::processReply(uint32_t tr,uint32_t* reply)
     {
       usleep(1000);
       cnt++;
-      if (cnt>1000)
+      if (cnt>REPLY_MAX_RETRY)
 	{
 	  PM_ERROR(_logMbmdcc," no return after "<<cnt);
 	  break;

@@ -115,7 +115,7 @@ uint32_t febv1::registerHandler::writeLongWord(uint16_t addr,uint64_t val,bool w
     }
   return ntohl(rep);
 }
-
+#define REPLY_MAX_RETRY 400
 void febv1::registerHandler::processReply(uint32_t tr,uint32_t* reply)
 {
   uint8_t b[0x4000];
@@ -131,7 +131,7 @@ void febv1::registerHandler::processReply(uint32_t tr,uint32_t* reply)
     {
       usleep(1000);
       cnt++;
-      if (cnt>1000)
+      if (cnt>REPLY_MAX_RETRY)
 	{
 	  PM_ERROR(_logFebv1," no return after "<<cnt);
 	  break;
