@@ -1,7 +1,7 @@
-#include "DIFInterface.hh"
+#include "interface.hh"
 #include <unistd.h>
 #include <stdint.h>
-lydaq::DIFInterface::DIFInterface(FtdiDeviceInfo* ftd) : _rd(NULL),_state("CREATED"),_dsData(NULL),_detid(100)
+dif::interface::interface(FtdiDeviceInfo* ftd) : _rd(NULL),_state("CREATED"),_dsData(NULL),_detid(100)
 {
   // Creation of data structure
   memcpy(&_ftd,ftd,sizeof(FtdiDeviceInfo));
@@ -9,17 +9,17 @@ lydaq::DIFInterface::DIFInterface(FtdiDeviceInfo* ftd) : _rd(NULL),_state("CREAT
   memset(_status,0,sizeof(DIFStatus));
   _status->id=_ftd.id;
 
-   gethostname(_status->host,80);
+  gethostname(_status->host,80);
   _dbdif = new DIFDbInfo();
   _readoutStarted=false;
   _readoutCompleted=true;
 }
-void lydaq::DIFInterface::setTransport(zdaq::zmSender* p)
+void dif::interface::setTransport(zdaq::zmSender* p)
 {
-_dsData=p;
-printf("DSDATA is %x\n",_dsData);
+  _dsData=p;
+  //printf("DSDATA is %x\n",_dsData);
 }
-lydaq::DIFInterface::~DIFInterface()
+dif::interface::~interface()
 {
 
   delete _dbdif;
@@ -34,67 +34,61 @@ lydaq::DIFInterface::~DIFInterface()
       _rd=NULL;
     }
 }
-void lydaq::DIFInterface::writeRegister(uint32_t adr,uint32_t reg)
+void dif::interface::writeRegister(uint32_t adr,uint32_t reg)
 {
-  LOG4CXX_INFO(_logLdaq,"Writing "<<_status->id<<" ["<<std::hex<<adr<<"]<-"<<reg);
-  try 
-    {
-      _rd->UsbRegisterWrite(adr,reg);
-    }
-  catch (LocalHardwareException e)
+  PM_INFO(_logDif,"Writing "<<_status->id<<" ["<<std::hex<<adr<<"]<-"<<reg);
+  _rd->UsbRegisterWrite(adr,reg);
+
+  if(!_rd->isOk())
     {
 	
-      LOG4CXX_ERROR(_logLdaq,"Cannot write register "<<_status->id<<" ["<<std::hex<<adr<<"]<-"<<reg<<std::dec);
+      PM_ERROR(_logDif,"Cannot write register "<<_status->id<<" ["<<std::hex<<adr<<"]<-"<<reg<<std::dec);
     }
-  LOG4CXX_INFO(_logLdaq,"Wrote "<<_status->id<<" ["<<std::hex<<adr<<"]<-"<<reg<<std::dec);
+  PM_INFO(_logDif,"Wrote "<<_status->id<<" ["<<std::hex<<adr<<"]<-"<<reg<<std::dec);
 }
-void lydaq::DIFInterface::readRegister(uint32_t adr,uint32_t &reg)
+void dif::interface::readRegister(uint32_t adr,uint32_t &reg)
 {
 
-  LOG4CXX_INFO(_logLdaq,"Reading "<<_status->id<<" ["<<std::hex<<adr<<"]<-");
-  try 
-    {
-      _rd->UsbRegisterRead(adr,&reg);
-    }
-  catch (LocalHardwareException e)
+  PM_INFO(_logDif,"Reading "<<_status->id<<" ["<<std::hex<<adr<<"]<-");
+  _rd->UsbRegisterRead(adr,&reg);
+
+  if(!_rd->isOk())
     {
 	
-      LOG4CXX_ERROR(_logLdaq,"Cannot read register "<<_status->id<<" ["<<std::hex<<adr<<"]<-"<<reg<<std::dec);
+      PM_ERROR(_logDif,"Cannot read register "<<_status->id<<" ["<<std::hex<<adr<<"]<-"<<reg<<std::dec);
     }
-  LOG4CXX_INFO(_logLdaq,"Got "<<_status->id<<" ["<<std::hex<<adr<<"]<-"<<reg<<std::dec);
+  PM_INFO(_logDif,"Got "<<_status->id<<" ["<<std::hex<<adr<<"]<-"<<reg<<std::dec);
 
 }
-void lydaq::DIFInterface::start()
+void dif::interface::start()
 {
 
   if (_rd==NULL)
     {
-      LOG4CXX_ERROR(_logLdaq, "DIF   id ("<<_status->id << ") is not initialised");
+      PM_ERROR(_logDif, "DIF   id ("<<_status->id << ") is not initialised");
       this->publishState("START_FAILED");
       return;
     }
-  try 
-    {
-      _rd->start();
-      this->publishState("STARTED");
-      LOG4CXX_INFO(_logLdaq,"DIF "<<_status->id<<" is started");
-      _status->bytes=0;
-      _running=true;
+  _rd->start();
+  this->publishState("STARTED");
+  PM_INFO(_logDif,"DIF "<<_status->id<<" is started");
+  _status->bytes=0;
+  _running=true;
       
-    }
-  catch (LocalHardwareException e)
+
+  if(!_rd->isOk())
     {
-      LOG4CXX_ERROR(_logLdaq,"Start failed "<<_status->id);
+      PM_ERROR(_logDif,"Start failed "<<_status->id);
       this->publishState("START_FAILED");
     }
   
 }
-void lydaq::DIFInterface::readout()
+void dif::interface::readout()
 {
-  LOG4CXX_INFO(_logLdaq,"Thread of dif "<<_status->id<<" is started");
+  PM_INFO(_logDif,"Thread of dif "<<_status->id<<" is started");
   if (_rd==NULL)
     {
-      LOG4CXX_ERROR(_logLdaq, "DIF   id ("<<_status->id << ") is not initialised");
+      PM_ERROR(_logDif, "DIF   id ("<<_status->id << ") is not initialised");
       this->publishState("READOUT_FAILED");
       _readoutStarted=false;
       return;
@@ -109,58 +103,50 @@ void lydaq::DIFInterface::readout()
       usleep((uint32_t) 100);
 		
 		
-      try 
-	{
-	  //printf("Trying to read \n");fflush(stdout);
-	  uint32_t nread=_rd->DoHardrocV2ReadoutDigitalData(cbuf);
-	  //printf(" Je lis %d => %d \n",_status->id,nread);
-	  if (nread==0) continue;
-	  //printf(" Je lis %d bytes => %d %x\n",_status->id,nread,_dsData);fflush(stdout);
-	  if (_dsData==NULL) continue;;
-	  memcpy((unsigned char*) _dsData->payload(),cbuf,nread);
-	  //this->publishData(nread);
+      //printf("Trying to read \n");fflush(stdout);
+      uint32_t nread=_rd->DoHardrocV2ReadoutDigitalData(cbuf);
+      //printf(" Je lis %d => %d \n",_status->id,nread);
+      if (nread==0) continue;
+      //printf(" Je lis %d bytes => %d %x\n",_status->id,nread,_dsData);fflush(stdout);
+      if (_dsData==NULL) continue;;
+      memcpy((unsigned char*) _dsData->payload(),cbuf,nread);
+      //this->publishData(nread);
 	 
-	  _status->gtc=lydaq::DIFInterface::getBufferDTC(cbuf);
-	  _status->bcid=lydaq::DIFInterface::getBufferABCID(cbuf);
-	  _status->bytes+=nread;
-	  //printf(" Je envoie %d => %d  avec %x \n",_status->id,nread,_dsData);fflush(stdout);
-	  _dsData->publish(_status->bcid,_status->gtc,nread);
+      _status->gtc=dif::interface::getBufferDTC(cbuf);
+      _status->bcid=dif::interface::getBufferABCID(cbuf);
+      _status->bytes+=nread;
+      //printf(" Je envoie %d => %d  avec %x \n",_status->id,nread,_dsData);fflush(stdout);
+      _dsData->publish(_status->bcid,_status->gtc,nread);
 
-	  
-	}
-      catch (LocalHardwareException e)
-	{
-	  LOG4CXX_ERROR(_logLdaq,"DIF "<<_status->id<<" cannot read events"<<e.what() );
+      if(!_rd->isOk())
+	PM_ERROR(_logDif,"DIF "<<_status->id<<" cannot read events"<<e.what() );
 
-	}
+
 		
     }
   _readoutCompleted=true;
-  LOG4CXX_INFO(_logLdaq,"Thread of dif "<<_status->id<<" is stopped"<<_readoutStarted);
+  PM_INFO(_logDif,"Thread of dif "<<_status->id<<" is stopped"<<_readoutStarted);
   _status->status=0XFFFF;
 }
-void lydaq::DIFInterface::stop()
+void dif::interface::stop()
 {
   _running=false;
   if (_rd==NULL)
     {
-      LOG4CXX_ERROR(_logLdaq, "DIF   id ("<<_status->id << ") is not initialised");
+      PM_ERROR(_logDif, "DIF   id ("<<_status->id << ") is not initialised");
       this->publishState("STOP_FAILED");
       return;
     }
-   try 
-     {
-       _rd->stop();
-       this->publishState("STOPPED");
-     }
-   catch (LocalHardwareException e)
-     {
-       this->publishState("STOP_FAILED");
+  _rd->stop();
+  this->publishState("STOPPED");
+  if(!_rd->isOk())
+    {
+      this->publishState("STOP_FAILED");
        
-       LOG4CXX_ERROR(_logLdaq,"Stop failed "<<_status->id);
-     }
+      PM_ERROR(_logDif,"Stop failed "<<_status->id);
+    }
 }
-void lydaq::DIFInterface::destroy()
+void dif::interface::destroy()
 {
   if (_readoutStarted)
     {
@@ -171,33 +157,23 @@ void lydaq::DIFInterface::destroy()
     }
   if (_rd!=NULL)
     {
-      try
-	{
-	  delete _rd;
-	  _rd=NULL;
-	}
-      catch (LocalHardwareException& e)
-	{
-	  LOG4CXX_FATAL(_logLdaq,"Destroy failed for "<<_status->id<<" "<<e.what());
-
-	  this->publishState("DESTROY_FAILED");
-	  
-	}
+      delete _rd;
+      _rd=NULL;
       this->publishState("CREATED");
     }
   if (_dsData!=NULL)
     {
-      LOG4CXX_INFO(_logLdaq," Deleting dim services ");
+      PM_INFO(_logDif," Deleting dim services ");
       delete _dsData;
       _dsData=NULL;
     }
 
 }
-void lydaq::DIFInterface::difConfigure(uint32_t ctrlreg,uint32_t p2pa,uint32_t pa2pd,uint32_t pd2daq,uint32_t daq2dr,uint32_t d2ar)
+void dif::interface::difConfigure(uint32_t ctrlreg,uint32_t p2pa,uint32_t pa2pd,uint32_t pd2daq,uint32_t daq2dr,uint32_t d2ar)
 {
   if (_rd==NULL)
     {
-      LOG4CXX_ERROR(_logLdaq, "DIF   id ("<<_status->id << ") is not initialised");
+      PM_ERROR(_logDif, "DIF   id ("<<_status->id << ") is not initialised");
       this->publishState("DIF_CONFIGURE_FAILED");
       return;
     }
@@ -206,55 +182,51 @@ void lydaq::DIFInterface::difConfigure(uint32_t ctrlreg,uint32_t p2pa,uint32_t p
   _rd->setPowerManagment(p2pa, pa2pd,pd2daq,daq2dr,d2ar);// Start decale de 36000 clock (8b68 a la place de 43 ECAL needs)
   //_rd->setPowerManagment(0x4e, 0x3e6,0x4e,0x4e,0x4e);// old value
   _rd->setControlRegister(ctrlreg);
-  try
+  _rd->configureRegisters();
+
+  if(!_rd->isOk())
     {
-      _rd->configureRegisters();
-    }
-  catch(...)
-    {
-      LOG4CXX_ERROR(_logLdaq, "DIF   id ("<<_status->id << ") cannot write registers");
+      PM_ERROR(_logDif, "DIF   id ("<<_status->id << ") cannot write registers");
       this->publishState("DIF_CONFIGURE_FAILED");
       return;
     }
   this->publishState("DIF_CONFIGURED");
-  LOG4CXX_INFO(_logLdaq, "DIF   id ("<<_status->id << ") has writen registers");
+  PM_INFO(_logDif, "DIF   id ("<<_status->id << ") has writen registers");
 
 }
-void lydaq::DIFInterface::chipConfigure()
+void dif::interface::chipConfigure()
 {
   if (_rd==NULL)
     {
-      LOG4CXX_ERROR(_logLdaq, "DIF   id ("<<_status->id << ") is not initialised");
+      PM_ERROR(_logDif, "DIF   id ("<<_status->id << ") is not initialised");
       this->publishState("CHIP_CONFIGURE_FAILED");
       return;
     }
   if (_dbdif->id !=_status->id)
     {
-      LOG4CXX_ERROR(_logLdaq, "DB info for DIF   id ("<<_status->id << ") is not available");
+      PM_ERROR(_logDif, "DB info for DIF   id ("<<_status->id << ") is not available");
       this->publishState("CHIP_CONFIGURE_FAILED");
       return;
     }
-  try
+  if (_dbdif->nbasic!=48)
     {
-      if (_dbdif->nbasic!=48)
-	{
-	  _rd->setNumberOfAsics(_dbdif->nbasic);
-	  _rd->configureRegisters();
-	}
-      _status->slc=_rd->configureChips(_dbdif->slow);
+      _rd->setNumberOfAsics(_dbdif->nbasic);
+      _rd->configureRegisters();
     }
-  catch(...)
+  _status->slc=_rd->configureChips(_dbdif->slow);
+    
+  if(!_rd->isOk())
     {
-       LOG4CXX_ERROR(_logLdaq, "DB info for DIF   id ("<<_status->id << ") cannot configure chips");
+      PM_ERROR(_logDif, "DB info for DIF   id ("<<_status->id << ") cannot configure chips");
       this->publishState("CHIP_CONFIGURE_FAILED");
       return;
     }
   this->publishState("CHIP_CONFIGURED");
-  LOG4CXX_INFO(_logLdaq, "DIF   id ("<<_status->id << ") has programmed ASICs");
+  PM_INFO(_logDif, "DIF   id ("<<_status->id << ") has programmed ASICs");
 		
 
 }
-void lydaq::DIFInterface::configure(uint32_t ctrlreg,uint32_t l1,uint32_t l2,uint32_t l3,uint32_t l4,uint32_t l5)
+void dif::interface::configure(uint32_t ctrlreg,uint32_t l1,uint32_t l2,uint32_t l3,uint32_t l4,uint32_t l5)
 {
   this->difConfigure(ctrlreg,l1,l2,l3,l4,l5);
   if (_state.compare("DIF_CONFIGURED")!=0)
@@ -298,52 +270,37 @@ void lydaq::DIFInterface::configure(uint32_t ctrlreg,uint32_t l1,uint32_t l2,uin
     }
   //std::cout<<s0.str()<<std::endl;
   if (bad)
-    LOG4CXX_ERROR(_logLdaq,"Configure failed on "<<_status->id<<s0.str()<<" SLC="<<_status->slc);
+    PM_ERROR(_logDif,"Configure failed on "<<_status->id<<s0.str()<<" SLC="<<_status->slc);
 
   this->publishState(s0.str());
-  LOG4CXX_INFO(_logLdaq, "DIF   id ("<<_status->id << ") ="<<s0.str());
+  PM_INFO(_logDif, "DIF   id ("<<_status->id << ") ="<<s0.str());
 }
-void lydaq::DIFInterface::initialise(zdaq::zmSender* p)
+void dif::interface::initialise(zdaq::zmSender* p)
 {
   uint32_t difid=_ftd.id;
   //  create services
   if (p!=NULL) this->setTransport(p);
 
 
-  try
-    {
-      std::string s(_ftd.name);
-      _rd = new DIFReadout(s,_ftd.productid);
+  std::string s(_ftd.name);
+  _rd = new DIFReadout(s,_ftd.productid);
       
-      }
-  catch (...)
+  
+  _rd->checkReadWrite(0x1234,100);
+    
+  if (!_rd->isOk())
     {
-      if (_rd!=NULL)
-	{
-	  delete _rd;
-	  _rd=NULL;
-	}
-      LOG4CXX_FATAL(_logLdaq,"cannot create DIFReadout for  "<<difid);
-      this->publishState("INIT_RD_FAILED");
-      return;
-    }
-  try
-    {
-      _rd->checkReadWrite(0x1234,100);
-    }
-  catch (LocalHardwareException& e)
-    {
-      LOG4CXX_FATAL(_logLdaq," Unable to read USB register (check clock) "<<e.message());
+      PM_FATAL(_logDif," Unable to read USB register (check clock) "<<e.message());
       this->publishState("INIT_FAILED");
       return;
     }
-  try
+  _rd->checkReadWrite(0x1234,100);
+    
+
+
+  if (!_rd->isOk())
     {
-      _rd->checkReadWrite(0x1234,100);
-    }
-  catch (LocalHardwareException& e)
-    {
-      LOG4CXX_FATAL(_logLdaq," Second check read write failed "<<e.message());
+      PM_FATAL(_logDif," Second check read write failed "<<e.message());
       this->publishState("INIT_FAILED");
       return;
     }
@@ -352,19 +309,19 @@ void lydaq::DIFInterface::initialise(zdaq::zmSender* p)
  
 
 
-uint32_t lydaq::DIFInterface::getBufferDIF(unsigned char* cb,uint32_t idx)
+uint32_t dif::interface::getBufferDIF(unsigned char* cb,uint32_t idx)
 {
   return cb[idx+DIF_ID_SHIFT];
 }
-uint32_t lydaq::DIFInterface::getBufferDTC(unsigned char* cb,uint32_t idx)
+uint32_t dif::interface::getBufferDTC(unsigned char* cb,uint32_t idx)
 {
   return (cb[idx+DIF_DTC_SHIFT]<<24)+(cb[idx+DIF_DTC_SHIFT+1]<<16)+(cb[idx+DIF_DTC_SHIFT+2]<<8)+cb[idx+DIF_DTC_SHIFT+3];
 }
-uint32_t lydaq::DIFInterface::getBufferGTC(unsigned char* cb,uint32_t idx)
+uint32_t dif::interface::getBufferGTC(unsigned char* cb,uint32_t idx)
 {
   return (cb[idx+DIF_GTC_SHIFT]<<24)+(cb[idx+DIF_GTC_SHIFT+1]<<16)+(cb[idx+DIF_GTC_SHIFT+2]<<8)+cb[idx+DIF_GTC_SHIFT+3];
 }
-unsigned long long lydaq::DIFInterface::getBufferABCID(unsigned char* cb,uint32_t idx)
+unsigned long long dif::interface::getBufferABCID(unsigned char* cb,uint32_t idx)
 {
   unsigned long long Shift=16777216ULL;//to shift the value from the 24 first bits
   unsigned long long LBC= ( (cb[idx+DIF_BCID_SHIFT]<<16) | (cb[idx+DIF_BCID_SHIFT+1]<<8) | (cb[idx+DIF_BCID_SHIFT+2]))*Shift+( (cb[idx+DIF_BCID_SHIFT+3]<<16) | (cb[idx+DIF_BCID_SHIFT+4]<<8) | (cb[idx+DIF_BCID_SHIFT+5]));

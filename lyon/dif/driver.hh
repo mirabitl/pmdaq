@@ -16,7 +16,7 @@
 #include <string.h>
 #include "stdafx.hh"
 #include "utils.hh"
-
+static LoggerPtr _logDif(Logger::getLogger("PMDAQ_DIF"));
 namespace dif
 {
   class driver : public mdcc::FtdiUsbDriver

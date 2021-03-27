@@ -1,25 +1,14 @@
-#ifndef _DIFInterface_h
-
-#define _DIFInterface_h
+#pragma once
 #include <iostream>
 
 #include <string.h>
 #include<stdio.h>
-#include "zmSender.hh"
-#include "DIFReadout.hh"
-#include "DIFReadoutConstant.hh"
-using namespace std;
+#include "pmSender.hh"
+#include "reader.hh"
+
 #include <sstream>
 #include <map>
 #include <vector>
-#include <boost/function.hpp>
-#include <boost/thread.hpp>
-#include <boost/bind.hpp>
-#include "ReadoutLogger.hh"
-
-
-
-#pragma once
 
 #include "FtdiUsbDriver.hh"
 #include <iostream>
@@ -30,7 +19,7 @@ using namespace std;
 
 #include "stdafx.hh"
 #include "utils.hh"
-static LoggerPtr _logDif(Logger::getLogger("PMDAQ_DIF"));
+
 typedef struct 
 {
   uint32_t vendorid;
@@ -40,11 +29,11 @@ typedef struct
   uint32_t type;
 } FtdiDeviceInfo;
 namespace dif {
-class DIFInterface
+class interface
 {
 public:
-  DIFInterface(FtdiDeviceInfo *ftd);
-  ~DIFInterface();
+  interface(FtdiDeviceInfo *ftd);
+  ~interface();
   void setTransport(pm::pmSender* p);
   // initialise
   void initialise(pm::pmSender* p=NULL);
@@ -68,7 +57,7 @@ public:
   void readRegister(uint32_t adr,uint32_t &reg);
   // Getter and setters
   inline DIFStatus* status() const {return _status;}
-  inline lydaq::DIFReadout* rd() const {return _rd;}
+  inline dif::reader* rd() const {return _rd;}
   inline DIFDbInfo* dbdif() const {return _dbdif;}
   void setState(std::string s){_state.assign(s);}
   inline std::string state() const {return _state;}
@@ -88,7 +77,7 @@ public:
 private:
   FtdiDeviceInfo _ftd;
   DIFStatus* _status;
-  lydaq::DIFReadout* _rd;
+  dif::reader* _rd;
   std::string _state;
   DIFDbInfo* _dbdif;
   uint32_t _data[32768];
@@ -98,4 +87,4 @@ private:
   bool _running,_readoutStarted,_readoutCompleted;
 };
 };
-#endif
+
