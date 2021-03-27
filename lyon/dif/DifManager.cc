@@ -1,5 +1,5 @@
 
-#include "DIFManager.hh"
+#include "DifManager.hh"
 #include <iostream>
 #include <sstream>
 #include <fcntl.h>
@@ -21,30 +21,30 @@ using namespace zdaq;
 
 
 
-void lydaq::DIFManager::scan(zdaq::fsmmessage* m) 
+void DifManager::scan(http_request m) 
 {
-  LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" CMD: "<<m->command());
+  PMF_INFO(_logDif," CMD: "<<m->command());
   // Store dbcache if changed
-  if (m->content().isMember("dbcache"))
-    this->parameters()["dbcache"]=m->content()["dbcache"];
+  if (utils::isMember(m->content(),"dbcache"))
+    params()["dbcache"]=m->content()["dbcache"];
   //
    this->prepareDevices();
    std::map<uint32_t,FtdiDeviceInfo*>& fm=this->getFtdiMap();
-   std::map<uint32_t,DIFInterface*> dm=this->getDIFMap();
-   //LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" CMD: SCANDEVICE clear Maps");
-   for ( std::map<uint32_t,DIFInterface*>::iterator it=dm.begin();it!=dm.end();it++)
+   std::map<uint32_t,dif::interface*> dm=this->getDifMap();
+   //PMF_INFO(_logDif," CMD: SCANDEVICE clear Maps");
+   for ( std::map<uint32_t,dif::interface*>::iterator it=dm.begin();it!=dm.end();it++)
      { if (it->second!=NULL) delete it->second;}
    dm.clear();
    // _ndif=0;
    std::vector<uint32_t> vids;
-   Json::Value array;
+   web::json::value array;
    for ( std::map<uint32_t,FtdiDeviceInfo*>::iterator it=fm.begin();it!=fm.end();it++)
      {
 
-       DIFInterface* d= new DIFInterface(it->second);
-       this->getDIFMap().insert(std::make_pair(it->first,d));
-       LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" CMD: SCANDEVICE created DIFInterface @ "<<std::hex<<d<<std::dec);
-       Json::Value jd;
+       dif::interface* d= new dif::interface(it->second);
+       this->getDifMap().insert(std::make_pair(it->first,d));
+       PMF_INFO(_logDif," CMD: SCANDEVICE created dif::interface @ "<<std::hex<<d<<std::dec);
+       web::json::value jd;
        jd["detid"]=d->detectorId();
        jd["sourceid"]=it->first;
        vids.push_back( (d->detectorId()<<16|it->first));
@@ -56,55 +56,55 @@ void lydaq::DIFManager::scan(zdaq::fsmmessage* m)
 }
 
 
-void lydaq::DIFManager::initialise(zdaq::fsmmessage* m)
+void DifManager::initialise(http_request m)
 {
   
-  LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" CMD: "<<m->command());
+  PMF_INFO(_logDif," CMD: "<<m->command());
   _vDif.clear();
-  Json::Value jDIF=this->parameters()["dif"];
+  web::json::value jDif=params()["dif"];
   
    // Download the configuration
    if (_hca==NULL)
      {
        std::cout<< "Create config acccess"<<std::endl;
-       _hca=new lydaq::HR2ConfigAccess();
+       _hca=new HR2ConfigAccess();
        _hca->clear();
      }
-   std::cout<< " jDIF "<<jDIF<<std::endl;
-   if (jDIF.isMember("json"))
+   std::cout<< " jDif "<<jDif<<std::endl;
+   if (utils::isMember(jDif,"json"))
      {
-       Json::Value jDIFjson=jDIF["json"];
-       if (jDIFjson.isMember("file"))
+       web::json::value jDifjson=jDif["json"];
+       if (utils::isMember(jDifjson,"file"))
 	 {
-	   _hca->parseJsonFile(jDIFjson["file"].asString());
+	   _hca->parseJsonFile(jDifjson["file"].as_string());
 	 }
        else
-	 if (jDIFjson.isMember("url"))
+	 if (utils::isMember(jDifjson,"url"))
 	   {
-	     _hca->parseJsonUrl(jDIFjson["url"].asString());
+	     _hca->parseJsonUrl(jDifjson["url"].as_string());
 	   }
      }
-    if (jDIF.isMember("db"))
+    if (utils::isMember(jDif,"db"))
      {
-              Json::Value jDIFdb=jDIF["db"];
-       LOG4CXX_ERROR(_logDIF,__PRETTY_FUNCTION__<<"Parsing:"<<jDIFdb["state"].asString()<<jDIFdb["mode"].asString());
+              web::json::value jDifdb=jDif["db"];
+       PMF_ERROR(_logDif,"Parsing:"<<jDifdb["state"].as_string()<<jDifdb["mode"].as_string());
 
               
-	if (jDIFdb["mode"].asString().compare("mongo")!=0)	
-	  _hca->parseDb(jDIFdb["state"].asString(),jDIFdb["mode"].asString());
+	if (jDifdb["mode"].as_string().compare("mongo")!=0)	
+	  _hca->parseDb(jDifdb["state"].as_string(),jDifdb["mode"].as_string());
 	else
-	  _hca->parseMongoDb(jDIFdb["state"].asString(),jDIFdb["version"].asUInt());
+	  _hca->parseMongoDb(jDifdb["state"].as_string(),jDifdb["version"].as_integer());
 
-	LOG4CXX_ERROR(_logDIF,__PRETTY_FUNCTION__<<"End of parseDB "<<_hca->asicMap().size());
+	PMF_ERROR(_logDif,"End of parseDB "<<_hca->asicMap().size());
      }
    if (_hca->asicMap().size()==0)
      {
-        LOG4CXX_ERROR(_logDIF,__PRETTY_FUNCTION__<<" No ASIC found in the configuration ");
+        PMF_ERROR(_logDif," No ASIC found in the configuration ");
        return;
      }
-   LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<"ASIC found in the configuration "<<_hca->asicMap().size() );
+   PMF_INFO(_logDif,"ASIC found in the configuration "<<_hca->asicMap().size() );
    // Initialise the network
-     std::map<uint32_t,DIFInterface*> dm=this->getDIFMap();
+     std::map<uint32_t,dif::interface*> dm=this->getDifMap();
    std::vector<uint32_t> vint;
    
    vint.clear();
@@ -112,38 +112,38 @@ void lydaq::DIFManager::initialise(zdaq::fsmmessage* m)
      {
        // only MSB is used
        uint32_t eip= ((x.first)>>56)&0XFF;
-       std::map<uint32_t,DIFInterface*>::iterator idif=dm.find(eip);
+       std::map<uint32_t,dif::interface*>::iterator idif=dm.find(eip);
        if (idif==dm.end()) continue;
        if ( std::find(vint.begin(), vint.end(), eip) != vint.end() ) continue;
 
-       LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" New DIF found in db "<<std::hex<<eip<<std::dec);
+       PMF_INFO(_logDif," New Dif found in db "<<std::hex<<eip<<std::dec);
        vint.push_back(eip);
       
        _vDif.push_back(idif->second);
-       LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" Registration done for "<<eip);
+       PMF_INFO(_logDif," Registration done for "<<eip);
      }
    //std::string network=
   // Connect to the event builder
   if (_context==NULL)
     _context= new zmq::context_t(1);
 
-  if (m->content().isMember("publish"))
+  if (utils::isMember(m->content(),"publish"))
     {
-      this->parameters()["publish"]=m->content()["publish"];
+      params()["publish"]=m->content()["publish"];
     }
-  if (!this->parameters().isMember("publish"))
+  if (utils::isMember(!params(),"publish"))
     {
       
-       LOG4CXX_ERROR(_logDIF,__PRETTY_FUNCTION__<<" No publish tag found ");
+       PMF_ERROR(_logDif," No publish tag found ");
        return;
     }
 
   
   for (auto x:_vDif)
     {
-      LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" Creating pusher to "<<this->parameters()["publish"].asString());
+      PMF_INFO(_logDif," Creating pusher to "<<params()["publish"].as_string());
 
-      zdaq::zmSender* push= new zdaq::zmSender(_context,x->detectorId(),x->status()->id);
+      zmSender* push= new zmSender(_context,x->detectorId(),x->status()->id);
       push->autoDiscover(this->configuration(),"BUILDER","collectingPort");
       push->collectorRegister();
 
@@ -154,9 +154,9 @@ void lydaq::DIFManager::initialise(zdaq::fsmmessage* m)
   /*  
   for (auto x:_vDif)
     {
-      LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" Creating pusher to "<<this->parameters()["publish"].asString());
-      zdaq::zmPusher* push=new zdaq::zmPusher(_context,x->detectorId(),x->status()->id);
-      push->connect(this->parameters()["publish"].asString());
+      PMF_INFO(_logDif," Creating pusher to "<<params()["publish"].as_string());
+      zmPusher* push=new zmPusher(_context,x->detectorId(),x->status()->id);
+      push->connect(params()["publish"].as_string());
       x->initialise(push);
 
     }
@@ -177,10 +177,10 @@ void lydaq::DIFManager::initialise(zdaq::fsmmessage* m)
 
 
 
-void lydaq::DIFManager::setThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t idif)
+void DifManager::setThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t idif)
 {
 
-  LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" Changin thresholds: "<<b0<<","<<b1<<","<<b2);
+  PMF_INFO(_logDif," Changin thresholds: "<<b0<<","<<b1<<","<<b2);
   for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
     {
       if (idif!=0)
@@ -199,10 +199,10 @@ void lydaq::DIFManager::setThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32
   ::sleep(1);
 
 }
-void lydaq::DIFManager::setGain(uint16_t gain)
+void DifManager::setGain(uint16_t gain)
 {
 
-  LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" Changing Gain: "<<gain);
+  PMF_INFO(_logDif," Changing Gain: "<<gain);
   for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
     {
       for (int i=0;i<64;i++)
@@ -214,9 +214,9 @@ void lydaq::DIFManager::setGain(uint16_t gain)
 
 }
 
-void lydaq::DIFManager::setMask(uint32_t level,uint64_t mask)
+void DifManager::setMask(uint32_t level,uint64_t mask)
 {
-LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" Changing Mask: "<<level<<" "<<std::hex<<mask<<std::dec);
+PMF_INFO(_logDif," Changing Mask: "<<level<<" "<<std::hex<<mask<<std::dec);
   for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
     {
       
@@ -229,9 +229,9 @@ LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" Changing Mask: "<<level<<" "<<std::h
   ::sleep(1);
 
 }
-void lydaq::DIFManager::setChannelMask(uint16_t level,uint16_t channel,uint16_t val)
+void DifManager::setChannelMask(uint16_t level,uint16_t channel,uint16_t val)
 {
-LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" Changing Mask: "<<level<<" "<<std::hex<<channel<<std::dec);
+PMF_INFO(_logDif," Changing Mask: "<<level<<" "<<std::hex<<channel<<std::dec);
   for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
     {
       
@@ -245,164 +245,164 @@ LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" Changing Mask: "<<level<<" "<<std::h
 
 }
 
-void lydaq::DIFManager::c_setthresholds(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void DifManager::c_setthresholds(http_request m)
 {
-  LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<"Set6bdac called ");
-  response["STATUS"]="DONE";
+  PMF_INFO(_logDif,"Set6bdac called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
 
   
-  uint32_t b0=atol(request.get("B0","250").c_str());
-  uint32_t b1=atol(request.get("B1","250").c_str());
-  uint32_t b2=atol(request.get("B2","250").c_str());
-  uint32_t idif=atol(request.get("DIF","0").c_str());
+  uint32_t b0=utils::queryIntValue(m,"B0",250);
+  uint32_t b1=utils::queryIntValue(m,"B1",250);
+  uint32_t b2=utils::queryIntValue(m,"B2",250);
+  uint32_t idif=utils::queryIntValue(m,"Dif",0);
   
   this->setThresholds(b0,b1,b2,idif);
-  response["THRESHOLD0"]=b0;
-  response["THRESHOLD1"]=b1;
-  response["THRESHOLD2"]=b2;
+  par["THRESHOLD0"]=web::json::value::number(b0);
+  par["THRESHOLD1"]=web::json::value::number(b1);
+  par["THRESHOLD2"]=web::json::value::number(b2);
 }
-void lydaq::DIFManager::c_setpagain(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void DifManager::c_setpagain(http_request m)
 {
-  LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<"Set6bdac called ");
-  response["STATUS"]="DONE";
+  PMF_INFO(_logDif,"Set6bdac called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
 
   
-  uint32_t gain=atol(request.get("gain","128").c_str());
+  uint32_t gain=utils::queryIntValue(m,"gain",128);
   this->setGain(gain);
-  response["GAIN"]=gain;
+  par["GAIN"]=web::json::value::number(gain);
 
 }
 
-void lydaq::DIFManager::c_setmask(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void DifManager::c_setmask(http_request m)
 {
-  LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<"SetMask called ");
-  response["STATUS"]="DONE";
+  PMF_INFO(_logDif,"SetMask called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
 
   
-  //uint32_t nc=atol(request.get("value","4294967295").c_str());
+  //uint32_t nc=utils::queryIntValue(m,"value",4294967295);
   uint64_t mask;
   sscanf(request.get("mask","0XFFFFFFFFFFFFFFFF").c_str(),"%lx",&mask);
-  uint32_t level=atol(request.get("level","0").c_str());
-  LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<"SetMask called "<<std::hex<<mask<<std::dec<<" level "<<level);
+  uint32_t level=utils::queryIntValue(m,"level",0);
+  PMF_INFO(_logDif,"SetMask called "<<std::hex<<mask<<std::dec<<" level "<<level);
   this->setMask(level,mask);
-  response["MASK"]=(Json::UInt64) mask;
-  response["LEVEL"]=level;
+  par["MASK"]=web::json::value::number((Json::UInt64) mask);
+  par["LEVEL"]=web::json::value::number(level);
 }
 
 
 
-void lydaq::DIFManager::c_setchannelmask(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void DifManager::c_setchannelmask(http_request m)
 {
-  LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<"SetMask called ");
-  response["STATUS"]="DONE";
+  PMF_INFO(_logDif,"SetMask called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
 
   
-  //uint32_t nc=atol(request.get("value","4294967295").c_str());
-  uint32_t level=atol(request.get("level","0").c_str());
-  uint32_t channel=atol(request.get("channel","0").c_str());
-  bool on=atol(request.get("value","1").c_str())==1;
-  LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<"SetMaskChannel called "<<channel<<std::dec<<" level "<<level);
+  //uint32_t nc=utils::queryIntValue(m,"value",4294967295);
+  uint32_t level=utils::queryIntValue(m,"level",0);
+  uint32_t channel=utils::queryIntValue(m,"channel",0);
+  bool on=utils::queryIntValue(m,"value",1)==1;
+  PMF_INFO(_logDif,"SetMaskChannel called "<<channel<<std::dec<<" level "<<level);
   this->setChannelMask(level,channel,on);
-  response["CHANNEL"]=channel;
-  response["LEVEL"]=level;
-  response["ON"]=on;
+  par["CHANNEL"]=web::json::value::number(channel);
+  par["LEVEL"]=web::json::value::number(level);
+  par["ON"]=web::json::value::number(on);
 }
-void lydaq::DIFManager::c_ctrlreg(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void DifManager::c_ctrlreg(http_request m)
 {
-  LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<"CTRLREG called "<<request.get("value","0").c_str());
+  PMF_INFO(_logDif,"CTRLREG called "<<request.get("value","0").c_str());
 
   uint32_t  ctrlreg=0;
   sscanf(request.get("value","0").c_str(),"%u",&ctrlreg);
    
   if (ctrlreg!=0)
-    this->parameters()["ctrlreg"]=ctrlreg;
+    params()["ctrlreg"]=ctrlreg;
 
-  fprintf(stderr,"CTRLREG %s %lx %d\n",request.get("value","0").c_str(),ctrlreg,this->parameters()["ctrlreg"].asUInt());
-  LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<"CTRLREG called "<<std::hex<<ctrlreg<<std::dec);
-  response["STATUS"]="DONE";
-  response["CTRLREG"]= ctrlreg;
+  fprintf(stderr,"CTRLREG %s %lx %d\n",request.get("value","0").c_str(),ctrlreg,params()["ctrlreg"].as_integer());
+  PMF_INFO(_logDif,"CTRLREG called "<<std::hex<<ctrlreg<<std::dec);
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  par["CTRLREG"]=web::json::value::number( ctrlreg);
   
 }
-void lydaq::DIFManager::c_downloadDB(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void DifManager::c_downloadDB(http_request m)
 {
-  LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<"downloadDB called ");
-  response["STATUS"]="DONE";
+  PMF_INFO(_logDif,"downloadDB called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
 
 
   
   std::string dbstate=request.get("state","NONE");
-  uint32_t version=atol(request.get("version","0").c_str());
-  Json::Value jTDC=this->parameters()["dif"];
-   if (jTDC.isMember("db"))
+  uint32_t version=utils::queryIntValue(m,"version",0);
+  web::json::value jTDC=params()["dif"];
+   if (utils::isMember(jTDC,"db"))
      {
-       Json::Value jTDCdb=jTDC["db"];
+       web::json::value jTDCdb=jTDC["db"];
        _hca->clear();
 
-       if (jTDCdb["mode"].asString().compare("mongo")!=0)
-	 _hca->parseDb(dbstate,jTDCdb["mode"].asString());
+       if (jTDCdb["mode"].as_string().compare("mongo")!=0)
+	 _hca->parseDb(dbstate,jTDCdb["mode"].as_string());
        else
 	 _hca->parseMongoDb(dbstate,version);
 
 	 
      }
-  response["DBSTATE"]=dbstate;
+  par["DBSTATE"]=web::json::value::number(dbstate);
 }
 
 
-void lydaq::DIFManager::c_status(Mongoose::Request &request, Mongoose::JsonResponse &response)
+void DifManager::c_status(http_request m)
 {
   
   int32_t rc=1;
-  std::map<uint32_t,DIFInterface*> dm=this->getDIFMap();
-  Json::Value array_slc;
+  std::map<uint32_t,dif::interface*> dm=this->getDifMap();
+  web::json::value array_slc;
  
-  for ( std::map<uint32_t,DIFInterface*>::iterator it=dm.begin();it!=dm.end();it++)
+  for ( std::map<uint32_t,dif::interface*>::iterator it=dm.begin();it!=dm.end();it++)
     {
       
-      Json::Value ds;
+      web::json::value ds;
       ds["detid"]=it->second->detectorId();
       ds["state"]=it->second->state();
       ds["id"]=it->second->status()->id;
       ds["status"]=it->second->status()->status;
       ds["slc"]=it->second->status()->slc;
       ds["gtc"]=it->second->status()->gtc;
-      ds["bcid"]=(Json::Value::UInt64) it->second->status()->bcid;
-      ds["bytes"]=(Json::Value::UInt64)it->second->status()->bytes;
+      ds["bcid"]=(web::json::value::UInt64) it->second->status()->bcid;
+      ds["bytes"]=(web::json::value::UInt64)it->second->status()->bytes;
       ds["host"]=it->second->status()->host;
       array_slc.append(ds);
 
 
 
     }
-  response["STATUS"]="DONE";
-  response["DIFLIST"]=array_slc;
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  par["DifLIST"]=web::json::value::number(array_slc);
 
 
   return;
   
 }
 
-Json::Value lydaq::DIFManager::configureHR2()
+web::json::value DifManager::configureHR2()
 {
-  uint32_t ctrlreg=this->parameters()["ctrlreg"].asUInt();
+  uint32_t ctrlreg=params()["ctrlreg"].as_integer();
   printf("CTRLREG %lx \n",ctrlreg);
   int32_t rc=1;
-  std::map<uint32_t,DIFInterface*> dm=this->getDIFMap();
-  Json::Value array_slc=Json::Value::null;
+  std::map<uint32_t,dif::interface*> dm=this->getDifMap();
+  web::json::value array_slc=web::json::value::null;
 
-  for ( std::map<uint32_t,DIFInterface*>::iterator it=dm.begin();it!=dm.end();it++)
+  for ( std::map<uint32_t,dif::interface*>::iterator it=dm.begin();it!=dm.end();it++)
     {
       std::stringstream ips;
-      // Dummy IP address for DIFs
+      // Dummy IP address for Difs
       ips<<"0.0.0."<<it->first;
       _hca->prepareSlowControl(ips.str(),true);
-      DIFDbInfo* dbdif=it->second->dbdif();
+      DifDbInfo* dbdif=it->second->dbdif();
       dbdif->id=it->first;
       dbdif->nbasic=_hca->slcBytes()/HARDROCV2_SLC_FRAME_SIZE;
       
       memcpy(dbdif->slow,_hca->slcBuffer(),_hca->slcBytes());
       it->second->configure(ctrlreg);
-      Json::Value ds;
+      web::json::value ds;
       ds["id"]=it->first;
       ds["slc"]=it->second->status()->slc;
       array_slc.append(ds);
@@ -412,78 +412,78 @@ Json::Value lydaq::DIFManager::configureHR2()
   return array_slc;
 }
 
-void lydaq::DIFManager::configure(zdaq::fsmmessage* m)
+void DifManager::configure(http_request m)
 {
 
-  LOG4CXX_DEBUG(_logDIF,__PRETTY_FUNCTION__<<" CMD: "<<m->command());
-  if (m->content().isMember("ctrlreg"))
+  PMF_DEBUG(_logDif," CMD: "<<m->command());
+  if (utils::isMember(m->content(),"ctrlreg"))
     {
-      this->parameters()["ctrlreg"]=m->content()["ctrlreg"].asUInt();
+      params()["ctrlreg"]=m->content()["ctrlreg"].as_integer();
     }
-  uint32_t ctrlreg=this->parameters()["ctrlreg"].asUInt();
-  LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" Configuring with  ctr "<<ctrlreg<<" cont "<<m->content());
+  uint32_t ctrlreg=params()["ctrlreg"].as_integer();
+  PMF_INFO(_logDif," Configuring with  ctr "<<ctrlreg<<" cont "<<m->content());
   int32_t rc=1;
-  std::map<uint32_t,DIFInterface*> dm=this->getDIFMap();
-  Json::Value array_slc=this->configureHR2();
+  std::map<uint32_t,dif::interface*> dm=this->getDifMap();
+  web::json::value array_slc=this->configureHR2();
 
   m->setAnswer(array_slc);
   return;
     
 }
 
-void lydaq::DIFManager::start(zdaq::fsmmessage* m)
+void DifManager::start(http_request m)
 {
-  LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" Starting ");
+  PMF_INFO(_logDif," Starting ");
  
   int32_t rc=1;
-  std::map<uint32_t,DIFInterface*> dm=this->getDIFMap();
-  for ( std::map<uint32_t,DIFInterface*>::iterator it=dm.begin();it!=dm.end();it++)
+  std::map<uint32_t,dif::interface*> dm=this->getDifMap();
+  for ( std::map<uint32_t,dif::interface*>::iterator it=dm.begin();it!=dm.end();it++)
     {
-      this->startDIFThread(it->second);
+      this->startDifThread(it->second);
       it->second->start();
     }
 
   return;
   
 }
-void lydaq::DIFManager::stop(zdaq::fsmmessage* m)
+void DifManager::stop(http_request m)
 {
-  LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" Stopping ");
+  PMF_INFO(_logDif," Stopping ");
  
   int32_t rc=1;
-  std::map<uint32_t,DIFInterface*> dm=this->getDIFMap();
+  std::map<uint32_t,dif::interface*> dm=this->getDifMap();
  
-  for ( std::map<uint32_t,DIFInterface*>::iterator it=dm.begin();it!=dm.end();it++)
+  for ( std::map<uint32_t,dif::interface*>::iterator it=dm.begin();it!=dm.end();it++)
     {
-      LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" Stopping thread of DIF"<<it->first);
+      PMF_INFO(_logDif," Stopping thread of Dif"<<it->first);
       it->second->stop();
     }
   
   return;
   
 }
-void lydaq::DIFManager::destroy(zdaq::fsmmessage* m)
+void DifManager::destroy(http_request m)
 {
-  LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" Destroying ");
+  PMF_INFO(_logDif," Destroying ");
   
   int32_t rc=1;
-  std::map<uint32_t,DIFInterface*> dm=this->getDIFMap();
+  std::map<uint32_t,dif::interface*> dm=this->getDifMap();
 
   bool running=false;
-  for ( std::map<uint32_t,DIFInterface*>::iterator it=dm.begin();it!=dm.end();it++)
+  for ( std::map<uint32_t,dif::interface*>::iterator it=dm.begin();it!=dm.end();it++)
     {
       running=running ||it->second->readoutStarted();
     }
   if (running)
     {
-      for ( std::map<uint32_t,DIFInterface*>::iterator it=dm.begin();it!=dm.end();it++)
+      for ( std::map<uint32_t,dif::interface*>::iterator it=dm.begin();it!=dm.end();it++)
 	{
 	  it->second->setReadoutStarted(false);
 	}
       
       this->joinThreads();
     }
-  for ( std::map<uint32_t,DIFInterface*>::iterator it=dm.begin();it!=dm.end();it++)
+  for ( std::map<uint32_t,dif::interface*>::iterator it=dm.begin();it!=dm.end();it++)
     {
       it->second->destroy();
     }
@@ -498,10 +498,10 @@ void lydaq::DIFManager::destroy(zdaq::fsmmessage* m)
 
 
 
-lydaq::DIFManager::DIFManager(std::string name)  : zdaq::baseApplication(name)
+DifManager::DifManager(std::string name)  : baseApplication(name)
 {
 
-  //_fsm=new zdaq::fsm(name);
+  //_fsm=new fsm(name);
   _fsm=this->fsm();
   // Zmq transport
   _context = new zmq::context_t (1);
@@ -511,30 +511,30 @@ lydaq::DIFManager::DIFManager(std::string name)  : zdaq::baseApplication(name)
   _fsm->addState("CONFIGURED");
   _fsm->addState("RUNNING");
   _fsm->addState("STOPPED");
-  _fsm->addTransition("SCAN","CREATED","SCANNED",boost::bind(&lydaq::DIFManager::scan, this,_1));
-  _fsm->addTransition("INITIALISE","SCANNED","INITIALISED",boost::bind(&lydaq::DIFManager::initialise, this,_1));
-  _fsm->addTransition("CONFIGURE","INITIALISED","CONFIGURED",boost::bind(&lydaq::DIFManager::configure, this,_1));
-  _fsm->addTransition("CONFIGURE","CONFIGURED","CONFIGURED",boost::bind(&lydaq::DIFManager::configure, this,_1));
-  _fsm->addTransition("CONFIGURE","STOPPED","CONFIGURED",boost::bind(&lydaq::DIFManager::configure, this,_1));
-  _fsm->addTransition("START","CONFIGURED","RUNNING",boost::bind(&lydaq::DIFManager::start, this,_1));
-  _fsm->addTransition("START","STOPPED","RUNNING",boost::bind(&lydaq::DIFManager::start, this,_1));
-  _fsm->addTransition("STOP","RUNNING","STOPPED",boost::bind(&lydaq::DIFManager::stop, this,_1));
-  _fsm->addTransition("DESTROY","STOPPED","CREATED",boost::bind(&lydaq::DIFManager::destroy, this,_1));
-  _fsm->addTransition("DESTROY","CONFIGURED","CREATED",boost::bind(&lydaq::DIFManager::destroy, this,_1));
+  _fsm->addTransition("SCAN","CREATED","SCANNED",std::bind(&DifManager::scan, this,std::placeholders::_1));
+  _fsm->addTransition("INITIALISE","SCANNED","INITIALISED",std::bind(&DifManager::initialise, this,std::placeholders::_1));
+  _fsm->addTransition("CONFIGURE","INITIALISED","CONFIGURED",std::bind(&DifManager::configure, this,std::placeholders::_1));
+  _fsm->addTransition("CONFIGURE","CONFIGURED","CONFIGURED",std::bind(&DifManager::configure, this,std::placeholders::_1));
+  _fsm->addTransition("CONFIGURE","STOPPED","CONFIGURED",std::bind(&DifManager::configure, this,std::placeholders::_1));
+  _fsm->addTransition("START","CONFIGURED","RUNNING",std::bind(&DifManager::start, this,std::placeholders::_1));
+  _fsm->addTransition("START","STOPPED","RUNNING",std::bind(&DifManager::start, this,std::placeholders::_1));
+  _fsm->addTransition("STOP","RUNNING","STOPPED",std::bind(&DifManager::stop, this,std::placeholders::_1));
+  _fsm->addTransition("DESTROY","STOPPED","CREATED",std::bind(&DifManager::destroy, this,std::placeholders::_1));
+  _fsm->addTransition("DESTROY","CONFIGURED","CREATED",std::bind(&DifManager::destroy, this,std::placeholders::_1));
 
 
-  _fsm->addCommand("STATUS",boost::bind(&lydaq::DIFManager::c_status,this,_1,_2));
-  _fsm->addCommand("SETTHRESHOLDS",boost::bind(&lydaq::DIFManager::c_setthresholds,this,_1,_2));
-  _fsm->addCommand("SETPAGAIN",boost::bind(&lydaq::DIFManager::c_setpagain,this,_1,_2));
-  _fsm->addCommand("SETMASK",boost::bind(&lydaq::DIFManager::c_setmask,this,_1,_2));
-  _fsm->addCommand("SETCHANNELMASK",boost::bind(&lydaq::DIFManager::c_setchannelmask,this,_1,_2));
-  _fsm->addCommand("DOWNLOADDB",boost::bind(&lydaq::DIFManager::c_downloadDB,this,_1,_2));
-  _fsm->addCommand("CTRLREG",boost::bind(&lydaq::DIFManager::c_ctrlreg,this,_1,_2));
+  _fsm->addCommand("STATUS",std::bind(&DifManager::c_status,this,std::placeholders::_1));
+  _fsm->addCommand("SETTHRESHOLDS",std::bind(&DifManager::c_setthresholds,this,std::placeholders::_1));
+  _fsm->addCommand("SETPAGAIN",std::bind(&DifManager::c_setpagain,this,std::placeholders::_1));
+  _fsm->addCommand("SETMASK",std::bind(&DifManager::c_setmask,this,std::placeholders::_1));
+  _fsm->addCommand("SETCHANNELMASK",std::bind(&DifManager::c_setchannelmask,this,std::placeholders::_1));
+  _fsm->addCommand("DOWNLOADDB",std::bind(&DifManager::c_downloadDB,this,std::placeholders::_1));
+  _fsm->addCommand("CTRLREG",std::bind(&DifManager::c_ctrlreg,this,std::placeholders::_1));
 
   char* wp=getenv("WEBPORT");
   if (wp!=NULL)
     {
-      LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<" Service "<<name<<" started on port "<<atoi(wp));
+      PMF_INFO(_logDif," Service "<<name<<" started on port "<<atoi(wp));
     _fsm->start(atoi(wp));
     }
   _hca=NULL;
@@ -547,14 +547,14 @@ lydaq::DIFManager::DIFManager(std::string name)  : zdaq::baseApplication(name)
 
 
 
-void lydaq::DIFManager::prepareDevices()
+void DifManager::prepareDevices()
 {
   for ( std::map<uint32_t,FtdiDeviceInfo*>::iterator it=theFtdiDeviceInfoMap_.begin();it!=theFtdiDeviceInfoMap_.end();it++)
     if (it->second!=NULL) delete it->second;
   theFtdiDeviceInfoMap_.clear();
-  for ( std::map<uint32_t,DIFInterface*>::iterator it=_DIFInterfaceMap.begin();it!=_DIFInterfaceMap.end();it++)
+  for ( std::map<uint32_t,dif::interface*>::iterator it=_dif::interfaceMap.begin();it!=_dif::interfaceMap.end();it++)
     if (it->second!=NULL) delete it->second;
-  _DIFInterfaceMap.clear();
+  _dif::interfaceMap.clear();
   system("/bin/rm /var/log/pi/ftdi_devices");
   system("/opt/dhcal/bin/ListDevices.py");
   std::string line;
@@ -588,21 +588,21 @@ void lydaq::DIFManager::prepareDevices()
   else 
     {
       //std::cout << "Unable to open file"<<std::endl; 
-      LOG4CXX_FATAL(_logDIF,__PRETTY_FUNCTION__<<" Unable to open /var/log/pi/ftdi_devices");
+      PMF_FATAL(_logDif," Unable to open /var/log/pi/ftdi_devices");
     }
 
   for (std::map<uint32_t,FtdiDeviceInfo*>::iterator it=theFtdiDeviceInfoMap_.begin();it!=theFtdiDeviceInfoMap_.end();it++)
-    LOG4CXX_INFO(_logDIF,__PRETTY_FUNCTION__<<"Device found and register "<<it->first<<" with info "<<it->second->vendorid<<" "<<it->second->productid<<" "<<it->second->name<<" "<<it->second->type);
+    PMF_INFO(_logDif,"Device found and register "<<it->first<<" with info "<<it->second->vendorid<<" "<<it->second->productid<<" "<<it->second->name<<" "<<it->second->type);
 }
 
 
 
-void lydaq::DIFManager::startDIFThread(DIFInterface* d)
+void DifManager::startDifThread(dif::interface* d)
 {
   if (d->readoutStarted()) return;
   d->setReadoutStarted(true);	
 
-  g_d.create_thread(boost::bind(&DIFInterface::readout,d));
+  g_d=std::thread(std::bind(&dif::interface::readout,d));
   
 }
 
