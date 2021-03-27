@@ -14,7 +14,7 @@ dif::interface::interface(FtdiDeviceInfo* ftd) : _rd(NULL),_state("CREATED"),_ds
   _readoutStarted=false;
   _readoutCompleted=true;
 }
-void dif::interface::setTransport(zdaq::zmSender* p)
+void dif::interface::setTransport(pm::pmSender* p)
 {
   _dsData=p;
   //printf("DSDATA is %x\n",_dsData);
@@ -119,7 +119,7 @@ void dif::interface::readout()
       _dsData->publish(_status->bcid,_status->gtc,nread);
 
       if(!_rd->isOk())
-	PM_ERROR(_logDif,"DIF "<<_status->id<<" cannot read events"<<e.what() );
+	PM_ERROR(_logDif,"DIF "<<_status->id<<" cannot read events" );
 
 
 		
@@ -275,7 +275,7 @@ void dif::interface::configure(uint32_t ctrlreg,uint32_t l1,uint32_t l2,uint32_t
   this->publishState(s0.str());
   PM_INFO(_logDif, "DIF   id ("<<_status->id << ") ="<<s0.str());
 }
-void dif::interface::initialise(zdaq::zmSender* p)
+void dif::interface::initialise(pm::pmSender* p)
 {
   uint32_t difid=_ftd.id;
   //  create services
@@ -283,14 +283,14 @@ void dif::interface::initialise(zdaq::zmSender* p)
 
 
   std::string s(_ftd.name);
-  _rd = new DIFReadout(s,_ftd.productid);
+  _rd = new dif::reader(s,_ftd.productid);
       
   
   _rd->checkReadWrite(0x1234,100);
     
   if (!_rd->isOk())
     {
-      PM_FATAL(_logDif," Unable to read USB register (check clock) "<<e.message());
+      PM_FATAL(_logDif," Unable to read USB register (check clock) ");
       this->publishState("INIT_FAILED");
       return;
     }
@@ -300,7 +300,7 @@ void dif::interface::initialise(zdaq::zmSender* p)
 
   if (!_rd->isOk())
     {
-      PM_FATAL(_logDif," Second check read write failed "<<e.message());
+      PM_FATAL(_logDif," Second check read write failed ");
       this->publishState("INIT_FAILED");
       return;
     }

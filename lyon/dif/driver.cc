@@ -36,14 +36,14 @@ int32_t CHardrocRegisterWrite(struct ftdi_context *ftdic,uint32_t address, uint3
   return ret;
 }	
 
-dif::driver::FtdiDIFDriver(char * deviceIdentifier,uint32_t productid )    : mdcc::FtdiUsbDriver(deviceIdentifier,productid) 
+dif::driver::driver(char * deviceIdentifier,uint32_t productid )    : mdcc::FtdiUsbDriver(deviceIdentifier,productid) 
 {
 
 
 }
 
 
-int32_t FtdiDIFDriver :: NbAsicsWrite(uint32_t tnumber,uint32_t l1,uint32_t l2,uint32_t l3,uint32_t l4 )    //throw (LocalHardwareException)
+int32_t dif::driver::NbAsicsWrite(uint32_t tnumber,uint32_t l1,uint32_t l2,uint32_t l3,uint32_t l4 )    //throw (LocalHardwareException)
 {
   uint32_t taddress=0x05;
   //printf ("nb of asics = %d\n",tnumber);
@@ -51,43 +51,43 @@ int32_t FtdiDIFDriver :: NbAsicsWrite(uint32_t tnumber,uint32_t l1,uint32_t l2,u
   tnumber += (l1<<8) + (l2<<14) + (l3<<20)+ (l4<<26);
   //	printf ("tnumber = %d\n",tnumber);
   UsbRegisterWrite2(taddress,tnumber);			
-  if (!isOk()) { LOG4CXX_ERROR(_logDIF," "<<e.message());PM_ERROR(_logDif,"Error found"); return -2; }
+  if (!isOk()) { PM_ERROR(_logDif,"Error found"); return -2; }
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: UsbSetDIFID(uint32_t tnumber)    //throw (LocalHardwareException)
+int32_t dif::driver::UsbSetDIFID(uint32_t tnumber)    //throw (LocalHardwareException)
 {
   uint32_t taddress=0x01;
   UsbRegisterWrite(taddress,tnumber);			
-  if (!isOk()) { LOG4CXX_ERROR(_logDIF," "<<e.message());PM_ERROR(_logDif,"Error found"); return -2;}
+  if (!isOk()) { PM_ERROR(_logDif,"Error found"); return -2;}
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetDIFID(uint32_t *tnumber)    //throw (LocalHardwareException)
+int32_t dif::driver::GetDIFID(uint32_t *tnumber)    //throw (LocalHardwareException)
 {
   uint32_t taddress=0x01;
   UsbRegisterRead(taddress,tnumber);			
   if (!isOk())
     {
-      LOG4CXX_ERROR(_logDIF," "<<e.message());PM_ERROR(_logDif,"Error found");
+      PM_ERROR(_logDif,"Error found");
       return -2;
     }
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: HardrocSetGeneratorDivision(uint32_t tnumber)    //throw (LocalHardwareException)
+int32_t dif::driver::HardrocSetGeneratorDivision(uint32_t tnumber)    //throw (LocalHardwareException)
 {
   uint32_t taddress=0x200;
   UsbRegisterWrite(taddress,tnumber);			
   if (!isOk())
     {
-      LOG4CXX_ERROR(_logDIF," "<<e.message());PM_ERROR(_logDif,"Error found");
+      PM_ERROR(_logDif,"Error found");
       return -2;
     }
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: NbAsicsRead(uint32_t *tnumber)    //throw (LocalHardwareException)
+int32_t dif::driver::NbAsicsRead(uint32_t *tnumber)    //throw (LocalHardwareException)
 {
   uint32_t taddress=0x05;
 
@@ -102,7 +102,7 @@ int32_t FtdiDIFDriver :: NbAsicsRead(uint32_t *tnumber)    //throw (LocalHardwar
 
 
 
-int32_t FtdiDIFDriver :: HardrocPwonDacDelayRead(uint32_t *tnumber)    
+int32_t dif::driver::HardrocPwonDacDelayRead(uint32_t *tnumber)    
 {
   uint32_t taddress=0x41;
 
@@ -115,7 +115,7 @@ int32_t FtdiDIFDriver :: HardrocPwonDacDelayRead(uint32_t *tnumber)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: HardrocPwonDacDelayWrite(uint32_t tnumber)    
+int32_t dif::driver::HardrocPwonDacDelayWrite(uint32_t tnumber)    
 {
   uint32_t taddress=0x41;
   UsbRegisterWrite(taddress,tnumber);			
@@ -127,7 +127,7 @@ int32_t FtdiDIFDriver :: HardrocPwonDacDelayWrite(uint32_t tnumber)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: HardrocPwonAEndDelayRead(uint32_t *tnumber)    
+int32_t dif::driver::HardrocPwonAEndDelayRead(uint32_t *tnumber)    
 {
   uint32_t taddress=0x40;
 
@@ -140,7 +140,7 @@ int32_t FtdiDIFDriver :: HardrocPwonAEndDelayRead(uint32_t *tnumber)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: HardrocPwonAEndDelayWrite(uint32_t tnumber)    
+int32_t dif::driver::HardrocPwonAEndDelayWrite(uint32_t tnumber)    
 {
   uint32_t taddress=0x40;
   UsbRegisterWrite(taddress,tnumber);			
@@ -152,21 +152,21 @@ int32_t FtdiDIFDriver :: HardrocPwonAEndDelayWrite(uint32_t tnumber)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: HardrocSLCStatusRead(uint32_t *tstatus)    
+int32_t dif::driver::HardrocSLCStatusRead(uint32_t *tstatus)    
 {
   uint32_t taddress=0x06;
   UsbRegisterRead(taddress,tstatus);
 
   if (!isOk())
     {
-      std::cout<<" HardrocSLCStatusRead "<< e.message()<<std::endl;PM_ERROR(_logDif,"Error found");
+      PM_ERROR(_logDif,"Error found");
       return -2;
     }
   return 0;
 
 }	
 
-int32_t FtdiDIFDriver :: HardrocSLCCRCStatusRead(void)    
+int32_t dif::driver::HardrocSLCCRCStatusRead(void)    
 {
   uint32_t taddress=0x06;
   uint32_t tdata;
@@ -182,7 +182,7 @@ int32_t FtdiDIFDriver :: HardrocSLCCRCStatusRead(void)
     return -1;	
 }	
 
-int32_t FtdiDIFDriver :: HardrocSLCLoadStatusRead(void)    
+int32_t dif::driver::HardrocSLCLoadStatusRead(void)    
 {
   uint32_t taddress=0x06;
   uint32_t tdata;
@@ -199,7 +199,7 @@ int32_t FtdiDIFDriver :: HardrocSLCLoadStatusRead(void)
     return -1;	
 }	
 
-int32_t FtdiDIFDriver :: DIFMonitoringEnable(int32_t status)   
+int32_t dif::driver::DIFMonitoringEnable(int32_t status)   
 {
   uint32_t taddress=0x10;					
   uint32_t tstatus;
@@ -220,7 +220,7 @@ int32_t FtdiDIFDriver :: DIFMonitoringEnable(int32_t status)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: DIFMonitoringSetDIFGain (int32_t gain)   
+int32_t dif::driver::DIFMonitoringSetDIFGain (int32_t gain)   
 {
   uint32_t taddress=0x10;					
   uint32_t tstatus;
@@ -241,7 +241,7 @@ int32_t FtdiDIFDriver :: DIFMonitoringSetDIFGain (int32_t gain)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: DIFMonitoringSetSlabGain(int32_t gain)   
+int32_t dif::driver::DIFMonitoringSetSlabGain(int32_t gain)   
 {
   uint32_t taddress=0x10;					
   uint32_t tstatus;
@@ -262,7 +262,7 @@ int32_t FtdiDIFDriver :: DIFMonitoringSetSlabGain(int32_t gain)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: DIFMonitoringSetSequencer(int32_t status)   
+int32_t dif::driver::DIFMonitoringSetSequencer(int32_t status)   
 {
   uint32_t taddress=0x10;					
   uint32_t tstatus;
@@ -283,7 +283,7 @@ int32_t FtdiDIFDriver :: DIFMonitoringSetSequencer(int32_t status)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: DIFMonitoringSetAVDDshdn (int32_t status)   
+int32_t dif::driver::DIFMonitoringSetAVDDshdn (int32_t status)   
 {
   uint32_t taddress=0x10;					
   uint32_t tstatus;
@@ -304,7 +304,7 @@ int32_t FtdiDIFDriver :: DIFMonitoringSetAVDDshdn (int32_t status)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: DIFMonitoringSetDVDDshdn (int32_t status)   
+int32_t dif::driver::DIFMonitoringSetDVDDshdn (int32_t status)   
 {
   uint32_t taddress=0x10;					
   uint32_t tstatus;
@@ -325,7 +325,7 @@ int32_t FtdiDIFDriver :: DIFMonitoringSetDVDDshdn (int32_t status)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: DIFMonitoringSetConvertedChannels (int32_t channel)   
+int32_t dif::driver::DIFMonitoringSetConvertedChannels (int32_t channel)   
 {
   uint32_t taddress=0x10;					
   uint32_t tstatus;
@@ -346,7 +346,7 @@ int32_t FtdiDIFDriver :: DIFMonitoringSetConvertedChannels (int32_t channel)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: DIFMonitoringGetConfigRegister(uint32_t *status)   
+int32_t dif::driver::DIFMonitoringGetConfigRegister(uint32_t *status)   
 {
   uint32_t taddress=0x10;					
   UsbRegisterRead(taddress,status);			
@@ -358,7 +358,7 @@ int32_t FtdiDIFDriver :: DIFMonitoringGetConfigRegister(uint32_t *status)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: DIFMonitoringGetTemperature(uint32_t *Temperature)
+int32_t dif::driver::DIFMonitoringGetTemperature(uint32_t *Temperature)
 
 {
   uint32_t taddress;
@@ -374,7 +374,7 @@ int32_t FtdiDIFDriver :: DIFMonitoringGetTemperature(uint32_t *Temperature)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: DIFMonitoringGetDIFCurrent(uint32_t *DIFCurrent)    
+int32_t dif::driver::DIFMonitoringGetDIFCurrent(uint32_t *DIFCurrent)    
 {
   uint32_t taddress=0x12;
 
@@ -388,7 +388,7 @@ int32_t FtdiDIFDriver :: DIFMonitoringGetDIFCurrent(uint32_t *DIFCurrent)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: DIFMonitoringGetSlabCurrent(uint32_t *SlabCurrent)    
+int32_t dif::driver::DIFMonitoringGetSlabCurrent(uint32_t *SlabCurrent)    
 {
   uint32_t taddress=0x13;
 
@@ -402,7 +402,7 @@ int32_t FtdiDIFDriver :: DIFMonitoringGetSlabCurrent(uint32_t *SlabCurrent)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: DIFMonitoringGetChannel4Monitoring(uint32_t *Ch4Value)    
+int32_t dif::driver::DIFMonitoringGetChannel4Monitoring(uint32_t *Ch4Value)    
 {
   uint32_t taddress=0x14;
 
@@ -416,7 +416,7 @@ int32_t FtdiDIFDriver :: DIFMonitoringGetChannel4Monitoring(uint32_t *Ch4Value)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: HardrocCommandSLCWrite(void)    
+int32_t dif::driver::HardrocCommandSLCWrite(void)    
 {
   uint32_t taddress=0x01;
 	
@@ -428,7 +428,7 @@ int32_t FtdiDIFDriver :: HardrocCommandSLCWrite(void)
     }
   return 0;
 }	
-int32_t FtdiDIFDriver :: HardrocCommandSLCWriteLocal(void)    
+int32_t dif::driver::HardrocCommandSLCWriteLocal(void)    
 {
   uint32_t taddress=0x11;
 	
@@ -440,7 +440,7 @@ int32_t FtdiDIFDriver :: HardrocCommandSLCWriteLocal(void)
     }
   return 0;
 }	
-int32_t FtdiDIFDriver :: HardrocCommandSLCWriteByte(unsigned char  tbyte)    
+int32_t dif::driver::HardrocCommandSLCWriteByte(unsigned char  tbyte)    
 {
   write(tbyte);		
   if (!isOk())
@@ -452,9 +452,9 @@ int32_t FtdiDIFDriver :: HardrocCommandSLCWriteByte(unsigned char  tbyte)
 }	
 
 
-int32_t FtdiDIFDriver :: HardrocCommandSLCWriteCRC(unsigned char  *tbyte)    
+int32_t dif::driver::HardrocCommandSLCWriteCRC(unsigned char  *tbyte)    
 {
-  MonWritenAmoi(tbyte,2);		
+  writeNb(tbyte,2);		
   if (!isOk())
     {
       PM_ERROR(_logDif,"Error found");
@@ -463,10 +463,10 @@ int32_t FtdiDIFDriver :: HardrocCommandSLCWriteCRC(unsigned char  *tbyte)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: CommandSLCWriteSingleSLCFrame(unsigned char  *tbyte,uint32_t n)
+int32_t dif::driver::CommandSLCWriteSingleSLCFrame(unsigned char  *tbyte,uint32_t n)
 
 {
-  MonWritenAmoi(tbyte,n);		
+  writeNb(tbyte,n);		
   if (!isOk())
     {
       PM_ERROR(_logDif,"Error found");
@@ -477,7 +477,7 @@ int32_t FtdiDIFDriver :: CommandSLCWriteSingleSLCFrame(unsigned char  *tbyte,uin
 
 
 
-int32_t FtdiDIFDriver :: HardrocCommandLemoPulse(void)
+int32_t dif::driver::HardrocCommandLemoPulse(void)
 
 {
   uint32_t taddress= 0x06;
@@ -492,7 +492,7 @@ int32_t FtdiDIFDriver :: HardrocCommandLemoPulse(void)
 }	
 
 
-int32_t FtdiDIFDriver :: FT245Reset(void)
+int32_t dif::driver::FT245Reset(void)
 
 {
   resetBus();
@@ -506,7 +506,7 @@ int32_t FtdiDIFDriver :: FT245Reset(void)
 }	
 
 // OK HR2 et MR
-int32_t FtdiDIFDriver :: FPGAReset(void)
+int32_t dif::driver::FPGAReset(void)
 
 {
   uint32_t taddress=0x03;
@@ -536,7 +536,7 @@ int32_t FtdiDIFDriver :: FPGAReset(void)
 }	
 
 // OK
-int32_t FtdiDIFDriver :: HardrocReset(void)
+int32_t dif::driver::HardrocReset(void)
 
 {
   uint32_t taddress=0x03;
@@ -565,7 +565,7 @@ int32_t FtdiDIFDriver :: HardrocReset(void)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: BCIDReset(void)   
+int32_t dif::driver::BCIDReset(void)   
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -593,7 +593,7 @@ int32_t FtdiDIFDriver :: BCIDReset(void)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: SCReset(void)
+int32_t dif::driver::SCReset(void)
 
 {
   uint32_t taddress=0x03;
@@ -625,7 +625,7 @@ int32_t FtdiDIFDriver :: SCReset(void)
 // met select = 0 puis sc_sr_rest = 0
 // puis sc_sr_reset = 1
 // puis select = 1
-int32_t FtdiDIFDriver :: SCSRReset(void)
+int32_t dif::driver::SCSRReset(void)
 
 {
   uint32_t taddress=0x03;
@@ -692,7 +692,7 @@ int32_t FtdiDIFDriver :: SCSRReset(void)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: SRReset(void)
+int32_t dif::driver::SRReset(void)
 
 {
   uint32_t taddress=0x03;
@@ -721,7 +721,7 @@ int32_t FtdiDIFDriver :: SRReset(void)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: SCReportReset(void)
+int32_t dif::driver::SCReportReset(void)
 
 {
   uint32_t taddress=0x03;
@@ -750,7 +750,7 @@ int32_t FtdiDIFDriver :: SCReportReset(void)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: DIFCptReset(void)
+int32_t dif::driver::DIFCptReset(void)
 
 {
   uint32_t taddress=0x03;
@@ -767,7 +767,7 @@ int32_t FtdiDIFDriver :: DIFCptReset(void)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: SetPowerAnalog(int32_t tstatus)    
+int32_t dif::driver::SetPowerAnalog(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -780,7 +780,7 @@ int32_t FtdiDIFDriver :: SetPowerAnalog(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetPowerAnalog(int32_t *tstatus)    
+int32_t dif::driver::GetPowerAnalog(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -792,7 +792,7 @@ int32_t FtdiDIFDriver :: GetPowerAnalog(int32_t *tstatus)
 }	
 
 
-int32_t FtdiDIFDriver :: SetPowerADC(int32_t tstatus)    
+int32_t dif::driver::SetPowerADC(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -805,7 +805,7 @@ int32_t FtdiDIFDriver :: SetPowerADC(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetPowerADC(int32_t *tstatus)    
+int32_t dif::driver::GetPowerADC(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -816,7 +816,7 @@ int32_t FtdiDIFDriver :: GetPowerADC(int32_t *tstatus)
   return 0;
 }	
 /*cc 3011
-  int32_t FtdiDIFDriver :: SetPowerSS(int32_t tstatus)    
+  int32_t dif::driver::SetPowerSS(int32_t tstatus)    
   {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -829,7 +829,7 @@ int32_t FtdiDIFDriver :: GetPowerADC(int32_t *tstatus)
   return 0;
   }	
 
-  int32_t FtdiDIFDriver :: GetPowerSS(int32_t *tstatus)    
+  int32_t dif::driver::GetPowerSS(int32_t *tstatus)    
   {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -840,7 +840,7 @@ int32_t FtdiDIFDriver :: GetPowerADC(int32_t *tstatus)
   return 0;
   }	
 */
-int32_t FtdiDIFDriver :: SetPowerDigital(int32_t tstatus)    
+int32_t dif::driver::SetPowerDigital(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -854,7 +854,7 @@ int32_t FtdiDIFDriver :: SetPowerDigital(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetPowerDigital(int32_t *tstatus)    
+int32_t dif::driver::GetPowerDigital(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -865,7 +865,7 @@ int32_t FtdiDIFDriver :: GetPowerDigital(int32_t *tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: SetPowerDAC(int32_t tstatus)    
+int32_t dif::driver::SetPowerDAC(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -878,7 +878,7 @@ int32_t FtdiDIFDriver :: SetPowerDAC(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetPowerDAC(int32_t *tstatus)    
+int32_t dif::driver::GetPowerDAC(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -889,7 +889,7 @@ int32_t FtdiDIFDriver :: GetPowerDAC(int32_t *tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: ResetCounter(int32_t tstatus)    
+int32_t dif::driver::ResetCounter(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -905,7 +905,7 @@ int32_t FtdiDIFDriver :: ResetCounter(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: ClearAnalogSR(int32_t tstatus)    
+int32_t dif::driver::ClearAnalogSR(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -921,7 +921,7 @@ int32_t FtdiDIFDriver :: ClearAnalogSR(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: SetSCChoice(int32_t tstatus)    
+int32_t dif::driver::SetSCChoice(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -934,7 +934,7 @@ int32_t FtdiDIFDriver :: SetSCChoice(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetSCChoice(int32_t *tstatus)    
+int32_t dif::driver::GetSCChoice(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -945,7 +945,7 @@ int32_t FtdiDIFDriver :: GetSCChoice(int32_t *tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: SetCalibrationMode(int32_t tstatus)    
+int32_t dif::driver::SetCalibrationMode(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -958,7 +958,7 @@ int32_t FtdiDIFDriver :: SetCalibrationMode(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetCalibrationMode(int32_t *tstatus)    
+int32_t dif::driver::GetCalibrationMode(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -969,7 +969,7 @@ int32_t FtdiDIFDriver :: GetCalibrationMode(int32_t *tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: SetSetupWithCCC(int32_t tstatus)    
+int32_t dif::driver::SetSetupWithCCC(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -982,7 +982,7 @@ int32_t FtdiDIFDriver :: SetSetupWithCCC(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetSetupWithCCC(int32_t *tstatus)    
+int32_t dif::driver::GetSetupWithCCC(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -993,7 +993,7 @@ int32_t FtdiDIFDriver :: GetSetupWithCCC(int32_t *tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: SetSetupWithDCC(int32_t tstatus)    
+int32_t dif::driver::SetSetupWithDCC(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1006,7 +1006,7 @@ int32_t FtdiDIFDriver :: SetSetupWithDCC(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetSetupWithDCC(int32_t *tstatus)    
+int32_t dif::driver::GetSetupWithDCC(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1017,7 +1017,7 @@ int32_t FtdiDIFDriver :: GetSetupWithDCC(int32_t *tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: SetAcqTest(int32_t tstatus)    
+int32_t dif::driver::SetAcqTest(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1030,7 +1030,7 @@ int32_t FtdiDIFDriver :: SetAcqTest(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetAcqTest(int32_t *tstatus)    
+int32_t dif::driver::GetAcqTest(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1041,7 +1041,7 @@ int32_t FtdiDIFDriver :: GetAcqTest(int32_t *tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: Set4VforSC(int32_t tstatus)    
+int32_t dif::driver::Set4VforSC(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1054,7 +1054,7 @@ int32_t FtdiDIFDriver :: Set4VforSC(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: Get4VforSC(int32_t *tstatus)    
+int32_t dif::driver::Get4VforSC(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1065,7 +1065,7 @@ int32_t FtdiDIFDriver :: Get4VforSC(int32_t *tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: SetMode4VforSC(int32_t tstatus)    
+int32_t dif::driver::SetMode4VforSC(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1078,7 +1078,7 @@ int32_t FtdiDIFDriver :: SetMode4VforSC(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetMode4VforSC(int32_t *tstatus)    
+int32_t dif::driver::GetMode4VforSC(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1089,7 +1089,7 @@ int32_t FtdiDIFDriver :: GetMode4VforSC(int32_t *tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: SetModeDCCCCC(int32_t tstatus)    
+int32_t dif::driver::SetModeDCCCCC(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1102,7 +1102,7 @@ int32_t FtdiDIFDriver :: SetModeDCCCCC(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetModeDCCCCC(int32_t *tstatus)    
+int32_t dif::driver::GetModeDCCCCC(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1117,7 +1117,7 @@ int32_t FtdiDIFDriver :: GetModeDCCCCC(int32_t *tstatus)
 
 
 
-int32_t FtdiDIFDriver :: SetHold(int32_t tstatus)    
+int32_t dif::driver::SetHold(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1130,7 +1130,7 @@ int32_t FtdiDIFDriver :: SetHold(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetHold(int32_t *tstatus)    
+int32_t dif::driver::GetHold(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1141,7 +1141,7 @@ int32_t FtdiDIFDriver :: GetHold(int32_t *tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: SetTimeoutDigitalReadout(int32_t tstatus)    
+int32_t dif::driver::SetTimeoutDigitalReadout(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1154,7 +1154,7 @@ int32_t FtdiDIFDriver :: SetTimeoutDigitalReadout(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetTimeoutDigitalReadout(int32_t *tstatus)    
+int32_t dif::driver::GetTimeoutDigitalReadout(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1165,7 +1165,7 @@ int32_t FtdiDIFDriver :: GetTimeoutDigitalReadout(int32_t *tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: SetPowerPulsing(int32_t tstatus)    
+int32_t dif::driver::SetPowerPulsing(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1178,7 +1178,7 @@ int32_t FtdiDIFDriver :: SetPowerPulsing(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetPowerPulsing(int32_t *tstatus)    
+int32_t dif::driver::GetPowerPulsing(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1189,7 +1189,7 @@ int32_t FtdiDIFDriver :: GetPowerPulsing(int32_t *tstatus)
   return 0;
 }
 
-int32_t FtdiDIFDriver :: SetRealPowerPulsing(int32_t tstatus)    
+int32_t dif::driver::SetRealPowerPulsing(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1202,7 +1202,7 @@ int32_t FtdiDIFDriver :: SetRealPowerPulsing(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetRealPowerPulsing(int32_t *tstatus)    
+int32_t dif::driver::GetRealPowerPulsing(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1213,7 +1213,7 @@ int32_t FtdiDIFDriver :: GetRealPowerPulsing(int32_t *tstatus)
   return 0;
 }
 
-int32_t FtdiDIFDriver :: SetDIFCommandsONOFF(int32_t tstatus)    
+int32_t dif::driver::SetDIFCommandsONOFF(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1226,7 +1226,7 @@ int32_t FtdiDIFDriver :: SetDIFCommandsONOFF(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetDIFCommandsONOFF(int32_t *tstatus)    
+int32_t dif::driver::GetDIFCommandsONOFF(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1237,7 +1237,7 @@ int32_t FtdiDIFDriver :: GetDIFCommandsONOFF(int32_t *tstatus)
   return 0;
 }
 
-int32_t FtdiDIFDriver :: SetDROBtMode(int32_t tstatus)    
+int32_t dif::driver::SetDROBtMode(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1250,7 +1250,7 @@ int32_t FtdiDIFDriver :: SetDROBtMode(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetDROBtMode(int32_t *tstatus)    
+int32_t dif::driver::GetDROBtMode(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1261,7 +1261,7 @@ int32_t FtdiDIFDriver :: GetDROBtMode(int32_t *tstatus)
   return 0;
 }
 
-int32_t FtdiDIFDriver :: SetClockFrequency(int32_t tstatus)    
+int32_t dif::driver::SetClockFrequency(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1274,7 +1274,7 @@ int32_t FtdiDIFDriver :: SetClockFrequency(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetClockFrequency(int32_t *tstatus)    
+int32_t dif::driver::GetClockFrequency(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1318,7 +1318,7 @@ int32_t dif::driver::GetControlRegister(uint32_t *tvalue)
 
 
 
-int32_t FtdiDIFDriver :: HardrocSetPowerPulsing(int32_t tstatus)    
+int32_t dif::driver::HardrocSetPowerPulsing(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1343,7 +1343,7 @@ int32_t FtdiDIFDriver :: HardrocSetPowerPulsing(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: HardrocGetPowerPulsing(int32_t *tstatus)    
+int32_t dif::driver::HardrocGetPowerPulsing(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1358,7 +1358,7 @@ int32_t FtdiDIFDriver :: HardrocGetPowerPulsing(int32_t *tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: SetSCClockFrequency(int32_t tstatus)    
+int32_t dif::driver::SetSCClockFrequency(int32_t tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1382,7 +1382,7 @@ int32_t FtdiDIFDriver :: SetSCClockFrequency(int32_t tstatus)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetSCClockFrequency(int32_t *tstatus)    
+int32_t dif::driver::GetSCClockFrequency(int32_t *tstatus)    
 {
   uint32_t taddress=0x03;
   uint32_t tdata;
@@ -1399,7 +1399,7 @@ int32_t FtdiDIFDriver :: GetSCClockFrequency(int32_t *tstatus)
 
 
 // ************ digital readout ************
-int32_t FtdiDIFDriver ::HardrocFlushDigitalFIFO(void)
+int32_t dif::driver ::HardrocFlushDigitalFIFO(void)
 {
   return 0;
   unsigned char  tdata;
@@ -1448,7 +1448,7 @@ int32_t FtdiDIFDriver ::HardrocFlushDigitalFIFO(void)
   return 0;
 }	
 
-int32_t FtdiDIFDriver ::HardrocFastFlushDigitalFIFO(void)
+int32_t dif::driver ::HardrocFastFlushDigitalFIFO(void)
 {
   return 0; //Not implemented
   unsigned char  tdata;
@@ -1495,7 +1495,7 @@ int32_t FtdiDIFDriver ::HardrocFastFlushDigitalFIFO(void)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: HardrocStartDigitalAcquisitionCommand(void)
+int32_t dif::driver::HardrocStartDigitalAcquisitionCommand(void)
 
 {
   uint32_t taddress=0x02;
@@ -1509,7 +1509,7 @@ int32_t FtdiDIFDriver :: HardrocStartDigitalAcquisitionCommand(void)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: HardrocStopDigitalAcquisitionCommand(void)
+int32_t dif::driver::HardrocStopDigitalAcquisitionCommand(void)
 
 {
   uint32_t taddress=0x23;
@@ -1524,7 +1524,7 @@ int32_t FtdiDIFDriver :: HardrocStopDigitalAcquisitionCommand(void)
 }	
 
 
-int32_t FtdiDIFDriver :: HardrocStartDigitalReadoutCommand(void)
+int32_t dif::driver::HardrocStartDigitalReadoutCommand(void)
 
 {
   uint32_t taddress=0x03;
@@ -1538,7 +1538,7 @@ int32_t FtdiDIFDriver :: HardrocStartDigitalReadoutCommand(void)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: HardrocSendRamfullExtCommand(void)
+int32_t dif::driver::HardrocSendRamfullExtCommand(void)
 
 {
   uint32_t taddress=0x21;
@@ -1552,7 +1552,7 @@ int32_t FtdiDIFDriver :: HardrocSendRamfullExtCommand(void)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: HardrocSendExternalTriggerCommand(void)
+int32_t dif::driver::HardrocSendExternalTriggerCommand(void)
 
 {
   uint32_t taddress=0x22;
@@ -1566,7 +1566,7 @@ int32_t FtdiDIFDriver :: HardrocSendExternalTriggerCommand(void)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: HardrocSendMezzanine11Command(void)
+int32_t dif::driver::HardrocSendMezzanine11Command(void)
 
 {
   uint32_t taddress=0x50;
@@ -1582,7 +1582,7 @@ int32_t FtdiDIFDriver :: HardrocSendMezzanine11Command(void)
 
 // *********** analog readout ************
 
-int32_t  FtdiDIFDriver :: HardrocSetTimerHoldRegister(int32_t thold)
+int32_t  dif::driver::HardrocSetTimerHoldRegister(int32_t thold)
 
 {
   int32_t taddress=0x20;
@@ -1613,7 +1613,7 @@ int32_t  dif::driver::HardrocGetTimerHoldRegister(uint32_t *thold)
   return 0;
 }
 
-int32_t  FtdiDIFDriver :: HardrocStartAnalogAcq(void)    
+int32_t  dif::driver::HardrocStartAnalogAcq(void)    
 {
   uint32_t taddress=0x04;
 	
@@ -1626,7 +1626,7 @@ int32_t  FtdiDIFDriver :: HardrocStartAnalogAcq(void)
   return 0;
 }
 
-int32_t  FtdiDIFDriver :: HardrocSoftwareTriggerAnalogAcq(void)    
+int32_t  dif::driver::HardrocSoftwareTriggerAnalogAcq(void)    
 {
   uint32_t taddress=0x41;
 	
@@ -1985,7 +1985,7 @@ int32_t dif::driver::GetChipTypeRegister(uint32_t *tvalue)
 */
 
 
-int32_t FtdiDIFDriver :: SetPwrToPwrARegister(uint32_t tnumber)    
+int32_t dif::driver::SetPwrToPwrARegister(uint32_t tnumber)    
 {
   uint32_t taddress=0x40;
   UsbRegisterWrite(taddress,tnumber);			
@@ -1997,7 +1997,7 @@ int32_t FtdiDIFDriver :: SetPwrToPwrARegister(uint32_t tnumber)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: SetPwrAToPwrDRegister(uint32_t tnumber)    
+int32_t dif::driver::SetPwrAToPwrDRegister(uint32_t tnumber)    
 {
   uint32_t taddress=0x41;
   UsbRegisterWrite(taddress,tnumber);			
@@ -2008,7 +2008,7 @@ int32_t FtdiDIFDriver :: SetPwrAToPwrDRegister(uint32_t tnumber)
     }
   return 0;
 }	
-int32_t FtdiDIFDriver :: SetPwrDToDAQRegister(uint32_t tnumber)    
+int32_t dif::driver::SetPwrDToDAQRegister(uint32_t tnumber)    
 {
   uint32_t taddress=0x42;
   UsbRegisterWrite(taddress,tnumber);			
@@ -2019,7 +2019,7 @@ int32_t FtdiDIFDriver :: SetPwrDToDAQRegister(uint32_t tnumber)
     }
   return 0;
 }	
-int32_t FtdiDIFDriver :: SetDAQToPwrDRegister(uint32_t tnumber)    
+int32_t dif::driver::SetDAQToPwrDRegister(uint32_t tnumber)    
 {
   uint32_t taddress=0x43;
   UsbRegisterWrite(taddress,tnumber);			
@@ -2030,7 +2030,7 @@ int32_t FtdiDIFDriver :: SetDAQToPwrDRegister(uint32_t tnumber)
     }
   return 0;
 }	
-int32_t FtdiDIFDriver :: SetPwrDToPwrARegister(uint32_t tnumber)    
+int32_t dif::driver::SetPwrDToPwrARegister(uint32_t tnumber)    
 {
   uint32_t taddress=0x44;
   UsbRegisterWrite(taddress,tnumber);			
@@ -2042,7 +2042,7 @@ int32_t FtdiDIFDriver :: SetPwrDToPwrARegister(uint32_t tnumber)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: HardrocCommandAskDifTemperature(void)    
+int32_t dif::driver::HardrocCommandAskDifTemperature(void)    
 {
   uint32_t taddress=0x09;
 	
@@ -2054,7 +2054,7 @@ int32_t FtdiDIFDriver :: HardrocCommandAskDifTemperature(void)
     }
   return 0;
 }	
-int32_t FtdiDIFDriver :: HardrocCommandAskAsuTemperature(void)    
+int32_t dif::driver::HardrocCommandAskAsuTemperature(void)    
 {
   uint32_t taddress=0x08;
 	
@@ -2067,7 +2067,7 @@ int32_t FtdiDIFDriver :: HardrocCommandAskAsuTemperature(void)
   return 0;
 }	
 
-int32_t FtdiDIFDriver :: GetDIFTemperature(uint32_t *tvalue)    				 	
+int32_t dif::driver::GetDIFTemperature(uint32_t *tvalue)    				 	
 {
   uint32_t taddress=0x11;
   *tvalue=0;	
@@ -2081,7 +2081,7 @@ int32_t FtdiDIFDriver :: GetDIFTemperature(uint32_t *tvalue)
   return 0;	
 }
 
-int32_t FtdiDIFDriver :: SetTemperatureReadoutToAuto(uint32_t tvalue)    				 	
+int32_t dif::driver::SetTemperatureReadoutToAuto(uint32_t tvalue)    				 	
 {
   uint32_t taddress=0x10;
   uint32_t tdata;
@@ -2105,7 +2105,7 @@ int32_t FtdiDIFDriver :: SetTemperatureReadoutToAuto(uint32_t tvalue)
     }
   return 0;	
 }
-int32_t FtdiDIFDriver :: GetTemperatureReadoutAutoStatus(uint32_t *tvalue)    				 	
+int32_t dif::driver::GetTemperatureReadoutAutoStatus(uint32_t *tvalue)    				 	
 {
   uint32_t taddress=0x10;
   uint32_t tdata;
@@ -2120,7 +2120,7 @@ int32_t FtdiDIFDriver :: GetTemperatureReadoutAutoStatus(uint32_t *tvalue)
   return 0;	
 }
 
-int32_t FtdiDIFDriver :: GetASUTemperature(uint32_t *tvalue1,uint32_t *tvalue2)    						
+int32_t dif::driver::GetASUTemperature(uint32_t *tvalue1,uint32_t *tvalue2)    						
 {
   uint32_t taddress=0x52;
   *tvalue1=0;	
@@ -2137,7 +2137,8 @@ int32_t FtdiDIFDriver :: GetASUTemperature(uint32_t *tvalue1,uint32_t *tvalue2)
     {
       PM_ERROR(_logDif,"Error found");
       return -1;
-    }	
+    }
+  return 0;
 }
 
 int32_t dif::driver::SetEventsBetweenTemperatureReadout(uint32_t tdata)    

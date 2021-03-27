@@ -3,12 +3,12 @@
 
 using namespace dif;
 /* Main program de readout */
-dif::reader::DIFReadout(std::string name, uint32_t productid) : FtdiDIFDriver((char *)name.c_str(), productid), theName_(name), theAsicType_(2), theNumberOfAsics_(48), theControlRegister_(0x80181B00), theCurrentSLCStatus_(0),
+dif::reader::reader(std::string name, uint32_t productid) : dif::driver((char *)name.c_str(), productid), theName_(name), theAsicType_(2), theNumberOfAsics_(48), theControlRegister_(0x80181B00), theCurrentSLCStatus_(0),
                                                                 thePwrToPwrARegister_(0x3E8), thePwrAToPwrDRegister_(0x3E6), thePwrDToDAQRegister_(0x4E), theDAQToPwrDRegister_(0x4E), thePwrDToPwrARegister_(0x4E)
 {
   sscanf(name.c_str(), "FT101%d", &theDIFId_);
 }
-dif::reader::~DIFReadout()
+dif::reader::~reader()
 {
   printf("%s %d \n", __PRETTY_FUNCTION__, __LINE__);
 }
@@ -37,7 +37,7 @@ void dif::reader::setControlRegister(uint32_t ControlRegister)
 
 void dif::reader::initialise(uint32_t difid, uint32_t asicType, uint32_t NumberOfAsics, uint32_t ctrlreg, uint32_t P2PAReg, uint32_t PA2PDReg, uint32_t PD2DAQReg, uint32_t DAQ2DReg, uint32_t D2AReg)
 {
-  LOG4CXX_INFO(_logDIF, "Initialise");
+  LOG4CXX_INFO(_logDif, "Initialise");
   theDIFId_ = difid;
   theAsicType_ = asicType;
   theNumberOfAsics_ = NumberOfAsics;
@@ -54,12 +54,12 @@ void dif::reader::initialise(uint32_t difid, uint32_t asicType, uint32_t NumberO
 void dif::reader::start()
 {
   // Nothing to do yet
-  LOG4CXX_INFO(_logDIF, "Start");
+  LOG4CXX_INFO(_logDif, "Start");
   HardrocFlushDigitalFIFO();
 }
 void dif::reader::stop()
 {
-  LOG4CXX_INFO(_logDIF, "Stop");
+  LOG4CXX_INFO(_logDif, "Stop");
   HardrocFlushDigitalFIFO();
   HardrocStopDigitalAcquisitionCommand();
   HardrocFlushDigitalFIFO();
@@ -196,7 +196,7 @@ void dif::reader::configureRegisters()
   //printf("Power %d %d %d %d \n",ds->PowerAnalog,ds->PowerDAC,ds->PowerDigital,ds->PowerADC);
   uint32_t CurrentDIFFwVersion;
   UsbGetFirmwareRevision(&CurrentDIFFwVersion);
-  PM_INFO(_logDif, " DIF" << theName << " Version " << std::hex << CurrentDIFFwVersion << std::dec);
+  PM_INFO(_logDif, " DIF" << theName_ << " Version " << std::hex << CurrentDIFFwVersion << std::dec);
   DIFCptReset();
   //	printf ("control reg settings to be modified!!!\n");
 
@@ -227,7 +227,7 @@ void dif::reader::configureRegisters()
   if (!isOk())
     PM_ERROR(_logDif, " Unable to send control reg value" << theName_);
   GetControlRegister(&toto);
-  PM_INFO(_logDif << "  CtrlReg =" << std::hex << toto << std::dec);
+  PM_INFO(_logDif, "  CtrlReg =" << std::hex << toto << std::dec);
 
   SetPwrToPwrARegister(thePwrToPwrARegister_);
 
@@ -454,7 +454,7 @@ uint32_t dif::reader::DoHardrocV2ReadoutDigitalData(unsigned char *CurrentDIFDig
   // Global header
   if (!isOk())
   {
-    PM_DEBUG(_logDIF, " "
+    PM_DEBUG(_logDif, " "
                           << "==>"
                           << "DIF : no data, exiting ");
     return 0;
