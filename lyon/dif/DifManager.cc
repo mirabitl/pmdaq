@@ -9,7 +9,7 @@
 #include <sys/dir.h>  
 #include <sys/param.h>  
 //#include "ftdi.hpp"
-#include <iostream>
+#include "pmSender.hh"
 #include <iomanip>
 #include <cstdlib>
 #include <cstring>
@@ -133,7 +133,7 @@ void DifManager::fsm_initialise(http_request m)
     {
       PMF_INFO(_logDif," Creating pusher to "<<params()["publish"].as_string());
 
-      pmSender* push= new pmSender(_context,x->detectorId(),x->status()->id);
+      pm::pmSender* push= new pm::pmSender(_context,x->detectorId(),x->status()->id);
       push->autoDiscover(session(),"evb_builder","collectingPort");
       push->collectorRegister();
 
@@ -292,7 +292,7 @@ void DifManager::c_setchannelmask(http_request m)
 void DifManager::c_ctrlreg(http_request m)
 {
   auto par = json::value::object();
-  PMF_INFO(_logDif,"CTRLREG called "<<request.get("value","0").c_str());
+  PMF_INFO(_logDif,"CTRLREG called ");
 
   uint32_t  ctrlreg=0;
   //sscanf(request.get("value","0").c_str(),"%u",&ctrlreg);
@@ -344,13 +344,13 @@ void DifManager::c_status(http_request m)
       
       web::json::value ds;
       ds["detid"]=json::value::number(it->second->detectorId());
-      ds["state"]=json::value::number(it->second->state());
+      ds["state"]=json::value::string(U(it->second->state()));
       ds["id"]=json::value::number(it->second->status()->id);
       ds["status"]=json::value::number(it->second->status()->status);
       ds["slc"]=json::value::number(it->second->status()->slc);
       ds["gtc"]=json::value::number(it->second->status()->gtc);
       ds["bcid"]=json::value::number(it->second->status()->bcid);
-      ds["bytes"]=json::value::number((it->second->status()->bytes);
+      ds["bytes"]=json::value::number(it->second->status()->bytes);
       ds["host"]=json::value::string(U(it->second->status()->host));
       array_slc[nd++]=ds;
     }
@@ -377,7 +377,7 @@ web::json::value DifManager::configureHR2()
       // Dummy IP address for Difs
       ips<<"0.0.0."<<it->first;
       _hca->prepareSlowControl(ips.str(),true);
-      DifDbInfo* dbdif=it->second->dbdif();
+      DIFDbInfo* dbdif=it->second->dbdif();
       dbdif->id=it->first;
       dbdif->nbasic=_hca->slcBytes()/HARDROCV2_SLC_FRAME_SIZE;
       
@@ -397,7 +397,7 @@ void DifManager::configure(http_request m)
 {
   auto par = json::value::object();
   PMF_DEBUG(_logDif," CMD: CONFIGURING");
-  uint32_t ctrlreg=utils::queryIntValue("ctrlreg",0);
+  uint32_t ctrlreg=utils::queryIntValue(m,"ctrlreg",0);
   if (ctrlreg!=0)
       params()["ctrlreg"]=json::value::number(ctrlreg);
 
@@ -407,7 +407,7 @@ void DifManager::configure(http_request m)
   std::map<uint32_t,dif::interface*> dm=this->getDifMap();
   web::json::value array_slc=this->configureHR2();
 
-  par["devices"]=array_slc
+  par["devices"]=array_slc;
   par["status"]=json::value::string(U("Configured"));
   Reply(status_codes::OK,par);  
   return;
@@ -423,7 +423,7 @@ void DifManager::start(http_request m)
   std::map<uint32_t,dif::interface*> dm=this->getDifMap();
   for ( std::map<uint32_t,dif::interface*>::iterator it=dm.begin();it!=dm.end();it++)
     {
-      this->startDifThread(it->second);
+      this->startDIFThread(it->second);
       it->second->start();
     }
   par["status"]=json::value::string(U("started"));
@@ -449,7 +449,7 @@ void DifManager::stop(http_request m)
   return;
   
 }
-void Difmanager::destroying()
+void DifManager::destroying()
 {
    PMF_INFO(_logDif," Destroying ");
   
@@ -503,7 +503,7 @@ void DifManager::destroy(http_request m)
   this->addState("RUNNING");
   this->addState("STOPPED");
   this->addTransition("SCAN","CREATED","SCANNED",std::bind(&DifManager::scan, this,std::placeholders::_1));
-  this->addTransition("INITIALISE","SCANNED","INITIALISED",std::bind(&DifManager::initialise, this,std::placeholders::_1));
+  this->addTransition("INITIALISE","SCANNED","INITIALISED",std::bind(&DifManager::fsm_initialise, this,std::placeholders::_1));
   this->addTransition("CONFIGURE","INITIALISED","CONFIGURED",std::bind(&DifManager::configure, this,std::placeholders::_1));
   this->addTransition("CONFIGURE","CONFIGURED","CONFIGURED",std::bind(&DifManager::configure, this,std::placeholders::_1));
   this->addTransition("CONFIGURE","STOPPED","CONFIGURED",std::bind(&DifManager::configure, this,std::placeholders::_1));
@@ -541,9 +541,9 @@ void DifManager::prepareDevices()
   for ( std::map<uint32_t,FtdiDeviceInfo*>::iterator it=theFtdiDeviceInfoMap_.begin();it!=theFtdiDeviceInfoMap_.end();it++)
     if (it->second!=NULL) delete it->second;
   theFtdiDeviceInfoMap_.clear();
-  for ( std::map<uint32_t,dif::interface*>::iterator it=_dif::interfaceMap.begin();it!=_dif::interfaceMap.end();it++)
+  for ( auto it=_interfaceMap.begin();it!=_interfaceMap.end();it++)
     if (it->second!=NULL) delete it->second;
-  _dif::interfaceMap.clear();
+  _interfaceMap.clear();
   system("/bin/rm /var/log/pi/ftdi_devices");
   system("/opt/dhcal/bin/ListDevices.py");
   std::string line;
@@ -587,14 +587,14 @@ void DifManager::prepareDevices()
 
 void DifManager::joinThreads()
 {
-  for (auto it=_interfaceMap.begin();it=_interfaceMap.end();it++)
-    it->second.setReadoutStarted(false);
+  for (auto it=_interfaceMap.begin();it!=_interfaceMap.end();it++)
+    it->second->setReadoutStarted(false);
   for (auto it=g_d.begin();it!=g_d.end();it++)
     it->join();
   g_d.clear();
 
 }
-void DifManager::startDifThread(dif::interface* d)
+void DifManager::startDIFThread(dif::interface* d)
 {
   if (d->readoutStarted()) return;
   d->setReadoutStarted(true);	
