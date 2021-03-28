@@ -12,7 +12,7 @@ set(SRCS
   driver.cc
   reader.cc
   interface.cc
-
+  SdccManager.cc
   )
 	
 set(HEADERS
@@ -20,6 +20,7 @@ set(HEADERS
   driver.hh
   reader.hh
   interface.hh
+  SdccManager.hh
 
   )
 link_directories( ../../lib )

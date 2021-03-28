@@ -18,7 +18,7 @@ namespace sdcc
     void test();
   
   
-    inline sdcc::reader* getCCCReadout(){return _sdcc;}
+    inline sdcc::reader* getReader(){return _sdcc;}
   private:
     sdcc::reader* _sdcc;
 
