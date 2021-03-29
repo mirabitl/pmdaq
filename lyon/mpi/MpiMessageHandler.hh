@@ -1,6 +1,6 @@
 #pragma once
 #include "MessageHandler.hh"
-
+#include <mutex>
 
 #include <map>
 #include <string>
@@ -22,6 +22,7 @@ class MpiMessageHandler : public mpi::MessageHandler
     std::map<uint64_t, ptrBuf> _sockMap;
     std::map<uint64_t,MPIFunctor> _handlers;
     uint64_t _npacket;
+    std::mutex _sem;
   };
 };
 

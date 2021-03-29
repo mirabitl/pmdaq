@@ -32,6 +32,7 @@ static LoggerPtr _logMpi(Logger::getLogger("PMDAQ_MPI"));
 mpi::MpiMessageHandler::MpiMessageHandler(std::string directory) : _storeDir(directory),_npacket(0)
 {
   _sockMap.clear();
+ 
 
 }
 
@@ -39,6 +40,7 @@ void mpi::MpiMessageHandler::processMessage(NL::Socket* socket) //throw (mpi::Mp
 {
   // build id
 
+  const std::lock_guard<std::mutex> lock(_sem);
   uint64_t id=( (uint64_t) utils::convertIP(socket->hostTo())<<32)|socket->portTo();
   PM_DEBUG(_logMpi,"Message received from "<<socket->hostTo()<<":"<<socket->portTo()<<" =>"<<std::hex<<id<<std::dec);
   std::map<uint64_t, ptrBuf>::iterator itsock=_sockMap.find(id);
@@ -126,6 +128,7 @@ void mpi::MpiMessageHandler::processMessage(NL::Socket* socket) //throw (mpi::Mp
       PM_ERROR(_logMpi,"Message received from "<<socket->hostTo()<<":"<<socket->portTo()<<" =>"<<std::hex<<id<<std::dec<<std::flush);
       fprintf(stderr,"%s No data handler for socket id %ld \n",__PRETTY_FUNCTION__,id);
       p.first=0;
+
       return;
           
     }
