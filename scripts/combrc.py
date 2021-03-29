@@ -31,15 +31,15 @@ class combRC(pmdaqrc.pmdaqControl):
             json.loads(self.session.apps['lyon_gpio'][0].sendCommand("VMEOFF", {}))
             json.loads(self.session.apps['lyon_gpio'][0].sendCommand("VMEON", {}))
             time.sleep(5)
-        if ("lyon_ccc" in self.session.apps):
-            s = json.loads(self.session.apps['lyon_ccc'][0].sendTransition("OPEN", m))
-            s = json.loads(self.session.apps['lyon_ccc'][0].sendTransition("INITIALISE", m))
-            s = json.loads(self.session.apps['lyon_ccc'][0].sendTransition("CONFIGURE", m))
-            json.loads(self.session.apps['lyon_ccc'][0].sendTransition("STOP", m))
+        if ("lyon_sdcc" in self.session.apps):
+            s = json.loads(self.session.apps['lyon_sdcc'][0].sendTransition("OPEN", m))
+            s = json.loads(self.session.apps['lyon_sdcc'][0].sendTransition("INITIALISE", m))
+            s = json.loads(self.session.apps['lyon_sdcc'][0].sendTransition("CONFIGURE", m))
+            json.loads(self.session.apps['lyon_sdcc'][0].sendTransition("STOP", m))
             time.sleep(1.);
-            json.loads(self.session.apps['lyon_ccc'][0].sendCommand("CCCRESET", {}))
-            json.loads(self.session.apps['lyon_ccc'][0].sendCommand("DIFRESET", {}))
-            r["lyon_ccc"] = s
+            json.loads(self.session.apps['lyon_sdcc'][0].sendCommand("CCCRESET", {}))
+            json.loads(self.session.apps['lyon_sdcc'][0].sendCommand("DIFRESET", {}))
+            r["lyon_sdcc"] = s
         # Mdcc 
         if ("lyon_mdcc" in self.session.apps):
             s = json.loads(self.session.apps['lyon_mdcc'][0].sendTransition("INITIALISE", m))
@@ -81,14 +81,14 @@ class combRC(pmdaqrc.pmdaqControl):
                 s = json.loads(x.sendTransition("INITIALISE", m))
                 r["lyon_gricv1_%d" % x.instance] = s
         # Old DIF Fw
-        if ("lyon_DIF" in self.session.apps):
-            for x in self.session.apps["lyon_DIF"]:
+        if ("lyon_dif" in self.session.apps):
+            for x in self.session.apps["lyon_dif"]:
                 s = json.loads(x.sendTransition("SCAN", m))
-                r["lyon_DIF_SCAN_%d" % x.instance] = s
+                r["lyon_dif_SCAN_%d" % x.instance] = s
 
-            for x in self.session.apps["lyon_DIF"]:
+            for x in self.session.apps["lyon_dif"]:
                 s = json.loads(x.sendTransition("INITIALISE", m))
-                r["lyon_DIF_INIT_%d" % x.instance] = s
+                r["lyon_dif_INIT_%d" % x.instance] = s
 
         self.daq_answer=json.dumps(r)
         self.storeState()
@@ -113,14 +113,14 @@ class combRC(pmdaqrc.pmdaqControl):
                 s = json.loads(x.sendTransition("CONFIGURE", m))
                 r["lyon_gricv1_%d" % x.instance] = s
         #Old DIF Firmware
-        if ("lyon_ccc" in self.session.apps):
-            json.loads(self.session.apps['lyon_ccc'][0].sendCommand("CCCRESET", {}))
-            s=json.loads(self.session.apps['lyon_ccc'][0].sendCommand("DIFRESET", {}))
-            r["lyon_ccc"] = s
-        if ("lyon_DIF" in self.session.apps):
-            for x in self.session.apps["lyon_DIF"]:
+        if ("lyon_sdcc" in self.session.apps):
+            json.loads(self.session.apps['lyon_sdcc'][0].sendCommand("CCCRESET", {}))
+            s=json.loads(self.session.apps['lyon_sdcc'][0].sendCommand("DIFRESET", {}))
+            r["lyon_sdcc"] = s
+        if ("lyon_dif" in self.session.apps):
+            for x in self.session.apps["lyon_dif"]:
                 s = json.loads(x.sendTransition("CONFIGURE", m))
-                r["lyon_DIF_%d" % x.instance] = s
+                r["lyon_dif_%d" % x.instance] = s
         self.daq_answer= json.dumps(r)
         self.storeState()
        
@@ -149,13 +149,13 @@ class combRC(pmdaqrc.pmdaqControl):
                 s = json.loads(x.sendTransition("STOP", m))
                 r["lyon_gricv1_%d" % x.instance] = s
         #Old DIF fw
-        if ("lyon_ccc" in self.session.apps):
-            s=json.loads(self.session.apps['lyon_ccc'][0].sendTransition("STOP", m))
-            r["lyon_ccc"] = s
-        if ("lyon_DIF" in self.session.apps):
-            for x in self.session.apps["lyon_DIF"]:
+        if ("lyon_sdcc" in self.session.apps):
+            s=json.loads(self.session.apps['lyon_sdcc'][0].sendTransition("STOP", m))
+            r["lyon_sdcc"] = s
+        if ("lyon_dif" in self.session.apps):
+            for x in self.session.apps["lyon_dif"]:
                 s = json.loads(x.sendTransition("STOP", m))
-                r["lyon_DIF_%d" % x.instance] = s
+                r["lyon_dif_%d" % x.instance] = s
         
         for x in self.session.apps["evb_builder"]:
             s = json.loads(x.sendTransition("STOP", m))
@@ -184,10 +184,10 @@ class combRC(pmdaqrc.pmdaqControl):
                 s = json.loads(x.sendTransition("DESTROY", m))
                 r["lyon_gricv1_%d" % x.instance] = s
         #old DIF Fw
-        if ("lyon_DIF" in self.session.apps):
-            for x in self.session.apps["lyon_DIF"]:
+        if ("lyon_dif" in self.session.apps):
+            for x in self.session.apps["lyon_dif"]:
                 s = json.loads(x.sendTransition("DESTROY", m))
-                r["lyon_DIF_%d" % x.instance] = s
+                r["lyon_dif_%d" % x.instance] = s
 
         if ("lyon_mbmdcc" in self.session.apps):
             for x in self.session.apps["lyon_mbmdcc"]:
@@ -240,14 +240,14 @@ class combRC(pmdaqrc.pmdaqControl):
 
 
         #old firmware
-        if ("lyon_DIF" in self.session.apps):
-            for x in self.session.apps["lyon_DIF"]:
+        if ("lyon_dif" in self.session.apps):
+            for x in self.session.apps["lyon_dif"]:
                 s = json.loads(x.sendTransition("START", m))
-                r["lyon_DIF_%d" % x.instance] = s
+                r["lyon_dif_%d" % x.instance] = s
 
-        if ("lyon_ccc" in self.session.apps):
-            s=json.loads(self.session.apps['lyon_ccc'][0].sendTransition("START", m))
-            r["lyon_ccc"] = s
+        if ("lyon_sdcc" in self.session.apps):
+            s=json.loads(self.session.apps['lyon_sdcc'][0].sendTransition("START", m))
+            r["lyon_sdcc"] = s
 
         self.daq_answer= json.dumps(r)
         self.storeState()
@@ -300,7 +300,7 @@ class combRC(pmdaqrc.pmdaqControl):
 
                     #rep["%s_%d" % (s.host, s.infos['instance'])] = r
         for k, v in self.session.apps.items():
-            if (k != "lyon_DIF"):
+            if (k != "lyon_dif"):
                 continue
             for s in v:
                 mr = json.loads(s.sendCommand("STATUS", {}))
@@ -502,4 +502,4 @@ class combRC(pmdaqrc.pmdaqControl):
     def setControlRegister(self,ctrlreg):
         param = {}
         param["value"] = int(ctrlreg, 16)
-        return self.processCommand("CTRLREG", "lyon_DIF", param)
+        return self.processCommand("CTRLREG", "lyon_dif", param)
