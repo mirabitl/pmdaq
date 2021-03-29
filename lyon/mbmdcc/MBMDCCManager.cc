@@ -147,6 +147,10 @@ void MbmdccManager::fsm_initialise(http_request m)
   _mpi->addDevice(idif->second);
 
   PMF_INFO(_logMbmdcc," Registration done for "<<std::hex<<ipboard<<std::dec);
+  PMF_INFO(_logMbmdcc,"START Listenning");
+
+  // Listen All Mbmdcc sockets
+  _mpi->listen();
 
 
   if (utils::isMember(params(),"spillon"))
@@ -161,10 +165,6 @@ void MbmdccManager::fsm_initialise(http_request m)
     {
       this->setSpillRegister(params()["spillregister"].as_integer());
     }
-    PMF_INFO(_logMbmdcc,"START Listenning");
-
-  // Listen All Mbmdcc sockets
-  _mpi->listen();
 
   PMF_INFO(_logMbmdcc," Init done  ");
   par["status"]=json::value::string(U("done"));

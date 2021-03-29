@@ -123,7 +123,8 @@ void mpi::MpiMessageHandler::processMessage(NL::Socket* socket) //throw (mpi::Mp
   std::map<uint64_t,MPIFunctor >::iterator icmd=_handlers.find(id);
   if (icmd==_handlers.end())
     {
-      printf("%s No data handler for socket id %ld \n",__PRETTY_FUNCTION__,id);
+      PM_ERROR(_logMpi,"Message received from "<<socket->hostTo()<<":"<<socket->portTo()<<" =>"<<std::hex<<id<<std::dec<<std::flush);
+      fprintf(stderr,"%s No data handler for socket id %ld \n",__PRETTY_FUNCTION__,id);
       p.first=0;
       return;
           
