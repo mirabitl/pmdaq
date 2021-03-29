@@ -12,6 +12,7 @@ set(SRCS
   interface.cc
   registerhandler.cc
   sockethandler.cc
+  messagehandler.cc
   MBMDCCManager.cc	
   )
 set(HEADERS

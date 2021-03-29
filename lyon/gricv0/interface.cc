@@ -54,7 +54,7 @@ gricv0::Interface::Interface() :  _group(NULL)
 {
   // Initialise NetLink
   NL::init();
-  _msh =new mpi::MpiMessageHandler("/dev/shm");
+  _msh =new gricv0::messageHandler();
 
  
 }

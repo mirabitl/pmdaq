@@ -46,6 +46,20 @@ namespace febv1
     
     };
 
+   /// Net link message
+    class messageHandler : public mpi::MessageHandler
+    {
+    public:
+      messageHandler();
+      virtual void processMessage(NL::Socket* socket);
+      virtual void removeSocket(NL::Socket* socket);
+      void addHandler(uint64_t id,MPIFunctor f);      
+    private:
+      std::map<uint64_t, ptrBuf> _sockMap;
+      std::map<uint64_t,MPIFunctor> _handlers;
+      uint64_t _npacket;
+      std::mutex _sem;
+    };
 
     /// Gere les connections aux socket et le select
     
@@ -69,7 +83,7 @@ namespace febv1
 
       NL::SocketGroup* _group;
  
-      mpi::MpiMessageHandler* _msh;
+      febv1::messageHandler* _msh;
       mpi::OnRead* _onRead;
       mpi::OnAccept* _onAccept;
       mpi::OnClientDisconnect* _onClientDisconnect;

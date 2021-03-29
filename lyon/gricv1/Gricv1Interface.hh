@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MpiMessageHandler.hh"
+#include "MessageHandler.hh"
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -46,7 +46,22 @@ static LoggerPtr _logGricv1(Logger::getLogger("PMDAQ_GRICV1"));
     
     };
 
+    /// Net link message
+    class messageHandler : public mpi::MessageHandler
+    {
+    public:
+      messageHandler();
+      virtual void processMessage(NL::Socket* socket);
+      virtual void removeSocket(NL::Socket* socket);
+      void addHandler(uint64_t id,MPIFunctor f);      
+    private:
+      std::map<uint64_t, ptrBuf> _sockMap;
+      std::map<uint64_t,MPIFunctor> _handlers;
+      uint64_t _npacket;
+      std::mutex _sem;
+    };
 
+    
     /// Gere les connections aux socket et le select
     
     class Interface 
@@ -68,7 +83,7 @@ static LoggerPtr _logGricv1(Logger::getLogger("PMDAQ_GRICV1"));
 
       NL::SocketGroup* _group;
  
-      mpi::MpiMessageHandler* _msh;
+      gricv1::messageHandler* _msh;
       mpi::OnRead* _onRead;
       mpi::OnAccept* _onAccept;
       mpi::OnClientDisconnect* _onClientDisconnect;

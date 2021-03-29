@@ -14,6 +14,7 @@ set(SRCS
   registerhandler.cc
   sockethandler.cc
   slchandler.cc
+  messagehandler.cc
   Gricv1Manager.cc
   )
 	

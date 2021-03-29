@@ -3,6 +3,9 @@
 #include <netlink/socket_group.h>
 #include <string>
 #include "stdafx.hh"
+typedef std::pair<uint32_t,unsigned char*> ptrBuf;
+typedef std::function<void (uint64_t,uint16_t,char*)> MPIFunctor;
+
 namespace mpi {
 
 struct MpiException : public std::exception
@@ -12,7 +15,8 @@ struct MpiException : public std::exception
    ~MpiException() throw () {} // Updated
    const char* what() const throw() { return s.c_str(); }
 };
-  
+
+
 class MessageHandler
 {
 public:

@@ -13,6 +13,7 @@ set(SRCS
   interface.cc
   registerhandler.cc
   sockethandler.cc
+  messagehandler.cc
   Febv1Manager.cc
   )
 	
