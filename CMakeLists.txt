@@ -111,6 +111,16 @@ target_link_libraries(pmd PRIVATE Threads::Threads)
 target_include_directories(pmd PRIVATE include)
 target_link_libraries(pmd PRIVATE pmdaq ${PMDAQ_LIBS})
 
+
+add_executable(scannet src/scannet.cc ${HEADERS})
+
+
+
+target_link_libraries(scannet PRIVATE Threads::Threads)
+
+target_include_directories(scannet PRIVATE include)
+target_link_libraries(scannet PRIVATE pmdaq ${PMDAQ_LIBS})
+
 file(GLOB SCRIPT_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/*.py"
      )
@@ -134,5 +144,5 @@ install(FILES ${ETC_TARGET} DESTINATION etc)
 install(FILES ${MG_TARGET} ${RC_TARGET} ${DAEMON_TARGET} DESTINATION bin)
 
 
-install(TARGETS pmd  DESTINATION bin  ARCHIVE DESTINATION bin)
+install(TARGETS pmd scannet DESTINATION bin  ARCHIVE DESTINATION bin)
 install(CODE "execute_process(COMMAND chmod -R +x ${CMAKE_INSTALL_PREFIX}/bin/)")
