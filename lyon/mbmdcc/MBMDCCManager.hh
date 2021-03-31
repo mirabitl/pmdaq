@@ -54,6 +54,7 @@ public:
   uint32_t externalTrigger();
   void reloadCalibCount();
   void resetTDC(uint8_t b);
+  void resetFSM(uint8_t b);
   uint32_t busyCount(uint8_t b);
   uint32_t readRegister(uint32_t adr);
   void writeRegister(uint32_t adr,uint32_t val);

@@ -1,5 +1,5 @@
 #include "MBMDCCManager.hh"
-using namespace mpi;
+
 #include <unistd.h>
 #include <sys/dir.h>  
 #include <sys/param.h>  
@@ -152,7 +152,10 @@ void MbmdccManager::fsm_initialise(http_request m)
   // Listen All Mbmdcc sockets
   _mpi->listen();
 
-
+  this->resetFSM(0x1);
+  ::usleep(100000);
+  this->resetFSM(0x0);
+  
   if (utils::isMember(params(),"spillon"))
     {
       this->setSpillOn(params()["spillon"].as_integer());
@@ -165,7 +168,7 @@ void MbmdccManager::fsm_initialise(http_request m)
     {
       this->setSpillRegister(params()["spillregister"].as_integer());
     }
-
+ 
   PMF_INFO(_logMbmdcc," Init done  ");
   par["status"]=json::value::string(U("done"));
   Reply(status_codes::OK,par);
@@ -280,7 +283,7 @@ void MbmdccManager::reloadCalibCount(){
 
 
 
-
+void MbmdccManager::resetFSM(uint8_t b){this->writeRegister(mbmdcc::Message::Register::RESET_FSM,b);}
 void MbmdccManager::resetTDC(uint8_t b){this->writeRegister(mbmdcc::Message::Register::RESET_FE,b);}
 uint32_t MbmdccManager::busyCount(uint8_t b){return this->readRegister(mbmdcc::Message::Register::BUSY_0+(b&0xF));}
 

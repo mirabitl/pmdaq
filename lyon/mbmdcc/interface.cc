@@ -1,5 +1,5 @@
 #include "MBMDCCInterface.hh"
-using namespace mpi;
+
 #include <unistd.h>
 #include <sys/dir.h>  
 #include <sys/param.h>  
@@ -64,10 +64,10 @@ void mbmdcc::Interface::initialise()
    // Initialise the network
    if (_group!=NULL) delete _group;
    _group=new NL::SocketGroup();
-   _onRead= new mpi::OnRead(_msh);
-  _onClientDisconnect= new mpi::OnClientDisconnect();
-  _onDisconnect= new mpi::OnDisconnect(_msh);
-  _onAccept=new mpi::OnAccept(_msh);
+   _onRead= new mbmdcc::OnRead(_msh);
+  _onClientDisconnect= new mbmdcc::OnClientDisconnect();
+  _onDisconnect= new mbmdcc::OnDisconnect(_msh);
+  _onAccept=new mbmdcc::OnAccept(_msh);
   _group->setCmdOnRead(_onRead);
   _group->setCmdOnAccept(_onAccept);
   _group->setCmdOnDisconnect(_onClientDisconnect);

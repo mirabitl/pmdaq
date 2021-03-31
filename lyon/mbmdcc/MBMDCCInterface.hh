@@ -1,6 +1,8 @@
 #pragma once
 
-#include "MpiMessageHandler.hh"
+
+#include <netlink/socket.h>
+#include <netlink/socket_group.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -83,6 +85,8 @@ x"0041"        TDC_calib2_register                Todo
 x"0100"        version        RO        x"14060100" ;20-FRM-PT-06-001_00
  */
 
+typedef std::pair<uint32_t,unsigned char*> ptrBuf;
+typedef std::function<void (uint64_t,uint16_t,char*)> MPIFunctor;
 
 static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
   namespace mbmdcc
@@ -117,6 +121,7 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
 		     TDC_T5=0x3A,TDC_CNT5=0x3B,
 		     TDC_T6=0x3C,TDC_CNT6=0x3D,
 		     TDC_CAL1=0x40,TDC_CAL2=0x41,
+		     RESET_FSM=0x60,
 		     VERSION=0x100};
 		     
 
@@ -135,7 +140,7 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
     };
 
 
-    class messageHandler : public mpi::MessageHandler
+    class messageHandler 
     {
     public:
       messageHandler();
@@ -149,6 +154,51 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
       std::mutex _sem;
     };
 
+    class OnAccept: public NL::SocketGroupCmd 
+    {
+      
+    public:
+      OnAccept(messageHandler* msh);
+      void exec(NL::Socket* socket, NL::SocketGroup* group, void* reference) ;
+    private:
+      messageHandler* _msh;
+    };
+
+
+    class OnRead: public NL::SocketGroupCmd 
+    {
+    public:
+      OnRead(messageHandler* msh);
+      void exec(NL::Socket* socket, NL::SocketGroup* group, void* reference);
+    public:
+      unsigned char _readBuffer[0x80000];
+    private:
+      messageHandler* _msh;
+    };
+
+
+    class OnDisconnect: public NL::SocketGroupCmd 
+    {
+    public:
+      OnDisconnect(messageHandler* msh);
+      void exec(NL::Socket* socket, NL::SocketGroup* group, void* reference);
+      bool disconnected(){return _disconnect;}
+    private:
+      messageHandler* _msh;
+      bool _disconnect;
+    };
+
+
+
+    class OnClientDisconnect: public NL::SocketGroupCmd 
+    {
+    public:
+      OnClientDisconnect();
+      void exec(NL::Socket* socket, NL::SocketGroup* group, void* reference);
+      bool disconnected(){return _disconnect;}
+    private:
+      bool _disconnect;
+    };
 
 
     /// Gere les connections aux socket et le select
@@ -174,10 +224,10 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
       NL::SocketGroup* _group;
  
       mbmdcc::messageHandler* _msh;
-      mpi::OnRead* _onRead;
-      mpi::OnAccept* _onAccept;
-      mpi::OnClientDisconnect* _onClientDisconnect;
-      mpi::OnDisconnect* _onDisconnect;
+      mbmdcc::OnRead* _onRead;
+      mbmdcc::OnAccept* _onAccept;
+      mbmdcc::OnClientDisconnect* _onClientDisconnect;
+      mbmdcc::OnDisconnect* _onDisconnect;
       std::thread g_store;
       bool _running;
     };

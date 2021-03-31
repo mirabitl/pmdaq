@@ -23,7 +23,7 @@
 #include "utils.hh"
 #include <err.h>
 
-using namespace mpi;
+//using namespace mpi;
 
 mbmdcc::messageHandler::messageHandler() : _npacket(0) {_sockMap.clear();}
 
@@ -98,12 +98,13 @@ void mbmdcc::messageHandler::processMessage(NL::Socket* socket)
   std::map<uint64_t,MPIFunctor >::iterator icmd=_handlers.find(id);
   if (icmd==_handlers.end())
     {
-      PM_ERROR(_logMbmdcc,"Message received from "<<socket->hostTo()<<":"<<socket->portTo()<<" =>"<<std::hex<<id<<std::dec<<std::flush);
+      uint64_t idn=( (uint64_t) utils::convertIP(socket->hostTo())<<32)|socket->portTo();
+      PM_ERROR(_logMbmdcc,"Message received from "<<socket->hostTo()<<":"<<socket->portTo()<<" =>"<<std::hex<<utils::convertIP(socket->hostTo())<<" ID "<<id<<" et maintenant "<< idn <<std::dec<<std::flush);
       fprintf(stderr,"%s No data handler for socket id %ld \n",__PRETTY_FUNCTION__,id);
       p.first=0;
 
       return;
-          
+
     }
   icmd->second(id,p.first,(char*) p.second);
   p.first=0;
@@ -122,4 +123,66 @@ void mbmdcc::messageHandler::addHandler(uint64_t id,MPIFunctor f)
 {
   std::pair<uint64_t,MPIFunctor> p(id,f);
   _handlers.insert(p);
+}
+
+
+mbmdcc::OnAccept::OnAccept(messageHandler* msh) : _msh(msh) {}
+void mbmdcc::OnAccept:: exec(NL::Socket* socket, NL::SocketGroup* group, void* reference) 
+{
+  NL::Socket* newConnection = socket->accept();
+  group->add(newConnection);
+  cout << "\nConnection " << newConnection->hostTo() << ":" << newConnection->portTo() << " added...";
+  cout.flush();
+}
+
+
+
+
+mbmdcc::OnRead::OnRead(messageHandler* msh) : _msh(msh) {}
+void mbmdcc::OnRead::exec(NL::Socket* socket, NL::SocketGroup* group, void* reference) {
+
+  //cout << "\nREAD -- ";
+  _msh->processMessage(socket);
+
+
+    cout.flush();
+  /*    unsigned char buffer[256];
+    buffer[255] = '\0';
+    memset(theReadBuffer_,0,0x10000);
+    //socket->read(buffer, 255);
+    size_t msgLen =socket->read(theReadBuffer_,0x10000);
+    std::string sread(buffer);
+    cout << "Message from " << socket->hostTo() << ":" << socket->portTo() << ". Text received: " << sread<<std::endl;
+    cout.flush();
+		
+    for(unsigned i=1; i < (unsigned) group->size(); ++i)
+    {
+    if(group->get(i) != socket)
+    {
+    printf(" \t sending %d  %d %s \n",i,sread.size(),sread.c_str());
+    group->get(i)->send(sread.c_str(), sread.size());
+    }
+    }
+  */
+}
+
+mbmdcc::OnDisconnect::OnDisconnect(messageHandler* msh) : _msh(msh),_disconnect(false) {}
+void mbmdcc::OnDisconnect::exec(NL::Socket* socket, NL::SocketGroup* group, void* reference) {
+
+  group->remove(socket);
+  cout << "\nClient " << socket->hostTo() << " disconnected...";
+  //_msh->removeSocket(socket);
+  cout.flush();
+  _disconnect=true;
+  //delete socket;
+}
+
+mbmdcc::OnClientDisconnect::OnClientDisconnect() : _disconnect(false) {}
+void mbmdcc::OnClientDisconnect::exec(NL::Socket* socket, NL::SocketGroup* group, void* reference) {
+
+  if (!_disconnect)
+    cout <<__PRETTY_FUNCTION__<< "\nClient " << socket->hostTo() << " disconnected..."<<std::flush;
+  _disconnect=true;
+  //uint32_t* i =(uint32_t*) reference;
+  //(*i)=0xDEAD;
 }

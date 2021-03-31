@@ -46,9 +46,9 @@ include(../../CMake.defs)
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
 #find_package(log4cxx CONFIG REQUIRED)
 #target_link_libraries(lyon_mbmdcc PRIVATE log4cxx)
-target_link_libraries(lyon_mbmdcc PRIVATE netLink lyon_mpi  evb)
+target_link_libraries(lyon_mbmdcc PRIVATE netLink   evb)
 
-target_include_directories(lyon_mbmdcc PRIVATE ../../include ../mpi  ../../evb/include )
+target_include_directories(lyon_mbmdcc PRIVATE ../../include   ../../evb/include )
 
 
 # Créé des variables avec les fichiers à combmdccler
