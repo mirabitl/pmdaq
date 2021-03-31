@@ -58,7 +58,7 @@ void mbmdcc::messageHandler::processMessage(NL::Socket* socket)
 
   const std::lock_guard<std::mutex> lock(_sem);
   uint64_t id=this->Id(socket);
-  PM_INFO(_logMbmdcc,"Message received from "<<socket->hostTo()<<":"<<socket->portTo()<<" =>"<<std::hex<<id<<std::dec<<" Read Size "<<socket->nextReadSize());
+  PM_DEBUG(_logMbmdcc,"Message received from "<<socket->hostTo()<<":"<<socket->portTo()<<" =>"<<std::hex<<id<<std::dec<<" Read Size "<<socket->nextReadSize());
   std::map<uint64_t, ptrBuf>::iterator itsock=_sockMap.find(id);
 
   if (itsock==_sockMap.end())

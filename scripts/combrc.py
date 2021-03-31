@@ -48,6 +48,12 @@ class combRC(pmdaqrc.pmdaqControl):
             s = json.loads(self.session.apps['lyon_mbmdcc'][0].sendTransition("INITIALISE", m))
             r["lyon_mbmdcc"] = s
             self.md_name="lyon_mbmdcc"
+        # Mbdaq0
+        if ("lyon_mbdaq0" in self.session.apps):
+            for x in self.session.apps["lyon_mbdaq0"]:
+                s = json.loads(x.sendTransition("INITIALISE", m))
+                r["lyon_mbdaq0_%d" % x.instance] = s
+
         # evb_builder
         for x in self.session.apps["evb_builder"]:
             s = json.loads(x.sendTransition("CONFIGURE", m))

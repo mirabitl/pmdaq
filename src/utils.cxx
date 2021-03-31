@@ -24,6 +24,9 @@
 uint32_t utils::convertIP(std::string hname)
 {
   //struct hostent *he;
+  in_addr_t ls0 = inet_addr(hname.c_str());
+  //fprintf(stderr,"IP found %s %d\n",hname.c_str(),ls1);
+  return (uint32_t)ls0;
 
   struct hostent hbuf, *hp; /* output DNS host entry */
   char tmp[8192];         /* temporary scratch buffer */

@@ -66,6 +66,7 @@ add_subdirectory(lyon/pmr)
 add_subdirectory(lyon/mdcc)
 add_subdirectory(lyon/dif)
 add_subdirectory(lyon/sdcc)
+add_subdirectory(lyon/mbdaq0)
 
 include(CPack)
 
