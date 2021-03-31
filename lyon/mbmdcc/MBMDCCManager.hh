@@ -70,6 +70,7 @@ public:
   void c_spillon(http_request m);
   void c_spilloff(http_request m);
   void c_resettdc(http_request m);
+  void c_resetfsm(http_request m);
   void c_channelon(http_request m);
   void c_sethardreset(http_request m);
   void c_setspillregister(http_request m);

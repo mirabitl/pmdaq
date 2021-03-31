@@ -27,12 +27,38 @@
 
 mbmdcc::messageHandler::messageHandler() : _npacket(0) {_sockMap.clear();}
 
+uint64_t mbmdcc::messageHandler::Id(NL::Socket* socket)
+{
+  struct hostent *he;
+  struct in_addr **addr_list;
+  int i;
+  char ip[100];
+  if ((he = gethostbyname(socket->hostTo().c_str())) == NULL)
+  {
+    return 0;
+  }
+
+  addr_list = (struct in_addr **)he->h_addr_list;
+
+  for (i = 0; addr_list[i] != NULL; i++)
+  {
+    //Return the first one;
+    strcpy(ip, inet_ntoa(*addr_list[i]));
+    break;
+  }
+
+  in_addr_t ls1 = inet_addr(ip);
+
+  
+  return ((uint64_t)ls1<<32)|((uint64_t) socket->portTo());
+
+}
 void mbmdcc::messageHandler::processMessage(NL::Socket* socket) 
 {
   // build id
 
   const std::lock_guard<std::mutex> lock(_sem);
-  uint64_t id=( (uint64_t) utils::convertIP(socket->hostTo())<<32)|socket->portTo();
+  uint64_t id=this->Id(socket);
   PM_DEBUG(_logMbmdcc,"Message received from "<<socket->hostTo()<<":"<<socket->portTo()<<" =>"<<std::hex<<id<<std::dec);
   std::map<uint64_t, ptrBuf>::iterator itsock=_sockMap.find(id);
 
@@ -98,7 +124,7 @@ void mbmdcc::messageHandler::processMessage(NL::Socket* socket)
   std::map<uint64_t,MPIFunctor >::iterator icmd=_handlers.find(id);
   if (icmd==_handlers.end())
     {
-      uint64_t idn=( (uint64_t) utils::convertIP(socket->hostTo())<<32)|socket->portTo();
+      uint64_t idn=this->Id(socket);
       PM_ERROR(_logMbmdcc,"Message received from "<<socket->hostTo()<<":"<<socket->portTo()<<" =>"<<std::hex<<utils::convertIP(socket->hostTo())<<" ID "<<id<<" et maintenant "<< idn <<std::dec<<std::flush);
       fprintf(stderr,"%s No data handler for socket id %ld \n",__PRETTY_FUNCTION__,id);
       p.first=0;
@@ -112,7 +138,7 @@ void mbmdcc::messageHandler::processMessage(NL::Socket* socket)
 }
 void mbmdcc::messageHandler::removeSocket(NL::Socket* socket)
 {
-  uint64_t id=((uint64_t) utils::convertIP(socket->hostTo())<<32)|socket->portTo();
+  uint64_t id=this->Id(socket);
   std::map<uint64_t, ptrBuf>::iterator itsock=_sockMap.find(id);
   if (itsock==_sockMap.end()) return;
   delete itsock->second.second;

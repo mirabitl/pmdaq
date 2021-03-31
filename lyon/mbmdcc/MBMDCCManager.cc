@@ -52,6 +52,7 @@ void MbmdccManager::initialise()
   this->addCommand("CHANNELON",std::bind(&MbmdccManager::c_channelon,this,std::placeholders::_1));
   
   this->addCommand("RESETTDC",std::bind(&MbmdccManager::c_resettdc,this,std::placeholders::_1));
+  this->addCommand("RESETFSM",std::bind(&MbmdccManager::c_resetfsm,this,std::placeholders::_1));
   this->addCommand("CALIBON",std::bind(&MbmdccManager::c_calibon,this,std::placeholders::_1));
   this->addCommand("CALIBOFF",std::bind(&MbmdccManager::c_caliboff,this,std::placeholders::_1));
   this->addCommand("RELOADCALIB",std::bind(&MbmdccManager::c_reloadcalib,this,std::placeholders::_1));
@@ -152,6 +153,7 @@ void MbmdccManager::fsm_initialise(http_request m)
   // Listen All Mbmdcc sockets
   _mpi->listen();
 
+  // Reset Busy state
   this->resetFSM(0x1);
   ::usleep(100000);
   this->resetFSM(0x0);
@@ -447,6 +449,18 @@ void MbmdccManager::c_resettdc(http_request m)
 
   uint32_t nc=utils::queryIntValue(m,"value",0);
   this->resetTDC(nc&0xF);
+
+  par["STATUS"]=json::value::string(U("DONE"));
+
+  Reply(status_codes::OK,par);
+} 
+void MbmdccManager::c_resetfsm(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logMbmdcc," Reset FSM called ");
+
+  uint32_t nc=utils::queryIntValue(m,"value",0);
+  this->resetFSM(nc&0xF);
 
   par["STATUS"]=json::value::string(U("DONE"));
 

@@ -146,7 +146,8 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
       messageHandler();
       virtual void processMessage(NL::Socket* socket);
       virtual void removeSocket(NL::Socket* socket);
-      void addHandler(uint64_t id,MPIFunctor f);      
+      void addHandler(uint64_t id,MPIFunctor f);
+      uint64_t Id(NL::Socket* socket);
     private:
       std::map<uint64_t, ptrBuf> _sockMap;
       std::map<uint64_t,MPIFunctor> _handlers;
