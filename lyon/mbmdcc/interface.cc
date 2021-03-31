@@ -66,10 +66,10 @@ void mbmdcc::Interface::initialise()
    _group=new NL::SocketGroup();
    _onRead= new mbmdcc::OnRead(_msh);
   _onClientDisconnect= new mbmdcc::OnClientDisconnect();
-  _onDisconnect= new mbmdcc::OnDisconnect(_msh);
-  _onAccept=new mbmdcc::OnAccept(_msh);
+  //_onDisconnect= new mbmdcc::OnDisconnect(_msh);
+  //_onAccept=new mbmdcc::OnAccept(_msh);
   _group->setCmdOnRead(_onRead);
-  _group->setCmdOnAccept(_onAccept);
+  //  _group->setCmdOnAccept(_onAccept);
   _group->setCmdOnDisconnect(_onClientDisconnect);
    // Loop on Asic Map and find existing DIF
   // Register their slow control socket (10001) and readout one (10002)

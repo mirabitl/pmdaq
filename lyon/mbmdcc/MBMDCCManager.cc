@@ -148,15 +148,18 @@ void MbmdccManager::fsm_initialise(http_request m)
   _mpi->addDevice(idif->second);
 
   PMF_INFO(_logMbmdcc," Registration done for "<<std::hex<<ipboard<<std::dec);
-  PMF_INFO(_logMbmdcc,"START Listenning");
+  PMF_INFO(_logMbmdcc,"START Listenning"<<std::flush);
 
   // Listen All Mbmdcc sockets
   _mpi->listen();
 
   // Reset Busy state
+  PMF_INFO(_logMbmdcc,"Resetting FSM"<<std::flush);
   this->resetFSM(0x1);
   ::usleep(100000);
   this->resetFSM(0x0);
+
+  PMF_INFO(_logMbmdcc,"Set parameters"<<std::flush);
   
   if (utils::isMember(params(),"spillon"))
     {

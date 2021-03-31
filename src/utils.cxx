@@ -23,25 +23,30 @@
 
 uint32_t utils::convertIP(std::string hname)
 {
-  struct hostent *he;
-  struct in_addr **addr_list;
-  int i;
-  char ip[100];
-  if ((he = gethostbyname(hname.c_str())) == NULL)
-  {
+  //struct hostent *he;
+
+  struct hostent hbuf, *hp; /* output DNS host entry */
+  char tmp[8192];         /* temporary scratch buffer */
+  int my_h_errno, rc;       /* DNS error code and return code */
+
+  rc = gethostbyname_r(hname.c_str(), &hbuf, tmp, 8192, &hp, &my_h_errno);
+  if (rc != 0) {
+    printf("gethostbyname_r error: %s\n", hstrerror(my_h_errno));
     return 0;
   }
+  struct in_addr **addr_list = (struct in_addr **)hp->h_addr_list;
 
-  addr_list = (struct in_addr **)he->h_addr_list;
-
-  for (i = 0; addr_list[i] != NULL; i++)
+  
+  char ip[100];memset(ip,0,100);
+  for (int i = 0; addr_list[i] != NULL; i++)
   {
     //Return the first one;
     strcpy(ip, inet_ntoa(*addr_list[i]));
     break;
   }
-
+  //fprintf(stderr,"IP found %s ",ip);
   in_addr_t ls1 = inet_addr(ip);
+  //fprintf(stderr,"IP found %s %d\n",hname.c_str(),ls1);
   return (uint32_t)ls1;
 }
 

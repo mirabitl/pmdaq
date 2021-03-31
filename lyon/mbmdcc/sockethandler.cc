@@ -38,7 +38,13 @@ mbmdcc::socketHandler::socketHandler(std::string ip,uint32_t port) : _idx(0),_tr
   // Now create the socket
   _id=( (uint64_t) utils::convertIP(ip)<<32)|port;
 
-  _sock=new NL::Socket(ip,port);
+  try {
+    _sock=new NL::Socket(ip,port);
+  }
+  catch (NL::Exception e)
+  {
+    PM_FATAL(_logMbmdcc,"Cannot open socket  error "<<e.msg());
+  }
 }
 
 void mbmdcc::socketHandler::clear()

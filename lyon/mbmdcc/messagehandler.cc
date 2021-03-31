@@ -29,27 +29,26 @@ mbmdcc::messageHandler::messageHandler() : _npacket(0) {_sockMap.clear();}
 
 uint64_t mbmdcc::messageHandler::Id(NL::Socket* socket)
 {
-  struct hostent *he;
-  struct in_addr **addr_list;
-  int i;
-  char ip[100];
-  if ((he = gethostbyname(socket->hostTo().c_str())) == NULL)
-  {
-    return 0;
-  }
+  // struct hostent *he;
+  // struct in_addr **addr_list;
+  // int i;
+  // char ip[100];
+  // if ((he = gethostbyname(socket->hostTo().c_str())) == NULL)
+  // {
+  //   return 0;
+  // }
 
-  addr_list = (struct in_addr **)he->h_addr_list;
+  // addr_list = (struct in_addr **)he->h_addr_list;
 
-  for (i = 0; addr_list[i] != NULL; i++)
-  {
-    //Return the first one;
-    strcpy(ip, inet_ntoa(*addr_list[i]));
-    break;
-  }
-
-  in_addr_t ls1 = inet_addr(ip);
-
-  
+  // for (i = 0; addr_list[i] != NULL; i++)
+  // {
+  //   //Return the first one;
+  //   strcpy(ip, inet_ntoa(*addr_list[i]));
+  //   break;
+  // }
+  in_addr_t ls1 = inet_addr(socket->hostTo().c_str());
+  //  in_addr_t ls1=inet_addr(ip_address.c_str());
+  //uint32_t ls1=utils::convertIP(socket->hostTo());
   return ((uint64_t)ls1<<32)|((uint64_t) socket->portTo());
 
 }
@@ -59,7 +58,7 @@ void mbmdcc::messageHandler::processMessage(NL::Socket* socket)
 
   const std::lock_guard<std::mutex> lock(_sem);
   uint64_t id=this->Id(socket);
-  PM_DEBUG(_logMbmdcc,"Message received from "<<socket->hostTo()<<":"<<socket->portTo()<<" =>"<<std::hex<<id<<std::dec);
+  PM_INFO(_logMbmdcc,"Message received from "<<socket->hostTo()<<":"<<socket->portTo()<<" =>"<<std::hex<<id<<std::dec<<" Read Size "<<socket->nextReadSize());
   std::map<uint64_t, ptrBuf>::iterator itsock=_sockMap.find(id);
 
   if (itsock==_sockMap.end())
