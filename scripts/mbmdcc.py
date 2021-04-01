@@ -1,4 +1,5 @@
 import socket
+import json
 HEADER=0;LEN=1;TRANS=3;CMD=4;PAYLOAD=6;
 WRITEREG=1;READREG=2;SLC=4;DATA=8;ACKNOWLEDGE=16;ERROR=32;
 TEST=0x0;ID=0x1;
@@ -88,10 +89,10 @@ class mbmdcc:
         b=self.build_message(WRITEREG,payload)
         rep=self.send_message(b)
         brep=self.read_message()
-        print(brep)
+        #print(brep)
         byte_val=brep[PAYLOAD+2:PAYLOAD+6]
         irep=int.from_bytes(byte_val, "big")
-
+        print("Write completed ",irep)
         return irep
     def version(self):
         return self.read_register(VERSION);
@@ -102,6 +103,10 @@ class mbmdcc:
     def maskTrigger(self):
         self.write_register(MASK,0xFFFFFFFF);
     def unmaskTrigger(self):
+        self.write_register(MASK,0x0);
+    def pause(self):
+        self.write_register(MASK,0xFFFFFFFF);
+    def resume(self):
         self.write_register(MASK,0x0);
     def spillCount(self):
         return self.read_register(SPILL_CNT);
@@ -198,10 +203,25 @@ class mbmdcc:
             print("\t ",k,v)
 
 
-    def defaults(self):
-        self.setChannels(3)
-        self.setSpillOn(2000000)
-        self.setSpillOff(20000)
-        self.setSpillRegister(64)
-        self.resetCounter()
-        self.maskTrigger()
+    def defaults(self,fname=None):
+        if (fname == None):
+            self.setChannels(3)
+            self.setSpillOn(2000000)
+            self.setSpillOff(20000)
+            self.setSpillRegister(64)
+            self.resetCounter()
+            self.maskTrigger()
+        else:
+            self.maskTrigger()
+            f=open(fname)
+            #print(f.read())
+            rc=json.loads(f.read())
+            #print(rc)
+            if ("spillregister" in rc):
+                self.setSpillRegister(rc["spillregister"])
+            if ("spillon" in rc):
+                self.setSpillOn(rc["spillon"])
+            if ("spilloff" in rc):
+                self.setSpillOff(rc["spilloff"])
+            if ("channels" in rc):
+                self.setChannels(rc["channels"])
