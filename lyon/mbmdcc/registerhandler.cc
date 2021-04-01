@@ -64,7 +64,23 @@ uint32_t mbmdcc::registerHandler::readRegister(uint16_t address)
   // // For the moment the reply is in transaction 0
   // // Clear it first, to be suppressed asap Xtof return the transaction #
   // uint8_t* repa=this->answer(0);
-  // memset(repa,0,0x4000);  
+  // memset(repa,0,0x4000);
+#ifdef PRINTMESSAGEMB
+  for (int i=0;i<len;i++)
+    {
+      fprintf(stderr,"%.2x ",_msg->ptr()[i]);
+      
+      if ((i-4)%16==15)
+	{
+	  fprintf(stderr,"\n");
+	}
+    }
+  fprintf(stderr,"\n");
+
+#endif
+
+
+  
   uint32_t tr=this->sendMessage(_msg);
   uint32_t rep=0;
  PM_DEBUG(_logMbmdcc,"Waiting PROCESSREPLY");

@@ -153,6 +153,9 @@ void MbmdccManager::fsm_initialise(http_request m)
   // Listen All Mbmdcc sockets
   _mpi->listen();
 
+  // Mask the trigger and reset
+  this->maskTrigger();
+  this->resetCounter();
   // Reset Busy state
   PMF_INFO(_logMbmdcc,"Resetting FSM"<<std::flush);
   this->resetFSM(0x1);
