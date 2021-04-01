@@ -18,7 +18,7 @@ set(HEADERS
 add_library(app_hih SHARED ${SRCS} ${HEADERS})
 
 set(hih_DIR /opt/lydaq/drivers/hih8000 )
-find_library(HIH_LIB lydaq_hih8000 PATHS ${hih_DIR}/lib)
+find_library(HIH_LIB lydaq_drivers PATHS /usr/local/lydaq/lib)
 if(NOT HIH_LIB)
   message(FATAL_ERROR "HIH_LIB library not found")
 endif()

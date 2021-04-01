@@ -18,7 +18,7 @@ set(HEADERS
 add_library(app_bmp SHARED ${SRCS} ${HEADERS})
 
 set(bmp_DIR /opt/lydaq/drivers/Bmp )
-find_library(BMP_LIB lydaq_Bmp PATHS /opt/lydaq/drivers/Bmp/lib)
+find_library(BMP_LIB lydaq_drivers PATHS /usr/local/lydaq/lib/)
 if(NOT BMP_LIB)
   message(FATAL_ERROR "BMP_LIB library not found")
 endif()
