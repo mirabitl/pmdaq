@@ -491,7 +491,7 @@ web::json::value  caen::HVCaenInterface::ChannelInfo(uint32_t slot,uint32_t chan
     }
   else
     {
-      Json::Value rep;
+      json::value rep;
       rep["name"]=json::value::string(U("SY_DISC"));
       rep["vset"]=json::value::number(-1.0);
       rep["vmon"]=json::value::number(-1.0);
