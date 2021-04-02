@@ -9,11 +9,13 @@ project(app_syx27 VERSION 0.0.1 DESCRIPTION "Syx27 plugin")
 
 set(SRCS
   syx27Plugin.cxx
+  HVCaenInterface.cxx
 	)
 	
 set(HEADERS
-	syx27Plugin.hh
-	)
+  syx27Plugin.hh
+  HVCaenInterface.hh
+  )
 
 add_library(app_syx27 SHARED ${SRCS} ${HEADERS})
 
@@ -24,23 +26,24 @@ if(NOT SYX27_LIB)
   message(FATAL_ERROR "caenhvwrapper library not found")
 endif()
 
+include(../../CMake.defs)
 
 
-target_link_libraries(app_syx27 PUBLIC ${SYX27_LIB})
+target_link_libraries(app_syx27 PUBLIC ${SYX27_LIB} ${PMDAQLIBS})
 
 #target_include_directories(app_syx27 PRIVATE ${syx27_DIR}/include)
 
 #target_include_directories(app_syx27 PRIVATE /usr/include/jsoncpp)
 
 
-include(../../CMake.defs)
 
-target_link_libraries(app_syx27 PRIVATE cpprest)
+
+#target_link_libraries(app_syx27 PRIVATE cpprest)
 
 
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
 #find_package(log4cxx CONFIG REQUIRED)
-target_link_libraries(app_syx27 PRIVATE log4cxx)
+#target_link_libraries(app_syx27 PRIVATE log4cxx)
 #target_link_libraries(app_syx27 PRIVATE jsoncpp)
 
 target_include_directories(app_syx27 PRIVATE ../../include)
