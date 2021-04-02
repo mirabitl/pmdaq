@@ -1,10 +1,9 @@
 
 #include "hihPlugin.hh"
-#include <jsoncpp/json/json.h>
-static LoggerPtr _logHih(Logger::getLogger("PMDAQ_HIH"));
 
 
-using namespace lydaq;
+
+
 hihPlugin::hihPlugin(): _hih(NULL){} 
 void hihPlugin::open()
 {
@@ -16,7 +15,7 @@ void hihPlugin::open()
     delete _hih;
   
  
-  _hih= new lydaq::hih8000();
+  _hih= new hih8000();
 
 }
 void hihPlugin::close()

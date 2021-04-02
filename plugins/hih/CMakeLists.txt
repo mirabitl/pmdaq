@@ -12,35 +12,16 @@ set(SRCS
 	)
 	
 set(HEADERS
-	hihPlugin.hh
-	)
-
-add_library(app_hih SHARED ${SRCS} ${HEADERS})
-
-set(hih_DIR /opt/lydaq/drivers/hih8000 )
-find_library(HIH_LIB lydaq_drivers PATHS /usr/local/lydaq/lib)
-if(NOT HIH_LIB)
-  message(FATAL_ERROR "HIH_LIB library not found")
-endif()
-
-
-
-target_link_libraries(app_hih PUBLIC ${HIH_LIB})
-target_include_directories(app_hih PRIVATE ${hih_DIR}/include)
-
-target_include_directories(app_hih PRIVATE /usr/include/jsoncpp)
+  hihPlugin.hh
+  hih8000.hh
+  )
 
 
 include(../../CMake.defs)
 
-target_link_libraries(app_hih PRIVATE cpprest)
+add_library(app_hih SHARED ${SRCS} ${HEADERS})
 
-
-#SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
-#find_package(log4cxx CONFIG REQUIRED)
-target_link_libraries(app_hih PRIVATE log4cxx)
-target_link_libraries(app_hih PRIVATE jsoncpp)
-
+target_link_libraries(app_hih PUBLIC ${PMDAQLIB})
 target_include_directories(app_hih PRIVATE ../../include)
 
 

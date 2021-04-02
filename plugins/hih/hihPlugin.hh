@@ -20,7 +20,7 @@ class hihPlugin : public monitoring::supervisor
     virtual void close();
     virtual void registerCommands();
     // Access to the interface
-    lydaq::hih8000* getHih8000Interface(){  //std::cout<<" get Ptr "<<_hih8000<<std::endl;
+    hih8000* getHih8000Interface(){  //std::cout<<" get Ptr "<<_hih8000<<std::endl;
       return _hih;}
 
     // Status
@@ -33,6 +33,6 @@ class hihPlugin : public monitoring::supervisor
 
 
   private:
-    lydaq::hih8000* _hih;
+    hih8000* _hih;
   };
 
