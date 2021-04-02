@@ -4,7 +4,7 @@
 
 static LoggerPtr _logBmp(Logger::getLogger("PMDAQ_BMP"));
 
-using namespace lydaq;
+
 bmpPlugin::bmpPlugin(): _bmp(NULL){} 
 void bmpPlugin::open()
 {
@@ -14,11 +14,8 @@ void bmpPlugin::open()
     delete _bmp;
   
   
-#ifdef BMP183  
-  _bmp= new lydaq::BMP183();
-#else
-  _bmp= new lydaq::BMP280();
-#endif
+  _bmp= new bmp280();
+
 
 
 }
@@ -45,15 +42,10 @@ web::json::value bmpPlugin::status()
       PMF_ERROR(_logBmp,"No Bmp Interface opened");
        return r;
     }
-#ifdef BMP183
-   r["pressure"]=json::value::number(_bmp->BMP183PressionRead());
-   r["temperature"]=json::value::number(_bmp->BMP183TemperatureRead());
-#else
    float t,p;
    _bmp->TemperaturePressionRead(&t,&p);
    r["pressure"]=json::value::number(p);
    r["temperature"]=json::value::number(t);
-#endif
    r["status"]=json::value::string(U("READ"));
 
 

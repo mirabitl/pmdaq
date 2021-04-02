@@ -6,12 +6,8 @@
 #include "monitor.hh"
 #include "stdafx.hh"
 
-#undef BMP183
-#ifdef BMP183
-#include "BMP183.hh"
-#else
-#include "BMP280.hh"
-#endif
+#include "bmp280.hh"
+
 
 using namespace std;
 #include <sstream>
@@ -26,11 +22,8 @@ class bmpPlugin : public monitoring::supervisor
     virtual void close();
     virtual void registerCommands();
     // Access to the interface
-#ifdef BMP183
-    lydaq::BMP183* getBmpInterface(){return _bmp;}
-#else
-    lydaq::BMP280* getBmpInterface(){return _bmp;}
-#endif
+    bmp280* getBmpInterface(){return _bmp;}
+
 
     // Status
     virtual web::json::value status();
@@ -42,10 +35,7 @@ class bmpPlugin : public monitoring::supervisor
 
 
   private:
-#ifdef BMP183 
-    lydaq::BMP183* _bmp;
-#else
-    lydaq::BMP280* _bmp;
-#endif
+    bmp280* _bmp;
+
   };
 
