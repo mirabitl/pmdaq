@@ -32,7 +32,7 @@ add_library(lyon_mbmdcc SHARED ${SRCS} ${HEADERS})
 
 
 #target_link_libraries(lyon_mbmdcc PUBLIC ${ZUP_LIB})
-target_link_libraries(lyon_mbmdcc PRIVATE ${PMDAQ_LIBS})
+target_link_libraries(lyon_mbmdcc PRIVATE pmdaq ${PMDAQ_LIBS})
 #target_include_directories(lyon_mbmdcc PRIVATE ${zup_DIR}/include)
 
 #target_include_directories(lyon_mbmdcc PRIVATE /usr/include/jsoncpp)

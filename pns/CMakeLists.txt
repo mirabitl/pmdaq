@@ -21,7 +21,7 @@ add_library(pns SHARED ${SRCS} ${HEADERS})
 include(../CMake.defs)
 
 
-target_link_libraries(pns PRIVATE ${PMDAQ_LIBS})
+target_link_libraries(pns PRIVATE pmdaq ${PMDAQ_LIBS})
 
 
 #target_link_libraries(pns PRIVATE log4cxx)

@@ -34,7 +34,12 @@ add_library(lyon_dif SHARED ${SRCS} ${HEADERS})
 
 
 #target_link_libraries(lyon_mdcc PUBLIC ${ZUP_LIB})
-target_link_libraries(lyon_dif PRIVATE evb lyon_db ${PMDAQ_LIBS})
+if (APPLE)
+target_link_libraries(lyon_dif PRIVATE  pmdaq zmq evb lyon_db ftdi1 pthread ${PMDAQ_LIBS})
+target_include_directories(lyon_dif PRIVATE /usr/local/include/libftdi1)
+else()
+target_link_libraries(lyon_dif PRIVATE pmdaq zmq evb lyon_db ftdi pthread ${PMDAQ_LIBS})
+endif()
 #target_include_directories(lyon_mdcc PRIVATE ${zup_DIR}/include)
 
 #target_include_directories(lyon_mdcc PRIVATE /usr/include/jsoncpp)
@@ -48,7 +53,6 @@ include(../../CMake.defs)
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
 #find_package(log4cxx CONFIG REQUIRED)
 #target_link_libraries(lyon_mdcc PRIVATE log4cxx)
-target_link_libraries(lyon_dif PRIVATE ftdi pthread)
 
 target_include_directories(lyon_dif PRIVATE ../db ../mdcc ../../include ../../evb/include   )
 

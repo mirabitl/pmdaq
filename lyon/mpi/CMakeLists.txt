@@ -29,7 +29,7 @@ add_library(lyon_mpi SHARED ${SRCS} ${HEADERS})
 
 
 #target_link_libraries(lyon_mpi PUBLIC ${ZUP_LIB})
-target_link_libraries(lyon_mpi PRIVATE ${PMDAQ_LIBS})
+target_link_libraries(lyon_mpi PRIVATE netLink pmdaq ${PMDAQ_LIBS})
 #target_include_directories(lyon_mpi PRIVATE ${zup_DIR}/include)
 
 #target_include_directories(lyon_mpi PRIVATE /usr/include/jsoncpp)

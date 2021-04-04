@@ -705,7 +705,7 @@ void Gricv1Manager::ScurveStep(std::string mdccUrl,std::string builderUrl,int th
 	    if (x.second->data()->event()>lastEvent) lastEvent=x.second->data()->event();
 	  nloop++;if (nloop > 60000 || !_running)  break;
 	}
-  PMF_INFO(_logGricv1,"Step:"<<vth<<" Threshold:"<<thmax-vth*step<<" First:"<<firstEvent<<" Last:"<<lastEvent)
+  PMF_INFO(_logGricv1,"Step:"<<vth<<" Threshold:"<<thmax-vth*step<<" First:"<<firstEvent<<" Last:"<<lastEvent);
       //printf("Step %d Th %d First %d Last %d \n",vth,thmax-vth*step,firstEvent,lastEvent);
       utils::sendCommand(mdccUrl,"PAUSE",json::value::null());
     }

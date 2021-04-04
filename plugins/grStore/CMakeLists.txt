@@ -20,7 +20,7 @@ add_library(grStore SHARED ${SRCS} ${HEADERS})
 
 include(../../CMake.defs)
 
-target_link_libraries(grStore PRIVATE ${PMDAQ_LIBS})
+target_link_libraries(grStore PRIVATE pmdaq ${PMDAQ_LIBS})
 
 
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)

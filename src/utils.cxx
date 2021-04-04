@@ -27,7 +27,7 @@ uint32_t utils::convertIP(std::string hname)
   in_addr_t ls0 = inet_addr(hname.c_str());
   //fprintf(stderr,"IP found %s %d\n",hname.c_str(),ls1);
   return (uint32_t)ls0;
-
+#ifdef UNUSED
   struct hostent hbuf, *hp; /* output DNS host entry */
   char tmp[8192];         /* temporary scratch buffer */
   int my_h_errno, rc;       /* DNS error code and return code */
@@ -51,6 +51,7 @@ uint32_t utils::convertIP(std::string hname)
   in_addr_t ls1 = inet_addr(ip);
   //fprintf(stderr,"IP found %s %d\n",hname.c_str(),ls1);
   return (uint32_t)ls1;
+#endif
 }
 
 uint64_t utils::asicTag(std::string hname,uint32_t header)

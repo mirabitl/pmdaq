@@ -31,7 +31,7 @@ add_library(lyon_mdcc SHARED ${SRCS} ${HEADERS})
 
 
 #target_link_libraries(lyon_mdcc PUBLIC ${ZUP_LIB})
-target_link_libraries(lyon_mdcc PRIVATE ${PMDAQ_LIBS})
+target_link_libraries(lyon_mdcc PRIVATE pmdaq ${PMDAQ_LIBS})
 #target_include_directories(lyon_mdcc PRIVATE ${zup_DIR}/include)
 
 #target_include_directories(lyon_mdcc PRIVATE /usr/include/jsoncpp)
@@ -45,8 +45,12 @@ include(../../CMake.defs)
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
 #find_package(log4cxx CONFIG REQUIRED)
 #target_link_libraries(lyon_mdcc PRIVATE log4cxx)
+if (APPLE)
+target_link_libraries(lyon_mdcc PRIVATE  ftdi1 pthread)
+target_include_directories(lyon_mdcc PRIVATE /usr/local/include/libftdi1)
+else()
 target_link_libraries(lyon_mdcc PRIVATE ftdi pthread)
-
+endif()
 target_include_directories(lyon_mdcc PRIVATE ../../include   )
 
 

@@ -49,8 +49,12 @@ include(../../CMake.defs)
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
 #find_package(log4cxx CONFIG REQUIRED)
 #target_link_libraries(lyon_mdcc PRIVATE log4cxx)
+if (NOT APPLE)
 target_link_libraries(lyon_sdcc PRIVATE ftdi pthread)
-
+else()
+target_link_libraries(lyon_sdcc PRIVATE  ftdi1 pthread)
+target_include_directories(lyon_sdcc PRIVATE /usr/local/include/libftdi1)
+endif()
 target_include_directories(lyon_sdcc PRIVATE ../mdcc ../../include )
 
 

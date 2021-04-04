@@ -33,7 +33,11 @@ target_include_directories(mgStore PRIVATE ../../include)
 target_include_directories(mgStore PRIVATE /usr/include/libmongoc-1.0)
 target_include_directories(mgStore PRIVATE /usr/include/libbson-1.0)
 
+if (APPLE)
+target_include_directories(mgStore PRIVATE /usr/local/include/libmongoc-1.0)
+target_include_directories(mgStore PRIVATE /usr/local/include/libbson-1.0)
 
+endif()
 # Créé des variables avec les fichiers à compiler
 
 # La bibliothèque peut être soit une bibliothèque statique, soit dynamique, donc on précise où installer pour les deux cas
