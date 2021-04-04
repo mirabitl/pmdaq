@@ -38,7 +38,7 @@ int32_t sdcc::driver:: CCCCommandDIFReset(void)    //throw (LocalHardwareExcepti
   UsbCommandWrite	(taddress);	
   if (!isOk())
     {
-      PM_ERROR(_logSdcc,"error found")
+      PM_ERROR(_logSdcc,"error found");
 	return -2;
     }
   return 0;
@@ -51,7 +51,7 @@ int32_t sdcc::driver::CCCCommandBCIDReset(void)    //throw (LocalHardwareExcepti
   UsbCommandWrite	(taddress);	
   if (!isOk())
     {
-      PM_ERROR(_logSdcc,"error found")
+      PM_ERROR(_logSdcc,"error found");
 	return -2;
     }
   return 0;
@@ -64,7 +64,7 @@ int32_t sdcc::driver::CCCCommandStartAcquisitionAuto(void)    //throw (LocalHard
   UsbCommandWrite	(taddress);	
   if (!isOk())
     {
-      PM_ERROR(_logSdcc,"error found")
+      PM_ERROR(_logSdcc,"error found");
 	return -2;
     }
   return 0;
@@ -77,7 +77,7 @@ int32_t sdcc::driver::CCCCommandRamfullExt(void)    //throw (LocalHardwareExcept
   UsbCommandWrite	(taddress);	
   if (!isOk())
     {
-      PM_ERROR(_logSdcc,"error found")
+      PM_ERROR(_logSdcc,"error found");
 	return -2;
     }
   return 0;
@@ -90,7 +90,7 @@ int32_t sdcc::driver::CCCCommandTriggerExt(void)    //throw (LocalHardwareExcept
   UsbCommandWrite	(taddress);	
   if (!isOk())
     {
-      PM_ERROR(_logSdcc,"error found")
+      PM_ERROR(_logSdcc,"error found");
 	return -2;
     }
   return 0;
@@ -104,7 +104,7 @@ int32_t sdcc::driver::CCCCommandStopAcquisition(void)    //throw (LocalHardwareE
   UsbCommandWrite	(taddress);	
   if (!isOk())
     {
-      PM_ERROR(_logSdcc,"error found")
+      PM_ERROR(_logSdcc,"error found");
 	return -2;
     }
   return 0;
@@ -117,7 +117,7 @@ int32_t sdcc::driver::CCCCommandDigitalReadout(void)    //throw (LocalHardwareEx
   UsbCommandWrite	(taddress);	
   if (!isOk())
     {
-      PM_ERROR(_logSdcc,"error found")
+      PM_ERROR(_logSdcc,"error found");
 	return -2;
     }
   return 0;
@@ -130,7 +130,7 @@ int32_t sdcc::driver::CCCCommandTrigger(void)    //throw (LocalHardwareException
   UsbCommandWrite	(taddress);	
   if (!isOk())
     {
-      PM_ERROR(_logSdcc,"error found")
+      PM_ERROR(_logSdcc,"error found");
 	return -2;
     }
   return 0;
@@ -143,7 +143,7 @@ int32_t sdcc::driver::CCCCommandSpillOn(void)    //throw (LocalHardwareException
   UsbCommandWrite	(taddress);	
   if (!isOk())
     {
-      PM_ERROR(_logSdcc,"error found")
+      PM_ERROR(_logSdcc,"error found");
 	return -2;
     }
   return 0;
@@ -156,7 +156,7 @@ int32_t sdcc::driver::CCCCommandSpillOff(void)    //throw (LocalHardwareExceptio
   UsbCommandWrite	(taddress);	
   if (!isOk())
     {
-      PM_ERROR(_logSdcc,"error found")
+      PM_ERROR(_logSdcc,"error found");
 	return -2;
     }
   return 0;
@@ -176,7 +176,7 @@ int32_t sdcc::driver::CCCCommandStartSingleAcquisition(void)    //throw (LocalHa
   UsbCommandWrite	(taddress);	
   if (!isOk())
     {
-      PM_ERROR(_logSdcc,"error found")
+      PM_ERROR(_logSdcc,"error found");
 	return -2;
     }
   return 0;
@@ -189,7 +189,7 @@ int32_t sdcc::driver::CCCCommandPulseLemo(void)    //throw (LocalHardwareExcepti
   UsbCommandWrite	(taddress);	
   if (!isOk())
     {
-      PM_ERROR(_logSdcc,"error found")
+      PM_ERROR(_logSdcc,"error found");
 	return -2;
     }
   return 0;
@@ -202,7 +202,7 @@ int32_t sdcc::driver::CCCCommandRazChannel(void)    //throw (LocalHardwareExcept
   UsbCommandWrite	(taddress);	
   if (!isOk())
     {
-      PM_ERROR(_logSdcc,"error found")
+      PM_ERROR(_logSdcc,"error found");
 	return -2;
     }
   return 0;
@@ -215,7 +215,7 @@ int32_t sdcc::driver::CCCCommandRazChannel(void)    //throw (LocalHardwareExcept
   CCCCommandWrite	(taddress);	
   if (!isOk())
   {
-  PM_ERROR(_logSdcc,"error found")
+  PM_ERROR(_logSdcc,"error found");
   return -2;
   }
   return 0;
@@ -228,7 +228,7 @@ int32_t sdcc::driver::CCCCommandResetCCC(void)    //throw (LocalHardwareExceptio
   UsbCommandWrite	(taddress);	
   if (!isOk())
     {
-      PM_ERROR(_logSdcc,"error found")
+      PM_ERROR(_logSdcc,"error found");
 	return -2;
     }
   return 0;
