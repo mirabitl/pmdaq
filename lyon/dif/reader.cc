@@ -276,8 +276,8 @@ void dif::reader::DoGetASUTemperatureCommand(uint32_t *ttemp1, uint32_t *ttemp2)
   if (!isOk())
     PM_ERROR(_logDif, " \t Unable to send asu temperature command");
   //	printf ("DIFReadout ASUTemp = %d %d \n",*ttemp1,*ttemp2);
-  theTemperatureBuffer_[1] = (*ttemp1) * 1.0;
-  theTemperatureBuffer_[2] = (*ttemp2) * 1.0;
+  theTemperatureBuffer_[0] = (*ttemp1) * 1.0;
+  theTemperatureBuffer_[1] = (*ttemp2) * 1.0;
   return;
 }
 
