@@ -71,6 +71,7 @@ namespace febinj {
 
   class utilspi
   {
+  public:
     static void write (struct wiringPiNodeStruct *node, int addr, int value)
     {
       

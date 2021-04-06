@@ -1,6 +1,4 @@
-#ifndef _FebInjServer_h
-
-#define _FebInjServer_h
+#pragma once
 #include <iostream>
 
 #include <string.h>
@@ -10,7 +8,7 @@
 #include "fsmw.hh"
 
 #include "febinj.hh"
-
+static LoggerPtr _logFebinj(Logger::getLogger("PMDAQ_FEBINJ"));
 using namespace std;
 #include <sstream>
 

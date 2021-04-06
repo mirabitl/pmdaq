@@ -47,6 +47,8 @@ if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm")
   set(CPACK_TOPLEVEL_TAG "Linux-arm")
   add_subdirectory(plugins/bmp)
   add_subdirectory(plugins/hih)
+  add_subdirectory(lyon/febinj)
+  
 endif()
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
