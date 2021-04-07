@@ -254,3 +254,18 @@ void FebinjManager::initialise()
   this->addCommand("PULSEHEIGHT", std::bind(&FebinjManager::c_set_pulse_height, this,std::placeholders::_1));
 
 }
+extern "C" 
+{
+    // loadDHCALAnalyzer function creates new LowPassDHCALAnalyzer object and returns it.  
+  handlerPlugin* loadProcessor(void)
+    {
+      return (new  FebinjManager);
+    }
+    // The deleteDHCALAnalyzer function deletes the LowPassDHCALAnalyzer that is passed 
+    // to it.  This isn't a very safe function, since there's no 
+    // way to ensure that the object provided is indeed a LowPassDHCALAnalyzer.
+  void deleteProcessor(handlerPlugin* obj)
+    {
+      delete obj;
+    }
+}
