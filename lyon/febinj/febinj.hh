@@ -101,8 +101,8 @@ namespace febinj {
   public:
     board()
     {
-      if (wiringPiSPISetup (0, 10000) < 0)	// 10MHz Max
-	exit(0);
+      if (wiringPiSPISetup (0, 10000) < 0)// 10MHz Max
+	return;
 
       node = wiringPiNewNode (64, 2) ;
       node->fd          = 0 ;
