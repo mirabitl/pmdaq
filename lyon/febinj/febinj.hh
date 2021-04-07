@@ -110,7 +110,8 @@ namespace febinj {
       node->analogRead = utilspi::read ;
 
     }
-    ~board();
+    ~board()
+    {;}
 
     void setMask(uint32_t mask,uint32_t hr)
     {
