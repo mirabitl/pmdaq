@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0)
 
 # Notre projet est étiqueté libhello
 
-project(app_febinj VERSION 0.0.1 DESCRIPTION "Febinj plugin")
+project(lyon_febinj VERSION 0.0.1 DESCRIPTION "Febinj plugin")
 
 
 
@@ -19,15 +19,15 @@ set(HEADERS
 
 include(../../CMake.defs)
 
-add_library(app_febinj SHARED ${SRCS} ${HEADERS})
+add_library(lyon_febinj SHARED ${SRCS} ${HEADERS})
 
-target_link_libraries(app_febinj PUBLIC pmdaq ${PMDAQLIB})
-target_include_directories(app_febinj PRIVATE ../../include)
+target_link_libraries(lyon_febinj PUBLIC pmdaq ${PMDAQLIB})
+target_include_directories(lyon_febinj PRIVATE ../../include)
 
 
 # Créé des variables avec les fichiers à compiler
 
 # La bibliothèque peut être soit une bibliothèque statique, soit dynamique, donc on précise où installer pour les deux cas
-install(TARGETS app_febinj  LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+install(TARGETS lyon_febinj  LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 
 
