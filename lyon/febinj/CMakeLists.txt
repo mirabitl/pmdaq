@@ -21,7 +21,7 @@ include(../../CMake.defs)
 
 add_library(lyon_febinj SHARED ${SRCS} ${HEADERS})
 
-target_link_libraries(lyon_febinj PUBLIC pmdaq ${PMDAQLIB})
+target_link_libraries(lyon_febinj PUBLIC wiringPi wiringPiDev pmdaq ${PMDAQLIB})
 target_include_directories(lyon_febinj PRIVATE ../../include)
 
 
