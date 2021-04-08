@@ -46,10 +46,13 @@ void monitoring::supervisor::initialise()
 }
 void monitoring::supervisor::end()
 {
-  if (!_running)
-    return;
-  _running = false;
-  _thr.join();
+  if (_running)
+    {
+      _running = false;
+      _thr.join();
+    }
+  this->close();
+
 }
 
 void monitoring::supervisor::configure(http_request m)

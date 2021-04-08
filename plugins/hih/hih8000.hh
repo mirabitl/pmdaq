@@ -50,6 +50,7 @@ class hih8000
 public:
   hih8000()
   {
+    _fd=-2;
     Setup () ;
     _temperature[0]=0;
     _temperature[1]=0;
@@ -59,6 +60,8 @@ public:
  
   ~hih8000(){
     GPIOUnexport(PINSELECT);
+    if (_fd>-1)
+      close(_fd);
   }
   int GPIOExport(int pin)
   {
@@ -203,23 +206,19 @@ public:
     return 0 ;
   }
 
-  int Read()
+  int chip_read(uint32_t chip)
   {
     unsigned char buf[4];                 /* Buffer for data read/written on the i2c bus */
+    GPIOWrite (PINSELECT, chip) ;
+    ::usleep(100000);
+    buf[0]=HUM_ADDR;
+    write(_fd,buf,1);
+    buf[0]=0x00; // Read command
+    write(_fd,buf,1);
 
-    GPIOWrite (PINSELECT, 1) ;  // capteur sur la partir etroite de la carte
-    //  if ((i2c_smbus_write_quick(_fd, 0)) != 0)
-    // {
-    if (wiringPiI2CWrite (_fd, 0)!=0)
-      {
-	printf("Error writing bit to i2c slave 1 \n");
-	return -1;
-	// exit(1);
-      }
-    usleep(100000);
     if (read(_fd, buf, 4) < 0)
       {
-	printf("Unable to read from slave\n");
+	fprintf(stderr,"Unable to read from slave\n");
 	//    exit(1);
 	return -1;
       }
@@ -232,46 +231,19 @@ public:
 	int reading_temp = (buf[2] << 6) + (buf[3] >> 2);
 	double temperature = reading_temp / 16382.0 * 165.0 - 40;
 	printf("Temperature 1: %f %f\n", temperature,humidity);
-	_humidity[1] =  (humidity);
-	_temperature[1] = (temperature) + 273.15;
-        //return 0;
+	_humidity[chip] =  (humidity);
+	_temperature[chip] = (temperature) + 273.15;
+        return 0;
       }
 
+  }
 
-
-
-    
-
-
-    GPIOWrite (PINSELECT, 0) ;  // capteur sur la partir large de la carte
-    //if ((i2c_smbus_write_quick(_fd, 0)) != 0)
-    //{
-    if (wiringPiI2CWrite (_fd, 0)!=0)
-      {   
-	printf("Error writing bit to i2c slave\n");
-	//exit(1);
-      }
-    usleep(100000);
-    if (read(_fd, buf, 4) < 0)
-      {
-	printf("Unable to read from slave\n");
-	//    exit(1);
-      }
-    else
-      {
-	int reading_hum = (buf[0] << 8) + buf[1];
-	double humidity = reading_hum / 16382.0 * 100.0;
-	//printf("Humidity: %f\n", humidity);
-	
-	int reading_temp = (buf[2] << 6) + (buf[3] >> 2);
-	double temperature = reading_temp / 16382.0 * 165.0 - 40;
-	//printf("Temperature: %f\n", temperature);
-	printf("Temperature 0: %f %f\n", temperature,humidity);
-	_humidity[0] =  humidity;
-	_temperature[0] =  temperature + 273.15;
-      }
-
-    return 0;
+  int Read()
+  {
+    int rc=chip_read(1);
+    if (rc!=0) return rc;
+    rc=chip_read(0);
+    return rc;
   }
 
  
