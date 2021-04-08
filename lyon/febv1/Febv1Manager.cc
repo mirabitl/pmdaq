@@ -23,7 +23,7 @@ using namespace mpi;
 
 
 
-Febv1Manager::Febv1Manager() : _context(NULL),_tca(NULL),_mpi(NULL) {;}
+Febv1Manager::Febv1Manager() : _context(NULL),_tca(NULL),_mpi(NULL),_sc_running(false),_running(false) {;}
 
 void Febv1Manager::initialise()
 {
@@ -242,7 +242,7 @@ void Febv1Manager::c_setCalibrationMask(http_request m)
   auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
   for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
     if (it2->first.compare("value")==0)
-      mask=std::stoi(it2->second);
+      mask=std::stol(it2->second);
 
   PM_INFO(_logFebv1, "SetCalibrationMask called  with mask" << std::hex << mask << std::dec);
   this->setCalibrationMask(mask);
@@ -409,13 +409,16 @@ void Febv1Manager::c_scurve(http_request m)
   _sc_thmin=first;
   _sc_thmax=last;
   _sc_step=step;
+  PMF_INFO(_logFebv1,"SCURVE called "<<mode<<" "<<_sc_thmin<<" "<<_sc_thmax<<" "<<step);
   if (_sc_running)
     {
+      PMF_INFO(_logFebv1,"SCURVE already running");
       par["SCURVE"] =json::value::string(U("ALREADY_RUNNING"));
       Reply(status_codes::OK,par);
       return;
     }
 
+  PMF_INFO(_logFebv1,"Starting the SCURVE thread");
   g_scurve=std::thread(std::bind(&Febv1Manager::thrd_scurve, this));
   par["SCURVE"] =json::value::string(U("RUNNING"));
   Reply(status_codes::OK,par);
@@ -427,9 +430,9 @@ void Febv1Manager::fsm_initialise(http_request m)
   PM_INFO(_logFebv1,"****** CMD: INITIALISING");
   //  std::cout<<"m= "<<m->command()<<std::endl<<m->content()<<std::endl;
  
-  web::json::value jtype=params()["type"];
-  _type=jtype.as_integer();
-  printf ("_type =%d\n",_type); 
+  //  web::json::value jtype=params()["type"];
+  // _type=jtype.as_integer();
+  // printf ("_type =%d\n",_type); 
 
   // Need a FEBV1 tag
   if (params().as_object().find("febv1")==params().as_object().end())
@@ -439,13 +442,15 @@ void Febv1Manager::fsm_initialise(http_request m)
       Reply(status_codes::OK,par);
       return;  
     }
-  
+  PM_INFO(_logFebv1,"Create Message handler");
+
   // Now create the Message handler
   if (_mpi==NULL)
     _mpi= new febv1::Interface();
+  
   _mpi->initialise();
 
-   
+  PM_INFO(_logFebv1,"Access FEBV1"); 
   web::json::value jFEBV1=params()["febv1"];
   //_msh =new MpiMessageHandler("/dev/shm");
   if (jFEBV1.as_object().find("network")==jFEBV1.as_object().end())
@@ -692,7 +697,7 @@ void Febv1Manager::setVthTime(uint32_t vth)
     int iasic = it->first & 0xFF;
 
     it->second.setVthTime(vth);
-    //it->second.Print();
+    it->second.Print();
     // 1 seul ASIC break;
   }
   this->configurePR2();
@@ -809,6 +814,7 @@ void Febv1Manager::start(http_request m)
       x.second->reg()->writeAddress(0x219,_type);
       x.second->reg()->writeAddress(0x220,1);
     }
+  _running=true;
   par["status"]=json::value::string(U("done"));
   Reply(status_codes::OK,par);  
 }
@@ -822,7 +828,7 @@ void Febv1Manager::stop(http_request m)
       x.second->reg()->writeAddress(0x220,0);
     }
   ::sleep(2);
-
+  _running=false;
   par["status"]=json::value::string(U("done"));
   Reply(status_codes::OK,par);
 }
@@ -854,7 +860,7 @@ void Febv1Manager::destroy(http_request m)
 
 void Febv1Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,int thmax,int step)
 {
-
+  PMF_INFO(_logFebv1,"Entering Scurve Step");
   int ncon=2000,ncoff=100,ntrg=50;
   utils::sendCommand(mdcc,"PAUSE",json::value::null());
   web::json::value p;
@@ -871,6 +877,7 @@ void Febv1Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,int
       if (!_sc_running) break;
       utils::sendCommand(mdcc,"PAUSE",json::value::null());
       this->setVthTime(thmax-vth*step);
+      PMF_INFO(_logFebv1,"VTH Step "<<thmax-vth*step);
       int firstEvent=0;
       for (auto x : _mpi->boards())
 	if (x.second->data()->event()>firstEvent) firstEvent=x.second->data()->event();
@@ -902,6 +909,7 @@ void Febv1Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,int
 
 void Febv1Manager::thrd_scurve()
 {
+  PMF_INFO(_logFebv1,"Calling Scurve");
   _sc_running=true;
   this->Scurve(_sc_mode,_sc_thmin,_sc_thmax,_sc_step);
   _sc_running=false;
@@ -910,8 +918,9 @@ void Febv1Manager::thrd_scurve()
 
 void Febv1Manager::Scurve(int mode,int thmin,int thmax,int step)
 {
+  PMF_INFO(_logFebv1,"Entering Scurve");
   std::string mdccUrl=utils::findUrl(session(),"lyon_mdcc",0);
-  std::string builderUrl=utils::findUrl(session(),"lyon_evb",0);
+  std::string builderUrl=utils::findUrl(session(),"evb_builder",0);
   if (mdccUrl.compare("")==0) return;
   if (builderUrl.compare("")==0) return;
   int firmware[]={0,2,4,6,

@@ -19,7 +19,31 @@
 #include <arpa/inet.h>
 #include "utils.hh"
 #include <err.h>
+char rfc3986[256] = {0};
+char html5[256] = {0};
 
+void url_encoder_rfc_tables_init(){
+
+  int i;
+
+  for (i = 0; i < 256; i++){
+
+    rfc3986[i] = isalnum( i) || i == '~' || i == '-' || i == '.' || i == '_' ? i : 0;
+    html5[i] = isalnum( i) || i == '*' || i == '-' || i == '.' || i == '_' ? i : (i == ' ') ? '+' : 0;
+  }
+}
+
+char *url_encode( char *table, unsigned char *s, char *enc){
+
+  for (; *s; s++){
+
+    if (table[*s]) sprintf( enc, "%c", table[*s]);
+    else sprintf( enc, "%%%02X", *s);
+    while (*++enc);
+  }
+
+  return( enc);
+}
 
 uint32_t utils::convertIP(std::string hname)
 {
@@ -372,20 +396,44 @@ http_response utils::sendCommand(std::string url, std::string command,web::json:
   if (par.is_object())
   {
     utility::ostringstream_t buf;
+    //buf<<command;
     uint32_t np = 0;
     for (auto iter = par.as_object().begin(); iter != par.as_object().end(); ++iter)
     {
-      if (np == 0)
-        buf << "?" << U(iter->first) << "=" << iter->second;
+      auto jvalue=U(iter->second);
+      if (iter->second.is_number()|| iter->second.is_string())
+	{
+	  if (np == 0)
+	    buf << "?" << U(iter->first) << "=" <<jvalue;
+	  else
+	    buf << "&" << U(iter->first) << "=" <<jvalue;
+	  np++;
+	}
       else
-        buf << "&" << U(iter->first) << "=" << iter->second;
-      np++;
+	{
+	  std::string sc=iter->second.serialize();
+	  char out[4096];
+	  url_encoder_rfc_tables_init();
+		
+	  url_encode( html5,(unsigned char*) sc.c_str(),out);
+	  if (np == 0)
+	    buf << "?" << U(iter->first) << "=" <<out;
+	  else
+	    buf << "&" << U(iter->first) << "=" <<out;
+	  np++;
+	  
+
+ 
+	}
     }
 
     return client.request(methods::GET, U(buf.str())).get();
   }
   else
-    return client.request(methods::GET).get();
+    {
+
+      return client.request(methods::GET).get();
+    }
 }
 
 uint32_t utils::queryIntValue(http_request m,std::string n,uint32_t def_val)
