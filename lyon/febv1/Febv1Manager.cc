@@ -23,7 +23,7 @@ using namespace mpi;
 
 
 
-Febv1Manager::Febv1Manager() : _context(NULL),_tca(NULL),_mpi(NULL),_sc_running(false),_running(false) {;}
+Febv1Manager::Febv1Manager() : _context(NULL),_tca(NULL),_mpi(NULL),_sc_running(false),_running(false),g_scurve(NULL) {;}
 
 void Febv1Manager::initialise()
 {
@@ -74,7 +74,13 @@ void Febv1Manager::end()
   if (_sc_running)
     {
       _sc_running=false;
-      g_scurve.join();
+
+    }
+  if (g_scurve!=NULL)
+    {
+      g_scurve->join();
+      delete g_scurve;
+      g_scurve=NULL;
     }
   //Stop listening
   if (_mpi!=NULL)
@@ -420,7 +426,7 @@ void Febv1Manager::c_scurve(http_request m)
     }
 
   PMF_INFO(_logFebv1,"Starting the SCURVE thread");
-  g_scurve=std::thread(std::bind(&Febv1Manager::thrd_scurve, this));
+  g_scurve=new std::thread(std::bind(&Febv1Manager::thrd_scurve, this));
   par["SCURVE"] =json::value::string(U("RUNNING"));
   Reply(status_codes::OK,par);
 }
@@ -823,6 +829,9 @@ void Febv1Manager::stop(http_request m)
 {
   auto par = json::value::object();
   PMF_INFO(_logFebv1," CMD: STOPPING ");
+
+
+  
   for (auto x:_mpi->boards())
     {
       // Automatic FSM (bit 1 a 0) , disabled (Bit 0 a 0)
@@ -830,6 +839,18 @@ void Febv1Manager::stop(http_request m)
     }
   ::sleep(2);
   _running=false;
+
+    // Stop any running SCURVE
+  if (_sc_running)
+    {
+      if (g_scurve!=NULL)
+	{
+	  g_scurve->join();
+	  delete g_scurve;
+	  g_scurve=NULL;
+	}
+    }
+
   par["status"]=json::value::string(U("done"));
   Reply(status_codes::OK,par);
 }

@@ -115,5 +115,5 @@ private:
   // Scurve parameters
   int _sc_mode,_sc_thmin,_sc_thmax,_sc_step;
   bool _sc_running;
-  std::thread g_scurve;
+  std::thread* g_scurve;
 };
