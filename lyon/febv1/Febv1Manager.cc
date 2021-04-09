@@ -256,15 +256,16 @@ void Febv1Manager::c_setMeasurementMask(http_request m)
   par["STATUS"] = json::value::string(U("DONE"));
   uint64_t mask = 0;
   uint32_t feb = 255;
+  std::string smask="0x0";
   auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
   for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
     {
-      if (it2->first.compare("value")==0)  mask=std::stoi(it2->second);
+      if (it2->first.compare("value")==0)  smask=it2->second;
       if (it2->first.compare("feb")==0)  feb=std::stoi(it2->second);
     }
 
- 
-  PM_INFO(_logFebv1, "c_setMeasurementMask called  with mask" << std::hex << mask << std::dec<<" On FEB "<<feb);
+  sscanf(smask.c_str(), "%llx", &mask);
+  PM_INFO(_logFebv1, "c_setMeasurementMask called  with mask " <<smask<<" ->"<< std::hex << mask << std::dec<<" On FEB "<<feb);
   this->setMeasurementMask(mask,feb);
   par["MMASK"] = json::value::number(mask);
   Reply(status_codes::OK,par);
