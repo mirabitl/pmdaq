@@ -222,6 +222,7 @@ void pm::builder::collector::purge(http_request m)
 }
 void pm::builder::collector::setheader(http_request m)
 {
+  PMF_INFO(_logCollector, "Set Header called ");
   auto par = json::value::object(); 
   if (_merger == NULL)
   {
@@ -238,6 +239,7 @@ void pm::builder::collector::setheader(http_request m)
       if (it2->first.compare("header")==0)
 	shead.assign(it2->second);
     }
+  PMF_INFO(_logCollector, "Step Header "<<nextevent<<" "<<shead);
   if (shead.compare("None") == 0)
     {
       par["STATUS"] = json::value::string(U("NO header provided"));
@@ -250,13 +252,14 @@ void pm::builder::collector::setheader(http_request m)
 
   if (errorCode.value()>0)
   {
+    PMF_ERROR(_logCollector, "Step Header cannot parse");
     par["STATUS"] = json::value::string(U("Cannot Parse"));
     par["VALUE"] = json::value::number(errorCode.value());
     Reply(status_codes::OK,par);
     return;
   }
 
-  PMF_DEBUG(_logCollector, "Header " << jdevs);
+  PMF_INFO(_logCollector, "Header " << jdevs);
   std::vector<uint32_t> &v = _merger->runHeader();
   v.clear();
   for (auto jt = jdevs.as_array().begin(); jt != jdevs.as_array().end(); ++jt)

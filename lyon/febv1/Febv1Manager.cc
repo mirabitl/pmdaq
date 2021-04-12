@@ -915,14 +915,16 @@ void Febv1Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,int
       utils::sendCommand(mdcc,"RELOADCALIB",json::value::null());
       utils::sendCommand(mdcc,"RESUME",json::value::null());
       int nloop=0,lastEvent=firstEvent;
-      while (lastEvent < (firstEvent + ntrg - 20))
+      while (lastEvent < (firstEvent + ntrg - 10))
 	{
 	  ::usleep(100000);
 	  for (auto x : _mpi->boards())
 	    if (x.second->data()->event()>lastEvent) lastEvent=x.second->data()->event();
-	  nloop++;if (nloop > 20 || !_running)  break;
+	  nloop++;if (nloop > 100 || !_running)  break;
 	}
       printf("Step %d Th %d First %d Last %d \n",vth,thmax-vth*step,firstEvent,lastEvent);
+      //::usleep(600000);
+
       utils::sendCommand(mdcc,"PAUSE",json::value::null());
     }
   utils::sendCommand(mdcc,"CALIBOFF",json::value::null());

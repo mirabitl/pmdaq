@@ -122,7 +122,7 @@ void pmMerger::processEvent(uint32_t idx)
 
     if (_writeHeader)
     {
-      PM_INFO(_logPdaq, "Processing Header " << _evt << " " << _nextEventHeader << " " << idx);
+      PM_INFO(_logPdaq, "Processing Header step " << _evt << " " << _nextEventHeader << " " << idx);
       if (_nextEventHeader > 0 && _nextEventHeader == idx)
       {
         (*itp)->processRunHeader(_runHeader);
