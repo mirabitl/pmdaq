@@ -52,6 +52,7 @@ else()
 target_link_libraries(lyon_mdcc PRIVATE ftdi pthread)
 endif()
 target_include_directories(lyon_mdcc PRIVATE ../../include   )
+target_include_directories(lyon_mdcc PRIVATE /usr/include/libftdi1)
 
 
 # Créé des variables avec les fichiers à comdccler

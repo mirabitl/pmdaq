@@ -33,7 +33,7 @@ add_library(lyon_pmr SHARED ${SRCS} ${HEADERS})
 target_link_libraries(lyon_pmr PRIVATE zmq pmdaq ${PMDAQ_LIBS})
 #target_include_directories(lyon_pmr PRIVATE ${zup_DIR}/include)
 
-#target_include_directories(lyon_pmr PRIVATE /usr/include/jsoncpp)
+target_include_directories(lyon_pmr PRIVATE /usr/include/libftdi1)
 
 
 include(../../CMake.defs)
