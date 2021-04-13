@@ -883,7 +883,7 @@ void Febv1Manager::destroy(http_request m)
 void Febv1Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,int thmax,int step)
 {
   PMF_INFO(_logFebv1,"Entering Scurve Step");
-  int ncon=2000,ncoff=100,ntrg=50;
+  int ncon=20,ncoff=100,ntrg=50;
   utils::sendCommand(mdcc,"PAUSE",json::value::null());
   web::json::value p;
   p["nclock"]=json::value::number(ncon);  utils::sendCommand(mdcc,"SPILLON",p);
