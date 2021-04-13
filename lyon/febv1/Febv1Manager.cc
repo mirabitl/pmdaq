@@ -23,7 +23,7 @@ using namespace mpi;
 
 
 
-Febv1Manager::Febv1Manager() : _context(NULL),_tca(NULL),_mpi(NULL),_sc_running(false),_running(false),g_scurve(NULL) {;}
+Febv1Manager::Febv1Manager() : _context(NULL),_tca(NULL),_mpi(NULL),_sc_running(false),_running(false),g_scurve(NULL),_sc_spillon(20),_sc_spilloff(100),_sc_ntrg(50) {;}
 
 void Febv1Manager::initialise()
 {
@@ -502,6 +502,15 @@ void Febv1Manager::fsm_initialise(http_request m)
 
       
     }
+    if (params().as_object().find("scurve")!=params().as_object().end())
+    { 
+      if (params()["scurve"].as_object().find("spillon")!=params()["scurve"].as_object().end())
+        _sc_spillon= params()["scurve"]["spillon"].as_integer();
+      if (params()["scurve"].as_object().find("spilloff")!=params()["scurve"].as_object().end())
+        _sc_spilloff= params()["scurve"]["spilloff"].as_integer();
+      if (params()["scurve"].as_object().find("ntrg")!=params()["scurve"].as_object().end())
+        _sc_ntrg= params()["scurve"]["ntrg"].as_integer();
+    }
   if (_tca->asicMap().size()==0)
     {
       PMF_ERROR(_logFebv1," No ASIC found in the configuration ");
@@ -883,7 +892,7 @@ void Febv1Manager::destroy(http_request m)
 void Febv1Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,int thmax,int step)
 {
   PMF_INFO(_logFebv1,"Entering Scurve Step");
-  int ncon=20,ncoff=100,ntrg=50;
+  int ncon=_sc_spillon,ncoff=_sc_spilloff,ntrg=_sc_ntrg;
   utils::sendCommand(mdcc,"PAUSE",json::value::null());
   web::json::value p;
   p["nclock"]=json::value::number(ncon);  utils::sendCommand(mdcc,"SPILLON",p);
@@ -901,9 +910,16 @@ void Febv1Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,int
       this->setVthTime(thmax-vth*step);
       PMF_INFO(_logFebv1,"VTH Step "<<thmax-vth*step);
       int firstEvent=0;
+#undef USEFEBS
+#ifdef USEFEBS
       for (auto x : _mpi->boards())
 	if (x.second->data()->event()>firstEvent) firstEvent=x.second->data()->event();
-
+#else
+  auto frep=utils::sendCommand(builder,"STATUS",json::value::null());
+  auto jfrep=frep.extract_json();
+  auto jfanswer = jfrep.get().as_object()["answer"];
+  firstEvent=jfanswer["event"].as_integer();
+#endif
       
       web::json::value p1;
       web::json::value h;
@@ -915,6 +931,7 @@ void Febv1Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,int
       utils::sendCommand(mdcc,"RELOADCALIB",json::value::null());
       utils::sendCommand(mdcc,"RESUME",json::value::null());
       int nloop=0,lastEvent=firstEvent;
+#ifdef USEFEBS
       while (lastEvent < (firstEvent + ntrg - 10))
 	{
 	  ::usleep(100000);
@@ -922,6 +939,17 @@ void Febv1Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,int
 	    if (x.second->data()->event()>lastEvent) lastEvent=x.second->data()->event();
 	  nloop++;if (nloop > 100 || !_running)  break;
 	}
+#else
+      while (lastEvent < (firstEvent + ntrg - 10))
+	{
+	  ::usleep(100000);
+    auto rep=utils::sendCommand(builder,"STATUS",json::value::null());
+    auto jrep=rep.extract_json();
+    auto janswer = jrep.get().as_object()["answer"];
+    lastEvent=janswer["event"].as_integer(); // A verifier
+	  nloop++;if (nloop > 100 || !_running)  break;
+	}
+#endif
       printf("Step %d Th %d First %d Last %d \n",vth,thmax-vth*step,firstEvent,lastEvent);
       //::usleep(600000);
 

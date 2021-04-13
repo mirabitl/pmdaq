@@ -114,6 +114,7 @@ private:
    bool _running;
   // Scurve parameters
   int _sc_mode,_sc_thmin,_sc_thmax,_sc_step;
+  uint32_t _sc_spillon,_sc_spilloff,_sc_ntrg;
   bool _sc_running;
   std::thread* g_scurve;
 };
