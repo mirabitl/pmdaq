@@ -648,6 +648,27 @@ class MongoRoc:
                 a["_id"]=None
             except Exception as e:
                 print(e)
+    def PR2_ChangeInputDacCommand(self, idif, iasic, ich, active):
+        """
+        Change PETIROC2 MASKDISCRITIME parameter for one channel
+
+        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        :param iasic: asic number, if 0 all Asics are changed
+        :param ich: The channel number
+        :param active: the channel mask
+        :warning: 1 = active, 0=inactive
+        """
+
+        for a in self.asiclist:
+            if (idif != 0 and a["dif"] != idif):
+                continue
+            if (iasic != 0 and a["num"] != iasic):
+                continue
+            try:
+                a["slc"]["InputDacCommand"][ich] = active
+                a["_id"]=None
+            except Exception as e:
+                print(e)
                 
     def PR2_SetCCOMP(self, v0,v1,v2,v3, idif=0, iasic=0):
         """
