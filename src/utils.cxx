@@ -390,7 +390,7 @@ http_response utils::sendCommand(std::string url, std::string command,web::json:
   address << U(url);
   http::uri uri = http::uri(address.str());
   web::http::client::http_client_config cfg;
-  cfg.set_timeout(std::chrono::seconds(1));
+  cfg.set_timeout(std::chrono::seconds(10));
   http_client client(http::uri_builder(uri).append_path(U(command)).to_uri(), cfg);
 
   if (par.is_object())
