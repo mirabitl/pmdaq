@@ -15,6 +15,7 @@ import time
 import argparse
 import requests
 import combrc
+import serviceAccess as sac
 import MongoJob as mg
 import sys
 from six.moves import range
@@ -27,10 +28,13 @@ grp_action = parser.add_mutually_exclusive_group()
 # JOB Control
 
 grp_action.add_argument('--jc-destroy', action='store_true',
-                        help='delete all registered services and the session')
+                        help='delete all registered services and the session (--name for a given application)')
 grp_action.add_argument('--jc-info', action='store_true',
                         help='List all services and parameters')
-
+grp_action.add_argument('--jc-pns-list', action='store_true',
+                        help='List all services in PNS (--name session for a given session)')
+grp_action.add_argument('--jc-pns-session', action='store_true',
+                        help='List all session in PNS ')
 # DAQ preparation
 # Running
 grp_action.add_argument('--daq-initialise', action='store_true',
@@ -218,7 +222,22 @@ lcgi = {}
 r_cmd = None
 
 if(results.jc_destroy):
-    fdc.session.remove()
+    if (results.name!=None):
+        fdc.session.remove(results.name)
+    else:
+        fdc.session.remove()
+    exit(0)
+elif(results.jc_pns_list):
+    if (results.name!=None):
+        rep=fdc.session.pns_list(results.name)
+        print(rep)
+    else:
+        rep=sac.pns_info_command()
+        print(rep)
+    exit(0)
+elif(results.jc_pns_session):
+    rep=fdc.session.pns_session_list()
+    print(rep)
     exit(0)
 elif(results.jc_info):
     fdc.session.Print(True)

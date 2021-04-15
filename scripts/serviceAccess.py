@@ -181,6 +181,24 @@ def create_access(pns_string):
      o=strip_pns_string(pns_string)
      return serviceAccess(o.host,o.port,o.session,o.name,o.instance)
     
+def pns_info_command():
+    pns_host=os.getenv("PNS_NAME","NONE")
+    if (pns_host == "NONE"):
+        print("The ENV varaible PNS_NAME mut be set")
+        exit(0)
+    r_pns_list=executeCMD(pns_host,8888,"/PNS/LIST",{})
+    if (type(r_pns_list) is bytes):
+        r_pns_list=r_pns_list.decode("utf-8")
+    pns_list=json.loads(r_pns_list)
+    if ("http_error" in r_pns_list):
+        return
+    #print(pns_list)
+    if ("REGISTERED" in pns_list):
+        #print(pns_list["REGISTERED"])
+        if ( pns_list["REGISTERED"]!=None):
+            for x in pns_list["REGISTERED"]:
+                o =strip_pns_string(x)
+                print("=>",o.host,o.port,o.path,o.session,o.name,o.instance,o.state)
 
 class serviceAccess:
     def __init__(self, vhost, vport,vsession,vname,vinstance):
