@@ -10,7 +10,7 @@ template <typename T>
 class pluginInfo
 {
 public:
-  pluginInfo(std::string libname, std::string create_name, std::string destroy_name) : _libname(libname)
+  pluginInfo(std::string libname, std::string create_name, std::string destroy_name) : _libname(libname),_handler(NULL)
   {
     std::stringstream s;
     s << "lib" << libname << ".so";
@@ -43,18 +43,19 @@ public:
     T *(*create)() = (T * (*)()) _maker;
     _object = (T *)create();
   }
-
+  void clear(){_handler=NULL;_maker=NULL;_destroyer=NULL;}
   T *ptr() const { return _object; }
   std::string name() { return _libname; }
-  void close() const
+  void close()
   {
     void *(*destroy)(T *) = (void *(*)(T *))_destroyer;
     std::cout << "Destroying the plugin" << std::endl;
     destroy(_object);
     std::cout << "Closing the library" << std::endl;
     dlclose(_handler);
+    clear();
   }
-
+  bool isAlived() const {return _handler!=NULL;}
 private:
   std::string _libname;
   void *_handler;

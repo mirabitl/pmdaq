@@ -80,14 +80,19 @@ void baseServer::handle_get_or_post(http_request message)
     sb << "/" << _p_session << "/" << _p_name << "/" << _p_instance << "/";
     uint32_t lsb = sb.str().length();
     // Now find in pluggins all instance and remove it from the map
+    pluginInfo<handlerPlugin>* pluginfo=NULL;
     for (auto it2 = _plugins.cbegin(); it2 != _plugins.cend() /* not hoisted */; /* no increment */)
     {
       if (it2->first.compare(0, lsb, sb.str()) == 0)
       {
         PM_INFO(_logPdaq, "removing " << it2->first);
         //it2->second->terminate();
-        it2->second.ptr()->terminate();
-        it2->second.close();
+	if (it2->second->isAlived())
+	  {
+	    it2->second->ptr()->terminate();
+	    it2->second->close();
+	    pluginfo=it2->second;
+	  }
         _plugins.erase(it2++); // or "it = m.erase(it)" since C++11
       }
       else
@@ -95,6 +100,8 @@ void baseServer::handle_get_or_post(http_request message)
         ++it2;
       }
     }
+    if (pluginfo!=NULL)
+      delete pluginfo;
     auto rep = json::value::string(U(sb.str()));
     message.reply(status_codes::OK, rep);
   }
@@ -115,7 +122,7 @@ void baseServer::handle_get_or_post(http_request message)
   {
     auto itp = _plugins.find(uri::decode(message.relative_uri().path()));
     if (itp != _plugins.end())
-      itp->second.ptr()->processRequest(message);
+      itp->second->ptr()->processRequest(message);
     else
     {
       PM_ERROR(_logPdaq, " Invalid request path");
@@ -185,11 +192,11 @@ void baseServer::registerPlugin(std::string name, std::string query)
     _plugins.insert(p);
   }
   #else
-  pluginInfo<handlerPlugin> p_info(name,"loadProcessor","deleteProcessor");
-  p_info.ptr()->setUrl(url());
-  for (auto x : p_info.ptr()->getPaths(query))
+  pluginInfo<handlerPlugin>* p_info = new  pluginInfo<handlerPlugin>(name,"loadProcessor","deleteProcessor");
+  p_info->ptr()->setUrl(url());
+  for (auto x : p_info->ptr()->getPaths(query))
   {
-    std::pair<std::string, pluginInfo<handlerPlugin>> p(x, p_info);
+    std::pair<std::string, pluginInfo<handlerPlugin>* > p(x, p_info);
     _plugins.insert(p);
   }
   #endif

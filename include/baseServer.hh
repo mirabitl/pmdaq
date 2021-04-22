@@ -30,6 +30,6 @@ private:
  http_listener m_listener;
   uint32_t req;
   //std::map<std::string,handlerPlugin*> _plugins;
-  std::map<std::string,pluginInfo<handlerPlugin>> _plugins;
+  std::map<std::string,pluginInfo<handlerPlugin>*> _plugins;
   std::string _url;
 };
