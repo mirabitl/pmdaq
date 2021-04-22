@@ -9,6 +9,7 @@
 #include <string>
 #include "stdafx.hh"
 #include <thread>
+#include "pluginInfo.hh"
 #define dskey(d,s) ( (s&0xFFF) | ((d &0xFFF)<<12))
 #define source_id(k) (k&0xFFF)
 #define detector_id(k) ((k>>12)&0xFFF)
@@ -136,7 +137,7 @@ namespace pm {
     */
     inline void setNumberOfDataSource(uint32_t k){_nDifs=k;}
     uint32_t numberOfDataPacket(uint32_t k);///< Number of received packet
-    void unregisterProcessor(pm::evbprocessor* p);///< remove a processor from the list
+    void unregisterProcessor(std::string name);///< remove a processor from the list
 
     /**
        \brief Start of run
@@ -198,7 +199,8 @@ namespace pm {
   private:
     bool _useEventId;
     uint32_t _nDifs;
-    std::vector<evbprocessor* > _processors;
+    //std::vector<evbprocessor* > _processors;
+    std::map<std::string, pluginInfo<evbprocessor> > _processors;
     std::map<uint64_t,std::vector<pm::buffer*> > _eventMap;
 	
     std::thread _gThread;

@@ -63,6 +63,7 @@ void pmMerger::clear()
 
 void pmMerger::registerProcessor(std::string name)
 {
+  #ifdef OLDPLUGIN
   std::stringstream s;
   s << "lib" << name << ".so";
   void *library = dlopen(s.str().c_str(), RTLD_NOW);
@@ -80,13 +81,21 @@ void pmMerger::registerProcessor(std::string name)
   // Get a new filter object
   pm::evbprocessor *a = (pm::evbprocessor *)create();
   _processors.push_back(a);
+  #else
+  pluginInfo<evbprocessor> p_info(name,"loadProcessor","deleteProcessor");
+  
+  _processors.insert(std::pair<std::string,pluginInfo<evbprocessor> >(name,p_info));
+  #endif
 }
 
-void pmMerger::unregisterProcessor(pm::evbprocessor *p)
+void pmMerger::unregisterProcessor(std::string name)
 {
-  std::vector<pm::evbprocessor *>::iterator it = std::find(_processors.begin(), _processors.end(), p);
+  auto it = _processors.find(name);
   if (it != _processors.end())
+  {
+    it->second.close();
     _processors.erase(it);
+  }
 }
 void pmMerger::registerDataSource(std::string url)
 {
@@ -117,7 +126,7 @@ void pmMerger::processEvent(uint32_t idx)
   _evt = it->first;
   _build++;
   //std::cout<<"full  event find " <<it->first<<std::endl;
-  for (std::vector<pm::evbprocessor *>::iterator itp = _processors.begin(); itp != _processors.end(); itp++)
+  for (auto itp = _processors.begin(); itp != _processors.end(); itp++)
   {
 
     if (_writeHeader)
@@ -125,12 +134,12 @@ void pmMerger::processEvent(uint32_t idx)
       PM_INFO(_logPdaq, "Processing Header step " << _evt << " " << _nextEventHeader << " " << idx);
       if (_nextEventHeader > 0 && _nextEventHeader == idx)
       {
-        (*itp)->processRunHeader(_runHeader);
+        itp->second.ptr()->processRunHeader(_runHeader);
         _writeHeader = false;
         _nextEventHeader = -1;
       }
     }
-    (*itp)->processEvent(it->first, it->second);
+    itp->second.ptr()->processEvent(it->first, it->second);
   }
 
   // remove completed events
@@ -164,9 +173,9 @@ void pmMerger::processRunHeader()
 }
 void pmMerger::loadParameters(web::json::value params)
 {
-  for (std::vector<pm::evbprocessor *>::iterator itp = _processors.begin(); itp != _processors.end(); itp++)
+  for (auto itp = _processors.begin(); itp != _processors.end(); itp++)
   {
-    (*itp)->loadParameters(params);
+    itp->second.ptr()->loadParameters(params);
   }
 }
 
@@ -187,9 +196,9 @@ void pmMerger::start(uint32_t nr)
   _eventMap.clear();
 
   PM_INFO(_logPdaq, "run : " << _run << " ZMMERGER START for " << numberOfDataSource() << " sources");
-  for (std::vector<pm::evbprocessor *>::iterator itp = _processors.begin(); itp != _processors.end(); itp++)
+  for (auto itp = _processors.begin(); itp != _processors.end(); itp++)
   {
-    (*itp)->start(nr);
+    itp->second.ptr()->start(nr);
   }
 
   _running = true;
@@ -212,9 +221,9 @@ void pmMerger::stop()
   // Do the stop of the the processors
   PM_INFO(_logPdaq, "Stopping theprocessors");
   //printf("ZmMeger =>Stopping the processors \n");
-  for (std::vector<pm::evbprocessor *>::iterator itp = _processors.begin(); itp != _processors.end(); itp++)
+  for (auto itp = _processors.begin(); itp != _processors.end(); itp++)
   {
-    (*itp)->stop();
+    itp->second.ptr()->stop();
   }
   PM_INFO(_logPdaq, "Leaving Stop method");
 }

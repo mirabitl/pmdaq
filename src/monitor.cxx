@@ -92,10 +92,10 @@ void monitoring::supervisor::configure(http_request m)
 
     PMF_INFO(_logMonitor, " Setting parameters for stores ");
     for (auto x : _stores)
-      x->loadParameters(params());
+      x.ptr()->loadParameters(params());
     PMF_INFO(_logMonitor, " Connect stores  ");
     for (auto x : _stores)
-      x->connect();
+      x.ptr()->connect();
     prep["stores"] = parray_keys;
   }
 
@@ -109,6 +109,7 @@ void monitoring::supervisor::configure(http_request m)
 }
 void monitoring::supervisor::registerStore(std::string name)
 {
+  #ifdef OLDPLUGIN
   std::stringstream s;
   s << "lib" << name << ".so";
   void *library = dlopen(s.str().c_str(), RTLD_NOW);
@@ -126,6 +127,10 @@ void monitoring::supervisor::registerStore(std::string name)
   // Get a new filter object
   monitoring::monStore *a = (monitoring::monStore *)create();
   _stores.push_back(a);
+  #else
+  pluginInfo<monitoring::monStore> p_info(name,"loadStore","deleteStore");
+  _stores.push_back(p_info);
+  #endif
 }
 
 void monitoring::supervisor::start(http_request m)
@@ -192,7 +197,7 @@ void monitoring::supervisor::monitor()
 
     // Save the status in all conncted stores
     for (auto y : _stores)
-      y->store(this->session(), this->hardware(), (uint32_t)time(0), this->status());
+      y.ptr()->store(this->session(), this->hardware(), (uint32_t)time(0), this->status());
 
     if (!_running)
       break;

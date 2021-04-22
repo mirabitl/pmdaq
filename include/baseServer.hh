@@ -4,6 +4,7 @@
 #include <cpprest/http_listener.h>
 #include <cpprest/asyncrt_utils.h>
 #include "handlerPlugin.hh" 
+#include "pluginInfo.hh"
 #pragma comment(lib, "cpprest_2_7.lib")
 #pragma comment(lib, "bcrypt.lib")
 #pragma comment(lib, "crypt32.lib")
@@ -28,6 +29,7 @@ private:
  void handle_get_or_post(http_request message);
  http_listener m_listener;
   uint32_t req;
-  std::map<std::string,handlerPlugin*> _plugins;
+  //std::map<std::string,handlerPlugin*> _plugins;
+  std::map<std::string,pluginInfo<handlerPlugin>> _plugins;
   std::string _url;
 };

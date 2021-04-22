@@ -3,7 +3,7 @@
 #include "fsmw.hh"
 #include "stdafx.hh"
 #include <thread>
-
+#include "pluginInfo.hh"
 namespace monitoring {
   /**
      \class monstore
@@ -77,7 +77,8 @@ namespace monitoring {
       bool _running,_readout;
       uint32_t _period;
 
-      std::vector<monitoring::monStore* > _stores;
+      //std::vector<monitoring::monStore* > _stores;
+      std::vector<pluginInfo<monitoring::monStore> > _stores;
       std::thread _thr;
 
 

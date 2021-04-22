@@ -7,59 +7,58 @@
 #include <sstream>
 
 template <typename T>
-class pluginInfo{
+class pluginInfo
+{
 public:
- 
-  pluginInfo(std::string libname,std::string create_name,std::string destroy_name) : _libname(libname)
+  pluginInfo(std::string libname, std::string create_name, std::string destroy_name) : _libname(libname)
   {
     std::stringstream s;
     s << "lib" << libname << ".so";
     _handler = dlopen(s.str().c_str(), RTLD_NOW);
-    if(_handler == NULL)
+    if (_handler == NULL)
     {
-      std::cerr<<" Error " << dlerror() << " Library open address " << std::hex << _handler << std::dec<<std::endl;
+      std::cerr << " Error " << dlerror() << " Library open address " << std::hex << _handler << std::dec << std::endl;
       return;
     }
 
-  
-    std::cout<<"Library"<<s.str()<<" is  opened at address " << std::hex << _handler << std::dec<<std::endl;
-  // Get the loadFilter function, for loading objects
-  _maker = dlsym(_handler, create_name.c_str());
-  if (_maker==NULL)
+    std::cout << "Library" << s.str() << " is  opened at address " << std::hex << _handler << std::dec << std::endl;
+    // Get the loadFilter function, for loading objects
+    _maker = dlsym(_handler, create_name.c_str());
+    if (_maker == NULL)
     {
-      std::cerr<<" Error " << dlerror() << " Cannot find"<<create_name<<" method "<<std::endl;
+      std::cerr << " Error " << dlerror() << " Cannot find" << create_name << " method " << std::endl;
       return;
     }
-  std::cout<<create_name<<" method at  address " << std::hex << _maker<< std::dec<<std::endl;
-  
-  _destroyer = dlsym(_handler, destroy_name.c_str());
-  if (_destroyer==NULL)
+    std::cout << create_name << " method at  address " << std::hex << _maker << std::dec << std::endl;
+
+    _destroyer = dlsym(_handler, destroy_name.c_str());
+    if (_destroyer == NULL)
     {
-      std::cerr<<" Error " << dlerror() << " Cannot find"<<destroy_name<<" method "<<std::endl;
+      std::cerr << " Error " << dlerror() << " Cannot find" << destroy_name << " method " << std::endl;
       return;
     }
-  std::cout<<destroy_name<<" method at  address " << std::hex << _destroyer<< std::dec<<std::endl;
+    std::cout << destroy_name << " method at  address " << std::hex << _destroyer << std::dec << std::endl;
 
-  // Get a new zmonStore object
-  T *(*create)()= (T*(*)()) _maker;
-  _object = (T *)create();
-
+    // Get a new zmonStore object
+    T *(*create)() = (T * (*)()) _maker;
+    _object = (T *)create();
   }
-  
-  T* ptr() {return _object;}
-  
-  void close()
+
+  T *ptr() const { return _object; }
+  std::string name() { return _libname; }
+  void close() const
   {
-    void *(*destroy)(T*)=(void*(*)(T*)) _destroyer;
-    std::cout<<"Destroying the plugin"<<std::endl;
+    void *(*destroy)(T *) = (void *(*)(T *))_destroyer;
+    std::cout << "Destroying the plugin" << std::endl;
     destroy(_object);
-    std::cout<<"Closing the library"<<std::endl;
+    std::cout << "Closing the library" << std::endl;
     dlclose(_handler);
   }
+
 private:
   std::string _libname;
-  void* _handler;
-  void* _maker;
-  void* _destroyer;
-  T* _object;
+  void *_handler;
+  void *_maker;
+  void *_destroyer;
+  T *_object;
 };

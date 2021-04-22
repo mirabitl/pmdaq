@@ -85,7 +85,9 @@ void baseServer::handle_get_or_post(http_request message)
       if (it2->first.compare(0, lsb, sb.str()) == 0)
       {
         PM_INFO(_logPdaq, "removing " << it2->first);
-        it2->second->terminate();
+        //it2->second->terminate();
+        it2->second.ptr()->terminate();
+        it2->second.close();
         _plugins.erase(it2++); // or "it = m.erase(it)" since C++11
       }
       else
@@ -113,7 +115,7 @@ void baseServer::handle_get_or_post(http_request message)
   {
     auto itp = _plugins.find(uri::decode(message.relative_uri().path()));
     if (itp != _plugins.end())
-      itp->second->processRequest(message);
+      itp->second.ptr()->processRequest(message);
     else
     {
       PM_ERROR(_logPdaq, " Invalid request path");
@@ -155,6 +157,7 @@ void baseServer::handle_get_or_post(http_request message)
 
 void baseServer::registerPlugin(std::string name, std::string query)
 {
+  #ifdef OLDPLUGIN
   std::stringstream s;
   s << "lib" << name << ".so";
   PM_INFO(_logPdaq, "1" << s.str());
@@ -181,4 +184,13 @@ void baseServer::registerPlugin(std::string name, std::string query)
     std::pair<std::string, handlerPlugin *> p(x, a);
     _plugins.insert(p);
   }
+  #else
+  pluginInfo<handlerPlugin> p_info(name,"loadProcessor","deleteProcessor");
+  p_info.ptr()->setUrl(url());
+  for (auto x : p_info.ptr()->getPaths(query))
+  {
+    std::pair<std::string, pluginInfo<handlerPlugin>> p(x, p_info);
+    _plugins.insert(p);
+  }
+  #endif
 }
