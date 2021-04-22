@@ -15,4 +15,5 @@ export PATH=/usr/local/pmdaq/bin:$PATH
 
 . /etc/pmdaq.conf
 
-/usr/local/pmdaq/bin/pmd > /var/log/pmd.log
+pid=$$
+/usr/local/pmdaq/bin/pmd > /tmp/pmd${pid}.log
