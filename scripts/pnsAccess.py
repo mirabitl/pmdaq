@@ -1,4 +1,3 @@
-import serviceAccess as sac
 from __future__ import absolute_import
 from __future__ import print_function
 import os
@@ -14,6 +13,8 @@ import base64
 import time
 import requests
 import six
+import serviceAccess as sac
+
 class pnsAccess:
     def __init__(self):
         """
