@@ -26,8 +26,32 @@ class pnsAccess:
             exit(0)
         self.process_list= self.pns_list()
         print("process  list: ",self.process_list)
-        self.sessions_list=self.pns_session_list()
+        self.session_list=self.pns_session_list()
         print("session  list: ",self.session_list)
+        self.registered=[]
+        if (self.process_list["REGISTERED"]!= None):
+            for x in self.process_list["REGISTERED"]:
+                print(x)
+                self.registered.append(sac.strip_pns_string(x))
+
+        xf=None
+        for x in self.registered:
+            print("Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state)
+            rep=json.loads(sac.executeCMD(x.host,x.port,x.path+"INFO",None))
+            if ( 'error' in rep):
+                print(rep)
+                x.state="FAILED"
+            else:
+                if (rep["STATE"]!= x.state):
+                    print(rep["STATE"]," found different from store one",x.state)
+                    x.state=rep["STATE"]
+            if (x.path=="/last_feb/evb_builder/0/"):
+                xf=x
+        if (xf!=None):
+            self.registered.remove(xf)
+        for x in self.registered:
+            print("After Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state)
+
         #json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/LIST",{}))
         #.decode("utf-8"))
     def pns_list(self,req_session="NONE"):

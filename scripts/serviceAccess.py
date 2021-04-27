@@ -134,7 +134,7 @@ def executeCMD(host,port,path,params):
 
     else:
         myurl = "http://"+host+ ":%d%s" % (port,path)
-
+        #print(myurl)
         try:
             r = requests.get(myurl)
         except requests.exceptions.RequestException as e:
