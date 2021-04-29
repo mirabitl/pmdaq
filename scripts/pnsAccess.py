@@ -24,6 +24,8 @@ class pnsAccess:
         if (self.pns_host == "NONE"):
             print("The ENV varaible PNS_NAME mut be set")
             exit(0)
+        self.check()
+    def check(self):
         self.process_list= self.pns_list()
         print("process  list: ",self.process_list)
         self.session_list=self.pns_session_list()
@@ -34,23 +36,23 @@ class pnsAccess:
                 print(x)
                 self.registered.append(sac.strip_pns_string(x))
 
-        xf=None
+        #xf=None
         for x in self.registered:
             print("Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state)
             rep=json.loads(sac.executeCMD(x.host,x.port,x.path+"INFO",None))
             if ( 'error' in rep):
                 print(rep)
-                x.state="FAILED"
+                x.state="DEAD"
             else:
                 if (rep["STATE"]!= x.state):
                     print(rep["STATE"]," found different from store one",x.state)
                     x.state=rep["STATE"]
-            if (x.path=="/last_feb/evb_builder/0/"):
-                xf=x
-        if (xf!=None):
-            self.registered.remove(xf)
+        #    if (x.path=="/last_feb/evb_builder/0/"):
+        #        xf=x
+        #if (xf!=None):
+        #    self.registered.remove(xf)
         for x in self.registered:
-            print("After Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state)
+            print("After Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state," Session :",x.session," Name : ",x.name," Instance ",x.instance )
 
         #json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/LIST",{}))
         #.decode("utf-8"))
@@ -70,4 +72,43 @@ class pnsAccess:
         print("Updating session ",par)
         pl=json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/SESSION/UPDATE",par))
         return pl
-    
+    def pns_remove(self,req_session=None):
+
+        # One loop for all but evb_builder
+        for x in self.registered:
+            if (req_session!=None and x.session!=req_session):
+                continue
+            if (x.name=="evb_builder"):
+                continue;
+            print("removing Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state," Session :",x.session," Name : ",x.name," Instance ",x.instance )
+            par={}
+            par["session"]=x.session
+            par["name"]=x.name
+            par["instance"]=x.instance
+            r_services=sac.executeCMD(x.host,x.port,"/REMOVE",par)
+        #  One loop for evb
+        for x in self.registered:
+            if (req_session!=None and x.session!=req_session):
+                continue
+            if (x.name!="evb_builder"):
+                continue;
+            print("removing Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state," Session :",x.session," Name : ",x.name," Instance ",x.instance )
+            par={}
+            par["session"]=x.session
+            par["name"]=x.name
+            par["instance"]=x.instance
+            r_services=sac.executeCMD(x.host,x.port,"/REMOVE",par)
+        # PURGE
+        sac.executeCMD(self.pns_host,8888,"/PNS/PURGE",{})
+        if (req_session!= None):
+            sac.executeCMD(self.pns_host,8888,"/PNS/SESSION/UPDATE",{"session":req_session,"state":"DEAD"})
+        sac.executeCMD(self.pns_host,8888,"/PNS/SESSION/PURGE",{})
+        self.check()
+        return    
+
+    def Print(self,session,verbose=False):
+        for x in self.registered:
+            if (x.session!=session):
+                 continue
+            y=sac.serviceAccess(x.host,x.port,x.session,x.name,x.instance)
+            y.printInfos(verbose)
