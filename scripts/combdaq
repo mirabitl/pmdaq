@@ -16,6 +16,7 @@ import argparse
 import requests
 import combrc
 import serviceAccess as sac
+import pnsAccess
 import MongoJob as mg
 import sys
 from six.moves import range
@@ -39,6 +40,8 @@ grp_action.add_argument('--jc-pns-session', action='store_true',
 # Running
 grp_action.add_argument('--daq-initialise', action='store_true',
                         help='Initialise DAQ, data source discovery and Builder final configuration')
+grp_action.add_argument('--daq-register', action='store_true',
+                        help='Ensure registration of all services and Print them')
 grp_action.add_argument('--daq-configure', action='store_true',
                         help=' Configure FDAQ, front end ASICs configuration')
 grp_action.add_argument('--daq-startrun', action='store_true',
@@ -199,6 +202,7 @@ if (account == "NONE"):
 
 config = os.getenv("DAQMONGO", "NONE")
 file_config=None
+session_name=None
 if (config == "NONE"):
     print("The ENV varaible DAQMONGO=name:version must be set")
     exit(0)
@@ -208,7 +212,11 @@ else:
     w.downloadConfig(config.split(':')[0],int(config.split(':')[1]),True)
     file_config="/dev/shm/mgjob/%s_%s.json" % (config.split(':')[0],config.split(':')[1])
     #exit(0)
-fdc = combrc.combRC(file_config)
+    session_name=config.split(':')[0]
+
+# PN access
+fpns=pnsAccess.pnsAccess()
+
 
 # fdc.updateInfo(True,True)
 
@@ -223,26 +231,30 @@ r_cmd = None
 
 if(results.jc_destroy):
     if (results.name!=None):
-        fdc.session.remove(results.name)
+        fpns.pns_remove(results.name)
     else:
-        fdc.session.remove()
+        fpns.pns_remove(session_name)
     exit(0)
 elif(results.jc_pns_list):
     if (results.name!=None):
-        rep=fdc.session.pns_list(results.name)
+        rep=fpns.pns_list(results.name)
         print(rep)
     else:
-        rep=sac.pns_info_command()
+        rep=fpns.pns_list(session_name)
         print(rep)
     exit(0)
 elif(results.jc_pns_session):
-    rep=fdc.session.pns_session_list()
+    rep=fpns.pns_session_list()
     print(rep)
     exit(0)
 elif(results.jc_info):
-    fdc.session.Print(True)
+    fpns.Print(session_name,True)
     exit(0)
 # DAQ
+fdc = combrc.combRC(file_config)
+if(results.daq_register):
+    fdc.session.Print(True)
+    exit(0)
 elif(results.daq_initialise):
     delay=0
     if (results.dead!=None):
