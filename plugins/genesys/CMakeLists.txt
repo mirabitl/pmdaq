@@ -9,6 +9,7 @@ project(app_genesys VERSION 0.0.1 DESCRIPTION "Genesys plugin")
 
 set(SRCS
   genesysPlugin.cxx
+  Genesys.cxx
 	)
 	
 set(HEADERS
