@@ -1,8 +1,8 @@
 #include  "Genesys.hh"
-
+#include <boost/format.hpp> 
 using namespace std;
 using namespace genesys;
-void genesys::Genesys::setIos()
+void genesys::GsDevice::setIos()
 {
   struct termios oldtio,newtio;
   char buf[255];
@@ -73,7 +73,7 @@ void genesys::Genesys::setIos()
   tcsetattr(fd1,TCSANOW,&newtio);
          
 }
-genesys::Genesys::Genesys(std::string device,uint32_t address)
+genesys::GsDevice::GsDevice(std::string device,uint32_t address)
 {
   fprintf(stderr,"%s device %s address %d \n",__PRETTY_FUNCTION__,device.c_str(),address);
   fd1=open(device.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
@@ -152,25 +152,25 @@ genesys::Genesys::Genesys(std::string device,uint32_t address)
   PM_INFO(_logGenesys," address set to "<<address);
 
 }
-genesys::Genesys::~Genesys()
+genesys::GsDevice::~GsDevice()
 {
   if (fd1>0)
     close(fd1);
 }
-void genesys::Genesys::ON()
+void genesys::GsDevice::ON()
 {
   readCommand("OUT 1\r");
   ::sleep(1);
   this->INFO();
 }
-void genesys::Genesys::OFF()
+void genesys::GsDevice::OFF()
 {
   readCommand("OUT 0\r");
   ::sleep(1);
   this->INFO();
 }
 
-void genesys::Genesys::readCommand(std::string cmd)
+void genesys::GsDevice::readCommand(std::string cmd)
 {
   if (fd1<0 || portstatus!=1)
     {
@@ -260,7 +260,7 @@ void genesys::Genesys::readCommand(std::string cmd)
     
   _value=toto;
 }
-void genesys::Genesys::INFO()
+void genesys::GsDevice::INFO()
 {
   int ntry=0;
   do
@@ -310,20 +310,20 @@ void genesys::Genesys::INFO()
     memset(buff,0,100);rd=read(fd1,buff,100); printf("%s \n",buff);
   */
 }
-float genesys::Genesys::ReadVoltageSet()
+float genesys::GsDevice::ReadVoltageSet()
 {
   if (time(0)-_lastInfo > 20) this->INFO();
   return _vSet;
 }
-float genesys::Genesys::ReadVoltageUsed()
+float genesys::GsDevice::ReadVoltageUsed()
 {
   if (time(0)-_lastInfo > 20) this->INFO();
   return _vRead;
 }
-float genesys::Genesys::ReadCurrentUsed()
+float genesys::GsDevice::ReadCurrentUsed()
 {
   if (time(0)-_lastInfo > 20) this->INFO();
   return _iRead;
 
 }
-std::string genesys::Genesys::readValue(){return _value;}
+std::string genesys::GsDevice::readValue(){return _value;}

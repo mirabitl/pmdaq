@@ -6,32 +6,33 @@ using namespace genesys;
 genesysPlugin::genesysPlugin(): _lv(NULL){} 
 void genesysPlugin::open()
 {
-
+  _lv=NULL;
   PMF_INFO(_logGenesys," CMD: Open ");
 
-  std::string device;
+  std::string device="/dev/null";
   if (params().as_object().find("device")!=params().as_object().end())
     { 
       device=params()["device"].as_string();
     }
 
 
-  uint32_t port;
+  uint32_t port=0;
 
   if (params().as_object().find("port")!=params().as_object().end())
     { 
     port=params()["port"].as_integer();
 
   }
-  std::cout<<"calling open "<<std::endl;
+  std::cout<<"calling open "<<device<<" port "<<port<<" "<<_lv<<std::endl;
   if (_lv!=NULL)
     delete _lv;
   
   
   
-  _lv= new Genesys(device,port);
- 
-  _lv->INFO();
+  _lv= new GsDevice(device,port);
+
+  if (_lv!=NULL)
+    _lv->INFO();
 
 }
 void genesysPlugin::close()

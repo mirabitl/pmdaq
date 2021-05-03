@@ -32,12 +32,12 @@ static LoggerPtr _logGenesys(Logger::getLogger("PMDAQ_GENESYS"));
 using namespace std;
 namespace genesys
 {
-  class Genesys
+  class GsDevice
   {
   public:
     void setIos();
-    Genesys(std::string device,uint32_t address);
-    ~Genesys();
+    GsDevice(std::string device,uint32_t address);
+    ~GsDevice();
     void ON();
     void OFF();
     void readCommand(std::string cmd);
