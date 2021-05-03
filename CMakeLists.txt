@@ -133,6 +133,9 @@ file(GLOB MG_TARGET
 file(GLOB RC_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/combdaq*"
      )
+file(GLOB SC_TARGET
+     "${CMAKE_CURRENT_SOURCE_DIR}/scripts/slowctrl*"
+     )
 file(GLOB DAEMON_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/bin/*daemon"
      )
@@ -144,7 +147,7 @@ file(GLOB ETC_TARGET
 
 install(FILES ${SCRIPT_TARGET}  DESTINATION share )
 install(FILES ${ETC_TARGET} DESTINATION etc)
-install(FILES ${MG_TARGET} ${RC_TARGET} ${DAEMON_TARGET} DESTINATION bin)
+install(FILES ${MG_TARGET} ${RC_TARGET} ${SC_TARGET} ${DAEMON_TARGET} DESTINATION bin)
 
 
 install(TARGETS pmd scannet DESTINATION bin  ARCHIVE DESTINATION bin)

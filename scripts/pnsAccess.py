@@ -43,6 +43,12 @@ class pnsAccess:
             if ( 'error' in rep):
                 print(rep)
                 x.state="DEAD"
+                par={}
+                par["host"]=x.host
+                par["port"]=x.port
+                par["path"]=x.path
+                par["state"]=x.state
+                sac.executeCMD(self.pns_host,8888,"/PNS/UPDATE",par)
             else:
                 if (rep["STATE"]!= x.state):
                     print(rep["STATE"]," found different from store one",x.state)
