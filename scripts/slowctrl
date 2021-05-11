@@ -1,0 +1,157 @@
+#!/usr/bin/env python3
+from __future__ import absolute_import
+from __future__ import print_function
+import os
+import socks
+import socket
+import six.moves.http_client
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
+from six.moves.urllib.error import URLError, HTTPError
+import json
+from copy import deepcopy
+import base64
+import time
+import argparse
+import requests
+import rcslow
+import serviceAccess as sac
+import pnsAccess
+import MongoJob as mg
+import sys
+from six.moves import range
+from six.moves import input
+
+parser = argparse.ArgumentParser()
+
+# configure all the actions
+grp_action = parser.add_mutually_exclusive_group()
+# JOB Control
+
+grp_action.add_argument('--jc-destroy', action='store_true',
+                        help='delete all registered services and the session (--name for a given application)')
+grp_action.add_argument('--jc-info', action='store_true',
+                        help='List all services and parameters')
+grp_action.add_argument('--jc-pns-list', action='store_true',
+                        help='List all services in PNS (--name session for a given session)')
+grp_action.add_argument('--jc-pns-session', action='store_true',
+                        help='List all session in PNS ')
+# SLOW preparation
+# Running
+grp_action.add_argument('--slow-register', action='store_true',
+                        help='Ensure registration of all services and Print them')
+grp_action.add_argument('--slow-configure', action='store_true',
+                        help=' Configure FSLOW, front end ASICs configuration')
+grp_action.add_argument('--slow-start', action='store_true',
+                        help=' start the monitoring')
+grp_action.add_argument('--slow-stop', action='store_true',
+                        help=' stop the monitoring')
+grp_action.add_argument('--slow-destroy', action='store_true',
+                        help='destroy the readout, back to the CREATED state')
+# Status
+grp_action.add_argument('--slow-status', action='store_true',
+                        help=' display SLOW status of all processes')
+# Arguments
+parser.add_argument('--config', action='store', dest='config',
+                    default=None, help='json config file')
+parser.add_argument('--channel', action='store', type=int,
+                    default=None, dest='channel', help='set the channel number')
+parser.add_argument('--first', action='store', type=int,
+                    default=None, dest='first', help='Scurve low vth')
+parser.add_argument('--last', action='store', type=int,
+                    default=None, dest='last', help='Scurve high vth')
+
+# Job
+parser.add_argument('--value', action='store', type=int,
+                    dest='value', default=None, help='value to pass')
+parser.add_argument('--address', action='store', type=int,
+                    dest='address', default=None, help='address to pass')
+parser.add_argument('--comment', action='store', default=None,
+                    dest='comment', help=' Comment for start run')
+
+parser.add_argument('-M', '--Method', action='store', dest='method',
+                    default=None, help='Command name')
+parser.add_argument('-A', '--Application', action='store', dest='application',
+                    default=None, help='Application name')
+parser.add_argument('-P', '--Parameter', action='store', dest='parameter',
+                    default=None, help='parameter set')
+
+account = os.getenv("MGDBLOGIN", "NONE")
+if (account == "NONE"):
+    print("The ENV varaible MGDBLOGIN=user/pwd@host:port@dbname mut be set")
+    exit(0)
+
+config = os.getenv("SLOWMONGO", "NONE")
+file_config=None
+session_name=None
+if (config == "NONE"):
+    print("The ENV varaible SLOWMONGO=name:version must be set")
+    exit(0)
+else:
+    w=mg.instance()
+    #print(config.split(':')[0],config.split(':')[1],True)
+    w.downloadConfig(config.split(':')[0],int(config.split(':')[1]),True)
+    file_config="/dev/shm/mgjob/%s_%s.json" % (config.split(':')[0],config.split(':')[1])
+    #exit(0)
+    session_name=config.split(':')[0]
+
+# PN access
+fpns=pnsAccess.pnsAccess()
+
+
+# fdc.updateInfo(True,True)
+
+if len(sys.argv) == 1:
+    parser.print_help(sys.stderr)
+    sys.exit(1)
+results = parser.parse_args()
+
+# analyse the command
+lcgi = {}
+r_cmd = None
+
+if(results.jc_destroy):
+    fpns.pns_remove(session_name)
+    exit(0)
+elif(results.jc_pns_list):
+    rep=fpns.pns_list(session_name)
+    print(rep)
+    exit(0)
+elif(results.jc_pns_session):
+    rep=fpns.pns_session_list()
+    print(rep)
+    exit(0)
+elif(results.jc_info):
+    fpns.Print(session_name,True)
+    exit(0)
+# SLOW
+fdc = rcslow.slowControl(file_config)
+if(results.slow_register):
+    fdc.session.Print(True)
+    exit(0)
+elif(results.slow_configure):
+    fdc.configure()
+    exit(0)
+elif(results.slow_status):
+    fdc.Status(True)
+    exit(0)
+elif(results.slow_start):
+    if (results.comment != None):
+        fdc.comment=results.comment
+        fdc.start()
+    else:
+        fdc.start()
+    exit(0)
+elif(results.slow_stop):
+    fdc.stop()
+    exit(0)
+elif(results.slow_destroy):
+    fdc.halt()
+    exit(0)
+
+elif (results.method!=None):
+    param=json.loads(results.parameter)
+    rep =fdc.processCommand(results.method,results.application,param)
+    if (results.verbose):
+        print(rep)
+    exit(0)
