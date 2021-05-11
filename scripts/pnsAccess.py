@@ -27,18 +27,18 @@ class pnsAccess:
         self.check()
     def check(self):
         self.process_list= self.pns_list()
-        print("process  list: ",self.process_list)
+        #print("process  list: ",self.process_list)
         self.session_list=self.pns_session_list()
-        print("session  list: ",self.session_list)
+        #print("session  list: ",self.session_list)
         self.registered=[]
         if (self.process_list["REGISTERED"]!= None):
             for x in self.process_list["REGISTERED"]:
-                print(x)
+                #print(x)
                 self.registered.append(sac.strip_pns_string(x))
 
         #xf=None
         for x in self.registered:
-            print("Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state)
+            #print("Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state)
             rep=json.loads(sac.executeCMD(x.host,x.port,x.path+"INFO",None))
             if ( 'error' in rep):
                 print(rep)
@@ -57,8 +57,8 @@ class pnsAccess:
         #        xf=x
         #if (xf!=None):
         #    self.registered.remove(xf)
-        for x in self.registered:
-            print("After Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state," Session :",x.session," Name : ",x.name," Instance ",x.instance )
+        #for x in self.registered:
+        #    print("After Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state," Session :",x.session," Name : ",x.name," Instance ",x.instance )
 
         #json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/LIST",{}))
         #.decode("utf-8"))

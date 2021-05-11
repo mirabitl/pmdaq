@@ -20,7 +20,7 @@ using namespace std;
     virtual void close();
     virtual void registerCommands();
     // Access to the interface
-    wiener::WienerSnmp* getHVWienerInterface(){  //std::cout<<" get Ptr "<<_hv<<std::endl;
+    wiener::WienerDevice* getHVWienerInterface(){  //std::cout<<" get Ptr "<<_hv<<std::endl;
       return _hv;}
     // Status
     virtual web::json::value status();
@@ -40,7 +40,7 @@ using namespace std;
   private:
     //zdaq::fsm* _fsm;
 
-    wiener::WienerSnmp* _hv;
+    wiener::WienerDevice* _hv;
   };
 
 

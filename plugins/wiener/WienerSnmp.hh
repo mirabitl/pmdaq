@@ -12,11 +12,11 @@ using namespace  std;
 
 namespace wiener
 {
-  class WienerSnmp
+  class WienerDevice
   {
   public:
     std::string exec(const char* cmd);
-    WienerSnmp(std::string ipa);
+    WienerDevice(std::string ipa);
     std::string getSysMainSwitch();
     std::string setOutputVoltage(uint32_t module,uint32_t voie,float tension);
     float getOutputVoltage(uint32_t module,uint32_t voie);

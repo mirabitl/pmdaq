@@ -8,62 +8,73 @@ using namespace wiener;
 #include <fstream>
 #include "utils.hh"
 
-std::string wiener::WienerSnmp::exec(const char* cmd) {
+std::string wiener::WienerDevice::exec(const char* cmd) {
+  //fprintf(stderr,"Command : %s",cmd);
+  PM_INFO(_logWiener,"Command called "<<cmd);
   FILE* pipe = popen(cmd, "r");
   if (!pipe) return "ERROR";
-  char buffer[128];
+  //char buffer[128];
   std::string result = "";
+  size_t nc=0;
+  char* line;
   while (!feof(pipe)) {
-    if (fgets(buffer, 128, pipe) != NULL)
-      result += buffer;
+    //if (fgets(buffer, 128, pipe) != NULL)
+    if (getline(&line, &nc, pipe) !=-1)
+      {
+	fprintf(stderr,"%d chae read %s",nc,line);
+      result += line;
+      }
+      else
+	break;
   }
   pclose(pipe);
+  PM_INFO(_logWiener,"Command done "<<result);
   return result;
     
 }
   
-wiener::WienerSnmp::WienerSnmp(std::string ipa) : _ip(ipa){}
-std::string wiener::WienerSnmp::getSysMainSwitch()
+wiener::WienerDevice::WienerDevice(std::string ipa) : _ip(ipa){}
+std::string wiener::WienerDevice::getSysMainSwitch()
 {
   std::stringstream sc;
   sc<<"snmpget -v 2c -m +WIENER-CRATE-MIB -c public ";
   sc<<_ip<<" sysMainSwitch.0";
-  return exec(sc.str().c_str());
+  return this->exec(sc.str().c_str());
 }
-std::string wiener::WienerSnmp::setOutputVoltage(uint32_t module,uint32_t voie,float tension)
+std::string wiener::WienerDevice::setOutputVoltage(uint32_t module,uint32_t voie,float tension)
 {
   std::stringstream sc;
   sc<<"snmpset -v 2c -m +WIENER-CRATE-MIB -c guru ";
   sc<<_ip<<" outputVoltage.u"<<100*module+voie<<" F "<<tension;
-  return exec(sc.str().c_str());
+  return this->exec(sc.str().c_str());
 
 }
-float wiener::WienerSnmp::getOutputVoltage(uint32_t module,uint32_t voie)
+float wiener::WienerDevice::getOutputVoltage(uint32_t module,uint32_t voie)
 {
   std::stringstream sc;
   sc<<"snmpget -v 2c -m +WIENER-CRATE-MIB -c public ";
   sc<<_ip<<" outputVoltage.u"<<100*module+voie;
-  std::string res=exec(sc.str().c_str());
+  std::string res=this->exec(sc.str().c_str());
   //std::cout<<__PRETTY_FUNCTION__<<res<<std::endl;
   //  std::vector<std::string> strs;
   //boost::split(strs,res, boost::is_any_of(" "));
   auto strs=utils::split(res,' ');
   return std::stof(strs[4]);
 }
-std::string wiener::WienerSnmp::setOutputVoltageRiseRate(uint32_t module,uint32_t voie,float val)
+std::string wiener::WienerDevice::setOutputVoltageRiseRate(uint32_t module,uint32_t voie,float val)
 {
   std::stringstream sc;
   sc<<"snmpset -v 2c -m +WIENER-CRATE-MIB -c guru ";
   sc<<_ip<<" outputVoltageRiseRate.u"<<100*module+voie<<" F "<<val;
-  return exec(sc.str().c_str());
+  return this->exec(sc.str().c_str());
 
 }
-float wiener::WienerSnmp::getOutputVoltageRiseRate(uint32_t module,uint32_t voie)
+float wiener::WienerDevice::getOutputVoltageRiseRate(uint32_t module,uint32_t voie)
 {
   std::stringstream sc;
   sc<<"snmpget -v 2c -m +WIENER-CRATE-MIB -c public ";
   sc<<_ip<<" outputVoltageRiseRate.u"<<100*module+voie;
-  std::string res=exec(sc.str().c_str());
+  std::string res=this->exec(sc.str().c_str());
   //std::cout<<__PRETTY_FUNCTION__<<res<<std::endl;
   //std::vector<std::string> strs;
   //boost::split(strs,res, boost::is_any_of(" "));
@@ -72,20 +83,20 @@ float wiener::WienerSnmp::getOutputVoltageRiseRate(uint32_t module,uint32_t voie
   return std::stof(strs[4]);
 
 }
-std::string wiener::WienerSnmp::setOutputCurrentLimit(uint32_t module,uint32_t voie,float cur )
+std::string wiener::WienerDevice::setOutputCurrentLimit(uint32_t module,uint32_t voie,float cur )
 {
   std::stringstream sc;
   sc<<"snmpset -v 2c -m +WIENER-CRATE-MIB -c guru ";
   sc<<_ip<<" outputCurrent.u"<<100*module+voie<<" F "<<cur;
-  return exec(sc.str().c_str());
+  return this->exec(sc.str().c_str());
 
 }
-float wiener::WienerSnmp::getOutputCurrentLimit(uint32_t module,uint32_t voie)
+float wiener::WienerDevice::getOutputCurrentLimit(uint32_t module,uint32_t voie)
 {
   std::stringstream sc;
   sc<<"snmpget -v 2c -m +WIENER-CRATE-MIB -c public ";
   sc<<_ip<<" outputCurrent.u"<<100*module+voie;
-  std::string res=exec(sc.str().c_str());
+  std::string res=this->exec(sc.str().c_str());
   //std::cout<<__PRETTY_FUNCTION__<<res<<std::endl;
   //std::vector<std::string> strs;
   //boost::split(strs,res, boost::is_any_of(" "));
@@ -94,12 +105,12 @@ float wiener::WienerSnmp::getOutputCurrentLimit(uint32_t module,uint32_t voie)
   return std::stof(strs[4]);
 
 }
-float wiener::WienerSnmp::getOutputMeasurementSenseVoltage(uint32_t module,uint32_t voie)
+float wiener::WienerDevice::getOutputMeasurementSenseVoltage(uint32_t module,uint32_t voie)
 {
   std::stringstream sc;
   sc<<"snmpget -v 2c -m +WIENER-CRATE-MIB -c public ";
   sc<<_ip<<" outputMeasurementSenseVoltage.u"<<100*module+voie;
-  std::string res=exec(sc.str().c_str());
+  std::string res=this->exec(sc.str().c_str());
   //std::cout<<__PRETTY_FUNCTION__<<res<<std::endl;
   //std::vector<std::string> strs;
   //boost::split(strs,res, boost::is_any_of(" "));
@@ -108,7 +119,7 @@ float wiener::WienerSnmp::getOutputMeasurementSenseVoltage(uint32_t module,uint3
   return std::stof(strs[4]);
   
 }
-float wiener::WienerSnmp::getOutputMeasurementCurrent(uint32_t module,uint32_t voie)
+float wiener::WienerDevice::getOutputMeasurementCurrent(uint32_t module,uint32_t voie)
 {
   std::stringstream sc;
   struct stat buffer;   
@@ -118,29 +129,37 @@ float wiener::WienerSnmp::getOutputMeasurementCurrent(uint32_t module,uint32_t v
   else
     sc<<"snmpget -v 2c  -m +WIENER-CRATE-MIB -c public ";
   sc<<_ip<<" outputMeasurementCurrent.u"<<100*module+voie;
-  std::string res=exec(sc.str().c_str());
+  std::string res=this->exec(sc.str().c_str());
   //std::cout<<__PRETTY_FUNCTION__<<res<<std::endl;
-  //std::vector<std::string> strs;
+  // std::vector<std::string> strs;
   //boost::split(strs,res, boost::is_any_of(" "));
   //return atof(strs[4].c_str());
-  auto strs=utils::split(res,' ');
-  return std::stof(strs[4]);
+   auto strs=utils::split(res,' ');
+   PM_INFO(_logWiener,"Len of strs "<<strs.size());
+   PM_INFO(_logWiener,"strs[4] "<<strs[4]);
+   if (strs.size()==6)
+     return std::stof(strs[4]);
+   if (strs.size()==7)
+     return std::stof(strs[5]);
+   else
+     return 0;
+   
 
 }
-std::string wiener::WienerSnmp::setOutputSwitch(uint32_t module,uint32_t voie,uint32_t val )
+std::string wiener::WienerDevice::setOutputSwitch(uint32_t module,uint32_t voie,uint32_t val )
 {
   std::stringstream sc;
   sc<<"snmpset -v 2c -m +WIENER-CRATE-MIB -c guru ";
   sc<<_ip<<" outputSwitch.u"<<100*module+voie<<" i "<<val;
-  return exec(sc.str().c_str());
+  return this->exec(sc.str().c_str());
 
 }
-std::string wiener::WienerSnmp::getOutputSwitch(uint32_t module,uint32_t voie)
+std::string wiener::WienerDevice::getOutputSwitch(uint32_t module,uint32_t voie)
 {
   std::stringstream sc;
   sc<<"snmpget -v 2c -m +WIENER-CRATE-MIB -c public ";
   sc<<_ip<<" outputSwitch.u"<<100*module+voie;
-  std::string res=exec(sc.str().c_str());
+  std::string res=this->exec(sc.str().c_str());
   //std::cout<<__PRETTY_FUNCTION__<<res<<std::endl;
   //std::vector<std::string> strs;
   //boost::split(strs,res, boost::is_any_of(" "));
@@ -149,12 +168,12 @@ std::string wiener::WienerSnmp::getOutputSwitch(uint32_t module,uint32_t voie)
   return strs[3];
 
 }
-std::string wiener::WienerSnmp::getOutputStatus(uint32_t module,uint32_t voie)
+std::string wiener::WienerDevice::getOutputStatus(uint32_t module,uint32_t voie)
 {
   std::stringstream sc;
   sc<<"snmpget -v 2c -m +WIENER-CRATE-MIB -c public ";
   sc<<_ip<<" outputStatus.u"<<100*module+voie;
-  std::string res=exec(sc.str().c_str());
+  std::string res=this->exec(sc.str().c_str());
   //std::cout<<__PRETTY_FUNCTION__<<res<<std::endl;
   //std::vector<std::string> strs;
   //boost::split(strs,res, boost::is_any_of(" "));

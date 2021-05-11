@@ -25,7 +25,7 @@ void wienerPlugin::open()
   
   
   
-  _hv= new wiener::WienerSnmp(address);
+  _hv= new wiener::WienerDevice(address);
   
 
 }
@@ -51,6 +51,7 @@ web::json::value wienerPlugin::channelStatus(uint32_t channel)
       PMF_ERROR(_logWiener,"No WienerSnmp opened");
        return r;
     }
+   PMF_INFO(_logWiener,"Getting value for channel"<<channel);
    // std::cout<<channel<<" gives "<<_hv->getOutputVoltage(channel/8,channel%8)<<std::endl;
    r["vset"]=json::value::number(_hv->getOutputVoltage(channel/8,channel%8));
    r["iset"]=json::value::number(_hv->getOutputCurrentLimit(channel/8,channel%8));
@@ -86,7 +87,7 @@ web::json::value wienerPlugin::status(int32_t first,int32_t last)
     fi=params()["first"].as_integer();
   else
     fi=first;
-  if (params().as_object().find("first")==params().as_object().end() && last<0)
+  if (params().as_object().find("last")==params().as_object().end() && last<0)
   {
     PMF_ERROR(_logWiener,"Please define last channel");
     return r;
@@ -95,18 +96,23 @@ web::json::value wienerPlugin::status(int32_t first,int32_t last)
     la=params()["last"].as_integer();
   else
     la=last;
-
+  PMF_INFO(_logWiener,"Status from "<<fi<<" to "<<la);
   for (uint32_t i=fi;i<=la;i++)
     {
+      PMF_INFO(_logWiener,"Calling ChannelStatus "<<i);
       c_array[nc++]=this->channelStatus(i);
+      PMF_INFO(_logWiener,"Status from "<<nc-1<<" "<<c_array[nc-1]);
       //std::cout <<v<<std::endl;
     }
+  PMF_INFO(_logWiener,"End ");
   r["channels"]=c_array;
   return r;
 }
 
 void wienerPlugin::c_status(http_request m)
 {
+
+  PMF_INFO(_logWiener,"Querying Status");
 
  auto par = json::value::object();
 
@@ -140,7 +146,7 @@ void wienerPlugin::c_status(http_request m)
     }
 
 
- 
+  PMF_INFO(_logWiener,"Querying Status from "<<first<<" to "<<last);
   par["status"] = this->status(first,last);
   Reply(status_codes::OK,par);
 }
