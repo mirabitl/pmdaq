@@ -8,12 +8,12 @@ project(lyon_db VERSION 0.0.1 DESCRIPTION "Event builder plugin")
 #add_subdirectory(pns)
 
 set(SRCS
-  HR2ConfigAccess.cc Febv1ConfigAccess.cc
+  HR2ConfigAccess.cc Febv1ConfigAccess.cc LIROCConfigAccess.cc
   )
 	
 set(HEADERS
 
-  HR2Slow.hh HR2ConfigAccess.hh PRSlow.hh PRBSlow.hh Febv1ConfigAccess.hh
+  HR2Slow.hh HR2ConfigAccess.hh PRSlow.hh PRBSlow.hh Febv1ConfigAccess.hh LIROCConfigAccess.hh
   )
       
 add_library(lyon_db SHARED ${SRCS} ${HEADERS})

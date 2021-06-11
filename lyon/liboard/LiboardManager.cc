@@ -132,7 +132,7 @@ void LiboardManager::fsm_initialise(http_request m)
   if (_hca==NULL)
     {
       std::cout<< "Create config acccess"<<std::endl;
-      _hca=new HR2ConfigAccess();
+      _hca=new LIROCConfigAccess();
       _hca->clear();
     }
   std::cout<< " jLiboard "<<jLiboard<<std::endl;
@@ -247,7 +247,7 @@ void LiboardManager::setThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t 
       //it->second.setHEADER(0x56);
     }
   // Now loop on slowcontrol socket
-  this->configureHR2();
+  this->configureLR();
   ::usleep(10);
 
 }
@@ -261,7 +261,7 @@ void LiboardManager::setGain(uint16_t gain)
 	it->second.setPAGAIN(i,gain);
     }
   // Now loop on slowcontrol socket
-  this->configureHR2();
+  this->configureLR();
   ::usleep(10);
 
 }
@@ -275,7 +275,7 @@ void LiboardManager::setMask(uint32_t level,uint64_t mask)
       it->second.setMASK(level,mask);
     }
   // Now loop on slowcontrol socket
-  this->configureHR2();
+  this->configureLR();
 
 
   ::usleep(10);
@@ -290,7 +290,7 @@ void LiboardManager::setChannelMask(uint16_t level,uint16_t channel,uint16_t val
       it->second.setMASKChannel(level,channel,val==1);
     }
   // Now loop on slowcontrol socket
-  this->configureHR2();
+  this->configureLR();
 
 
   ::usleep(10);
@@ -310,7 +310,7 @@ void LiboardManager::setAllMasks(uint64_t mask)
 	    
     }
   // Now loop on slowcontrol socket
-  this->configureHR2();
+  this->configureLR();
 
 
   ::usleep(10);
@@ -330,7 +330,7 @@ void LiboardManager::setCTEST(uint64_t mask)
 
     }
   // Now loop on slowcontrol socket
-  this->configureHR2();
+  this->configureLR();
 
 
   ::usleep(10);
@@ -498,7 +498,7 @@ void LiboardManager::c_status(http_request m)
   
 }
 
-web::json::value LiboardManager::configureHR2()
+web::json::value LiboardManager::configureLR()
 {
   /// A reecrire
   uint32_t external=params()["external"].as_integer();
@@ -532,7 +532,7 @@ void LiboardManager::configure(http_request m)
  
   int32_t rc=1;
 
-  web::json::value array_slc=this->configureHR2();
+  web::json::value array_slc=this->configureLR();
 
   par["status"]=json::value::string(U("done"));
   par["devices"]=array_slc;
@@ -794,7 +794,7 @@ void LiboardManager::Scurve(int mode,int thmin,int thmax,int step)
       for (int i=0;i<64;i++)
 	{
 	  mask=(1ULL<<i);
-	  std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
+	  std::cout<<"Step LR "<<i<<" channel "<<i<<std::endl;
 	  this->setAllMasks(mask);
 	  this->setCTEST(mask);
 	  this->ScurveStep(mdccUrl,builderUrl,thmin,thmax,step);

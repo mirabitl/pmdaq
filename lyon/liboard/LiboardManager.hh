@@ -32,7 +32,7 @@
 #include "utils.hh"
 #include "LiboardInterface.hh"
 
-#include "HR2ConfigAccess.hh"
+#include "LIROCConfigAccess.hh"
 
 using namespace liboard;
 #include <sstream>
@@ -117,7 +117,7 @@ class LiboardManager  : public fsmw
     void setMask(uint32_t level,uint64_t mask);
     void setChannelMask(uint16_t level,uint16_t channel,uint16_t val);
 
-    web::json::value configureHR2();
+    web::json::value configureLR();
 
     void prepareDevices();
     void startReadoutThread(LiboardInterface* d);
@@ -140,7 +140,7 @@ class LiboardManager  : public fsmw
     std::map<uint32_t,liboard::FtdiDeviceInfo*> theFtdiDeviceInfoMap_;	
     std::map<uint32_t,LiboardInterface*> _LiboardInterfaceMap;
     std::vector<LiboardInterface*> _vDif;
-    HR2ConfigAccess* _hca;
+    LIROCConfigAccess* _hca;
 
     std::vector<std::thread> g_d;
     zmq::context_t* _context;

@@ -28,7 +28,7 @@ class LRSlow
 {
 public:
   ///  Constructor
-  PRBSlow() { memset(_l, 0, 21 * sizeof(uint32_t)); }
+  LRSlow() { memset(_l, 0, 21 * sizeof(uint32_t)); }
   ///  Get one bit status
   bool getBit(int b) { return (_l[b / 8] >> (b % 8)) & 1; }
   /// set one bit
@@ -110,7 +110,7 @@ public:
       else
         clearBit(b + i);
   }
-  uint8_t getDC_PA(uint8_t ch){return (uint8_t) getWord(ch*16+0,6)&0x3F;}
+  uint8_t getDC_pa(uint8_t ch){return (uint8_t) getWord(ch*16+0,6)&0x3F;}
   bool getCtest(uint8_t ch){return getBit(ch*16+6);}
   bool getMask(uint8_t ch){return getBit(ch*16+8);}
   uint8_t getDAC_local(uint8_t ch){return (uint8_t) getWord(ch*16+9,7)&0x7F;}
@@ -143,10 +143,10 @@ public:
   uint8_t getIbo_probe(){return  (uint8_t) getWord(1104+2,6)&0xF;}
 
 
-  void setDC_PA(uint8_t ch,uint8_t val){setWord(ch*16+0,val&0x3F,6);}
+  void setDC_pa(uint8_t ch,uint8_t val){setWord(ch*16+0,val&0x3F,6);}
   void setCtest(uint8_t ch,bool t){setBitState(ch*16+6,t);}
   void setMask(uint8_t ch,bool t){setBitState(ch*16+8,t);}
-  void setDAC_local(uint8_t ch,uint8_t val){setWord(ch*16+9,,val&0x7F,7);}
+  void setDAC_local(uint8_t ch,uint8_t val){setWord(ch*16+9,val&0x7F,7);}
   void setEN_pa(bool t){setBitState(1024+0,t);}
   void setPP_pa(bool t){setBitState(1024+1,t);}
   void setPA_gain(  uint8_t v){setWord(1024+2,v&0xF,4);}
@@ -181,7 +181,7 @@ public:
   {
 
     for (int ch = 0; ch < 64; ch++)
-      std::cout << "DC_PA[" << ch << "]=" << (int)getDC_PA(ch) << std::endl;
+      std::cout << "DC_PA[" << ch << "]=" << (int)getDC_pa(ch) << std::endl;
     for (int ch = 0; ch < 64; ch++)
       std::cout << "Ctest[" << ch << "]=" << (int)getCtest(ch) << std::endl;
     
@@ -198,7 +198,7 @@ public:
     std::cout << "EN_disc =" << getEN_disc() << std::endl;
     std::cout << "PP_disc =" << getPP_disc() << std::endl;
     std::cout << "Polarity =" << getPolarity() << std::endl;
-    std::cout << "Hysteresys =" << getHysteresis() << std::endl;
+    std::cout << "Hysteresys =" << getHysteresys() << std::endl;
     std::cout << "EN_bg =" << getEN_bg() << std::endl;
     std::cout << "PP_bg =" << getPP_bg() << std::endl;
     std::cout << "EN_10bDAC =" << getEN_10bDAC() << std::endl;
@@ -395,7 +395,7 @@ public:
 	    address=64+j/3;
 	    sub=j%3;
 	  }
-	_board[i]=_l[i]|(adress<<8)|(sub<<16);
+	_board[i]=_l[i]|(address<<8)|(sub<<16);
       }
     return _board;
   }
@@ -428,5 +428,6 @@ public:
 
 private:
   uint8_t _l[139]; ///< 640 bits of SLC
+  uint32_t _board[139];
   web::json::value _jasic; ///< JSON cpp Value 
 };
