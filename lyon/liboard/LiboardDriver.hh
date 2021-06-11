@@ -74,6 +74,7 @@ namespace liboard
     int32_t readNBytes(unsigned char  *cdata, uint32_t nb);
     int32_t registerWrite(uint32_t address, uint32_t data);
     int32_t registerRead(uint32_t address, uint32_t *data);
+    uint32_t registerRead(uint32_t address);
     int32_t setup();
     int32_t loadSLC(uint32_t* SLC,uint32_t size);
     int32_t setAcquisitionMode(bool active=true,bool autoreset=true,bool external=false);

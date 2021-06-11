@@ -184,6 +184,13 @@ int32_t liboard::LiboardDriver::registerRead(uint32_t address, uint32_t *data)
   return 0;
 }	
 
+
+uint32_t liboard::LiboardDriver::registerRead(uint32_t address)
+{
+  uint32_t tdata=0;
+  this->registerRead(address,&tdata);
+  return tdata;
+}
 int32_t liboard::LiboardDriver::setup()
 {
   int32_t ret;
@@ -240,7 +247,7 @@ int32_t liboard::LiboardDriver::loadSLC(uint32_t* SLC,uint32_t slc_size)
   for (i = 0;i<slc_size; i++)
     {
       printf ("0x%x\n",SLC[i]);
-      tdaq=SLC[i];
+      tdata=SLC[i];
       ret=registerWrite(LIBOARD_SLC_DATA_REG,tdata);
       printf ("%d reg write 0x%08x at 0x%x, ret=%d\n",i,tdata,taddr, ret);
       // getchar();
