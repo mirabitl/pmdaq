@@ -51,7 +51,7 @@ public:
   void initialise(pm::pmSender* p=NULL);
   // configure
  
-  void configure(unsigned char* b, uint32_t nb);
+  void configure(uint32_t* b, uint32_t nb);
   // Start Stop
   void start();
   void readout();

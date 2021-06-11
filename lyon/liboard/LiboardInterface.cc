@@ -1,7 +1,7 @@
 #include "LiboardInterface.hh"
 #include <unistd.h>
 #include <stdint.h>
-liboard::LiboardInterface::LiboardInterface(liboard::FtdiDeviceInfo* ftd) : _rd(NULL),_state("CREATED"),_dsData(NULL),_detid(150),_external(true)
+liboard::LiboardInterface::LiboardInterface(liboard::FtdiDeviceInfo* ftd) : _rd(NULL),_state("CREATED"),_dsData(NULL),_detid(170),_external(true)
 {
   // Creation of data structure
 
@@ -179,7 +179,7 @@ void liboard::LiboardInterface::destroy()
 
 }
 
-void liboard::LiboardInterface::configure(unsigned char* b,uint32_t nb)
+void liboard::LiboardInterface::configure(uint32_t* b,uint32_t nb)
 {
   _rd->loadSLC(b,nb);
   uint32_t tdata;

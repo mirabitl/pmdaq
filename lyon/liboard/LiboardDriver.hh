@@ -18,21 +18,27 @@
 
 #define LIBOARD_TEST_REG 0x00
 #define LIBOARD_ID_REG 0x01
-#define LIBOARD_NBASIC_REG 0x02
-#define LIBOARD_SLC_DATA_REG 0x10
-#define LIBOARD_SLC_CONTROL_REG 0x11
-#define LIBOARD_SLC_STATUS_REG 0x12
-#define LIBOARD_SLC_SIZE_REG 0x13
-#define LIBOARD_RO_DATA_FORMAT_REG 0x31
-#define LIBOARD_RO_CONTROL_REG 0x30
-#define LIBOARD_RO_RESET_REG 0x32
 
 
-#define LIBOARD_MDCC_SHIFT 0x100
+
+
+#define LIBOARD_SLC_DATA_REG 0x8000
+#define LIBOARD_SLC_CONTROL_REG 0x8001
+#define LIBOARD_SLC_STATUS_REG 0x8002
+
+
+
+
+
+#define LIBOARD_RO_CONTROL_REG 0x2002
+#define LIBOARD_RO_RESET_REG 0x2003
+
+
+#define LIBOARD_MDCC_SHIFT 0x4000
 
 
 #define LIBOARD_HEADER_SIZE 20
-#define LIBOARD_FRAME_SIZE  20
+#define LIBOARD_FRAME_SIZE  11
 #define LIBOARD_EVENT_START 0xB0
 #define LIBOARD_EVENT_STOP 0xA0
 
@@ -69,7 +75,7 @@ namespace liboard
     int32_t registerWrite(uint32_t address, uint32_t data);
     int32_t registerRead(uint32_t address, uint32_t *data);
     int32_t setup();
-    int32_t loadSLC(unsigned char* SLC,uint32_t size);
+    int32_t loadSLC(uint32_t* SLC,uint32_t size);
     int32_t setAcquisitionMode(bool active=true,bool autoreset=true,bool external=false);
     int32_t resetFSM();
     int32_t readData(unsigned char* tro,uint32_t size);

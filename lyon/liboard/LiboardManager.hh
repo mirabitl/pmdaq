@@ -102,8 +102,9 @@ class LiboardManager  : public fsmw
     void c_downloadDB(http_request m );
     void c_setchannelmask(http_request m );
     void c_setmask(http_request m );
-    void c_setthresholds(http_request m );
-    void c_setpagain(http_request m );
+    void c_setthreshold(http_request m );
+    void c_setdcpa(http_request m );
+    void c_setdaclocal(http_request m );
     void c_external(http_request m );
     /**
        Change the threshold on all Asics of the Liboard
@@ -112,10 +113,11 @@ class LiboardManager  : public fsmw
        @param b2 Third threshold
        @param idif The dif ID
      */
-    void setThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t idif=0);
-    void setGain(uint16_t gain);
-    void setMask(uint32_t level,uint64_t mask);
-    void setChannelMask(uint16_t level,uint16_t channel,uint16_t val);
+    void setThreshold(uint16_t v0,uint32_t idif=0);
+    void setDC_pa(uint8_t gain);
+    void setDAC_local(uint8_t dac);
+    void setMask(uint64_t mask);
+    void setChannelMask(uint16_t channel,uint16_t val);
 
     web::json::value configureLR();
 
@@ -129,13 +131,38 @@ class LiboardManager  : public fsmw
 
     void joinThreads(){for (auto i=g_d.begin();i!=g_d.end();i++) (*i).join();}
 
-    void setAllMasks(uint64_t mask);
-    void setCTEST(uint64_t mask);
-    void ScurveStep(std::string mdcc,std::string builder,int thmin,int thmax,int step);
+    void setCtest(uint64_t mask);
+    void ScurveStep(std::string builder,int thmin,int thmax,int step);
     void thrd_scurve() ;
     void Scurve(int mode,int thmin,int thmax,int step);
 
     void c_scurve(http_request m );
+
+    
+    void c_mdccstatus(http_request m);
+    void c_pause(http_request m);
+    void c_resume(http_request m);
+    void c_ecalpause(http_request m);
+    void c_ecalresume(http_request m);
+    void c_reset(http_request m);
+    void c_readreg(http_request m);
+    void c_writereg(http_request m);
+    void c_spillon(http_request m);
+    void c_spilloff(http_request m);
+    void c_beamon(http_request m);
+    void c_setcalibcount(http_request m);
+    void c_reloadcalib(http_request m);
+    void c_calibon(http_request m);
+    void c_caliboff(http_request m);
+    void c_resettdc(http_request m);
+    void c_setcalibregister(http_request m);
+    void c_setspillregister(http_request m);
+    void c_sethardreset(http_request m);
+    void c_settrigext(http_request m);
+    void c_setexternaltrigger(http_request m);
+
+
+    
   private:
     std::map<uint32_t,liboard::FtdiDeviceInfo*> theFtdiDeviceInfoMap_;	
     std::map<uint32_t,LiboardInterface*> _LiboardInterfaceMap;
@@ -150,5 +177,7 @@ class LiboardManager  : public fsmw
     int _sc_mode,_sc_thmin,_sc_thmax,_sc_step;
     bool _sc_running;
     std::thread g_scurve;
+    // MDCC
+    liboard::LiboardDriver* _mdcc;
   };
 

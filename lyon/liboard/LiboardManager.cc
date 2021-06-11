@@ -56,6 +56,13 @@ void LiboardManager::prepareDevices()
 	      std::pair<uint32_t,liboard::FtdiDeviceInfo*> p(difi->id,difi);
 	      theFtdiDeviceInfoMap_.insert(p);
 	    }
+	  if (strncmp(difi->name,"LI_",3)==0)
+	    {
+	      sscanf(difi->name,"LI_%d",&difi->id); 
+	      difi->type=0;
+	      std::pair<uint32_t,liboard::FtdiDeviceInfo*> p(difi->id,difi);
+	      theFtdiDeviceInfoMap_.insert(p);
+	    }
 	  if (strncmp(difi->name,"DCCCCC",6)==0)
 	    {sscanf(difi->name,"DCCCCC%d",&difi->id);difi->type=0x10;}
 
@@ -79,6 +86,7 @@ void LiboardManager::scan(http_request m)
   auto par = json::value::object();
   PMF_INFO(_logLiboard," CMD: SCanning");
   // Fill Ftdi Map
+  _mdcc=NULL;
   this->prepareDevices();
   std::map<uint32_t,liboard::FtdiDeviceInfo*>& fm=this->getFtdiMap();
   std::map<uint32_t,LiboardInterface*> dm=this->getLiboardMap();
@@ -93,6 +101,7 @@ void LiboardManager::scan(http_request m)
     {
       PMF_INFO(_logLiboard,"Creating "<<it->second->name);
       LiboardInterface* d= new LiboardInterface(it->second);
+      if (_mdcc==NULL) _mdcc=d->rd();
       PMF_INFO(_logLiboard,"After Creating "<<it->second->name);
       this->getLiboardMap().insert(std::make_pair(it->first,d));
       PMF_INFO(_logLiboard," CMD: SCANDEVICE created LiboardInterface @ "<<std::hex<<d<<std::dec);
@@ -211,15 +220,8 @@ void LiboardManager::fsm_initialise(http_request m)
 
     }
 
-    par["status"]=json::value::string(U("Configured"));
+    par["status"]=json::value::string(U("Initialised"));
     Reply(status_codes::OK,par);  
-
-
-
-
-
-
-
   
 }
 
@@ -229,7 +231,7 @@ void LiboardManager::fsm_initialise(http_request m)
 
 
 
-void LiboardManager::setThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t idif)
+void LiboardManager::setThreshold(uint16_t b0,uint32_t idif)
 {
 
   PMF_INFO(_logLiboard," Changin thresholds: "<<b0<<","<<b1<<","<<b2);
@@ -241,7 +243,7 @@ void LiboardManager::setThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t 
 	  printf("%lx %x %x \n",(it->first>>32),ip,idif);
 	  if (idif!=ip) continue;
 	}
-      it->second.setB0(b0);
+      it->second.setDAC_threshold(b0);
       it->second.setB1(b1);
       it->second.setB2(b2);
       //it->second.setHEADER(0x56);
@@ -251,14 +253,28 @@ void LiboardManager::setThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t 
   ::usleep(10);
 
 }
-void LiboardManager::setGain(uint16_t gain)
+void LiboardManager::setDC_pa(uint8_t gain)
 {
 
   PMF_INFO(_logLiboard," Changing Gain: "<<gain);
   for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
     {
       for (int i=0;i<64;i++)
-	it->second.setPAGAIN(i,gain);
+	it->second.setDC_pa(i,gain);
+    }
+  // Now loop on slowcontrol socket
+  this->configureLR();
+  ::usleep(10);
+
+}
+void LiboardManager::setDAC_local(uint8_t dac)
+{
+
+  PMF_INFO(_logLiboard," Changing Gain: "<<gain);
+  for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
+    {
+      for (int i=0;i<64;i++)
+	it->second.setDAC_local(i,dac);
     }
   // Now loop on slowcontrol socket
   this->configureLR();
@@ -266,13 +282,13 @@ void LiboardManager::setGain(uint16_t gain)
 
 }
 
-void LiboardManager::setMask(uint32_t level,uint64_t mask)
+void LiboardManager::setMask(uint64_t mask)
 {
   PMF_INFO(_logLiboard," Changing Mask: "<<level<<" "<<std::hex<<mask<<std::dec);
   for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
     {
-      
-      it->second.setMASK(level,mask);
+      for (int i=0;i<64;i++)
+	it->second.setMask(i,(mask>>i)&1));
     }
   // Now loop on slowcontrol socket
   this->configureLR();
@@ -281,13 +297,13 @@ void LiboardManager::setMask(uint32_t level,uint64_t mask)
   ::usleep(10);
 
 }
-void LiboardManager::setChannelMask(uint16_t level,uint16_t channel,uint16_t val)
+void LiboardManager::setChannelMask(uint16_t channel,uint16_t val)
 {
   PMF_INFO(_logLiboard," Changing Mask: "<<level<<" "<<std::hex<<channel<<std::dec);
   for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
     {
-      
-      it->second.setMASKChannel(level,channel,val==1);
+    
+      it->second.setMask(channel,val==1);
     }
   // Now loop on slowcontrol socket
   this->configureLR();
@@ -297,38 +313,21 @@ void LiboardManager::setChannelMask(uint16_t level,uint16_t channel,uint16_t val
 
 }
 
-void LiboardManager::setAllMasks(uint64_t mask)
+void LiboardManager::setCtest(uint64_t mask)
 {
-  PMF_INFO(_logLiboard," Changing Mask: "<<std::hex<<mask<<std::dec);
-  for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
-    {
-      it->second.dumpBinary();
-      it->second.setMASK(0,mask);
-      it->second.setMASK(1,mask);
-      it->second.setMASK(2,mask);
-      it->second.dumpBinary();
-	    
-    }
-  // Now loop on slowcontrol socket
-  this->configureLR();
 
-
-  ::usleep(10);
-
-}
-void LiboardManager::setCTEST(uint64_t mask)
-{
-  PMF_INFO(_logLiboard," Changing CTEST: "<<std::hex<<mask<<std::dec);
+  PMF_INFO(_logLiboard," Changing Ctest: "<<level<<" "<<std::hex<<mask<<std::dec);
   for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
     {
       for (int i=0;i<64;i++)
-	{
-	  bool on=((mask>>i)&1)==1;
-	  it->second.setCTEST(i,on);
-	  PMF_INFO(_logLiboard,"CTEST: "<<std::hex<<mask<<std::dec<<" channel "<<i<<" "<<on);
-	}
-
+	it->second.setCtest(i,(mask>>i)&1));
     }
+  // Now loop on slowcontrol socket
+  this->configureLR();
+
+
+  ::usleep(10);
+
   // Now loop on slowcontrol socket
   this->configureLR();
 
@@ -337,37 +336,33 @@ void LiboardManager::setCTEST(uint64_t mask)
 
 }
 
-void LiboardManager::c_setthresholds(http_request m)
+void LiboardManager::c_setthreshold(http_request m)
 {
   auto par = json::value::object();
-  PMF_INFO(_logLiboard,"Set6bdac called ");
+  PMF_INFO(_logLiboard,"SetThreshold called ");
   par["STATUS"]=web::json::value::string(U("DONE"));
 
   
-  uint32_t b0=utils::queryIntValue(m,"B0",250);
-  uint32_t b1=utils::queryIntValue(m,"B1",250);
-  uint32_t b2=utils::queryIntValue(m,"B2",250);
+  uint32_t b0=utils::queryIntValue(m,"B0",470);
   uint32_t idif=utils::queryIntValue(m,"LIBOARD",0);
   
-  this->setThresholds(b0,b1,b2,idif);
+  this->setThreshold(b0,idif);
   par["THRESHOLD0"]=web::json::value::number(b0);
-  par["THRESHOLD1"]=web::json::value::number(b1);
-  par["THRESHOLD2"]=web::json::value::number(b2);
   par["DIF"]=web::json::value::number(idif);
   par["status"]=json::value::string(U("done"));
   Reply(status_codes::OK,par);  
 
 }
-void LiboardManager::c_setpagain(http_request m)
+void LiboardManager::c_setdcpa(http_request m)
 {
   auto par = json::value::object();
-  PMF_INFO(_logLiboard,"Set6bdac called ");
+  PMF_INFO(_logLiboard,"SetDC_pa called ");
   par["STATUS"]=web::json::value::string(U("DONE"));
 
   
-  uint32_t gain=utils::queryIntValue(m,"gain",128);
-  this->setGain(gain);
-  par["GAIN"]=web::json::value::number(gain);
+  uint32_t gain=utils::queryIntValue(m,"value",0);
+  this->setDC_pa(gain);
+  par["DC_pa"]=web::json::value::number(gain);
   
   Reply(status_codes::OK,par);  
 
@@ -383,11 +378,9 @@ void LiboardManager::c_setmask(http_request m)
   //uint32_t nc=utils::queryIntValue(m,"value",4294967295);
   uint64_t mask;
   sscanf(utils::queryStringValue(m,"mask","0XFFFFFFFFFFFFFFFF").c_str(),"%lx",&mask);
-  uint32_t level=utils::queryIntValue(m,"level",0);
-  PMF_INFO(_logLiboard,"SetMask called "<<std::hex<<mask<<std::dec<<" level "<<level);
-  this->setMask(level,mask);
+  PMF_INFO(_logLiboard,"SetMask called "<<std::hex<<mask<<std::dec);
+  this->setMask(mask);
   par["MASK"]=web::json::value::number(mask);
-  par["LEVEL"]=web::json::value::number(level);
 
   Reply(status_codes::OK,par);  
 
@@ -403,13 +396,12 @@ void LiboardManager::c_setchannelmask(http_request m)
 
   
   //uint32_t nc=utils::queryIntValue(m,"value",4294967295);
-  uint32_t level=utils::queryIntValue(m,"level",0);
+
   uint32_t channel=utils::queryIntValue(m,"channel",0);
   bool on=utils::queryIntValue(m,"value",1)==1;
-  PMF_INFO(_logLiboard,"SetMaskChannel called "<<channel<<std::dec<<" level "<<level);
-  this->setChannelMask(level,channel,on);
+  PMF_INFO(_logLiboard,"SetMaskChannel called "<<channel<<std::dec);
+  this->setChannelMask(channel,on);
   par["CHANNEL"]=web::json::value::number(channel);
-  par["LEVEL"]=web::json::value::number(level);
   par["ON"]=web::json::value::number(on);
 
   Reply(status_codes::OK,par);  
@@ -512,9 +504,9 @@ web::json::value LiboardManager::configureLR()
       std::stringstream ips;
       // Dummy IP address for Liboards
       ips<<"0.0.0."<<it->first;
-      _hca->prepareSlowControl(ips.str(),true);
+      _hca->prepareSlowControl(ips.str());
      
-      it->second->configure(_hca->slcBuffer(),_hca->slcBytes());
+      it->second->configure(_hca->slcBuffer(),_hca->slcWords());
       web::json::value ds;
       ds["id"]=json::value::number(it->first);
       ds["slc"]=json::value::number(it->second->status()->slc);
@@ -649,13 +641,38 @@ void LiboardManager::initialise()
 
 
   this->addCommand("STATUS",std::bind(&LiboardManager::c_status,this,std::placeholders::_1));
-  this->addCommand("SETTHRESHOLDS",std::bind(&LiboardManager::c_setthresholds,this,std::placeholders::_1));
-  this->addCommand("SETPAGAIN",std::bind(&LiboardManager::c_setpagain,this,std::placeholders::_1));
+  this->addCommand("SETTHRESHOLD",std::bind(&LiboardManager::c_setthreshold,this,std::placeholders::_1));
+  this->addCommand("SETDCPA",std::bind(&LiboardManager::c_setdcpa,this,std::placeholders::_1));
+  this->addCommand("SETDACLOCAL",std::bind(&LiboardManager::c_setdaclocal,this,std::placeholders::_1));
   this->addCommand("SETMASK",std::bind(&LiboardManager::c_setmask,this,std::placeholders::_1));
   this->addCommand("SETCHANNELMASK",std::bind(&LiboardManager::c_setchannelmask,this,std::placeholders::_1));
   this->addCommand("DOWNLOADDB",std::bind(&LiboardManager::c_downloadDB,this,std::placeholders::_1));
   this->addCommand("TRIGEXT",std::bind(&LiboardManager::c_external,this,std::placeholders::_1));
   this->addCommand("SCURVE",std::bind(&LiboardManager::c_scurve,this,std::placeholders::_1));
+
+  // MDCC stuff
+
+  this->addCommand("PAUSE",std::bind(&LiboardManager::c_pause,this,std::placeholders::_1));
+  this->addCommand("RESUME",std::bind(&LiboardManager::c_resume,this,std::placeholders::_1));
+  this->addCommand("RESET",std::bind(&LiboardManager::c_reset,this,std::placeholders::_1));
+  this->addCommand("WRITEREG",std::bind(&LiboardManager::c_writereg,this,std::placeholders::_1));
+  this->addCommand("READREG",std::bind(&LiboardManager::c_readreg,this,std::placeholders::_1));
+  this->addCommand("MDCCSTATUS",std::bind(&LiboardManager::c_mdccstatus,this,std::placeholders::_1));
+  this->addCommand("SPILLON",std::bind(&LiboardManager::c_spillon,this,std::placeholders::_1));
+  this->addCommand("SPILLOFF",std::bind(&LiboardManager::c_spilloff,this,std::placeholders::_1));
+  this->addCommand("BEAMON",std::bind(&LiboardManager::c_beamon,this,std::placeholders::_1));
+
+  this->addCommand("RESETTDC",std::bind(&LiboardManager::c_resettdc,this,std::placeholders::_1));
+  this->addCommand("CALIBON",std::bind(&LiboardManager::c_calibon,this,std::placeholders::_1));
+  this->addCommand("CALIBOFF",std::bind(&LiboardManager::c_caliboff,this,std::placeholders::_1));
+  this->addCommand("RELOADCALIB",std::bind(&LiboardManager::c_reloadcalib,this,std::placeholders::_1));
+  this->addCommand("SETCALIBCOUNT",std::bind(&LiboardManager::c_setcalibcount,this,std::placeholders::_1));
+  this->addCommand("SETSPILLREGISTER",std::bind(&LiboardManager::c_setspillregister,this,std::placeholders::_1));
+  this->addCommand("SETCALIBREGISTER",std::bind(&LiboardManager::c_setcalibregister,this,std::placeholders::_1));
+  this->addCommand("SETHARDRESET",std::bind(&LiboardManager::c_sethardreset,this,std::placeholders::_1));
+  this->addCommand("SETTRIGEXT",std::bind(&LiboardManager::c_settrigext,this,std::placeholders::_1));
+  this->addCommand("SETEXTERNAL",std::bind(&LiboardManager::c_setexternaltrigger,this,std::placeholders::_1));
+
 
   _hca=NULL;
   // Initialise delays for 
@@ -707,25 +724,25 @@ void LiboardManager::startReadoutThread(LiboardInterface* d)
   
 }
 
-void LiboardManager::ScurveStep(std::string mdcc,std::string builder,int thmin,int thmax,int step)
+void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step)
 {
   std::map<uint32_t,LiboardInterface*> dm=this->getLiboardMap();
   int ncon=50000,ncoff=100,ntrg=50;
-  utils::sendCommand(mdcc,"PAUSE",json::value::null());
+  _mdcc->pause();
   web::json::value p;
-  p["nclock"]=ncon;utils::sendCommand(mdcc,"SPILLON",p);
-  p["nclock"]=ncoff;utils::sendCommand(mdcc,"SPILLOFF",p);
-  printf("Clock On %d Off %d \n",ncon, ncoff);
-  p["value"]=4;utils::sendCommand(mdcc,"SETSPILLREGISTER",p);
-  utils::sendCommand(mdcc,"CALIBON",json::value::null());
-  p["nclock"]=ntrg;utils::sendCommand(mdcc,"SETCALIBCOUNT",p);
+  _mdcc->setSpillOn(ncon);
+  _mdcc->setSpillOff(ncoff);
+  _mdcc->setSpillRegister(4);
+  _mdcc->calibOn();
+  _mdcc->setCalibCount(ntrg);
   int thrange=(thmax-thmin+1)/step;
   for (int vth=0;vth<=thrange;vth++)
     {
       if (!_running) break;
-      utils::sendCommand(mdcc,"PAUSE",json::value::null());
+      _mdcc->pause();
+
       usleep(1000);
-      this->setThresholds(thmax-vth*step,512,512);
+      this->setThreshold(thmax-vth*step);
       
       web::json::value h;
       web::json::value ph;
@@ -739,8 +756,8 @@ void LiboardManager::ScurveStep(std::string mdcc,std::string builder,int thmin,i
       ph["header"]=h;
       ph["nextevent"]=json::value::number(firstEvent+1);
       utils::sendCommand(builder,"SETHEADER",ph);
-      utils::sendCommand(mdcc,"RELOADCALIB",json::value::null());
-      utils::sendCommand(mdcc,"RESUME",json::value::null());
+      _mdcc->reloadCalibCount();
+      _mdcc->resume();
       int nloop=0,lastEvent=firstEvent;
       while (lastEvent < (firstEvent + ntrg - 1))
 	{
@@ -752,9 +769,10 @@ void LiboardManager::ScurveStep(std::string mdcc,std::string builder,int thmin,i
 	  nloop++;if (nloop > 60000 || !_running)  break;
 	}
       printf("Step %d Th %d First %d Last %d \n",vth,thmax-vth*step,firstEvent,lastEvent);
-      utils::sendCommand(mdcc,"PAUSE",json::value::null());
+      _mdcc->pause();
+
     }
-  utils::sendCommand(mdcc,"CALIBOFF",json::value::null());
+  _mdcc->calibOff();
 }
 
 
@@ -768,9 +786,7 @@ void LiboardManager::thrd_scurve()
 
 void LiboardManager::Scurve(int mode,int thmin,int thmax,int step)
 {
-  std::string mdccUrl=utils::findUrl(session(),"lyon_mdcc",0);
   std::string builderUrl=utils::findUrl(session(),"lyon_evb",0);
-  if (mdccUrl.compare("")==0) return;
   if (builderUrl.compare("")==0) return;
 
   uint64_t mask=0;
@@ -781,8 +797,8 @@ void LiboardManager::Scurve(int mode,int thmin,int thmax,int step)
 
       //for (int i=0;i<64;i++) mask|=(1<<i);
       mask=0xFFFFFFFFFFFFFFFF;
-      this->setAllMasks(mask);
-      this->ScurveStep(mdccUrl,builderUrl,thmin,thmax,step);
+      this->setMask(mask);
+      this->ScurveStep(builderUrl,thmin,thmax,step);
       return;
       
     }
@@ -795,9 +811,9 @@ void LiboardManager::Scurve(int mode,int thmin,int thmax,int step)
 	{
 	  mask=(1ULL<<i);
 	  std::cout<<"Step LR "<<i<<" channel "<<i<<std::endl;
-	  this->setAllMasks(mask);
-	  this->setCTEST(mask);
-	  this->ScurveStep(mdccUrl,builderUrl,thmin,thmax,step);
+	  this->setMask(mask);
+	  this->setCtest(mask);
+	  this->ScurveStep(builderUrl,thmin,thmax,step);
 	}
       return;
     }
@@ -806,9 +822,9 @@ void LiboardManager::Scurve(int mode,int thmin,int thmax,int step)
 
   mask=(1ULL<<mode);
   PMF_INFO(_logLiboard,"CTEST One "<<mode<<" "<<std::hex<<mask<<std::dec);
-  this->setAllMasks(mask);
-  this->setCTEST(mask);
-  this->ScurveStep(mdccUrl,builderUrl,thmin,thmax,step);
+  this->setMask(mask);
+  this->setCtest(mask);
+  this->ScurveStep(builderUrl,thmin,thmax,step);
 
   
 }
@@ -843,6 +859,319 @@ void LiboardManager::c_scurve(http_request m)
 
 }
 
+void LiboardManager::c_pause(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard," Pause called ");
+
+  if (_mdcc==NULL)
+    {
+      PMF_ERROR(_logLiboard,"Please open MDC01 first");
+      par["STATUS"]=web::json::value::string(U("Please open MDC01 first"));
+      Reply(status_codes::OK,par);  
+      return;
+    }
+  _mdcc->maskTrigger();
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  
+  Reply(status_codes::OK,par);  
+
+  
+}
+void LiboardManager::c_resume(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard," Resume called ");
+
+  if (_mdcc==NULL)
+    {
+      PMF_ERROR(_logLiboard,"Please open MDC01 first");
+      par["STATUS"]=web::json::value::string(U("Please open MDC01 first"));
+      Reply(status_codes::OK,par);  
+      return;
+    }
+  _mdcc->unmaskTrigger();
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);  
+}
+void LiboardManager::c_ecalpause(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard," Ecal Pause called ");
+  if (_mdcc==NULL)
+    {
+      PMF_ERROR(_logLiboard,"Please open MDC01 first");
+      par["STATUS"]=web::json::value::string(U("Please open MDC01 first"));
+      Reply(status_codes::OK,par);  
+      return;
+    }
+  _mdcc->maskEcal();
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);  
+}
+void LiboardManager::c_ecalresume(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard," Ecal Resume called ");
+  if (_mdcc==NULL)
+    {
+      PMF_ERROR(_logLiboard,"Please open MDC01 first");
+      par["STATUS"]=web::json::value::string(U("Please open MDC01 first"));
+      Reply(status_codes::OK,par);  
+      return;
+    }
+  _mdcc->unmaskEcal();
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);  
+}
+void LiboardManager::c_calibon(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard," Calib On called ");
+  if (_mdcc==NULL)
+    {
+      PMF_ERROR(_logLiboard,"Please open MDC01 first");
+      par["STATUS"]=web::json::value::string(U("Please open MDC01 first"));
+      Reply(status_codes::OK,par);  
+      return;
+    }
+  _mdcc->calibOn();
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);  
+}
+void LiboardManager::c_caliboff(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard," Calib Off called ");
+  if (_mdcc==NULL)
+    {
+      PMF_ERROR(_logLiboard,"Please open MDC01 first");
+      par["STATUS"]=web::json::value::string(U("Please open MDC01 first"));
+      Reply(status_codes::OK,par);  
+      return;
+    }
+  _mdcc->calibOff();
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);  
+}
+void LiboardManager::c_reloadcalib(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard," Calib reload called ");
+  if (_mdcc==NULL)
+    {
+      PMF_ERROR(_logLiboard,"Please open MDC01 first");
+      par["STATUS"]=web::json::value::string(U("Please open MDC01 first"));
+      Reply(status_codes::OK,par);  
+      return;
+    }
+  _mdcc->reloadCalibCount();
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);  
+}
+
+void LiboardManager::c_setcalibcount(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard," Calib count called ");
+  if (_mdcc==NULL)
+    {par["STATUS"]=web::json::value::string(U("NO Mdcc created"));
+      Reply(status_codes::OK,par);  return;}
+  uint32_t nc=utils::queryIntValue(m,"nclock",5000000);
+  _mdcc->setCalibCount(nc);
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  par["NCLOCK"]=web::json::value::number(nc);
+  Reply(status_codes::OK,par);  
+} 
+
+void LiboardManager::c_reset(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard," RESET called ");
+  if (_mdcc==NULL)
+    {
+      PMF_ERROR(_logLiboard,"Please open MDC01 first");
+      par["STATUS"]=web::json::value::string(U("Please open MDC01 first"));
+      Reply(status_codes::OK,par);  
+      return;
+    }
+  _mdcc->resetCounter();
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);  
+}
+
+void LiboardManager::c_readreg(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard,"Read Register called ");
+  if (_mdcc==NULL)    {par["STATUS"]=web::json::value::string(U("NO Mdcc created"));        Reply(status_codes::OK,par);  return;}
+  uint32_t adr=utils::queryIntValue(m,"address",2);
+  uint32_t val =_mdcc->readRegister(adr);
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  par["ADDRESS"]=web::json::value::number(adr);
+  par["VALUE"]=web::json::value::number(val);
+  Reply(status_codes::OK,par);  
+} 
+void LiboardManager::c_writereg(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard," Write Register called ");
+  if (_mdcc==NULL)    {par["STATUS"]=web::json::value::string(U("NO Mdcc created"));        Reply(status_codes::OK,par);  return;}
+  uint32_t adr=utils::queryIntValue(m,"address",2);
+  uint32_t value=utils::queryIntValue(m,"value",1234);
+  _mdcc->writeRegister(adr,value);
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  par["ADDRESS"]=web::json::value::number(adr);
+  par["VALUE"]=web::json::value::number(value);
+  Reply(status_codes::OK,par);  
+} 
+void LiboardManager::c_spillon(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard," Spill ON called ");
+  if (_mdcc==NULL)    {par["STATUS"]=web::json::value::string(U("NO Mdcc created"));        Reply(status_codes::OK,par);  return;}
+  uint32_t nc=utils::queryIntValue(m,"nclock",50);
+  _mdcc->setSpillOn(nc);
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  par["NCLOCK"]=web::json::value::number(nc);
+  Reply(status_codes::OK,par);  
+} 
+void LiboardManager::c_spilloff(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard," Spill Off called ");
+  if (_mdcc==NULL)    {par["STATUS"]=web::json::value::string(U("NO Mdcc created"));        Reply(status_codes::OK,par);  return;}
+  uint32_t nc=utils::queryIntValue(m,"nclock",5000);
+  _mdcc->setSpillOff(nc);
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  par["NCLOCK"]=web::json::value::number(nc);
+  Reply(status_codes::OK,par);  
+
+} 
+void LiboardManager::c_resettdc(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard," Reset TDC called ");
+  if (_mdcc==NULL)    {par["STATUS"]=web::json::value::string(U("NO Mdcc created"));        Reply(status_codes::OK,par);  return;}
+  uint32_t nc=utils::queryIntValue(m,"value",0);
+  _mdcc->resetTDC(nc&0xF);
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  //par["NCLOCK"]=web::json::value::number(nc);
+  Reply(status_codes::OK,par);  
+} 
+
+void LiboardManager::c_beamon(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard," beam on time called ");
+  if (_mdcc==NULL)    {par["STATUS"]=web::json::value::string(U("NO Mdcc created"));        Reply(status_codes::OK,par);  return;}
+  uint32_t nc=utils::queryIntValue(m,"nclock",5000000);
+  _mdcc->setBeam(nc);
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  par["NCLOCK"]=web::json::value::number(nc);
+  Reply(status_codes::OK,par);  
+}
+
+void LiboardManager::c_sethardreset(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard," Hard reset called ");
+  if (_mdcc==NULL)    {par["STATUS"]=web::json::value::string(U("NO Mdcc created"));        Reply(status_codes::OK,par);  return;}
+  uint32_t nc=utils::queryIntValue(m,"value",0);
+  _mdcc->setHardReset(nc);
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  par["VALUE"]=web::json::value::number(nc);
+  Reply(status_codes::OK,par);  
+}
+
+void LiboardManager::c_setspillregister(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard,"Spill register called ");
+  if (_mdcc==NULL)    {par["STATUS"]=web::json::value::string(U("NO Mdcc created"));        Reply(status_codes::OK,par);   return;}
+  uint32_t nc=utils::queryIntValue(m,"value",0);
+  _mdcc->setSpillRegister(nc);
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  par["VALUE"]=web::json::value::number(nc);
+  Reply(status_codes::OK,par);  
+}
+void LiboardManager::c_setexternaltrigger(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard,"Spill register called ");
+  if (_mdcc==NULL)    {par["STATUS"]=web::json::value::string(U("NO Mdcc created"));        Reply(status_codes::OK,par);  return;}
+  uint32_t nc=utils::queryIntValue(m,"value",0);
+  _mdcc->setExternalTrigger(nc);
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  par["VALUE"]=web::json::value::number(nc);
+  Reply(status_codes::OK,par);  
+}
+void LiboardManager::c_setcalibregister(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard,"Calib register called ");
+  if (_mdcc==NULL)    {par["STATUS"]=web::json::value::string(U("NO Mdcc created"));        Reply(status_codes::OK,par);  return;}
+  uint32_t nc=utils::queryIntValue(m,"value",0);
+  PMF_INFO(_logLiboard,"Calib register called "<<nc);
+  _mdcc->setCalibRegister(nc);
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  par["VALUE"]=web::json::value::number(nc);
+  Reply(status_codes::OK,par);  
+}
+
+void LiboardManager::c_settrigext(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard," Trig ext setting called ");
+  if (_mdcc==NULL)    {par["STATUS"]=web::json::value::string(U("NO Mdcc created"));        Reply(status_codes::OK,par);  return;}
+  uint32_t delay=utils::queryIntValue(m,"delay",20);
+  uint32_t busy=utils::queryIntValue(m,"busy",20);
+  _mdcc->setTriggerDelay(delay);
+  _mdcc->setTriggerBusy(busy);
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  par["DELAY"]=web::json::value::number(delay);
+  par["BUSY"]=web::json::value::number(busy);
+  Reply(status_codes::OK,par);  
+}
+
+void LiboardManager::c_mdccstatus(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard," Status called ");
+  if (_mdcc==NULL)    {par["STATUS"]=web::json::value::string(U("NO Mdcc created"));        Reply(status_codes::OK,par);  return;}
+  web::json::value rc;
+  rc["version"]=json::value::number(_mdcc->version());
+  rc["mask"]=json::value::number(_mdcc->mask());
+  rc["hard"]=json::value::number(_mdcc->hardReset());
+  rc["spill"]=json::value::number(_mdcc->spillCount());
+  rc["busy0"]=json::value::number(_mdcc->busyCount(0));
+  rc["busy1"]=json::value::number(_mdcc->busyCount(1));
+  rc["busy2"]=json::value::number(_mdcc->busyCount(2));
+  rc["spillon"]=json::value::number(_mdcc->spillOn());
+  rc["spilloff"]=json::value::number(_mdcc->spillOff());
+  rc["ecalmask"]=json::value::number(_mdcc->ecalmask());
+  rc["beam"]=json::value::number(_mdcc->beam());
+  rc["calib"]=json::value::number(_mdcc->calibCount());
+  rc["spillreg"]=json::value::number(_mdcc->spillRegister());
+  rc["trigdelay"]=json::value::number(_mdcc->triggerDelay());
+  rc["external"]=json::value::number(_mdcc->externalTrigger());
+  par["COUNTERS"]=rc;
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);  
+
+} 
 
 
 extern "C" 

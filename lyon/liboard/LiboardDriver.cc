@@ -13,7 +13,7 @@ liboard::LiboardDriver::LiboardDriver(char * deviceIdentifier, uint32_t producti
   _productId=productid;
   memset(_deviceId,0,12);
   memcpy(_deviceId,deviceIdentifier,8);
-  sscanf(deviceIdentifier,"FT101%d",&_difId);
+  sscanf(deviceIdentifier,"LI_%d",&_difId);
   this->setup();
 }
 
@@ -46,6 +46,7 @@ int32_t liboard::LiboardDriver::open(char * deviceIdentifier, uint32_t productid
       PM_FATAL(_logLiboard,"FTDI_INIT failed");
       return -1;
     }
+  ret=ftdi_set_interface(&theFtdi,INTERFACE_A);
 
   if ((ret = ftdi_usb_open_desc(&theFtdi, 0x0403,productid,NULL,deviceIdentifier)) < 0)
     {
@@ -215,50 +216,43 @@ int32_t liboard::LiboardDriver::setup()
   return 0;
 }
 
-int32_t liboard::LiboardDriver::loadSLC(unsigned char* SLC,uint32_t slc_size)
+int32_t liboard::LiboardDriver::loadSLC(uint32_t* SLC,uint32_t slc_size)
 {
   int32_t ret;
   uint32_t taddr;
   uint32_t tdata;
   int32_t i;
-  uint32_t nb_asic=slc_size/109;
+  uint32_t nb_asic=slc_size/139;
 
-  // SLC Size 
+  // // SLC Size 
 
-  tdata = slc_size; //0x0A;
-  ret=registerWrite(LIBOARD_SLC_SIZE_REG, tdata);// SLc size
-  printf ("SLc size reg write(0x%08x at 0x%x), ret=%d\n",tdata, taddr, ret);
+  // tdata = slc_size; //0x0A;
+  // ret=registerWrite(LIBOARD_SLC_SIZE_REG, tdata);// SLc size
+  // printf ("SLc size reg write(0x%08x at 0x%x), ret=%d\n",tdata, taddr, ret);
 
   // SLC Control Enable LOAD
-  tdata = 0x01;
-  ret=registerWrite(LIBOARD_SLC_CONTROL_REG, tdata);// enable SLc load
+  // tdata = 0x01;
+  // ret=registerWrite(LIBOARD_SLC_CONTROL_REG, tdata);// enable SLc load
   //	printf ("SLc ctrl reg write( 0x%x at 0x%x), ret=%d\n",tdata, taddr,ret);
 
   //getchar();
 
-  for (i = 0;i<slc_size; i=i+4)
+  for (i = 0;i<slc_size; i++)
     {
-      printf ("0x%02x 0x%02x 0x%02x 0x%02x\n",SLC[i],SLC[i+1],SLC[i+2], SLC[i+3]); 
-      if ((i+3) >= (slc_size))
-	tdata = (SLC[i]<<24)+ (SLC[i+1]<<16)+(SLC[i+2]<<8);		
-      else if ((i+2)>= (slc_size))
-	tdata = (SLC[i]<<24)+ (SLC[i+1]<<16);		
-      else 	if ((i+1)>= (slc_size))
-	tdata = (SLC[i]<<24);		
-      else
-	tdata = (SLC[i]<<24)+ (SLC[i+1]<<16)+(SLC[i+2]<<8)+SLC[i+3];		
+      printf ("0x%x\n",SLC[i]);
+      tdaq=SLC[i];
       ret=registerWrite(LIBOARD_SLC_DATA_REG,tdata);
       printf ("%d reg write 0x%08x at 0x%x, ret=%d\n",i,tdata,taddr, ret);
       // getchar();
     }
 
   // SLC Control disable LOAD
-  tdata = 0x00;
-  ret=registerWrite(LIBOARD_SLC_CONTROL_REG,tdata);// disable SLc load
+  // tdata = 0x00;
+  // ret=registerWrite(LIBOARD_SLC_CONTROL_REG,tdata);// disable SLc load
   //	printf ("disable SLC load( 0x%08x at 0x%x), ret=%d\n",tdata, taddr,ret);
 
   // SLC Control SLC to ASIC
-  tdata = 0x02;
+  tdata = 0x01;
   ret=registerWrite(LIBOARD_SLC_CONTROL_REG, tdata);// start SLC to asic
   //  printf ("start slc load reg write (0x%08x at 0x%x), ret=%d\n",tdata, taddr, ret);
 	
@@ -273,7 +267,7 @@ int32_t liboard::LiboardDriver::loadSLC(unsigned char* SLC,uint32_t slc_size)
   
   ret=registerRead(LIBOARD_SLC_STATUS_REG,&tdata);
   printf ("slc status read, ret=%d data = 0x%08x\n",ret,tdata);
-  if ((tdata&0x03)==3)
+  if ((tdata&0x01)==1)
     printf ("           SLC OK\n");
   else
     printf ("           SLC fail\n");
@@ -366,7 +360,6 @@ uint32_t liboard::LiboardDriver::readOneEvent(unsigned char* cbuf)
 }
 
 uint32_t liboard::LiboardDriver::version(){return this->registerRead(LIBOARD_MDCC_SHIFT+0x100);}
-uint32_t liboard::LiboardDriver::id(){return this->registerRead(LIBOARD_MDCC_SHIFT+0x1);}
 uint32_t liboard::LiboardDriver::mask(){return this->registerRead(LIBOARD_MDCC_SHIFT+0x2);}
 void liboard::LiboardDriver::maskTrigger(){this->registerWrite(LIBOARD_MDCC_SHIFT+0x2,0x1);}
 void liboard::LiboardDriver::unmaskTrigger(){this->registerWrite(LIBOARD_MDCC_SHIFT+0x2,0x0);}
