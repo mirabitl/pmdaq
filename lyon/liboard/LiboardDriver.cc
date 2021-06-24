@@ -315,6 +315,20 @@ int32_t liboard::LiboardDriver::resetFSM()
 
   return 0;
 }
+void liboard::LiboardDriver::maskTdcChannels(uint64_t mask)
+{
+  uint32_t lsb=(uint32_t) (mask&0xFFFFFFFF);
+  uint32_t msb=(uint32_t) ((mask>>32)&0xFFFFFFFF);
+  int32_t ret;
+  ret=registerWrite(LIBOARD_MASK_LSB_REG, lsb);
+  ret=registerWrite(LIBOARD_MASK_MSB_REG, msb);
+  
+}
+
+void liboard::LiboardDriver::setLatchDelay(uint32_t delay)
+{int ret=registerWrite(LIBOARD_LATCH_DELAY_REG, delay);}
+void liboard::LiboardDriver::setLatchDuration(uint32_t delay)
+{int ret=registerWrite(LIBOARD_LATCH_DURATION_REG, delay);}
 int32_t liboard::LiboardDriver::readData(unsigned char* tro,uint32_t size)
 {
   uint32_t ret=ftdi_read_data(&theFtdi,tro,size);

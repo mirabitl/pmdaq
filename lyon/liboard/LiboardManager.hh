@@ -137,6 +137,9 @@ class LiboardManager  : public fsmw
     void Scurve(int mode,int thmin,int thmax,int step);
 
     void c_scurve(http_request m );
+    void c_masktdcchannels(http_request m );
+    void c_setlatchdelay(http_request m );
+    void c_setlatchduration(http_request m );
 
     
     void c_mdccstatus(http_request m);

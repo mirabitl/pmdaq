@@ -22,19 +22,23 @@
 
 
 
-#define LIBOARD_SLC_DATA_REG 0x8000
-#define LIBOARD_SLC_CONTROL_REG 0x8001
-#define LIBOARD_SLC_STATUS_REG 0x8002
+#define LIBOARD_SLC_DATA_REG 0x800
+#define LIBOARD_SLC_CONTROL_REG 0x801
+#define LIBOARD_SLC_STATUS_REG 0x802
 
 
 
 
 
-#define LIBOARD_RO_CONTROL_REG 0x2002
-#define LIBOARD_RO_RESET_REG 0x2003
+#define LIBOARD_MASK_LSB_REG 0x200
+#define LIBOARD_MASK_MSB_REG 0x201
+#define LIBOARD_RO_CONTROL_REG 0x202
+#define LIBOARD_RO_RESET_REG 0x203
+#define LIBOARD_LATCH_DELAY_REG 0x204
+#define LIBOARD_LATCH_DURATION_REG 0x205
 
 
-#define LIBOARD_MDCC_SHIFT 0x4000
+#define LIBOARD_MDCC_SHIFT 0x400
 
 
 #define LIBOARD_HEADER_SIZE 20
@@ -78,6 +82,9 @@ namespace liboard
     int32_t setup();
     int32_t loadSLC(uint32_t* SLC,uint32_t size);
     int32_t setAcquisitionMode(bool active=true,bool autoreset=true,bool external=false);
+    void maskTdcChannels(uint64_t mask);
+    void setLatchDelay(uint32_t delay);
+    void setLatchDuration(uint32_t delay);
     int32_t resetFSM();
     int32_t readData(unsigned char* tro,uint32_t size);
     uint32_t readOneEvent(unsigned char* cbuf);

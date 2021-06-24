@@ -383,6 +383,73 @@ void LiboardManager::c_setmask(http_request m)
   Reply(status_codes::OK,par);  
 
 }
+void LiboardManager::c_masktdcchannels(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard,"mask TDC channels called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  if (_mdcc==NULL)
+    {
+      PMF_ERROR(_logLiboard,"Please open MDC01 first");
+      par["STATUS"]=web::json::value::string(U("Please open MDC01 first"));
+      Reply(status_codes::OK,par);  
+      return;
+    }
+  
+  //uint32_t nc=utils::queryIntValue(m,"value",4294967295);
+  uint64_t mask;
+  sscanf(utils::queryStringValue(m,"mask","0XFFFFFFFFFFFFFFFF").c_str(),"%lx",&mask);
+  PMF_INFO(_logLiboard,"mask TDC channels called "<<std::hex<<mask<<std::dec);
+  _mdcc->maskTdcChannels(mask);
+  par["MASK"]=web::json::value::number(mask);
+
+  Reply(status_codes::OK,par);  
+
+}
+void LiboardManager::c_setlatchdelay(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard,"Set Latch delay called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  if (_mdcc==NULL)
+    {
+      PMF_ERROR(_logLiboard,"Please open MDC01 first");
+      par["STATUS"]=web::json::value::string(U("Please open MDC01 first"));
+      Reply(status_codes::OK,par);  
+      return;
+    }
+
+  
+  uint32_t nc=utils::queryIntValue(m,"value",0x10);
+  PMF_INFO(_logLiboard,"Latch delay is "<<std::hex<<nc<<std::dec);
+  _mdcc->setLatchDelay(nc);
+  par["DELAY"]=web::json::value::number(nc);
+
+  Reply(status_codes::OK,par);  
+
+}
+void LiboardManager::c_setlatchduration(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard,"Set Latch Duration called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  if (_mdcc==NULL)
+    {
+      PMF_ERROR(_logLiboard,"Please open MDC01 first");
+      par["STATUS"]=web::json::value::string(U("Please open MDC01 first"));
+      Reply(status_codes::OK,par);  
+      return;
+    }
+
+  
+  uint32_t nc=utils::queryIntValue(m,"value",0x10);
+  PMF_INFO(_logLiboard,"Latch duration is "<<std::hex<<nc<<std::dec);
+  _mdcc->setLatchDelay(nc);
+  par["DELAY"]=web::json::value::number(nc);
+
+  Reply(status_codes::OK,par);  
+
+}
 
 
 
@@ -648,6 +715,10 @@ void LiboardManager::initialise()
   this->addCommand("TRIGEXT",std::bind(&LiboardManager::c_external,this,std::placeholders::_1));
   this->addCommand("SCURVE",std::bind(&LiboardManager::c_scurve,this,std::placeholders::_1));
 
+  this->addCommand("MASKTDCCHANNELS",std::bind(&LiboardManager::c_masktdcchannels,this,std::placeholders::_1));
+  this->addCommand("SETLATCHDELAY",std::bind(&LiboardManager::c_setlatchdelay,this,std::placeholders::_1));
+  this->addCommand("SETLATCHDURATION",std::bind(&LiboardManager::c_setlatchduration,this,std::placeholders::_1));
+  
   // MDCC stuff
 
   this->addCommand("PAUSE",std::bind(&LiboardManager::c_pause,this,std::placeholders::_1));
