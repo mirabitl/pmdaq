@@ -585,6 +585,8 @@ web::json::value LiboardManager::configureLR()
       std::stringstream ips;
       // Dummy IP address for Liboards
       ips<<"0.0.0."<<it->first;
+      PMF_INFO(_logLiboard,"Configuring"<<it->first<<" "<<it->second);
+ 
       _hca->prepareSlowControl(ips.str());
      
       it->second->configure(_hca->slcBuffer(),_hca->slcWords());
@@ -601,7 +603,7 @@ web::json::value LiboardManager::configureLR()
 void LiboardManager::configure(http_request m)
 {
   auto par = json::value::object();
-  PMF_DEBUG(_logLiboard," CMD: Configuring");
+  PMF_INFO(_logLiboard," CMD: Configuring");
  
   int32_t rc=1;
 
