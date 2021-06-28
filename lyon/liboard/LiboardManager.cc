@@ -203,7 +203,7 @@ void LiboardManager::fsm_initialise(http_request m)
 
   for (auto x:_vDif)
     {
-      PMF_INFO(_logLiboard," Creating pusher to "<<params()["publish"].as_string());
+      PMF_INFO(_logLiboard," Creating pusher to ");
       /** Old single method
 	  zmPusher* push=new zmPusher(_context,x->detectorId(),x->status()->id);
 	  push->connect(params()["publish"].as_string());
@@ -217,6 +217,7 @@ void LiboardManager::fsm_initialise(http_request m)
       push->collectorRegister();
 
       x->initialise(push);
+      PMF_INFO(_logLiboard," Done pusher to ");
 
     }
 
