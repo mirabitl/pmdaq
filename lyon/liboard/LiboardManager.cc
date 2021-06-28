@@ -574,8 +574,8 @@ void LiboardManager::c_status(http_request m)
 web::json::value LiboardManager::configureLR()
 {
   /// A reecrire
-  uint32_t external=params()["external"].as_integer();
-  printf("TRigger EXT %x \n",external);
+  // uint32_t external=params()["external"].as_integer();
+  // printf("TRigger EXT %x \n",external);
   int32_t rc=1;
   std::map<uint32_t,LiboardInterface*> dm=this->getLiboardMap();
   web::json::value array_slc;uint32_t nd=0;
