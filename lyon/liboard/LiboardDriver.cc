@@ -380,7 +380,7 @@ uint32_t liboard::LiboardDriver::readOneEvent(unsigned char* cbuf)
   return idx;
 }
 
-uint32_t liboard::LiboardDriver::version(){return this->registerRead(LIBOARD_MDCC_SHIFT+0x100);}
+uint32_t liboard::LiboardDriver::version(){return this->registerRead(0x100);}
 uint32_t liboard::LiboardDriver::mask(){return this->registerRead(LIBOARD_MDCC_SHIFT+0x2);}
 void liboard::LiboardDriver::maskTrigger(){this->registerWrite(LIBOARD_MDCC_SHIFT+0x2,0x1);}
 void liboard::LiboardDriver::unmaskTrigger(){this->registerWrite(LIBOARD_MDCC_SHIFT+0x2,0x0);}
