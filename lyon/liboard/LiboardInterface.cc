@@ -10,7 +10,7 @@ liboard::LiboardInterface::LiboardInterface(liboard::FtdiDeviceInfo* ftd) : _rd(
   _status = new liboard::DIFStatus();
   memset(_status,0,sizeof(liboard::DIFStatus));
 
-  sscanf(ftd->name,"FT101%d",&(_status->id));
+  sscanf(ftd->name,"LI_%d",&(_status->id));
   _readoutStarted=false;
   _readoutCompleted=true;
 

@@ -217,6 +217,7 @@ void LiboardManager::fsm_initialise(http_request m)
       push->collectorRegister();
 
       x->initialise(push);
+      _mdcc=x->rd();
       PMF_INFO(_logLiboard," Done pusher to ");
 
     }
