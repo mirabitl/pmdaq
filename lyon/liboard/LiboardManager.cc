@@ -365,6 +365,20 @@ void LiboardManager::c_setdcpa(http_request m)
   Reply(status_codes::OK,par);  
 
 }
+void LiboardManager::c_setdaclocal(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard,"SetDACLocal called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
+
+  
+  uint32_t gain=utils::queryIntValue(m,"value",0);
+  this->setDAC_local(gain);
+  par["DC_pa"]=web::json::value::number(gain);
+  
+  Reply(status_codes::OK,par);  
+
+}
 
 void LiboardManager::c_setmask(http_request m)
 {
