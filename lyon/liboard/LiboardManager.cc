@@ -102,7 +102,7 @@ void LiboardManager::scan(http_request m)
       PMF_INFO(_logLiboard,"Creating "<<it->second->name);
       LiboardInterface* d= new LiboardInterface(it->second);
       if (_mdcc==NULL) _mdcc=d->rd();
-      PMF_INFO(_logLiboard,"After Creating "<<it->second->name);
+      PMF_INFO(_logLiboard,"After Creating "<<it->second->name<<_mdcc);
       this->getLiboardMap().insert(std::make_pair(it->first,d));
       PMF_INFO(_logLiboard," CMD: SCANDEVICE created LiboardInterface @ "<<std::hex<<d<<std::dec);
       web::json::value jd;
