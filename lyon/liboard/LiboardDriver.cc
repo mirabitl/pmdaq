@@ -238,8 +238,8 @@ int32_t liboard::LiboardDriver::loadSLC(uint32_t* SLC,uint32_t slc_size)
   // printf ("SLc size reg write(0x%08x at 0x%x), ret=%d\n",tdata, taddr, ret);
 
   // SLC Control Enable LOAD
-  // tdata = 0x01;
-  // ret=registerWrite(LIBOARD_SLC_CONTROL_REG, tdata);// enable SLc load
+  tdata = 0x01;
+  ret=registerWrite(LIBOARD_SLC_CONTROL_REG, tdata);// enable SLc load
   //	printf ("SLc ctrl reg write( 0x%x at 0x%x), ret=%d\n",tdata, taddr,ret);
 
   //getchar();
@@ -254,12 +254,12 @@ int32_t liboard::LiboardDriver::loadSLC(uint32_t* SLC,uint32_t slc_size)
     }
 
   // SLC Control disable LOAD
-  // tdata = 0x00;
-  // ret=registerWrite(LIBOARD_SLC_CONTROL_REG,tdata);// disable SLc load
+  tdata = 0x00;
+  ret=registerWrite(LIBOARD_SLC_CONTROL_REG,tdata);// disable SLc load
   //	printf ("disable SLC load( 0x%08x at 0x%x), ret=%d\n",tdata, taddr,ret);
 
   // SLC Control SLC to ASIC
-  tdata = 0x01;
+  tdata = 0x02;
   ret=registerWrite(LIBOARD_SLC_CONTROL_REG, tdata);// start SLC to asic
   //  printf ("start slc load reg write (0x%08x at 0x%x), ret=%d\n",tdata, taddr, ret);
 	
