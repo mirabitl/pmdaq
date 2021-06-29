@@ -74,6 +74,7 @@ void liboard::LiboardInterface::start()
       this->publishState("START_FAILED");
       return;
     }
+  _external=false;
   _rd->setAcquisitionMode(true,false,_external);
   // _rd->setAcquisitionMode(true,true,_external);
   this->publishState("STARTED");

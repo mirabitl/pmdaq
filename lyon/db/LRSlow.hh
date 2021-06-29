@@ -30,11 +30,11 @@ public:
   ///  Constructor
   LRSlow() { memset(_l, 0, 139 * sizeof(uint8_t)); }
   ///  Get one bit status
-  bool getBit(uint8_t w, int b) { return (w >> b) & 1; }
+  bool getBit(uint8_t w, int b) { return (_l[w] >> b) & 1; }
   /// set one bit
-  void setBit(uint8_t w, int b) { w |= (1 << b); };
+  void setBit(uint8_t w, int b) { _l[w] |= (1 << b); };
   ///  clear one bit
-  void clearBit(uint8_t w, int b) { w &= ~(1 << b); };
+  void clearBit(uint8_t w, int b) { _l[w] &= ~(1 << b); };
   ///  Set the bit state
   void setBitState(uint8_t w, int b, bool t)
   {
@@ -56,6 +56,7 @@ public:
           setBit(w,i);
         else
           clearBit(w,i);
+	shift++;
       }
     }
     else
@@ -67,6 +68,7 @@ public:
           setBit(w,i);
         else
           clearBit(w,i);
+	shift++;
       }
     }
 
@@ -94,87 +96,87 @@ uint8_t getWord(uint8_t w,int b,int len,bool reverse=false)
   ///  Set at most 8 bits of a byte at b postion
   // Channel dependant values
   uint8_t getDC_pa(uint8_t ch) { return (_l[ch*2+0]>>2) & 0x3F; }
-  bool getCtest(uint8_t ch) { return getBit(_l[ch*2+0],1); }
-  bool getMask(uint8_t ch) { return getBit(_l[ch*2+1],7); }
+  bool getCtest(uint8_t ch) { return getBit(ch*2+0,1); }
+  bool getMask(uint8_t ch) { return getBit(ch*2+1,7); }
   uint8_t getDAC_local(uint8_t ch) { return (uint8_t)(_l[ch*2+1] & 0x7F); }
 
-  void setDC_pa(uint8_t ch, uint8_t val) { setWord(_l[ch*2+0], 2,val & 0x3F, 6); }
-  void setCtest(uint8_t ch, bool t) { setBitState(_l[ch*2+0], 1, t); }
-  void setMask(uint8_t ch, bool t) { setBitState(_l[ch*2+1],7, t); }
-  void setDAC_local(uint8_t ch, uint8_t val) { setWord( _l[ch*2+1],0,val & 0x7F, 7); }  
+  void setDC_pa(uint8_t ch, uint8_t val) { setWord(ch*2+0, 2,val & 0x3F, 6); }
+  void setCtest(uint8_t ch, bool t) { setBitState(ch*2+0, 1, t); }
+  void setMask(uint8_t ch, bool t) { setBitState(ch*2+1,7, t); }
+  void setDAC_local(uint8_t ch, uint8_t val) { setWord( ch*2+1,0,val & 0x7F, 7); }  
   // Global
   //64|0
-  bool getEN_pa() { return getBit(_l[128+0],7); }
-  bool getPP_pa() { return getBit(_l[128+0],6); }
+  bool getEN_pa() { return getBit(128+0,7); }
+  bool getPP_pa() { return getBit(128+0,6); }
   uint8_t getPA_gain() { return (uint8_t) (_l[128+0]>>2) & 0xF; }
-  void setEN_pa(bool t) { setBitState(_l[128+0],7, t); }
-  void setPP_pa(bool t) { setBitState(_l[128+0],6, t); }
-  void setPA_gain(uint8_t v) { setWord(_l[128+0],2, v & 0xF, 4); }
+  void setEN_pa(bool t) { setBitState(128+0,7, t); }
+  void setPP_pa(bool t) { setBitState(128+0,6, t); }
+  void setPA_gain(uint8_t v) { setWord(128+0,2, v & 0xF, 4); }
 
   //64 |1
-  bool getEN_7b() { return getBit(_l[128+1],7); }
-  bool getPP_7b() { return getBit(_l[128+1],6); }
-  void setEN_7b(bool t) { setBitState(_l[128+1],7, t); }
-  void setPP_7b(bool t) { setBitState(_l[128+1],6, t); }
+  bool getEN_7b() { return getBit(128+1,7); }
+  bool getPP_7b() { return getBit(128+1,6); }
+  void setEN_7b(bool t) { setBitState(128+1,7, t); }
+  void setPP_7b(bool t) { setBitState(128+1,6, t); }
 
   //64 |2
-  bool getEN_disc() { return getBit(_l[128+2],7); }
-  bool getPP_disc() { return getBit(_l[128+2],6); }
-  bool getPolarity() { return getBit(_l[128+2],5); }
-  bool getHysteresys() { return getBit(_l[128+2],4); }
-  void setEN_disc(bool t) { setBitState(_l[128+2],7, t); }
-  void setPP_disc(bool t) { setBitState(_l[128+2],6, t); }
-  void setPolarity(bool t) { setBitState(_l[128+2],5, t); }
-  void setHysteresys(bool t) { setBitState(_l[128+2],4, t); }
+  bool getEN_disc() { return getBit(128+2,7); }
+  bool getPP_disc() { return getBit(128+2,6); }
+  bool getPolarity() { return getBit(128+2,5); }
+  bool getHysteresys() { return getBit(128+2,4); }
+  void setEN_disc(bool t) { setBitState(128+2,7, t); }
+  void setPP_disc(bool t) { setBitState(128+2,6, t); }
+  void setPolarity(bool t) { setBitState(128+2,5, t); }
+  void setHysteresys(bool t) { setBitState(128+2,4, t); }
 
   // 65| 0
-  bool getEN_bg() { return getBit(_l[131+0],7); }
-  bool getPP_bg() { return getBit(_l[131+0],6); }
-  void setEN_bg(bool t) { setBitState(_l[131+0],7, t); }
-  void setPP_bg(bool t) { setBitState(_l[131+0],6, t); }
+  bool getEN_bg() { return getBit(131+0,7); }
+  bool getPP_bg() { return getBit(131+0,6); }
+  void setEN_bg(bool t) { setBitState(131+0,7, t); }
+  void setPP_bg(bool t) { setBitState(131+0,6, t); }
 
   // 65 | 1
-  bool getEN_10bDAC() { return getBit(_l[131+1],7); }
-  bool getPP_10bDAC() { return getBit(_l[131+1],6); }
-  void setEN_10bDAC(bool t) { setBitState(_l[131+1],7, t); }
-  void setPP_10bDAC(bool t) { setBitState(_l[131+1],6, t); }
+  bool getEN_10bDAC() { return getBit(131+1,7); }
+  bool getPP_10bDAC() { return getBit(131+1,6); }
+  void setEN_10bDAC(bool t) { setBitState(131+1,7, t); }
+  void setPP_10bDAC(bool t) { setBitState(131+1,6, t); }
 
   // 65 | 2 DAC threhsold
   uint16_t getDAC_threshold() { uint16_t r=((_l[131+1]&0x3)<<8)|_l[131+2]; return r;}
-  void setDAC_threshold(uint16_t v) { setWord(_l[131+1], 0,(v>>8) & 0x3, 2); _l[131+2]=(v&0xFF); }
+  void setDAC_threshold(uint16_t v) { setWord(131+1, 0,(v>>8) & 0x3, 2); _l[131+2]=(v&0xFF); }
 
   // 66| 0
-  uint8_t getCLPS_bsize() { return (uint8_t)getWord(_l[134+0], 4,4, true) & 0xF; }
-  uint8_t getEN_pre_emphasis() { return (uint8_t)getWord(_l[134+0], 0,4, true) & 0xF; }
+  uint8_t getCLPS_bsize() { return (uint8_t)getWord(134+0, 4,4, true) & 0xF; }
+  uint8_t getEN_pre_emphasis() { return (uint8_t)getWord(134+0, 0,4, true) & 0xF; }
 
-  void setCLPS_bsize(uint8_t v) { setWord(_l[134+0],4, v & 0xF, 4, true); }
-  void setEN_pre_emphasis(uint8_t v) { setWord(_l[134+0],0, v & 0xF, 4, true); }
+  void setCLPS_bsize(uint8_t v) { setWord(134+0,4, v & 0xF, 4, true); }
+  void setEN_pre_emphasis(uint8_t v) { setWord(134+0,0, v & 0xF, 4, true); }
 
   // 66 |1
-  uint8_t getPre_emphasis_delay() { return (uint8_t)getWord(_l[134+1],6, 2, true); }
-  void setPre_emphasis_delay(uint8_t v) { setWord(_l[134+1],6, v & 0x4, 2, true); }
+  uint8_t getPre_emphasis_delay() { return (uint8_t)getWord(134+1,6, 2, true); }
+  void setPre_emphasis_delay(uint8_t v) { setWord(134+1,6, v & 0x4, 2, true); }
 
   // 66 | 2
-  bool getEN_differential() { return getBit(_l[134+2],7); }
-  bool getPP_differential() { return getBit(_l[134+2],6); }
-  bool getForced_ValEvt() { return getBit(_l[134+2],5); }
-  void setEN_differential(bool t) { setBitState(_l[134+2],7, t); }
-  void setPP_differential(bool t) { setBitState(_l[134+2],6, t); }
-  void setForced_ValEvt(bool t) { setBitState(_l[134+2],5, t); }
+  bool getEN_differential() { return getBit(134+2,7); }
+  bool getPP_differential() { return getBit(134+2,6); }
+  bool getForced_ValEvt() { return getBit(134+2,5); }
+  void setEN_differential(bool t) { setBitState(134+2,7, t); }
+  void setPP_differential(bool t) { setBitState(134+2,6, t); }
+  void setForced_ValEvt(bool t) { setBitState(134+2,5, t); }
 
   // 67 | 0
-  bool getEN_probe() { return getBit(_l[137+0],7); }
-  bool getPP_probe() { return getBit(_l[137+0],6); }
+  bool getEN_probe() { return getBit(137+0,7); }
+  bool getPP_probe() { return getBit(137+0,6); }
   uint8_t getMillerComp() { return (uint8_t)_l[137+0]& 0x7; }
-  void setEN_probe(bool t) { setBitState(_l[137+0],7, t); }
-  void setPP_probe(bool t) { setBitState(_l[137+0],6, t); }
-  void setMillerComp(uint8_t v) { setWord(_l[137+0],0, v & 0x7, 3); }
+  void setEN_probe(bool t) { setBitState(137+0,7, t); }
+  void setPP_probe(bool t) { setBitState(137+0,6, t); }
+  void setMillerComp(uint8_t v) { setWord(137+0,0, v & 0x7, 3); }
 
   // 67 | 1
-  uint8_t getIbi_probe() { return (uint8_t)getWord(_l[137+1],6, 2) & 0x3; }
-  uint8_t getIbo_probe() { return (uint8_t)getWord(_l[137+1],0, 6) & 0x7F; }
-  void setIbi_probe(uint8_t v) { setWord(_l[137+1],6, v & 0x3, 2); }
-  void setIbo_probe(uint8_t v) { setWord(_l[137+1],0, v & 0x7F, 6); }
+  uint8_t getIbi_probe() { return (uint8_t)getWord(137+1,6, 2) & 0x3; }
+  uint8_t getIbo_probe() { return (uint8_t)getWord(137+1,0, 6) & 0x7F; }
+  void setIbi_probe(uint8_t v) { setWord(137+1,6, v & 0x3, 2); }
+  void setIbo_probe(uint8_t v) { setWord(137+1,0, v & 0x7F, 6); }
 
 
   ///  Print Slow Control
@@ -343,6 +345,7 @@ uint8_t getWord(uint8_t w,int b,int len,bool reverse=false)
     {
       uint8_t sid = (*it).as_integer();
       setDAC_local(ch, sid);
+      fprintf(stderr," ch %d val %d l %d \n",ch,sid,_l[2*ch+1]);
       ch++;
     }
 
@@ -406,6 +409,7 @@ uint8_t getWord(uint8_t w,int b,int len,bool reverse=false)
   void setJson(web::json::value v)
   {
     _jasic = v;
+    std::cout<<_jasic<<std::endl;
     setFromJson();
   }
 
