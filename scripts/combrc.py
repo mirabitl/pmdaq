@@ -90,6 +90,15 @@ class combRC(pmdaqrc.pmdaqControl):
                 s = json.loads(x.sendTransition("INITIALISE", m))
                 r["lyon_pmr_%d" % x.instance] = s
 
+        if ("lyon_liboard" in self.session.apps):
+            for x in self.session.apps["lyon_liboard"]:
+                s = json.loads(x.sendTransition("SCAN", m))
+                r["lyon_liboard_%d" % x.instance] = s
+
+            for x in self.session.apps["lyon_liboard"]:
+                s = json.loads(x.sendTransition("INITIALISE", m))
+                r["lyon_liboard_%d" % x.instance] = s
+
         if ("lyon_gricv0" in self.session.apps):
             for x in self.session.apps["lyon_gricv0"]:
                 s = json.loads(x.sendTransition("INITIALISE", m))
@@ -123,6 +132,10 @@ class combRC(pmdaqrc.pmdaqControl):
             for x in self.session.apps["lyon_pmr"]:
                 s = json.loads(x.sendTransition("CONFIGURE", m))
                 r["lyon_pmr_%d" % x.instance] = s
+        if ("lyon_liboard" in self.session.apps):
+            for x in self.session.apps["lyon_liboard"]:
+                s = json.loads(x.sendTransition("CONFIGURE", m))
+                r["lyon_liboard_%d" % x.instance] = s
         if ("lyon_gricv0" in self.session.apps):
             for x in self.session.apps["lyon_gricv0"]:
                 s = json.loads(x.sendTransition("CONFIGURE", m))
@@ -243,6 +256,10 @@ class combRC(pmdaqrc.pmdaqControl):
             for x in self.session.apps["lyon_pmr"]:
                 s = json.loads(x.sendTransition("START", m))
                 r["lyon_pmr_%d" % x.instance] = s
+         if ("lyon_liboard" in self.session.apps):
+            for x in self.session.apps["lyon_liboard"]:
+                s = json.loads(x.sendTransition("START", m))
+                r["lyon_liboard_%d" % x.instance] = s
         if ("lyon_gricv0" in self.session.apps):
             for x in self.session.apps["lyon_gricv0"]:
                 s = json.loads(x.sendTransition("START", m))
@@ -291,6 +308,17 @@ class combRC(pmdaqrc.pmdaqControl):
 
         for k, v in self.session.apps.items():
             if (k != "lyon_pmr"):
+                continue
+            for s in v:
+                mr = json.loads(s.sendCommand("STATUS", {}))
+                if (mr['status'] != "FAILED"):
+                    rep["%s_%d" % (s.host, s.infos['instance'])
+                        ] = mr["answer"]["DIFLIST"]
+                else:
+                    rep["%s_%d" % (s.host, s.infos['instance'])] = mr
+
+        for k, v in self.session.apps.items():
+            if (k != "lyon_liboard"):
                 continue
             for s in v:
                 mr = json.loads(s.sendCommand("STATUS", {}))

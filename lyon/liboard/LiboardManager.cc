@@ -836,9 +836,18 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
       h[0]=json::value::number(2);h[1]=json::value::number(thmax-vth*step);
 
       int firstEvent=0;
+
+#undef USEFEBS
+#ifdef USEFEBS
       for ( std::map<uint32_t,LiboardInterface*>::iterator it=dm.begin();it!=dm.end();it++)
 	
 	if (it->second->status()->gtc>firstEvent) firstEvent=it->second->status()->gtc;
+#else
+    auto frep = utils::sendCommand(builder, "STATUS", json::value::null());
+    auto jfrep = frep.extract_json();
+    auto jfanswer = jfrep.get().as_object()["answer"];
+    firstEvent = jfanswer["event"].as_integer();
+#endif
 
       ph["header"]=h;
       ph["nextevent"]=json::value::number(firstEvent+1);
@@ -846,15 +855,31 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
       _mdcc->reloadCalibCount();
       _mdcc->unmaskTrigger();
       int nloop=0,lastEvent=firstEvent;
-      while (lastEvent < (firstEvent + ntrg - 1))
-	{
-	  ::usleep(10000);
-	  for ( std::map<uint32_t,LiboardInterface*>::iterator it=dm.begin();it!=dm.end();it++)
+#ifdef USEFEBS
+    while (lastEvent < (firstEvent + ntrg - 10))
+    {
+      ::usleep(100000);
+      for ( std::map<uint32_t,LiboardInterface*>::iterator it=dm.begin();it!=dm.end();it++)
 	
-	    if (it->second->status()->gtc>firstEvent) firstEvent=it->second->status()->gtc;
+	if (it->second->status()->gtc>lastEvent) lastEvent=it->second->status()->gtc;
+      nloop++;
+      if (nloop > 100 || !_running)
+        break;
+    }
+#else
+    while (lastEvent < (firstEvent + ntrg - 10))
+    {
+      ::usleep(100000);
+      auto rep = utils::sendCommand(builder, "STATUS", json::value::null());
+      auto jrep = rep.extract_json();
+      auto janswer = jrep.get().as_object()["answer"];
+      lastEvent = janswer["event"].as_integer(); // A verifier
+      nloop++;
+      if (nloop > 100 || !_running)
+        break;
+    }
+#endif
 
-	  nloop++;if (nloop > 60000 || !_running)  break;
-	}
       printf("Step %d Th %d First %d Last %d \n",vth,thmax-vth*step,firstEvent,lastEvent);
       _mdcc->maskTrigger();
 
