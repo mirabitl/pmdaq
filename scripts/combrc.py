@@ -256,7 +256,7 @@ class combRC(pmdaqrc.pmdaqControl):
             for x in self.session.apps["lyon_pmr"]:
                 s = json.loads(x.sendTransition("START", m))
                 r["lyon_pmr_%d" % x.instance] = s
-         if ("lyon_liboard" in self.session.apps):
+        if ("lyon_liboard" in self.session.apps):
             for x in self.session.apps["lyon_liboard"]:
                 s = json.loads(x.sendTransition("START", m))
                 r["lyon_liboard_%d" % x.instance] = s
