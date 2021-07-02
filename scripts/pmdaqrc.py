@@ -56,7 +56,7 @@ class pmdaqControl(daqrc.daqControl):
         if ("lyon_liboard" in self.session.apps): 
             pn="lyon_liboard"
         mr = json.loads(self.mdcc_Status())
-        #print(mr)
+        print(mr)
         #print("ON DEBUG ",mr)
         #print("ON DEBUG ",mr)
         if (not verbose):
@@ -89,9 +89,13 @@ class pmdaqControl(daqrc.daqControl):
             self.pn="lyon_mdcc"
         if ("lyon_liboard" in self.session.apps):
             self.pn="lyon_liboard"
+            if (cmd=="STATUS"):
+                cmd="MDCCSTATUS"
         return self.processCommand(cmd,  self.pn,par)      
     def mdcc_Status(self):
         return self.mdcc_command("STATUS",{})
+        
+            
 
     def mdcc_Pause(self):
        return self.mdcc_command("PAUSE",  {})

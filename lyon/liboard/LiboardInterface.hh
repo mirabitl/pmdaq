@@ -56,6 +56,8 @@ public:
   void start();
   void readout();
   void stop();
+  void pause();
+  void resume();
   // destroy
   void destroy();
   // Getter and setters

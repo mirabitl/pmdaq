@@ -81,7 +81,7 @@ void liboard::LiboardInterface::start()
   PM_INFO(_logLiboard,"Liboard "<<_status->id<<" is started");
   _status->bytes=0;
   _running=true;
-      
+  
   
 }
 void liboard::LiboardInterface::stop()
@@ -97,6 +97,8 @@ void liboard::LiboardInterface::stop()
   this->publishState("STOPPED");
   
 }
+void liboard::LiboardInterface::pause(){_running=false;}
+void liboard::LiboardInterface::resume(){_running=true;}
 
 void liboard::LiboardInterface::readout()
 {
@@ -115,14 +117,15 @@ void liboard::LiboardInterface::readout()
   while (_readoutStarted)
     {
       //printf("On rentre dans la boucle \n");fflush(stdout);
-      if (!_running) {usleep((uint32_t) 100000);continue;}
+      if (!_running) {::usleep(100000);continue;}
       usleep((uint32_t) 100);
 		
 		
       //printf("Trying to read \n");fflush(stdout);
       uint32_t nread=_rd->readOneEvent(cbuf);
-      //printf(" Je lis %d => %d \n",_status->id,nread);
-      if (nread==0) continue;
+      printf(" Je lis %d => %d \n",_status->id,nread);
+      if (nread==0)
+	{::usleep(100000);continue;}
       _rd->resetFSM();
       //printf(" Je lis %d bytes => %d %x\n",_status->id,nread,_dsData);fflush(stdout);
       //this->publishData(nread);
