@@ -344,15 +344,18 @@ int32_t liboard::LiboardDriver::readData(unsigned char* tro,uint32_t size)
 
 uint32_t liboard::LiboardDriver::readOneEvent(unsigned char* cbuf)
 {
+  lock();
   int32_t tret=0;
   int32_t header_size=0,idx=0,frame_size=0,trailer=0;
   // Read Header (16 bytes)
   //fprintf(stderr,"On rentre dans readOne\n");
   while (header_size<LIBOARD_HEADER_SIZE)
     {
+
       tret=ftdi_read_data(&theFtdi,&cbuf[idx],LIBOARD_HEADER_SIZE);
       //fprintf(stderr," tret header %d \n",tret);
-      if (tret==0) return 0; // No data on bus
+      if (tret==0)
+	{unlock();return 0;} // No data on bus
       header_size+=tret;
       idx+=tret;
     }
@@ -384,6 +387,7 @@ uint32_t liboard::LiboardDriver::readOneEvent(unsigned char* cbuf)
 	  break;
 	}
     }
+  unlock();
   return idx;
 }
 

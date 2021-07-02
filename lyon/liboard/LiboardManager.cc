@@ -642,6 +642,9 @@ void LiboardManager::stop(http_request m)
   PMF_INFO(_logLiboard," Stopping ");
  
   int32_t rc=1;
+  _running=false;
+  _sc_running=false;
+  ::usleep(100000);
   std::map<uint32_t,LiboardInterface*> dm=this->getLiboardMap();
  
   for ( std::map<uint32_t,LiboardInterface*>::iterator it=dm.begin();it!=dm.end();it++)
@@ -649,7 +652,7 @@ void LiboardManager::stop(http_request m)
       PMF_INFO(_logLiboard," Stopping thread of Liboard"<<it->first);
       it->second->stop();
     }
-  _running=false;
+
   par["status"]=json::value::string(U("done"));
   Reply(status_codes::OK,par);  
 
@@ -814,7 +817,7 @@ void LiboardManager::startReadoutThread(LiboardInterface* d)
 void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step)
 {
   std::map<uint32_t,LiboardInterface*> dm=this->getLiboardMap();
-  int ncon=50000,ncoff=100,ntrg=50;
+  int ncon=50000,ncoff=1000,ntrg=50;
   _mdcc->maskTrigger();
   web::json::value p;
   _mdcc->setSpillOn(ncon);
@@ -825,6 +828,7 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
   int thrange=(thmax-thmin+1)/step;
   for (int vth=0;vth<=thrange;vth++)
     {
+      if (!_sc_running) continue;
       if (!_running) break;
       _mdcc->maskTrigger();
 
@@ -867,7 +871,7 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
         break;
     }
 #else
-    while (lastEvent < (firstEvent + ntrg - 10))
+    while (lastEvent < (firstEvent + ntrg - 10) && _sc_running)
     {
       ::usleep(100000);
       auto rep = utils::sendCommand(builder, "STATUS", json::value::null());
@@ -875,11 +879,11 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
       auto janswer = jrep.get().as_object()["answer"];
       lastEvent = janswer["event"].as_integer(); // A verifier
       nloop++;
-      if (nloop > 100 || !_running)
+      if (nloop > 100 || !_running || !_sc_running)
         break;
     }
 #endif
-
+    PMF_ERROR(_logLiboard,"Calibration Step "<<vth<<" "<<firstEvent<<" " <<lastEvent<<" SC RUNNING "<<(int) _sc_running<<" "<<(int) _running );
       printf("Step %d Th %d First %d Last %d \n",vth,thmax-vth*step,firstEvent,lastEvent);
       _mdcc->maskTrigger();
 
@@ -898,7 +902,7 @@ void LiboardManager::thrd_scurve()
 
 void LiboardManager::Scurve(int mode,int thmin,int thmax,int step)
 {
-  std::string builderUrl=utils::findUrl(session(),"lyon_evb",0);
+  std::string builderUrl=utils::findUrl(session(),"evb_builder",0);
   if (builderUrl.compare("")==0) return;
 
   uint64_t mask=0;
@@ -984,6 +988,7 @@ void LiboardManager::c_pause(http_request m)
       return;
     }
   _mdcc->maskTrigger();
+  ::usleep(100000);
   auto dm=this->getLiboardMap();
   for ( std::map<uint32_t,LiboardInterface*>::iterator it=dm.begin();it!=dm.end();it++)
     {
@@ -1008,6 +1013,7 @@ void LiboardManager::c_resume(http_request m)
       return;
     }
   _mdcc->unmaskTrigger();
+  ::usleep(100000);
   auto dm=this->getLiboardMap();
   for ( std::map<uint32_t,LiboardInterface*>::iterator it=dm.begin();it!=dm.end();it++)
     {

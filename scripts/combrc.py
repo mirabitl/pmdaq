@@ -174,6 +174,10 @@ class combRC(pmdaqrc.pmdaqControl):
                 s = json.loads(x.sendTransition("STOP", m))
                 r["lyon_pmr_%d" % x.instance] = s
 
+        if ("lyon_liboard" in self.session.apps):
+            for x in self.session.apps["lyon_liboard"]:
+                s = json.loads(x.sendTransition("STOP", m))
+                r["lyon_liboard_%d" % x.instance] = s
         if ("lyon_gricv0" in self.session.apps):
             for x in self.session.apps["lyon_gricv0"]:
                 s = json.loads(x.sendTransition("STOP", m))
@@ -210,6 +214,10 @@ class combRC(pmdaqrc.pmdaqControl):
             for x in self.session.apps["lyon_pmr"]:
                 s = json.loads(x.sendTransition("DESTROY", m))
                 r["lyon_pmr_%d" % x.instance] = s
+        if ("lyon_liboard" in self.session.apps):
+            for x in self.session.apps["lyon_liboard"]:
+                s = json.loads(x.sendTransition("DESTROY", m))
+                r["lyon_liboard_%d" % x.instance] = s
         if ("lyon_gricv0" in self.session.apps):
             for x in self.session.apps["lyon_gricv0"]:
                 s = json.loads(x.sendTransition("DESTROY", m))
