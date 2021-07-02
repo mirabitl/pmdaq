@@ -837,8 +837,8 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
 
       int firstEvent=0;
 
-#undef USEFEBS
-#ifdef USEFEBS
+#undef USEBOARDS
+#ifdef USEBOARDS
       for ( std::map<uint32_t,LiboardInterface*>::iterator it=dm.begin();it!=dm.end();it++)
 	
 	if (it->second->status()->gtc>firstEvent) firstEvent=it->second->status()->gtc;
@@ -855,7 +855,7 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
       _mdcc->reloadCalibCount();
       _mdcc->unmaskTrigger();
       int nloop=0,lastEvent=firstEvent;
-#ifdef USEFEBS
+#ifdef USEBOARDS
     while (lastEvent < (firstEvent + ntrg - 10))
     {
       ::usleep(100000);

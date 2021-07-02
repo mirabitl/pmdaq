@@ -15,6 +15,7 @@ liboard::LiboardDriver::LiboardDriver(char * deviceIdentifier, uint32_t producti
   memcpy(_deviceId,deviceIdentifier,8);
   sscanf(deviceIdentifier,"LI_%d",&_difId);
   this->setup();
+  unlock();
 }
 
 liboard::LiboardDriver::~LiboardDriver()     
@@ -72,6 +73,7 @@ int32_t liboard::LiboardDriver::open(char * deviceIdentifier, uint32_t productid
 
 int32_t liboard::LiboardDriver::writeNBytes( unsigned char  *cdata, uint32_t nb)
 {
+  lock();
   int32_t tbytestowrite=nb;
   int32_t ret=ftdi_write_data(&theFtdi,cdata,tbytestowrite);
   if( ret==-666)
@@ -87,11 +89,13 @@ int32_t liboard::LiboardDriver::writeNBytes( unsigned char  *cdata, uint32_t nb)
     {
       PM_ERROR(_logLiboard,"Timeout occured while writing on FT245");
     }
+  unlock();
   return ret;
 }
 
 int32_t   liboard::LiboardDriver::readNBytes( unsigned char  *resultPtr,uint32_t nbbytes )
 {
+  lock();
   uint32_t tbytesread=0;	
 
   int32_t ret= 0;
@@ -132,6 +136,7 @@ int32_t   liboard::LiboardDriver::readNBytes( unsigned char  *resultPtr,uint32_t
       PM_ERROR(_logLiboard,"Only  "<<ret<<" Bytes found, "<<nbbytes<<" required, buffer cleared");
 
     }
+  unlock();
   return ret;
 }
 
@@ -184,6 +189,8 @@ int32_t liboard::LiboardDriver::registerRead(uint32_t address, uint32_t *data)
   return 0;
 }	
 
+void liboard::LiboardDriver::lock() {_bsem.lock();}
+void liboard::LiboardDriver::unlock() {_bsem.unlock();}
 
 uint32_t liboard::LiboardDriver::registerRead(uint32_t address)
 {

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdint.h>
+#include <boost/interprocess/sync/interprocess_mutex.hpp>
 
 // hardware access
 #include <ftdi.h>
@@ -128,11 +129,14 @@ namespace liboard
     
     void setExternalTrigger(uint32_t nc);
     uint32_t externalTrigger();
-
+    void lock();
+    void unlock();
   protected:
     struct ftdi_context theFtdi;
     uint32_t _productId;
     char _deviceId[12];
     uint32_t _difId;
+    boost::interprocess::interprocess_mutex _bsem;
+
   };
 };
