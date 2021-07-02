@@ -984,6 +984,11 @@ void LiboardManager::c_pause(http_request m)
       return;
     }
   _mdcc->maskTrigger();
+  auto dm=this->getLiboardMap();
+  for ( std::map<uint32_t,LiboardInterface*>::iterator it=dm.begin();it!=dm.end();it++)
+    {
+      it->second->pause();
+    }
   par["STATUS"]=web::json::value::string(U("DONE"));
   
   Reply(status_codes::OK,par);  
@@ -1003,6 +1008,12 @@ void LiboardManager::c_resume(http_request m)
       return;
     }
   _mdcc->unmaskTrigger();
+  auto dm=this->getLiboardMap();
+  for ( std::map<uint32_t,LiboardInterface*>::iterator it=dm.begin();it!=dm.end();it++)
+    {
+      it->second->resume();
+    }
+
   par["STATUS"]=web::json::value::string(U("DONE"));
   Reply(status_codes::OK,par);  
 }
