@@ -822,7 +822,7 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
   web::json::value p;
   _mdcc->setSpillOn(ncon);
   _mdcc->setSpillOff(ncoff);
-  _mdcc->setSpillRegister(4);
+  _mdcc->setSpillRegister(4);//4 normalement
   _mdcc->calibOn();
   _mdcc->setCalibCount(ntrg);
   int thrange=(thmax-thmin+1)/step;
@@ -862,7 +862,7 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
 #ifdef USEBOARDS
     while (lastEvent < (firstEvent + ntrg - 10))
     {
-      ::usleep(100000);
+      ::usleep(10000);
       for ( std::map<uint32_t,LiboardInterface*>::iterator it=dm.begin();it!=dm.end();it++)
 	
 	if (it->second->status()->gtc>lastEvent) lastEvent=it->second->status()->gtc;
@@ -873,13 +873,13 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
 #else
     while (lastEvent < (firstEvent + ntrg - 10) && _sc_running)
     {
-      ::usleep(100000);
+      ::usleep(10000);
       auto rep = utils::sendCommand(builder, "STATUS", json::value::null());
       auto jrep = rep.extract_json();
       auto janswer = jrep.get().as_object()["answer"];
       lastEvent = janswer["event"].as_integer(); // A verifier
       nloop++;
-      if (nloop > 100 || !_running || !_sc_running)
+      if (nloop > 1000 || !_running || !_sc_running)
         break;
     }
 #endif
@@ -913,6 +913,7 @@ void LiboardManager::Scurve(int mode,int thmin,int thmax,int step)
 
       //for (int i=0;i<64;i++) mask|=(1<<i);
       mask=0xFFFFFFFFFFFFFFFF;
+      mask=0;
       this->setMask(mask);
       this->ScurveStep(builderUrl,thmin,thmax,step);
       return;
@@ -988,7 +989,7 @@ void LiboardManager::c_pause(http_request m)
       return;
     }
   _mdcc->maskTrigger();
-  ::usleep(100000);
+  ::usleep(10000);
   auto dm=this->getLiboardMap();
   for ( std::map<uint32_t,LiboardInterface*>::iterator it=dm.begin();it!=dm.end();it++)
     {
@@ -1013,7 +1014,7 @@ void LiboardManager::c_resume(http_request m)
       return;
     }
   _mdcc->unmaskTrigger();
-  ::usleep(100000);
+  ::usleep(10000);
   auto dm=this->getLiboardMap();
   for ( std::map<uint32_t,LiboardInterface*>::iterator it=dm.begin();it!=dm.end();it++)
     {
@@ -1121,6 +1122,7 @@ void LiboardManager::c_writereg(http_request m)
   uint32_t adr=utils::queryIntValue(m,"address",2);
   uint32_t value=utils::queryIntValue(m,"value",1234);
   _mdcc->registerWrite(adr,value);
+  PMF_INFO(_logLiboard," Write Register called "<<std::hex<<adr<<" "<<value<<std::dec);
 
   par["STATUS"]=web::json::value::string(U("DONE"));
   par["ADDRESS"]=web::json::value::number(adr);

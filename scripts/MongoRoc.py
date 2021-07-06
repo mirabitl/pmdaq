@@ -800,7 +800,7 @@ class MongoRoc:
 
         return _kasic
 
-    def LIROC_setForced_ValEvt(self,forced):
+    def LIROC_setForced_ValEvt(self,forced,idif=0,iasic=0):
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
                 continue

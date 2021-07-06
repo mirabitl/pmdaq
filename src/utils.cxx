@@ -442,7 +442,7 @@ uint32_t utils::queryIntValue(http_request m,std::string n,uint32_t def_val)
   uint32_t nc=def_val;
   auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
   for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
-    if (it2->first.compare(n)==0) nc=std::stoi(it2->second);
+    if (it2->first.compare(n)==0) nc=std::stoul(it2->second);
   return nc;
 }
 
