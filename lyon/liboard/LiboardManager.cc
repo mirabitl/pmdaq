@@ -817,7 +817,7 @@ void LiboardManager::startReadoutThread(LiboardInterface* d)
 void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step)
 {
   std::map<uint32_t,LiboardInterface*> dm=this->getLiboardMap();
-  int ncon=50000,ncoff=1000,ntrg=50;
+  int ncon=1000,ncoff=100,ntrg=20;
   _mdcc->maskTrigger();
   web::json::value p;
   _mdcc->setSpillOn(ncon);
@@ -830,11 +830,13 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
     {
       if (!_sc_running) continue;
       if (!_running) break;
+    debut:
       _mdcc->maskTrigger();
 
-      usleep(1000);
+      usleep(100000);
       this->setThreshold(thmax-vth*step);
-      
+      usleep(100000);
+
       web::json::value h;
       web::json::value ph;
       h[0]=json::value::number(2);h[1]=json::value::number(thmax-vth*step);
@@ -871,7 +873,7 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
         break;
     }
 #else
-    while (lastEvent < (firstEvent + ntrg - 10) && _sc_running)
+    while (lastEvent < (firstEvent + ntrg - 1) && _sc_running)
     {
       ::usleep(10000);
       auto rep = utils::sendCommand(builder, "STATUS", json::value::null());
@@ -886,7 +888,7 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
     PMF_ERROR(_logLiboard,"Calibration Step "<<vth<<" "<<firstEvent<<" " <<lastEvent<<" SC RUNNING "<<(int) _sc_running<<" "<<(int) _running );
       printf("Step %d Th %d First %d Last %d \n",vth,thmax-vth*step,firstEvent,lastEvent);
       _mdcc->maskTrigger();
-
+      if ((lastEvent-firstEvent)<3) goto debut;
     }
   _mdcc->calibOff();
 }

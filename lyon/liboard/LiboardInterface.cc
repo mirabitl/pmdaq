@@ -123,10 +123,11 @@ void liboard::LiboardInterface::readout()
 		
       //printf("Trying to read \n");fflush(stdout);
       uint32_t nread=_rd->readOneEvent(cbuf);
+      _rd->resetFSM();
       //printf(" Je lis %d => %d \n",_status->id,nread);
       if (nread==0)
-	{::usleep(10000);continue;}
-      _rd->resetFSM();
+	{::usleep(1000);continue;}
+      
       //printf(" Je lis %d bytes => %d %x\n",_status->id,nread,_dsData);fflush(stdout);
       //this->publishData(nread);
       

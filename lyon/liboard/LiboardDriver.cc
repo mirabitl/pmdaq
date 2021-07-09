@@ -359,9 +359,10 @@ uint32_t liboard::LiboardDriver::readOneEvent(unsigned char* cbuf)
       header_size+=tret;
       idx+=tret;
     }
-  for (int i=0;i<LIBOARD_HEADER_SIZE;i++)
-    fprintf(stderr,"%.2x ",cbuf[i]);
-  fprintf(stderr,"\n");
+  // for (int i=0;i<LIBOARD_HEADER_SIZE;i++)
+  //   fprintf(stderr,"%.2x ",cbuf[i]);
+  // fprintf(stderr,"\n")
+    ;
   
   // Read Frames
   for (;;)
@@ -370,13 +371,13 @@ uint32_t liboard::LiboardDriver::readOneEvent(unsigned char* cbuf)
       while(frame_size <LIBOARD_FRAME_SIZE)
 	{
 	  tret=ftdi_read_data(&theFtdi,&cbuf[idx],LIBOARD_FRAME_SIZE);
-	  fprintf(stderr," tret frame %d \n",tret);
+	  /*fprintf(stderr," tret frame %d \n",tret);
 	   for (int i=idx;i<idx+tret;i++)
 	     fprintf(stderr,"%.2x ",cbuf[i]);
-
+	  */
 	  frame_size+=tret;
 	  idx+=tret;
-	  fprintf(stderr," Stop %.2x \n",cbuf[idx-4]);
+	  //fprintf(stderr," Stop %.2x \n",cbuf[idx-4]);
 	  if ((tret<LIBOARD_FRAME_SIZE) && (cbuf[idx-4]==LIBOARD_EVENT_STOP))
 	    {
 	      trailer=1;					
