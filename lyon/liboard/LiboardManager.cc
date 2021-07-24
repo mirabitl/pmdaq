@@ -122,7 +122,8 @@ void LiboardManager::scan(http_request m)
 
 void LiboardManager::fsm_initialise(http_request m)
 {
-  
+  // _mdcc->maskTrigger();
+
   auto par = json::value::object();
   PMF_INFO(_logLiboard," CMD: INITIALISING");
   _vDif.clear();
@@ -817,7 +818,7 @@ void LiboardManager::startReadoutThread(LiboardInterface* d)
 void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step)
 {
   std::map<uint32_t,LiboardInterface*> dm=this->getLiboardMap();
-  int ncon=1000,ncoff=100,ntrg=20;
+  int ncon=150,ncoff=10,ntrg=20;
   _mdcc->maskTrigger();
   web::json::value p;
   _mdcc->setSpillOn(ncon);
@@ -873,7 +874,7 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
         break;
     }
 #else
-    while (lastEvent < (firstEvent + ntrg - 1) && _sc_running)
+    while (lastEvent < (firstEvent + ntrg - 2) && _sc_running)
     {
       ::usleep(10000);
       auto rep = utils::sendCommand(builder, "STATUS", json::value::null());
@@ -881,7 +882,7 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
       auto janswer = jrep.get().as_object()["answer"];
       lastEvent = janswer["event"].as_integer(); // A verifier
       nloop++;
-      if (nloop > 1000 || !_running || !_sc_running)
+      if (nloop > 100 || !_running || !_sc_running)
         break;
     }
 #endif
@@ -939,7 +940,7 @@ void LiboardManager::Scurve(int mode,int thmin,int thmax,int step)
 
   // One channel pedestal
 
-  mask=(1ULL<<mode);
+  mask=~(1ULL<<mode);
   PMF_INFO(_logLiboard,"CTEST One "<<mode<<" "<<std::hex<<mask<<std::dec);
   this->setMask(mask);
   this->setCtest(mask);

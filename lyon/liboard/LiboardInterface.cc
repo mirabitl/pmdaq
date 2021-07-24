@@ -75,8 +75,8 @@ void liboard::LiboardInterface::start()
       return;
     }
   _external=false;
-  _rd->setAcquisitionMode(true,false,_external);
-  // _rd->setAcquisitionMode(true,true,_external);
+  // _rd->setAcquisitionMode(true,false,_external);
+  _rd->setAcquisitionMode(true,true,_external);
   this->publishState("STARTED");
   PM_INFO(_logLiboard,"Liboard "<<_status->id<<" is started");
   _status->bytes=0;
@@ -112,7 +112,7 @@ void liboard::LiboardInterface::readout()
     }
 
   _rd->resetFSM();
-  unsigned char cbuf[48*128*20+8];
+  unsigned char cbuf[0x400000];
   _readoutCompleted=false;
   while (_readoutStarted)
     {
@@ -123,7 +123,7 @@ void liboard::LiboardInterface::readout()
 		
       //printf("Trying to read \n");fflush(stdout);
       uint32_t nread=_rd->readOneEvent(cbuf);
-      _rd->resetFSM();
+      // A VOIR  _rd->resetFSM();
       //printf(" Je lis %d => %d \n",_status->id,nread);
       if (nread==0)
 	{::usleep(1000);continue;}

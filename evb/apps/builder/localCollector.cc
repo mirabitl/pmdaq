@@ -195,7 +195,7 @@ void pm::builder::collector::status(http_request m)
       
       par["answer"] = json::value::string(U("NO merger created yet"));
     }
-  PMF_INFO(_logCollector, "STATUS"<<par);
+  PMF_DEBUG(_logCollector, "STATUS"<<par);
   Reply(status_codes::OK,par);
 }
 

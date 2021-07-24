@@ -317,7 +317,8 @@ int32_t liboard::LiboardDriver::resetFSM()
   ret=registerWrite(LIBOARD_RO_RESET_REG, 0x1);
   ::usleep(100000);
   ret=registerWrite(LIBOARD_RO_RESET_REG, 0x0);
-  
+   ::usleep(100000);
+  ret=registerWrite(LIBOARD_RO_RESET_REG, 0x0);
   //	printf ("reset_FSM write (0x%08x at 0x%x), ret=%d\n",tdata, taddr, ret);
 
   return 0;
@@ -370,19 +371,33 @@ uint32_t liboard::LiboardDriver::readOneEvent(unsigned char* cbuf)
       // Read on frame or A0
       while(frame_size <LIBOARD_FRAME_SIZE)
 	{
-	  tret=ftdi_read_data(&theFtdi,&cbuf[idx],LIBOARD_FRAME_SIZE);
-	  /*fprintf(stderr," tret frame %d \n",tret);
-	   for (int i=idx;i<idx+tret;i++)
-	     fprintf(stderr,"%.2x ",cbuf[i]);
-	  */
+	  // ::usleep(10);
+	  tret=ftdi_read_data(&theFtdi,&cbuf[idx],4);
+	  fprintf(stderr," tret frame %d \n",tret);
+	  //for (int i=idx;i<idx+tret;i++)
+	 
+	  bool trailerFound=(cbuf[idx-4]==LIBOARD_EVENT_STOP)&&
+	      (cbuf[idx-3]==LIBOARD_EVENT_STOP)&&
+	      (cbuf[idx-2]==LIBOARD_EVENT_STOP)&&
+	    (cbuf[idx-1]==LIBOARD_EVENT_STOP);
+	  if (trailerFound)
+	    {
+	   for (int i=1;i<=4;i++)
+	     fprintf(stderr,"%.2x ",cbuf[idx-i]);
+	  fprintf(stderr,"\n");
+	  fprintf(stderr," Stop %.2x \n",cbuf[idx-4]);
+	    }
 	  frame_size+=tret;
 	  idx+=tret;
-	  //fprintf(stderr," Stop %.2x \n",cbuf[idx-4]);
-	  if ((tret<LIBOARD_FRAME_SIZE) && (cbuf[idx-4]==LIBOARD_EVENT_STOP))
+
+	  //if ((tret<LIBOARD_FRAME_SIZE) &&
+	  if (trailerFound)
+	
 	    {
 	      trailer=1;					
 	      break;
-	    }	
+	    }
+
 	}
       // Continue to next frame
       if (trailer ==0) 
