@@ -291,9 +291,9 @@ void MbmdccManager::reloadCalibCount(){
 
 
 
-void MbmdccManager::resetFSM(uint8_t b){this->writeRegister(mbmdcc::Message::Register::RESET_FSM,b);}
-void MbmdccManager::resetTDC(uint8_t b){this->writeRegister(mbmdcc::Message::Register::RESET_FE,b);}
-uint32_t MbmdccManager::busyCount(uint8_t b){return this->readRegister(mbmdcc::Message::Register::BUSY_0+(b&0xF));}
+void MbmdccManager::resetFSM(uint32_t b){this->writeRegister(mbmdcc::Message::Register::RESET_FSM,b);}
+void MbmdccManager::resetTDC(uint32_t b){this->writeRegister(mbmdcc::Message::Register::RESET_FE,b);}
+uint32_t MbmdccManager::busyCount(uint32_t b){return this->readRegister(mbmdcc::Message::Register::BUSY_0+(b&0xF));}
 
 
 
