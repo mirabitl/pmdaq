@@ -22,7 +22,7 @@
 
 void mbmdcc::Interface::dolisten()
 {
-  _running=true;
+  // _running=true;
   while(!_onClientDisconnect->disconnected()) {
     PM_INFO(_logMbmdcc,"Thread is "<<_running);
 
