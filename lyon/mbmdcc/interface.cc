@@ -22,13 +22,13 @@
 
 void mbmdcc::Interface::dolisten()
 {
- 
+  _running=true;
   while(!_onClientDisconnect->disconnected()) {
     PM_INFO(_logMbmdcc,"Thread is "<<_running);
 
     if (!_running) break;
-    // if(!_group->listen(4))
-    //  std::cout << "\nNo msg recieved during the last 4 seconds";
+    if(!_group->listen(4000))
+      std::cout << "\nNo msg recieved during the last 4 seconds";
   }
   PM_INFO(_logMbmdcc,"Thread is finished");
 }
