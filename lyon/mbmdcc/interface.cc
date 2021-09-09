@@ -75,7 +75,7 @@ void mbmdcc::Interface::initialise()
   //_onAccept=new mbmdcc::OnAccept(_msh);
   _group->setCmdOnRead(_onRead);
   //  _group->setCmdOnAccept(_onAccept);
-  _group->setCmdOnDisconnect(_onClientDisconnect);
+  //_group->setCmdOnDisconnect(_onClientDisconnect);
    // Loop on Asic Map and find existing DIF
   // Register their slow control socket (10001) and readout one (10002)
   _boards.clear();
