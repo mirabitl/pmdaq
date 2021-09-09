@@ -41,12 +41,14 @@ void mbmdcc::Interface::listen()
 
 }
 void mbmdcc::Interface::terminate()
-{
+{ PM_INFO(_logMbmdcc,"Terminating");
   if (_running)
     {
     _running=false;
+    PM_INFO(_logMbmdcc,"Joining");
     g_store.join();
     }
+  PM_INFO(_logMbmdcc,"Terminated");
 }
 
 mbmdcc::Interface::Interface() :  _group(NULL)
@@ -95,15 +97,17 @@ void mbmdcc::Interface:: addDevice(std::string address)
 
 void mbmdcc::Interface::close()
 {
+  PM_INFO(_logMbmdcc,"Closing");
   if (_running)
     this->terminate();
-
+  PM_INFO(_logMbmdcc,"Removing sockets");
   for (auto x=_boards.begin();x!=_boards.end();x++)
     {
       _group->remove(x->second->reg()->socket());
       x->second->reg()->socket()->disconnect();
 
     }
+    PM_INFO(_logMbmdcc,"Clear boards");
   _boards.clear();
   
 }

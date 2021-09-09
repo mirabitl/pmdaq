@@ -91,8 +91,11 @@ void Gricv1Manager::end()
 	}
       PMF_INFO(_logGricv1," Terminating MPI"<<std::flush);
 
+
     _mpi->terminate();
-    _mpi->close();
+    //PMF_DEBUG(_logGricv1," Close MPI"<<std::flush);
+    //_mpi->close();
+    PMF_DEBUG(_logGricv1," Deleting boards "<<std::flush);
     for (auto x:_mpi->boards())
       delete x.second;
     _mpi->boards().clear();
