@@ -454,7 +454,7 @@ void MbmdccManager::c_resettdc(http_request m)
   PMF_INFO(_logMbmdcc," Reset TDC called ");
 
   uint32_t nc=utils::queryIntValue(m,"value",0);
-  this->resetTDC(nc&0xF);
+  this->resetTDC(nc&0xFFFF);
 
   par["STATUS"]=json::value::string(U("DONE"));
 
@@ -466,7 +466,7 @@ void MbmdccManager::c_resetfsm(http_request m)
   PMF_INFO(_logMbmdcc," Reset FSM called ");
 
   uint32_t nc=utils::queryIntValue(m,"value",0);
-  this->resetFSM(nc&0xF);
+  this->resetFSM(nc&0xFFFF);
 
   par["STATUS"]=json::value::string(U("DONE"));
 
