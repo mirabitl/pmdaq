@@ -52,6 +52,7 @@ uint64_t mbmdcc::messageHandler::Id(NL::Socket* socket)
   return ((uint64_t)ls1<<32)|((uint64_t) socket->portTo());
 
 }
+
 void mbmdcc::messageHandler::processMessage(NL::Socket* socket) 
 {
   // build id
@@ -150,7 +151,7 @@ void mbmdcc::messageHandler::addHandler(uint64_t id,MPIFunctor f)
   _handlers.insert(p);
 }
 
-
+/*
 mbmdcc::OnAccept::OnAccept(messageHandler* msh) : _msh(msh) {}
 void mbmdcc::OnAccept:: exec(NL::Socket* socket, NL::SocketGroup* group, void* reference) 
 {
@@ -162,7 +163,6 @@ void mbmdcc::OnAccept:: exec(NL::Socket* socket, NL::SocketGroup* group, void* r
 
 
 
-
 mbmdcc::OnRead::OnRead(messageHandler* msh) : _msh(msh) {}
 void mbmdcc::OnRead::exec(NL::Socket* socket, NL::SocketGroup* group, void* reference) {
 
@@ -171,25 +171,8 @@ void mbmdcc::OnRead::exec(NL::Socket* socket, NL::SocketGroup* group, void* refe
 
 
     cout.flush();
-  /*    unsigned char buffer[256];
-    buffer[255] = '\0';
-    memset(theReadBuffer_,0,0x10000);
-    //socket->read(buffer, 255);
-    size_t msgLen =socket->read(theReadBuffer_,0x10000);
-    std::string sread(buffer);
-    cout << "Message from " << socket->hostTo() << ":" << socket->portTo() << ". Text received: " << sread<<std::endl;
-    cout.flush();
-		
-    for(unsigned i=1; i < (unsigned) group->size(); ++i)
-    {
-    if(group->get(i) != socket)
-    {
-    printf(" \t sending %d  %d %s \n",i,sread.size(),sread.c_str());
-    group->get(i)->send(sread.c_str(), sread.size());
-    }
-    }
-  */
 }
+
 
 mbmdcc::OnDisconnect::OnDisconnect(messageHandler* msh) : _msh(msh),_disconnect(false) {}
 void mbmdcc::OnDisconnect::exec(NL::Socket* socket, NL::SocketGroup* group, void* reference) {
@@ -211,3 +194,4 @@ void mbmdcc::OnClientDisconnect::exec(NL::Socket* socket, NL::SocketGroup* group
   //uint32_t* i =(uint32_t*) reference;
   //(*i)=0xDEAD;
 }
+*/

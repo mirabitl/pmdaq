@@ -1,8 +1,9 @@
 #pragma once
 
 
-#include <netlink/socket.h>
-#include <netlink/socket_group.h>
+//#include <netlink/socket.h>
+//#include <netlink/socket_group.h>
+#include "MessageHandler.hh"
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -139,7 +140,23 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
     
     };
 
+    class messageHandler : public mpi::MessageHandler
+    {
+    public:
+      messageHandler();
+      virtual void processMessage(NL::Socket* socket);
+      virtual void removeSocket(NL::Socket* socket);
+      void addHandler(uint64_t id,MPIFunctor f);
+      uint64_t Id(NL::Socket* socket);
+      
+    private:
+      std::map<uint64_t, ptrBuf> _sockMap;
+      std::map<uint64_t,MPIFunctor> _handlers;
+      uint64_t _npacket;
+      std::mutex _sem;
+    };
 
+    /*
     class messageHandler 
     {
     public:
@@ -201,7 +218,7 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
       bool _disconnect;
     };
 
-
+    */
     /// Gere les connections aux socket et le select
     
     class Interface 
@@ -225,10 +242,10 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
       NL::SocketGroup* _group;
  
       mbmdcc::messageHandler* _msh;
-      mbmdcc::OnRead* _onRead;
-      mbmdcc::OnAccept* _onAccept;
-      mbmdcc::OnClientDisconnect* _onClientDisconnect;
-      mbmdcc::OnDisconnect* _onDisconnect;
+      mpi::OnRead* _onRead;
+      mpi::OnAccept* _onAccept;
+      mpi::OnClientDisconnect* _onClientDisconnect;
+      mpi::OnDisconnect* _onDisconnect;
       std::thread g_store;
       bool _running;
     };
