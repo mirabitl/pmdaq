@@ -45,7 +45,7 @@ void mbmdcc::Interface::listen()
 }
 void mbmdcc::Interface::terminate()
 { PM_INFO(_logMbmdcc,"Terminating");
-  if (_running && false)
+  if (_running)
     {
     _running=false;
     PM_INFO(_logMbmdcc,"Joining");
