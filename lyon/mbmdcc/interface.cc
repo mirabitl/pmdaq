@@ -28,9 +28,10 @@ void mbmdcc::Interface::dolisten()
     if(!_group->listen(4000))
       std::cout << "\nNo msg recieved during the last 4 seconds";
   }
-
-    
+  PM_INFO(_logMbmdcc,"Thread is finished");
 }
+    
+
 void mbmdcc::Interface::listen()
 {
   _running=true;  
