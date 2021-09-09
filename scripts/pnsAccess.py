@@ -86,6 +86,8 @@ class pnsAccess:
                 continue
             if (x.name=="evb_builder"):
                 continue;
+            if (x.name=="lyon_mbmdcc"):
+                continue;
             print("removing Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state," Session :",x.session," Name : ",x.name," Instance ",x.instance )
             par={}
             par["session"]=x.session
@@ -96,7 +98,7 @@ class pnsAccess:
         for x in self.registered:
             if (req_session!=None and x.session!=req_session):
                 continue
-            if (x.name!="evb_builder"):
+            if (x.name!="evb_builder" and  x.name!="lyon_mbmdcc" ):
                 continue;
             print("removing Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state," Session :",x.session," Name : ",x.name," Instance ",x.instance )
             par={}
