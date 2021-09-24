@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os
-import socks
+#import socks
 import socket
 import json
 from copy import deepcopy

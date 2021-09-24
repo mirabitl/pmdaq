@@ -27,9 +27,10 @@ void mbmdcc::Interface::dolisten()
     //    PM_INFO(_logMbmdcc,"Thread is "<<_running);
 
     if (!_running) break;
-    if(!_group->listen())
-      ::usleep(1000);
-    //std::cout << "\nNo msg recieved during the last 4 seconds"<<std::endl<<std::flush;
+    if(!_group->listen(1000))
+      std::cout << "\nNo msg recieved during the last 4 seconds"<<std::endl<<std::flush;
+    //::usleep(1000);
+
   }
   PM_INFO(_logMbmdcc,"Thread is finished");
 }
@@ -49,10 +50,13 @@ void mbmdcc::Interface::terminate()
   if (_running)
     {
     _running=false;
+    ::sleep(2);
     PM_INFO(_logMbmdcc,"Joining");
     g_store.join();
+    fprintf(stderr,"On est sorti \n");
     }
   PM_INFO(_logMbmdcc,"Terminated");
+  this->close();
 }
 
 mbmdcc::Interface::Interface() :  _group(NULL)
@@ -73,9 +77,9 @@ void mbmdcc::Interface::initialise()
    _onRead= new mpi::OnRead(_msh);
   _onClientDisconnect= new mpi::OnClientDisconnect();
   _onDisconnect= new mpi::OnDisconnect(_msh);
-  _onAccept=new mpi::OnAccept(_msh);
+  //_onAccept=new mpi::OnAccept(_msh);
   _group->setCmdOnRead(_onRead);
-  _group->setCmdOnAccept(_onAccept);
+  //_group->setCmdOnAccept(_onAccept);
   _group->setCmdOnDisconnect(_onClientDisconnect);
    // Loop on Asic Map and find existing DIF
   // Register their slow control socket (10001) and readout one (10002)
@@ -102,8 +106,6 @@ void mbmdcc::Interface:: addDevice(std::string address)
 void mbmdcc::Interface::close()
 {
   PM_INFO(_logMbmdcc,"Closing");
-  if (_running)
-    this->terminate();
   PM_INFO(_logMbmdcc,"Removing sockets");
   for (auto x=_boards.begin();x!=_boards.end();x++)
     {
@@ -111,6 +113,7 @@ void mbmdcc::Interface::close()
       x->second->reg()->socket()->disconnect();
 
     }
+ 
     PM_INFO(_logMbmdcc,"Clear boards");
   _boards.clear();
   

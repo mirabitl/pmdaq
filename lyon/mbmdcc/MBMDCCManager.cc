@@ -77,13 +77,13 @@ void MbmdccManager::end()
  
 if (_mpi!=NULL)
     {
+        PMF_INFO(_logMbmdcc,"=> TERMINATE");
+
       _mpi->terminate();
-      
+      PMF_INFO(_logMbmdcc,"=> CLOSE");
       _mpi->close();
-      for (auto x:_mpi->boards())
-	delete x.second;
-      _mpi->boards().clear();
-      delete _mpi;
+      PMF_INFO(_logMbmdcc,"=> DELETE");
+      if (_mpi!=NULL) delete _mpi;
       _mpi=NULL;
     }
   

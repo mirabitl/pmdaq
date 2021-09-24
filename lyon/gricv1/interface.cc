@@ -74,9 +74,9 @@ void gricv1::Interface::initialise()
    _onRead= new mpi::OnRead(_msh);
   _onClientDisconnect= new mpi::OnClientDisconnect();
   _onDisconnect= new mpi::OnDisconnect(_msh);
-  _onAccept=new mpi::OnAccept(_msh);
+  // _onAccept=new mpi::OnAccept(_msh);
   _group->setCmdOnRead(_onRead);
-  _group->setCmdOnAccept(_onAccept);
+  // _group->setCmdOnAccept(_onAccept);
   _group->setCmdOnDisconnect(_onClientDisconnect);
    // Loop on Asic Map and find existing DIF
   // Register their slow control socket (10001) and readout one (10002)

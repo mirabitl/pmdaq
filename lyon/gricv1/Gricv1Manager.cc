@@ -618,7 +618,8 @@ void Gricv1Manager::start(http_request m)
   for (auto x:_mpi->boards())
     {
       // Automatic FSM (bit 1 a 0) , enabled (Bit 0 a 1)
-      x.second->reg()->writeRegister(gricv1::Message::Register::ACQ_CTRL,1);
+      //x.second->reg()->writeRegister(gricv1::Message::Register::ACQ_CTRL,1);
+      x.second->reg()->writeRegister(gricv1::Message::Register::ACQ_CTRL,5);
     }
   _running=true;
   par["status"]=json::value::string(U("done"));
@@ -636,6 +637,12 @@ void Gricv1Manager::stop(http_request m)
     }
   ::sleep(1);
   _running=false;
+
+   if (_sc_running)
+    {
+      g_scurve.join();
+      _sc_running=false;
+    }
   par["status"]=json::value::string(U("done"));
   Reply(status_codes::OK,par);
 
@@ -691,9 +698,16 @@ void Gricv1Manager::ScurveStep(std::string mdccUrl,std::string builderUrl,int th
       h[0]=2;h[1]=web::json::value::number(thmax-vth*step);
 
       int firstEvent=0;
-      for (auto x : _mpi->boards())
+#undef USEFEBS
+#ifdef USEFEBS
+   for (auto x : _mpi->boards())
 	if (x.second->data()->event()>firstEvent) firstEvent=x.second->data()->event();
-
+#else
+    auto frep = utils::sendCommand(builderUrl, "STATUS", json::value::null());
+    auto jfrep = frep.extract_json();
+    auto jfanswer = jfrep.get().as_object()["answer"];
+    firstEvent = jfanswer["event"].as_integer();  
+#endif
       web::json::value ph;
       ph["header"]=h;
       ph["nextevent"]=web::json::value::number(firstEvent+1);
@@ -701,6 +715,7 @@ void Gricv1Manager::ScurveStep(std::string mdccUrl,std::string builderUrl,int th
       utils::sendCommand(mdccUrl,"RELOADCALIB",json::value::null());
       utils::sendCommand(mdccUrl,"RESUME",json::value::null());
       int nloop=0,lastEvent=firstEvent;
+#ifdef USEFEBS
       while (lastEvent < (firstEvent + ntrg - 1))
 	{
 	  ::usleep(10000);
@@ -708,6 +723,19 @@ void Gricv1Manager::ScurveStep(std::string mdccUrl,std::string builderUrl,int th
 	    if (x.second->data()->event()>lastEvent) lastEvent=x.second->data()->event();
 	  nloop++;if (nloop > 60000 || !_running)  break;
 	}
+#else
+    while (lastEvent < (firstEvent + ntrg - 10))
+    {
+      ::usleep(100000);
+      auto rep = utils::sendCommand(builderUrl, "STATUS", json::value::null());
+      auto jrep = rep.extract_json();
+      auto janswer = jrep.get().as_object()["answer"];
+      lastEvent = janswer["event"].as_integer(); // A verifier
+      nloop++;
+      if (nloop > 100 || !_running)
+        break;
+    }
+#endif
   PMF_INFO(_logGricv1,"Step:"<<vth<<" Threshold:"<<thmax-vth*step<<" First:"<<firstEvent<<" Last:"<<lastEvent);
       //printf("Step %d Th %d First %d Last %d \n",vth,thmax-vth*step,firstEvent,lastEvent);
       utils::sendCommand(mdccUrl,"PAUSE",json::value::null());
@@ -720,14 +748,14 @@ void Gricv1Manager::thrd_scurve()
 {
   _sc_running=true;
   this->Scurve(_sc_mode,_sc_thmin,_sc_thmax,_sc_step);
-  _sc_running=false;
+  // _sc_running=false;
 }
 
 
 void Gricv1Manager::Scurve(int mode,int thmin,int thmax,int step)
 {
-  std::string mdcc=utils::findUrl(session(),"lyon_mdcc",0);
-  std::string builder=utils::findUrl(session(),"lyon_evb",0);
+  std::string mdcc=utils::findUrl(session(),"lyon_mbmdcc",0);
+  std::string builder=utils::findUrl(session(),"evb_builder",0);
   if (mdcc.compare("")==0) return;
   if (builder.compare("")==0) return;
   uint64_t mask=0;
