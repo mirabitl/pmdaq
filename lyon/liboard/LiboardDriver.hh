@@ -8,7 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdint.h>
-#include <boost/interprocess/sync/interprocess_mutex.hpp>
+#include <mutex>
 
 // hardware access
 #include <ftdi.h>
@@ -136,7 +136,7 @@ namespace liboard
     uint32_t _productId;
     char _deviceId[12];
     uint32_t _difId;
-    boost::interprocess::interprocess_mutex _bsem;
+    std::mutex _bsem;
 
   };
 };

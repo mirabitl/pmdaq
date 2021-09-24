@@ -74,6 +74,7 @@ int32_t liboard::LiboardDriver::open(char * deviceIdentifier, uint32_t productid
 int32_t liboard::LiboardDriver::writeNBytes( unsigned char  *cdata, uint32_t nb)
 {
   lock();
+  //fprintf(stderr,"Entering WriteNbytes\n");
   int32_t tbytestowrite=nb;
   int32_t ret=ftdi_write_data(&theFtdi,cdata,tbytestowrite);
   if( ret==-666)
@@ -96,6 +97,7 @@ int32_t liboard::LiboardDriver::writeNBytes( unsigned char  *cdata, uint32_t nb)
 int32_t   liboard::LiboardDriver::readNBytes( unsigned char  *resultPtr,uint32_t nbbytes )
 {
   lock();
+  // fprintf(stderr,"Entering ReadNbytes\n");
   uint32_t tbytesread=0;	
 
   int32_t ret= 0;
@@ -171,7 +173,7 @@ int32_t liboard::LiboardDriver::registerRead(uint32_t address, uint32_t *data)
       PM_ERROR(_logLiboard,"write adress error");	
       return -2;
     }
-
+  // fprintf(stderr,"Calling readNbytes\n");
   if (readNBytes(ttampon,4)!=4)
     {
       (*data)=0;
@@ -194,8 +196,10 @@ void liboard::LiboardDriver::unlock() {_bsem.unlock();}
 
 uint32_t liboard::LiboardDriver::registerRead(uint32_t address)
 {
+
   uint32_t tdata=0;
   this->registerRead(address,&tdata);
+
   return tdata;
 }
 int32_t liboard::LiboardDriver::setup()
@@ -218,6 +222,7 @@ int32_t liboard::LiboardDriver::setup()
 
   if (tdata!=0x12345678)
     PM_ERROR(_logLiboard,"Invalid Test register test "<<std::hex<<tdata<<std::dec);
+  
   ret=registerWrite(LIBOARD_TEST_REG,0xABCD1234);
   //printf ("test ....reg write, ret=%d\n",ret);
   ret=registerRead(LIBOARD_TEST_REG,&tdata);
@@ -253,10 +258,10 @@ int32_t liboard::LiboardDriver::loadSLC(uint32_t* SLC,uint32_t slc_size)
 
   for (i = 0;i<slc_size; i++)
     {
-      printf ("0x%x\n",SLC[i]);
+      // printf ("0x%x\n",SLC[i]);
       tdata=SLC[i];
       ret=registerWrite(LIBOARD_SLC_DATA_REG,tdata);
-      printf ("%d reg write 0x%08x at 0x%x, ret=%d\n",i,tdata,taddr, ret);
+      //printf ("%d reg write 0x%08x at 0x%x, ret=%d\n",i,tdata,taddr, ret);
       // getchar();
     }
 
@@ -360,10 +365,9 @@ uint32_t liboard::LiboardDriver::readOneEvent(unsigned char* cbuf)
       header_size+=tret;
       idx+=tret;
     }
-  // for (int i=0;i<LIBOARD_HEADER_SIZE;i++)
-  //   fprintf(stderr,"%.2x ",cbuf[i]);
-  // fprintf(stderr,"\n")
-    ;
+  for (int i=0;i<LIBOARD_HEADER_SIZE;i++)
+    fprintf(stderr,"%.2x ",cbuf[i]);
+  fprintf(stderr,"\n");
   
   // Read Frames
   for (;;)
@@ -371,21 +375,21 @@ uint32_t liboard::LiboardDriver::readOneEvent(unsigned char* cbuf)
       // Read on frame or A0
       while(frame_size <LIBOARD_FRAME_SIZE)
 	{
-	  // ::usleep(10);
+	   ::usleep(10);			// cc 2706 : uncomment
 	  tret=ftdi_read_data(&theFtdi,&cbuf[idx],4);
-	  fprintf(stderr," tret frame %d \n",tret);
+	  //if (tret !=0) 	  fprintf(stderr," tret frame %d \n",tret);   // cc 2706 : if
 	  //for (int i=idx;i<idx+tret;i++)
-	 
-	  bool trailerFound=(cbuf[idx-4]==LIBOARD_EVENT_STOP)&&
-	      (cbuf[idx-3]==LIBOARD_EVENT_STOP)&&
-	      (cbuf[idx-2]==LIBOARD_EVENT_STOP)&&
-	    (cbuf[idx-1]==LIBOARD_EVENT_STOP);
+	  //   fprintf(stderr,"%.2x ",cbuf[i]);
+	  bool trailerFound=(cbuf[idx]==LIBOARD_EVENT_STOP)&&
+	      (cbuf[idx+1]==LIBOARD_EVENT_STOP)&&
+	      (cbuf[idx+2]==LIBOARD_EVENT_STOP)&&
+	    (cbuf[idx+3]==LIBOARD_EVENT_STOP);
 	  if (trailerFound)
 	    {
-	   for (int i=1;i<=4;i++)
-	     fprintf(stderr,"%.2x ",cbuf[idx-i]);
+	   for (int i=0;i<4;i++)
+	     fprintf(stderr,"%.2x ",cbuf[idx+i]);
 	  fprintf(stderr,"\n");
-	  fprintf(stderr," Stop %.2x \n",cbuf[idx-4]);
+	  fprintf(stderr," Trailer found %.2x \n",cbuf[idx+3]);
 	    }
 	  frame_size+=tret;
 	  idx+=tret;
