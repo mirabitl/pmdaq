@@ -823,7 +823,7 @@ void LiboardManager::startReadoutThread(LiboardInterface* d)
 void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step)
 {
   std::map<uint32_t,LiboardInterface*> dm=this->getLiboardMap();
-  int ncon=150,ncoff=10000,ntrg=200;
+  int ncon=150,ncoff=10000,ntrg=100;
   _mdcc->maskTrigger();
   web::json::value p;
   _mdcc->setSpillOn(ncon);
@@ -834,9 +834,10 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
   int thrange=(thmax-thmin+1)/step;
   for (int vth=0;vth<=thrange;vth++)
     {
+    debut:
       if (!_sc_running) break;
       if (!_running) break;
-    debut:
+
       _mdcc->maskTrigger();
 
       usleep(100000);
@@ -875,7 +876,7 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
 	
 	if (it->second->status()->gtc>lastEvent) lastEvent=it->second->status()->gtc;
       nloop++;
-      if (nloop > 100 || !_running)
+      if (nloop > 100000 || !_running)
         break;
     }
 #else
@@ -887,7 +888,7 @@ void LiboardManager::ScurveStep(std::string builder,int thmin,int thmax,int step
       auto janswer = jrep.get().as_object()["answer"];
       lastEvent = janswer["event"].as_integer(); // A verifier
       nloop++;
-      if (nloop > 100 || !_running || !_sc_running)
+      if (nloop > 1000 || !_running || !_sc_running)
         break;
     }
 #endif

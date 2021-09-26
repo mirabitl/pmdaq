@@ -79,7 +79,7 @@ void LIROCConfigAccess::parseJson()
 	  std::string ipadr = asic["address"].as_string();
 	  uint8_t header=asic["num"].as_integer();
 	  LRSlow prs;prs.setJson(asic["slc"]);
-	  prs.Print();
+	  //prs.Print();
 	  uint64_t eid=utils::asicTag(ipadr,header);
 	  //((uint64_t) TdcConfigAccess::convertIP(ipadr))<<32|header;
 	  fprintf(stderr,"Inserting ASIC %x \n",eid);
@@ -112,7 +112,7 @@ void  LIROCConfigAccess::prepareSlowControl(std::string ipadr)
 
       std::map<uint64_t,LRSlow>::iterator im=_asicMap.find(eisearch);
       if (im==_asicMap.end()) continue;
-      im->second.Print();
+      //im->second.Print();
       memcpy(&_slcBuffer[_slcWords],im->second.board_ptr(),139*sizeof(uint32_t));
       _slcWords+=139;
     }
