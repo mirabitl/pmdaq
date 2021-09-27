@@ -754,7 +754,7 @@ void LiboardManager::startReadoutThread(LiboardInterface *d)
 void LiboardManager::ScurveStep(std::string builder, int thmin, int thmax, int step)
 {
   std::map<uint32_t, LiboardInterface *> dm = this->getLiboardMap();
-  int ncon = 1500, ncoff = 100000, ntrg = 2;
+  int ncon = 1500, ncoff = 100000, ntrg = 5;
   _mdcc->maskTrigger();
   web::json::value p;
   _mdcc->setSpillOn(ncon);
