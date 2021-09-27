@@ -816,7 +816,7 @@ void LiboardManager::ScurveStep(std::string builder, int thmin, int thmax, int s
         break;
     }
 #else
-    while (lastEvent < (firstEvent + ntrg - 1) && _sc_running)
+    while (lastEvent < (firstEvent + ntrg - 2) && _sc_running)
     {
       ::usleep(10000);
       auto rep = utils::sendCommand(builder, "STATUS", json::value::null());
