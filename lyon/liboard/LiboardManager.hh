@@ -165,7 +165,8 @@ class LiboardManager  : public fsmw
     void c_setexternaltrigger(http_request m);
 
 
-    
+    void ScurveStandalone(uint32_t mode, int thmin, int thmax, int step, bool usectest);
+    void c_scurve1(http_request m);
   private:
     std::map<uint32_t,liboard::FtdiDeviceInfo*> theFtdiDeviceInfoMap_;	
     std::map<uint32_t,LiboardInterface*> _LiboardInterfaceMap;

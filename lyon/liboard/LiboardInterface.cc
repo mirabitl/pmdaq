@@ -145,6 +145,7 @@ void liboard::LiboardInterface::readout()
       fprintf(stderr,"ABCID %lx \n",LBC);
       _status->bytes+=nread;
       if (_dsData==NULL) continue;;
+      if (_rd->vth_set()!=0) continue; /// Skip event building if vth is set at the driver level
       memcpy((unsigned char*) _dsData->payload(),cbuf,nread);
       //printf(" Je envoie %d => %d  avec %x \n",_status->id,nread,_dsData);fflush(stdout);
       _dsData->publish(_status->bcid,_status->gtc,nread);

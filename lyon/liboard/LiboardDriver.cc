@@ -398,7 +398,10 @@ uint32_t liboard::LiboardDriver::readOneEvent(unsigned char* cbuf)
 	  if (trailerFound)
 	
 	    {
-	      trailer=1;					
+	      trailer=1;	
+        _last_read++;
+        if (_vth_set!=0)
+          analyze_buffer(cbuf,idx);				
 	      break;
 	    }
 
@@ -418,7 +421,21 @@ uint32_t liboard::LiboardDriver::readOneEvent(unsigned char* cbuf)
   unlock();
   return idx;
 }
-
+void liboard::LiboardDriver::analyze_buffer(unsigned char* cbuf,uint32_t size_buf)
+{
+uint32_t first=LIBOARD_HEADER_SIZE,last=size_buf-4;
+for (int i=first;i<last;)
+{
+  uint8_t ch=(cbuf[i+3]>>2)&0x3F;
+  _scurve[ch*1024+_vth_set]++;
+  i+=4;
+}
+}
+void liboard::LiboardDriver::analyze_init()
+{
+  memset(_scurve,0,1024*64);
+  _last_read=0;
+}
 uint32_t liboard::LiboardDriver::version(){return this->registerRead(0x100);}
 uint32_t liboard::LiboardDriver::mask(){return this->registerRead(LIBOARD_MDCC_SHIFT+0x2);}
 void liboard::LiboardDriver::maskTrigger(){this->registerWrite(LIBOARD_MDCC_SHIFT+0x2,0x1);}

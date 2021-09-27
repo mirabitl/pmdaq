@@ -131,12 +131,22 @@ namespace liboard
     uint32_t externalTrigger();
     void lock();
     void unlock();
+    //
+    inline void set_vth(uint32_t i){_vth_set=i;}
+    inline uint32_t vth_set(){return _vth_set;}
+    inline void set_last_read(uint32_t i){_last_read=i;}
+    inline uint32_t last_read(){return _last_read;}
+    void analyze_buffer(unsigned char* cbuf,uint32_t size_buf);
+    void analyze_init();
+    uint16_t* scurve(){return _scurve;}
   protected:
     struct ftdi_context theFtdi;
     uint32_t _productId;
     char _deviceId[12];
     uint32_t _difId;
     std::mutex _bsem;
+    uint32_t _vth_set,_last_read;
+    uint16_t _scurve[64*1024];
 
   };
 };
