@@ -883,7 +883,7 @@ void LiboardManager::ScurveStandalone(uint32_t mode, int thmin, int thmax, int s
   int firstEvent = 0;
 
   for (std::map<uint32_t, LiboardInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
-    it->second->rd()->analyze_init();
+    {it->second->rd()->analyze_init();it->second->start();}
   for (int vth = 0; vth <= thrange; vth++)
   {
     _mdcc->maskTrigger();
@@ -910,6 +910,8 @@ void LiboardManager::ScurveStandalone(uint32_t mode, int thmin, int thmax, int s
     _mdcc->maskTrigger();
   }
   _mdcc->calibOff();
+  for (std::map<uint32_t, LiboardInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
+    {it->second->stop();}
 }
 
 void LiboardManager::thrd_scurve()
