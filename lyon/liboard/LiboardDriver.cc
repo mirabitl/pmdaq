@@ -377,9 +377,9 @@ uint32_t liboard::LiboardDriver::readOneEvent(unsigned char* cbuf)
 	{
 	   ::usleep(10);			// cc 2706 : uncomment
 	  tret=ftdi_read_data(&theFtdi,&cbuf[idx],4);
-	  //if (tret !=0) 	  fprintf(stderr," tret frame %d \n",tret);   // cc 2706 : if
+	  if (tret !=0) 	  fprintf(stderr," tret frame %d \n",tret);   // cc 2706 : if
 	  //for (int i=idx;i<idx+tret;i++)
-	  //   fprintf(stderr,"%.2x ",cbuf[i]);
+	  //  fprintf(stderr,"%.2x ",cbuf[i]);
 	  bool trailerFound=(cbuf[idx]==LIBOARD_EVENT_STOP)&&
 	      (cbuf[idx+1]==LIBOARD_EVENT_STOP)&&
 	      (cbuf[idx+2]==LIBOARD_EVENT_STOP)&&
