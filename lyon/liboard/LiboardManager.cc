@@ -957,7 +957,7 @@ void LiboardManager::Scurve(int mode, int thmin, int thmax, int step)
     //for (int i=0;i<64;i++) mask|=(1<<i);
     mask = 0xFFFFFFFFFFFFFFFF;
     mask = 0;
-    this->setMask(mask);
+    //this->setMask(mask);
     this->ScurveStep(builderUrl, thmin, thmax, step);
     return;
   }

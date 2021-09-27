@@ -872,7 +872,29 @@ class MongoRoc:
             a["slc"]["DAC_local"][ipad]=vnew
             a["_id"]=None
             print(idif,iasic,ipad,a["slc"]["DAC_local"][ipad])
+
+    def LIROC_shiftDAC_local(self,idif,iasic,delta):
+        """
+        Set the gain of one pad  of specified  asics, modified asics are tagged for upload
+        
+        :param idif: DIF_ID, if 0 all DIFs are changed
+        :param iasic: asic number, if 0 all Asics are changed
+        :param ipad: Channel number
+        :param vnew: new gain
+
+        """
+  
+        for a in self.asiclist:
+            if (idif != 0 and a["dif"] != idif):
+                continue
+            if (iasic != 0 and a["num"] != iasic):
+                continue
+            for ipad in range(64):
+                a["slc"]["DAC_local"][ipad]= a["slc"]["DAC_local"][ipad]+delta[ipad]
+            a["_id"]=None
+            print(idif,iasic,a["slc"]["DAC_local"])
             
+
     def LIROC_setCtest(self,idif,iasic,ipad,vnew):
         """
         Set the gain of one pad  of specified  asics, modified asics are tagged for upload
