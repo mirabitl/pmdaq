@@ -886,7 +886,8 @@ else
   int firstEvent = 0;
 
   for (std::map<uint32_t, LiboardInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
-    {it->second->rd()->analyze_init();it->second->start();}
+    {it->second->rd()->analyze_init();it->second->start();  it->second->rd()->resetFSM();
+}
   for (int vth = 0; vth <= thrange; vth++)
   {
     _mdcc->maskTrigger();
