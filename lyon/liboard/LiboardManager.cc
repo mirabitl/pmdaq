@@ -275,6 +275,7 @@ void LiboardManager::setMask(uint64_t mask)
   {
     for (int i = 0; i < 64; i++)
       it->second.setMask(i, (mask >> i) & 1);
+    it->second.Print();
   }
   // Now loop on slowcontrol socket
   this->configureLR();
