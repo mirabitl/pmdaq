@@ -753,7 +753,7 @@ void LiboardManager::startReadoutThread(LiboardInterface *d)
 void LiboardManager::ScurveStep(std::string builder, int thmin, int thmax, int step)
 {
   std::map<uint32_t, LiboardInterface *> dm = this->getLiboardMap();
-  int ncon = 150, ncoff = 10000, ntrg = 100;
+  int ncon = 150, ncoff = 100000, ntrg = 100;
   _mdcc->maskTrigger();
   web::json::value p;
   _mdcc->setSpillOn(ncon);
@@ -1016,7 +1016,7 @@ void LiboardManager::c_scurve1(http_request m)
         if (mode!=255 && mode!=1023)
         for (int i=first;i<=last;)
         {
-          fprintf(stderr,"%d %d ",i,scb[64*mode+i]);
+          fprintf(stderr,"%d %d ",i,scb[1024*mode+i]);
           i+=1;
         }
         for (int i=0;i<64*1024;i++)
