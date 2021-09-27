@@ -754,7 +754,7 @@ void LiboardManager::startReadoutThread(LiboardInterface *d)
 void LiboardManager::ScurveStep(std::string builder, int thmin, int thmax, int step)
 {
   std::map<uint32_t, LiboardInterface *> dm = this->getLiboardMap();
-  int ncon = 150, ncoff = 100000, ntrg = 100;
+  int ncon = 1500, ncoff = 100000, ntrg = 2;
   _mdcc->maskTrigger();
   web::json::value p;
   _mdcc->setSpillOn(ncon);
@@ -816,7 +816,7 @@ void LiboardManager::ScurveStep(std::string builder, int thmin, int thmax, int s
         break;
     }
 #else
-    while (lastEvent < (firstEvent + ntrg - 2) && _sc_running)
+    while (lastEvent < (firstEvent + ntrg - 1) && _sc_running)
     {
       ::usleep(10000);
       auto rep = utils::sendCommand(builder, "STATUS", json::value::null());
