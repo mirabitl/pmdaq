@@ -906,14 +906,22 @@ else
     for (int iev=0;iev<ntrg;iev++)
     {
       debut:
-      int nr=0;
+      int nr=0,nl=0;
       while(nr==0)
+      {
       for (std::map<uint32_t, LiboardInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
       {
         nr=it->second->rd()->readOneEvent(cbuf);
         if (nr!=0)
-      PMF_ERROR(_logLiboard, "Calibration " << it->second->rd()->last_read() << " " << it->second->rd()->vth_set());
+          PMF_ERROR(_logLiboard, "Calibration " << it->second->rd()->last_read() << " " << it->second->rd()->vth_set());
+        else
+          ::usleep(10000);
+          
+
       }
+      nl++;
+          if (nl>100) break;
+    }
     }
    
     
