@@ -903,15 +903,20 @@ else
 
     int nloop = 0, lastEvent = firstEvent;
     uint8_t cbuf[0x4000000];
-    while (lastEvent < (firstEvent + ntrg))
+    for (int iev=0;iev<ntrg;iev++)
     {
+      debut:
+      int nr=0;
+      while(nr==0)
       for (std::map<uint32_t, LiboardInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
       {
-        it->second->rd()->readOneEvent(cbuf);
-        lastEvent = it->second->rd()->last_read();
-        PMF_ERROR(_logLiboard, "Calibration " << it->second->rd()->last_read() << " " << it->second->rd()->vth_set());
+        nr=it->second->rd()->readOneEvent(cbuf);
+        if (nr!=0)
+      PMF_ERROR(_logLiboard, "Calibration " << it->second->rd()->last_read() << " " << it->second->rd()->vth_set());
       }
     }
+   
+    
 
     _mdcc->maskTrigger();
   }
