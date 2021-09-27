@@ -1013,6 +1013,12 @@ void LiboardManager::c_scurve1(http_request m)
   for (std::map<uint32_t, LiboardInterface *>::iterator it = this->getLiboardMap().begin(); it != this->getLiboardMap().end(); it++)
       {
         uint16_t* scb=it->second->rd()->scurve();
+        if (mode!=255 && mode!=1023)
+        for (int i=first;i<=last;)
+        {
+          fprintf(stderr,"%d %d ",i,scb[64*mode+i]);
+          i+=1;
+        }
         for (int i=0;i<64*1024;i++)
           res[i]= web::json::value::number(scb[i]);
       }
