@@ -427,6 +427,7 @@ uint32_t first=LIBOARD_HEADER_SIZE,last=size_buf-4;
 for (int i=first;i<last;)
 {
   uint8_t ch=(cbuf[i+3]>>2)&0x3F;
+  std::cout<<i<<" "<<ch<<std::endl;
   _scurve[ch*1024+_vth_set]++;
   i+=4;
 }
