@@ -853,6 +853,7 @@ void LiboardManager::ScurveStandalone(uint32_t mode, int thmin, int thmax, int s
   }
 
   // Chanel per channel pedestal (CTEST is active)
+  else 
   if (mode == 1023)
   {
     mask = 0;
@@ -866,12 +867,13 @@ void LiboardManager::ScurveStandalone(uint32_t mode, int thmin, int thmax, int s
   }
 
   // One channel pedestal
-
+else
+{
   mask = ~(1ULL << mode);
   PMF_INFO(_logLiboard, "CTEST One " << mode << " " << std::hex << mask << std::dec);
   this->setMask(mask);
   if (usectest) this->setCtest(mask);
-
+}
   int ncon = 150, ncoff = 10000, ntrg = 10;
   _mdcc->maskTrigger();
   web::json::value p;
