@@ -896,6 +896,8 @@ void LiboardManager::ScurveStandalone(uint32_t mode, int thmin, int thmax, int s
     usleep(10000);
     _mdcc->reloadCalibCount();
     _mdcc->unmaskTrigger();
+        usleep(10000);
+
     int nloop = 0, lastEvent = firstEvent;
     uint8_t cbuf[0x4000000];
     while (lastEvent < (firstEvent + ntrg))
