@@ -754,14 +754,14 @@ void LiboardManager::startReadoutThread(LiboardInterface *d)
 void LiboardManager::ScurveStep(std::string builder, int thmin, int thmax, int step)
 {
   std::map<uint32_t, LiboardInterface *> dm = this->getLiboardMap();
-  int ncon = 1500, ncoff = 100000, ntrg = 5;
+  //int ncon = 1500, ncoff = 100000, ntrg = 5;
   _mdcc->maskTrigger();
   web::json::value p;
-  _mdcc->setSpillOn(ncon);
-  _mdcc->setSpillOff(ncoff);
+  _mdcc->setSpillOn(_sc_spillon);
+  _mdcc->setSpillOff(_sc_spilloff);
   _mdcc->setSpillRegister(4); //4 normalement
   _mdcc->calibOn();
-  _mdcc->setCalibCount(ntrg);
+  _mdcc->setCalibCount(_sc_ntrg);
   int thrange = (thmax - thmin + 1) / step;
   for (int vth = 0; vth <= thrange; vth++)
   {
@@ -816,7 +816,7 @@ void LiboardManager::ScurveStep(std::string builder, int thmin, int thmax, int s
         break;
     }
 #else
-    while (lastEvent < (firstEvent + ntrg - 2) && _sc_running)
+    while (lastEvent < (firstEvent + _sc_ntrg - 2) && _sc_running)
     {
       ::usleep(10000);
       auto rep = utils::sendCommand(builder, "STATUS", json::value::null());
@@ -853,8 +853,7 @@ void LiboardManager::ScurveStandalone(uint32_t mode, int thmin, int thmax, int s
   }
 
   // Chanel per channel pedestal (CTEST is active)
-  else 
-  if (mode == 1023)
+  else if (mode == 1023)
   {
     mask = 0;
     for (int i = 0; i < 64; i++)
@@ -862,18 +861,20 @@ void LiboardManager::ScurveStandalone(uint32_t mode, int thmin, int thmax, int s
       mask = ~(1ULL << i);
       std::cout << "Step LR " << i << " channel " << i << std::endl;
       this->setMask(mask);
-      if (usectest) this->setCtest(mask);
+      if (usectest)
+        this->setCtest(mask);
     }
   }
 
   // One channel pedestal
-else
-{
-  mask = ~(1ULL << mode);
-  PMF_INFO(_logLiboard, "CTEST One " << mode << " " << std::hex << mask << std::dec);
-  this->setMask(mask);
-  if (usectest) this->setCtest(mask);
-}
+  else
+  {
+    mask = ~(1ULL << mode);
+    PMF_INFO(_logLiboard, "CTEST One " << mode << " " << std::hex << mask << std::dec);
+    this->setMask(mask);
+    if (usectest)
+      this->setCtest(mask);
+  }
   int ncon = 150, ncoff = 10000, ntrg = 10;
   _mdcc->maskTrigger();
   web::json::value p;
@@ -886,8 +887,11 @@ else
   int firstEvent = 0;
 
   for (std::map<uint32_t, LiboardInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
-    {it->second->rd()->analyze_init();it->second->start();  it->second->rd()->resetFSM();
-}
+  {
+    it->second->rd()->analyze_init();
+    it->second->start();
+    it->second->rd()->resetFSM();
+  }
   for (int vth = 0; vth <= thrange; vth++)
   {
     _mdcc->maskTrigger();
@@ -899,46 +903,45 @@ else
     usleep(10000);
     _mdcc->reloadCalibCount();
     _mdcc->unmaskTrigger();
-        usleep(10000);
+    usleep(10000);
 
     int nloop = 0, lastEvent = firstEvent;
     uint8_t cbuf[0x4000000];
-    for (int iev=0;iev<ntrg;iev++)
+    for (int iev = 0; iev < ntrg; iev++)
     {
-      debut:
-      int nr=0,nl=0;
-      while(nr==0)
+    debut:
+      int nr = 0, nl = 0;
+      while (nr == 0)
       {
-      for (std::map<uint32_t, LiboardInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
-      {
-        nr=it->second->rd()->readOneEvent(cbuf);
-        if (nr!=0)
+        for (std::map<uint32_t, LiboardInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
         {
-          PMF_ERROR(_logLiboard, "Calibration " << it->second->rd()->last_read() << " " << it->second->rd()->vth_set());
+          nr = it->second->rd()->readOneEvent(cbuf);
+          if (nr != 0)
+          {
+            PMF_ERROR(_logLiboard, "Calibration " << it->second->rd()->last_read() << " " << it->second->rd()->vth_set());
+          }
+          else
+            ::usleep(10000);
         }
-        else
-          ::usleep(10000);
-          
-
+        nl++;
+        if (nl > 100)
+          break;
       }
-      nl++;
-          if (nl>100) break;
     }
-    }
-   
-    
 
     _mdcc->maskTrigger();
   }
   _mdcc->calibOff();
   for (std::map<uint32_t, LiboardInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
-    {it->second->stop();}
+  {
+    it->second->stop();
+  }
 }
 
 void LiboardManager::thrd_scurve()
 {
   _sc_running = true;
-  this->Scurve(_sc_mode, _sc_thmin, _sc_thmax, _sc_step);
+  this->Scurve(_sc_channel, _sc_thmin, _sc_thmax, _sc_step);
   _sc_running = false;
 }
 
@@ -951,13 +954,10 @@ void LiboardManager::Scurve(int mode, int thmin, int thmax, int step)
   uint64_t mask = 0;
 
   // All channel pedestal
-  if (mode == 255)
+  if (mode== 255)
   {
 
-    //for (int i=0;i<64;i++) mask|=(1<<i);
-    mask = 0xFFFFFFFFFFFFFFFF;
-    mask = 0;
-    //this->setMask(mask);
+    // Do not apply any mask but the one in the DB
     this->ScurveStep(builderUrl, thmin, thmax, step);
     return;
   }
@@ -969,9 +969,9 @@ void LiboardManager::Scurve(int mode, int thmin, int thmax, int step)
     for (int i = 0; i < 64; i++)
     {
       mask = (1ULL << i);
-      std::cout << "Step LR " << i << " channel " << i << std::endl;
+      PMF_INFO(_logLiboard, "SCURVE Channel" << i << " " << std::hex << mask << std::dec);
       this->setMask(mask);
-      this->setCtest(mask);
+      if (_sc_ctest) this->setCtest(mask);
       this->ScurveStep(builderUrl, thmin, thmax, step);
     }
     return;
@@ -982,7 +982,7 @@ void LiboardManager::Scurve(int mode, int thmin, int thmax, int step)
   mask = ~(1ULL << mode);
   PMF_INFO(_logLiboard, "CTEST One " << mode << " " << std::hex << mask << std::dec);
   this->setMask(mask);
-  this->setCtest(mask);
+  if (_sc_ctest)  this->setCtest(mask);
   this->ScurveStep(builderUrl, thmin, thmax, step);
 }
 
@@ -991,18 +991,20 @@ void LiboardManager::c_scurve(http_request m)
   auto par = json::value::object();
   par["STATUS"] = web::json::value::string(U("DONE"));
 
-  uint32_t first = utils::queryIntValue(m, "first", 80);
-  uint32_t last = utils::queryIntValue(m, "last", 250);
-  uint32_t step = utils::queryIntValue(m, "step", 1);
-  uint32_t mode = utils::queryIntValue(m, "channel", 255);
-  PMF_INFO(_logLiboard, " SCURVE/CTEST " << mode << " " << step << " " << first << " " << last);
+  _sc_thmin = utils::queryIntValue(m, "first", 80);
+  _sc_thmax = utils::queryIntValue(m, "last", 250);
+  _sc_step = utils::queryIntValue(m, "step", 1);
+  _sc_channel = utils::queryIntValue(m, "channel", 255);
+  _sc_ctest = (utils::queryIntValue(m, "ctest", 0) == 1);
+  _sc_spillon = utils::queryIntValue(m, "spillon", 150);
+  _sc_spilloff= utils::queryIntValue(m, "spilloff", 10000);
+  _sc_ntrg= utils::queryIntValue(m, "ntrg", 5);
+
+  PMF_INFO(_logLiboard, " SCURVE/CTEST " << _sc_channel << " " << _sc_step << " " << _sc_thmin << " " << _sc_thmax);
 
   //this->Scurve(mode,first,last,step);
 
-  _sc_mode = mode;
-  _sc_thmin = first;
-  _sc_thmax = last;
-  _sc_step = step;
+  
   if (_sc_running)
   {
     par["SCURVE"] = web::json::value::string(U("ALREADY_RUNNING"));
@@ -1023,28 +1025,29 @@ void LiboardManager::c_scurve1(http_request m)
   uint32_t last = utils::queryIntValue(m, "last", 250);
   uint32_t step = utils::queryIntValue(m, "step", 1);
   uint32_t mode = utils::queryIntValue(m, "channel", 255);
-  bool ctest = (utils::queryIntValue(m, "ctest", 0)==1);
+  bool ctest = (utils::queryIntValue(m, "ctest", 0) == 1);
 
-  PMF_INFO(_logLiboard, " SCURVE1/CTEST " << mode << " " << step << " " << first << " " << last<<" "<<ctest);
+  PMF_INFO(_logLiboard, " SCURVE1/CTEST " << mode << " " << step << " " << first << " " << last << " " << ctest);
 
-  this->ScurveStandalone(mode,first,last,step,ctest);
+  this->ScurveStandalone(mode, first, last, step, ctest);
 
   par["SCURVE"] = web::json::value::string(U("RUNNING"));
-  auto res=json::value();
+  auto res = json::value();
   for (std::map<uint32_t, LiboardInterface *>::iterator it = this->getLiboardMap().begin(); it != this->getLiboardMap().end(); it++)
-      {
-        uint16_t* scb=it->second->rd()->scurve();
-        int ch=mode;
-        if (mode==255 || mode==1023) ch=39;
-        for (int i=first;i<=last;)
-        {
-          fprintf(stderr,"%d %d ",i,scb[1024*ch+i]);
-          i+=1;
-        }
-        //for (int i=0;i<64*1024;i++)
-          //res[i]= web::json::value::number(scb[i]);
-      }
-  par["RESULTS"]=res;
+  {
+    uint16_t *scb = it->second->rd()->scurve();
+    int ch = mode;
+    if (mode == 255 || mode == 1023)
+      ch = 39;
+    for (int i = first; i <= last;)
+    {
+      fprintf(stderr, "%d %d ", i, scb[1024 * ch + i]);
+      i += 1;
+    }
+    //for (int i=0;i<64*1024;i++)
+    //res[i]= web::json::value::number(scb[i]);
+  }
+  par["RESULTS"] = res;
   Reply(status_codes::OK, par);
 }
 void LiboardManager::c_pause(http_request m)

@@ -178,8 +178,8 @@ class LiboardManager  : public fsmw
 
     bool _running;
     // Scurve parameters
-    int _sc_mode,_sc_thmin,_sc_thmax,_sc_step;
-    bool _sc_running;
+    int _sc_channel,_sc_thmin,_sc_thmax,_sc_step,_sc_spillon,_sc_spilloff,_sc_ntrg;
+    bool _sc_running,_sc_ctest;
     std::thread g_scurve;
     // MDCC
     liboard::LiboardDriver* _mdcc;
