@@ -52,7 +52,7 @@ public:
     std::cout << "Destroying the plugin" << std::endl;
     destroy(_object);
     std::cout << "Closing the library" << std::endl;
-    dlclose(_handler);
+    //dlclose(_handler);
     clear();
   }
   bool isAlived() const {return _handler!=NULL;}

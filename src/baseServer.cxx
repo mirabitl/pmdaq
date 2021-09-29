@@ -79,6 +79,26 @@ void baseServer::handle_get_or_post(http_request message)
     std::stringstream sb;
     sb << "/" << _p_session << "/" << _p_name << "/" << _p_instance << "/";
     uint32_t lsb = sb.str().length();
+    auto rep = json::value::string(U(sb.str()));
+    #ifdef OLDPLUGIN
+        for (auto it2 = _plugins.cbegin(); it2 != _plugins.cend() /* not hoisted */; /* no increment */)
+    {
+      if (it2->first.compare(0, lsb, sb.str()) == 0)
+      {
+        PM_INFO(_logPdaq, "removing " << it2->first);
+        //it2->second->terminate();
+	it2->second->terminate();
+	PM_INFO(_logPdaq, "terminated " << it2->first);
+      
+        _plugins.erase(it2++); // or "it = m.erase(it)" since C++11
+      }
+      else
+      {
+        ++it2;
+      }
+    }
+
+    #else
     // Now find in pluggins all instance and remove it from the map
     pluginInfo<handlerPlugin>* pluginfo=NULL;
     for (auto it2 = _plugins.cbegin(); it2 != _plugins.cend() /* not hoisted */; /* no increment */)
@@ -90,7 +110,9 @@ void baseServer::handle_get_or_post(http_request message)
 	if (it2->second->isAlived())
 	  {
 	    it2->second->ptr()->terminate();
+	    PM_INFO(_logPdaq, "terminated " << it2->first);
 	    it2->second->close();
+	    PM_INFO(_logPdaq, "closed " << it2->first);
 	    pluginfo=it2->second;
 	  }
         _plugins.erase(it2++); // or "it = m.erase(it)" since C++11
@@ -100,10 +122,15 @@ void baseServer::handle_get_or_post(http_request message)
         ++it2;
       }
     }
+    PM_INFO(_logPdaq, "deleting pluginfo ");
     if (pluginfo!=NULL)
-      delete pluginfo;
-    auto rep = json::value::string(U(sb.str()));
+      {delete pluginfo;
+    	pluginfo=NULL;}
+    #endif
+    
+    PM_INFO(_logPdaq, "deleted pluginfo ");
     message.reply(status_codes::OK, rep);
+    PM_INFO(_logPdaq, "Message replied ");
   }
   else if (uri::decode(message.relative_uri().path()).compare("/SERVICES") == 0)
   {
@@ -122,7 +149,11 @@ void baseServer::handle_get_or_post(http_request message)
   {
     auto itp = _plugins.find(uri::decode(message.relative_uri().path()));
     if (itp != _plugins.end())
+#ifdef OLDPLUGIN
+      itp->second->processRequest(message);
+#else
       itp->second->ptr()->processRequest(message);
+#endif
     else
     {
       PM_ERROR(_logPdaq, " Invalid request path");

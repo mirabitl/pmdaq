@@ -4,7 +4,7 @@ using namespace pm;
 using namespace pm::builder;
 static LoggerPtr _logCollector(Logger::getLogger("PMDAQ_COLLECTOR"));
 
-pm::builder::collector::collector() :  _running(false), _merger(NULL) {;}
+pm::builder::collector::collector() :  _running(false), _merger(NULL),_context(NULL) {;}
 
 void pm::builder::collector::initialise()
 {
@@ -33,7 +33,7 @@ void pm::builder::collector::initialise()
 void pm::builder::collector::end()
 {
   // Stop possible running thread
-  PMF_DEBUG(_logCollector, "Entering end of Builder");
+  PMF_INFO(_logCollector, "Entering end of Builder");
   if (_merger!=NULL)
     {
         PMF_INFO(_logCollector, "Existing merger "<<_running);
@@ -43,11 +43,11 @@ void pm::builder::collector::end()
     delete _merger;
     _merger=NULL;
     }
-    PMF_DEBUG(_logCollector, "deleting context");
+    PMF_INFO(_logCollector, "deleting context");
     if (_context!=NULL)
       delete _context;
     _context=NULL;
-    PMF_DEBUG(_logCollector, "exiting end");
+    PMF_INFO(_logCollector, "exiting end");
 }
 void pm::builder::collector::configure(http_request m)
 {

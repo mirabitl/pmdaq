@@ -15,7 +15,7 @@ using namespace web;
 using namespace http;
 using namespace utility;
 using namespace http::experimental::listener;
- 
+ #undef OLDPLUGIN
 class baseServer
 {
 public:
@@ -29,7 +29,10 @@ private:
  void handle_get_or_post(http_request message);
  http_listener m_listener;
   uint32_t req;
-  //std::map<std::string,handlerPlugin*> _plugins;
+  #ifdef OLDPLUGIN
+  std::map<std::string,handlerPlugin*> _plugins;
+  #else
   std::map<std::string,pluginInfo<handlerPlugin>*> _plugins;
+  #endif
   std::string _url;
 };
