@@ -8,7 +8,7 @@ endif()
 
 ADD_DEFINITIONS(-std=c++11)
 if (NOT WINDOWS)
-ADD_DEFINITIONS(-DUNIX)
+ADD_DEFINITIONS(-DUNIX -fno-gnu-unique)
 endif()
 
 #SET(cpprestsdk_DIR /usr/lib/x86_64-linux-gnu/cmake)
