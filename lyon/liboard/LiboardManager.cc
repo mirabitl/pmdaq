@@ -217,6 +217,8 @@ void LiboardManager::fsm_initialise(http_request m)
     PMF_INFO(_logLiboard, " Done pusher to ");
   }
 
+  //PMF_INFO(_logLiboard, " DEBUGGGGGGGGGGGGGGGGGGGG 2 ");
+
   par["status"] = json::value::string(U("Initialised"));
   Reply(status_codes::OK, par);
 }

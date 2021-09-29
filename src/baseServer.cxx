@@ -109,10 +109,6 @@ void baseServer::handle_get_or_post(http_request message)
         //it2->second->terminate();
 	if (it2->second->isAlived())
 	  {
-	    it2->second->ptr()->terminate();
-	    PM_INFO(_logPdaq, "terminated " << it2->first);
-	    it2->second->close();
-	    PM_INFO(_logPdaq, "closed " << it2->first);
 	    pluginfo=it2->second;
 	  }
         _plugins.erase(it2++); // or "it = m.erase(it)" since C++11
@@ -122,6 +118,15 @@ void baseServer::handle_get_or_post(http_request message)
         ++it2;
       }
     }
+    if (pluginfo!=NULL)
+      if (pluginfo->isAlived())
+	{
+	    pluginfo->ptr()->terminate();
+	    PM_INFO(_logPdaq, "terminated " << sb.str());
+	    pluginfo->close();
+	    PM_INFO(_logPdaq, "closed " << sb.str());
+	  
+	}
     PM_INFO(_logPdaq, "deleting pluginfo ");
     if (pluginfo!=NULL)
       {delete pluginfo;
