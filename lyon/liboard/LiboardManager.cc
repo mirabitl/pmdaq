@@ -784,12 +784,12 @@ void LiboardManager::ScurveStep(std::string builder, int thmin, int thmax, int s
 
     int firstEvent = 0;
 
-#undef USEBOARDS
+#define USEBOARDS
 #ifdef USEBOARDS
     for (std::map<uint32_t, LiboardInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
 
-      if (it->second->status()->gtc > firstEvent)
-        firstEvent = it->second->status()->gtc;
+      if (it->second->rd()->last_read() > firstEvent)
+        firstEvent = it->second->rd()->last_read();
 #else
     auto frep = utils::sendCommand(builder, "STATUS", json::value::null());
     auto jfrep = frep.extract_json();
@@ -801,18 +801,19 @@ void LiboardManager::ScurveStep(std::string builder, int thmin, int thmax, int s
     ph["nextevent"] = json::value::number(firstEvent + 1);
     utils::sendCommand(builder, "SETHEADER", ph);
     _mdcc->reloadCalibCount();
+    //::usleep(500000);
     _mdcc->unmaskTrigger();
     int nloop = 0, lastEvent = firstEvent;
 #ifdef USEBOARDS
-    while (lastEvent < (firstEvent + ntrg - 10))
+    while (lastEvent < (firstEvent + _sc_ntrg -1))
     {
       ::usleep(10000);
       for (std::map<uint32_t, LiboardInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
 
-        if (it->second->status()->gtc > lastEvent)
-          lastEvent = it->second->status()->gtc;
+        if (it->second->rd()->last_read() > lastEvent)
+          lastEvent = it->second->rd()->last_read();
       nloop++;
-      if (nloop > 100000 || !_running)
+      if (nloop > 1000 || !_running || !_sc_running)
         break;
     }
 #else
@@ -858,22 +859,24 @@ void LiboardManager::ScurveStandalone(uint32_t mode, int thmin, int thmax, int s
     mask = 0;
     for (int i = 0; i < 64; i++)
     {
+      uint64_t maskctest=(1ULL<<i);
       mask = ~(1ULL << i);
       std::cout << "Step LR " << i << " channel " << i << std::endl;
       this->setMask(mask);
       if (usectest)
-        this->setCtest(mask);
+        this->setCtest(maskctest);
     }
   }
 
   // One channel pedestal
   else
   {
+    uint64_t maskctest=(1ULL<<mode);
     mask = ~(1ULL << mode);
     PMF_INFO(_logLiboard, "CTEST One " << mode << " " << std::hex << mask << std::dec);
     this->setMask(mask);
     if (usectest)
-      this->setCtest(mask);
+      this->setCtest(maskctest);
   }
   int ncon = 150, ncoff = 10000, ntrg = 10;
   _mdcc->maskTrigger();

@@ -399,9 +399,10 @@ uint32_t liboard::LiboardDriver::readOneEvent(unsigned char* cbuf)
 	
 	    {
 	      trailer=1;	
-        _last_read++;
-        if (_vth_set!=0)
-          analyze_buffer(cbuf,idx);				
+	      _last_read++;
+	      fprintf(stderr," Trailer found %d \n",_last_read);
+	      if (_vth_set!=0)
+		analyze_buffer(cbuf,idx);				
 	      break;
 	    }
 
@@ -494,7 +495,7 @@ void liboard::LiboardDriver::reloadCalibCount(){
   // sleep(1);
   // this->registerWrite(LIBOARD_MDCC_SHIFT+0x8,0x0);
   // sleep(1);
-  this->unmaskTrigger();
+  //this->unmaskTrigger();
   this->calibOn();
 
 
