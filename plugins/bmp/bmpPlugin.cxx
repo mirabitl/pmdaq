@@ -16,7 +16,7 @@ void bmpPlugin::open()
   
   _bmp= new bmp280();
 
-
+  unlock();
 
 }
 void bmpPlugin::close()
@@ -42,8 +42,11 @@ web::json::value bmpPlugin::status()
       PMF_ERROR(_logBmp,"No Bmp Interface opened");
        return r;
     }
+   lock();
    float t,p;
    _bmp->TemperaturePressionRead(&t,&p);
+   ::usleep(100000);
+   unlock();
    r["pressure"]=json::value::number(p);
    r["temperature"]=json::value::number(t);
    r["status"]=json::value::string(U("READ"));

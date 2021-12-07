@@ -23,6 +23,8 @@ class bmpPlugin : public monitoring::supervisor
     virtual void registerCommands();
     // Access to the interface
     bmp280* getBmpInterface(){return _bmp;}
+    void lock() {_bsem.lock();}
+    void unlock() {_bsem.unlock();}
 
 
     // Status
@@ -36,6 +38,6 @@ class bmpPlugin : public monitoring::supervisor
 
   private:
     bmp280* _bmp;
-
+    std::mutex _bsem;
   };
 

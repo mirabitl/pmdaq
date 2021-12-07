@@ -152,6 +152,6 @@ elif(results.slow_destroy):
 elif (results.method!=None):
     param=json.loads(results.parameter)
     rep =fdc.processCommand(results.method,results.application,param)
-    if (results.verbose):
-        print(rep)
+    #if (results.verbose):
+    print(rep)
     exit(0)
