@@ -283,7 +283,7 @@ std::string utils::lmexec(const char* cmd) {
 
 
 
-std::map<uint32_t,std::string> utils::scanNetwork(std::string base)
+std::map<uint32_t,std::string> utils::scanNetwork(std::string base,std::vector<std::string> *rejected,std::vector<std::string> *accepted)
 {
   std::map<uint32_t,std::string> m;
   std::stringstream ss;
@@ -300,7 +300,16 @@ std::map<uint32_t,std::string> utils::scanNetwork(std::string base)
   if (res.c_str() != NULL)
   {
     while(std::getline(ss1,to,'\n')){
-      host_list.push_back(to);
+      if (rejected!=NULL)
+	if (std::find(rejected->begin(), rejected->end(), to) != rejected->end())
+	  continue;
+      bool found=true;
+      if (accepted!=NULL)
+	if (std::find(accepted->begin(), accepted->end(), to) == accepted->end())
+	  found=false;
+
+      if (found)
+	host_list.push_back(to);
     }
   }
   

@@ -312,7 +312,7 @@ class combRC(pmdaqrc.pmdaqControl):
                 if (mr['STATUS'] != "FAILED"):
                     rep["%s_%d_FEB" % (s.host, s.instance)] = mr["TDCSTATUS"]
                 else:
-                    rep["%s_%d" % (s.host, s.instance)] = mr
+                    rep["%s_%s_%d" % (s.host,k, s.instance)] = mr
 
         for k, v in self.session.apps.items():
             if (k != "lyon_pmr"):
@@ -320,10 +320,10 @@ class combRC(pmdaqrc.pmdaqControl):
             for s in v:
                 mr = json.loads(s.sendCommand("STATUS", {}))
                 if (mr['status'] != "FAILED"):
-                    rep["%s_%d" % (s.host, s.infos['instance'])
+                    rep["%s_%s_%d" % (s.host,k, s.infos['instance'])
                         ] = mr["answer"]["DIFLIST"]
                 else:
-                    rep["%s_%d" % (s.host, s.infos['instance'])] = mr
+                    rep["%s_%s_%d" % (s.host,k, s.infos['instance'])] = mr
 
         for k, v in self.session.apps.items():
             if (k != "lyon_liboard"):
@@ -332,10 +332,10 @@ class combRC(pmdaqrc.pmdaqControl):
                 mr = json.loads(s.sendCommand("STATUS", {}))
                 #print(mr)
                 if (mr['STATUS'] != "FAILED"):
-                    rep["%s_%d" % (s.host, s.instance)
+                    rep["%s_%s_%d" % (s.host,k, s.instance)
                         ] = mr["DIFLIST"]
                 else:
-                    rep["%s_%d" % (s.host, s.instance)] = mr
+                    rep["%s_%s_%d" % (s.host,k, s.instance)] = mr
 
                     #rep["%s_%d" % (s.host, s.infos['instance'])] = r
         for k, v in self.session.apps.items():
@@ -343,10 +343,11 @@ class combRC(pmdaqrc.pmdaqControl):
                 continue
             for s in v:
                 mr = json.loads(s.sendCommand("STATUS", {}))
+                #print(mr)
                 if (mr['STATUS'] != "FAILED"):
-                    rep["%s_%d" % (s.host, s.instance)] = mr["GRICSTATUS"]
+                    rep["%s_%s_%d" % (s.host,k, s.instance)] = mr["GRICSTATUS"]
                 else:
-                    rep["%s_%d" % (s.host, s.instance)] = mr
+                    rep["%s_%s_%d" % (s.host,k, s.instance)] = mr
 
                     #rep["%s_%d" % (s.host, s.infos['instance'])] = r
         for k, v in self.session.apps.items():
@@ -354,10 +355,11 @@ class combRC(pmdaqrc.pmdaqControl):
                 continue
             for s in v:
                 mr = json.loads(s.sendCommand("STATUS", {}))
+                #print(mr)
                 if (mr['STATUS'] != "FAILED"):
-                    rep["%s_%d" % (s.host, s.instance)] = mr["C3ISTATUS"]
+                    rep["%s_%s_%d" % (s.host,k, s.instance)] = mr["C3ISTATUS"]
                 else:
-                    rep["%s_%d" % (s.host, s.instance)] = mr
+                    rep["%s_%s_%d" % (s.host,k, s.instance)] = mr
 
                     #rep["%s_%d" % (s.host, s.infos['instance'])] = r
         for k, v in self.session.apps.items():
@@ -367,10 +369,10 @@ class combRC(pmdaqrc.pmdaqControl):
                 mr = json.loads(s.sendCommand("STATUS", {}))
                 # print(mr)
                 if (mr['status'] != "FAILED"):
-                    rep["%s_%d" % (s.host, s.infos['instance'])
+                    rep["%s_%s_%d" % (s.host,k, s.infos['instance'])
                         ] = mr["answer"]["DIFLIST"]
                 else:
-                    rep["%s_%d" % (s.host, s.infos['instance'])] = mr
+                    rep["%s_%s_%d" % (s.host,k, s.infos['instance'])] = mr
         if (not verbose):
             return json.dumps(rep)
         # Verbose Printout

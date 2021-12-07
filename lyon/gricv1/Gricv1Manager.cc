@@ -343,8 +343,34 @@ void Gricv1Manager::fsm_initialise(http_request m)
 
       return;
     }
+  
   // Scan the network
-  std::map<uint32_t,std::string> diflist=utils::scanNetwork(jC4I["network"].as_string());
+    std::vector<string> *accepted=NULL;
+  if (utils::isMember(jC4I,"accepted"))
+    {
+      accepted= new   std::vector<std::string>;
+      for (auto it = jC4I["accepted"].as_array().begin(); it != jC4I["accepted"].as_array().end(); it++)
+	{
+
+	  PMF_INFO(_logGricv1, " acppeted IP" << (*it).as_string());
+	  accepted->push_back((*it).as_string());
+	  
+	}
+    }
+  std::vector<string> *rejected=NULL;
+  if (utils::isMember(jC4I,"rejected"))
+    {
+      rejected= new   std::vector<std::string>;
+      for (auto it = jC4I["rejected"].as_array().begin(); it != jC4I["rejected"].as_array().end(); it++)
+	{
+
+	  PMF_INFO(_logGricv1, " rejected IP" << (*it).as_string());
+	  rejected->push_back((*it).as_string());
+	  
+	}
+    }
+
+  std::map<uint32_t,std::string> diflist=utils::scanNetwork(jC4I["network"].as_string(),rejected,accepted);
   // Download the configuration
   if (_hca==NULL)
     {

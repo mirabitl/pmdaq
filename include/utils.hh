@@ -23,7 +23,7 @@ class utils
   static void graphite_finalize();
   static void graphite_send(const char *message);
   static void graphite_send_plain( const char* path, float value, unsigned long timestamp );
-  static std::map<uint32_t,std::string> scanNetwork(std::string base);
+  static std::map<uint32_t,std::string> scanNetwork(std::string base,std::vector<std::string> *rejected=NULL,std::vector<std::string> *accepted=NULL);
   static std::string lmexec(const char* cmd);
   static std::string  findUrl(std::string session, std::string appname,uint32_t appinstance);
   static http_response sendCommand(std::string url, std::string command,web::json::value par);
