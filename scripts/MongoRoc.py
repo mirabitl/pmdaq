@@ -1187,6 +1187,28 @@ class MongoRoc:
 
 
                 
+    def HR2_SetAsicPAGain(self,idif,iasic,vnew):
+        """
+        Set the gain of all pads  of specified  asics, modified asics are tagged for upload
+        
+        :param idif: DIF_ID, if 0 all DIFs are changed
+        :param iasic: asic number, if 0 all Asics are changed
+        :param vnew: new gain
+
+        """
+        for a in self.asiclist:
+            if (idif != 0 and a["dif"] != idif):
+                continue
+            if (iasic != 0 and a["num"] != iasic):
+                continue
+            for ipad in range(0,64):
+                a["slc"]["PAGAIN"][ipad]=vnew[ipad]
+                a["_id"]=None
+            print(idif,iasic,a["slc"]["PAGAIN"])
+
+
+
+                
     def HR2_RescaleGain(self,gain0,gain1,idif=0,iasic=0):
         """
          Rescale the gain of all pads with scale=gain1/gain0  of specified  asics, modified asics are tagged for upload

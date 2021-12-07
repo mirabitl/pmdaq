@@ -75,6 +75,9 @@ bool gricv0::dataHandler::processPacket()
 
   PM_DEBUG(_logGricv0,id()<<" Command answer="<<command<<" length="<<length<<" trame id="<<trame<<" buffer length "<<_idx);
 
+  // correction to be synchrone with V1 and FEBs
+  if (_lastGTC>0)
+    _lastGTC=_lastGTC+1;
 #define DEBUGEVENTN
 #ifdef DEBUGEVENT  
   fprintf(stderr,"Length %d \n==> ",_idx);
