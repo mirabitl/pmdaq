@@ -1385,7 +1385,29 @@ class MongoRoc:
                 a["slc"]["MASK1"][ipad]=a["slc"]["MASK1"][ipad]& (im1n>>ipad)
                 a["slc"]["MASK2"][ipad]=a["slc"]["MASK2"][ipad]& (im2n>>ipad)
             a["_id"]=None
-            
+
+    def HR2_setChannelMask(self,idif,iasic,ipad,ival):
+        """
+        Set the 3 masks  for specified  asics, modified asics are tagged for upload
+        
+
+        :param idif: DIF_ID
+        :param iasic: asic number
+        :param ipad: pad from 0
+        :param ival: 0 Off 1 On
+
+        """
+        for a in self.asiclist:
+            if (idif != 0 and a["dif"] != idif):
+                continue
+            if (iasic != 0 and a["num"] != iasic):
+                continue
+            for ipad in range(0,64):
+                a["slc"]["MASK0"][ipad]=ival
+                a["slc"]["MASK1"][ipad]=ival
+                a["slc"]["MASK2"][ipad]=ival
+            a["_id"]=None
+
     def HR2_setEnable(self,enable,idif=0,iasic=0):
         """
         Set the ENABLE tag for specified  asics, modified asics are tagged for upload
