@@ -45,6 +45,10 @@ public:
   void Scurve(int mode,int thmin,int thmax,int step);
 
   void c_scurve(http_request m);
+  void GainCurveStep(std::string mdcc,std::string builder,int thmin,int thmax,int step,int thr);
+  void thrd_gaincurve() ;
+  void GainCurve(int mode,int thmin,int thmax,int step,int thr);
+  void c_gaincurve(http_request m);
 private:
   HR2ConfigAccess* _hca;
   gricv1::Interface* _mpi;
@@ -60,7 +64,8 @@ private:
 
   bool _running;
  // Scurve parameters
-  int _sc_mode,_sc_thmin,_sc_thmax,_sc_step;
+  
+  int _sc_mode,_sc_thmin,_sc_thmax,_sc_step,_sc_gmin,_sc_gmax,_sc_threshold;
   bool _sc_running;
 std::thread g_scurve;
   

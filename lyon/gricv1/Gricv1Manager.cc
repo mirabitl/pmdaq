@@ -55,6 +55,7 @@ void Gricv1Manager::initialise()
 
   this->addCommand("READBME",std::bind(&Gricv1Manager::c_readbme,this,std::placeholders::_1));
   //std::cout<<"Service "<<name<<" started on port "<<port<<std::endl;
+  this->addCommand("GAINCURVE",std::bind(&Gricv1Manager::c_gaincurve,this,std::placeholders::_1));
  
  
   // Initialise NetLink
@@ -853,6 +854,179 @@ void Gricv1Manager::c_scurve(http_request m)
   Reply(status_codes::OK,par);
 
 }
+
+
+
+
+void Gricv1Manager::GainCurveStep(std::string mdcc,std::string builder,int gmin,int gmax,int step,int threshold)
+{
+
+  int ncon=2000,ncoff=100,ntrg=20;
+  utils::sendCommand(mdcc,"PAUSE",json::value::null());
+  web::json::value p;
+  p["nclock"]=ncon;  utils::sendCommand(mdcc,"SPILLON",p);
+  p["nclock"]=ncoff;  utils::sendCommand(mdcc,"SPILLOFF",p);
+  printf("Clock On %d Off %d \n",ncon, ncoff);
+  p["value"]=4;  utils::sendCommand(mdcc,"SETSPILLREGISTER",p);
+  //::sleep(20);
+  utils::sendCommand(mdcc,"CALIBON",json::value::null());
+  p["nclock"]=ntrg;  utils::sendCommand(mdcc,"SETCALIBCOUNT",p);
+  
+  int grange=(gmax-gmin+1)/step;
+  for (int g=0;g<=grange;g++)
+    {
+      if (!_running) break;
+      utils::sendCommand(mdcc,"PAUSE",json::value::null());
+    
+      usleep(1000);
+      this->setThresholds(threshold,512,512);
+      this->setGain(gmin+g*step);
+
+      int firstEvent=0,firstInBoard=0;
+      for (auto x : _mpi->boards())
+	if (x.second->data()->event()>firstInBoard) firstInBoard=x.second->data()->event();
+      
+      auto frep = utils::sendCommand(builder, "STATUS", json::value::null());
+      auto jfrep = frep.extract_json();
+      auto jfanswer = jfrep.get().as_object()["answer"];
+      firstEvent = jfanswer["event"].as_integer();  
+
+
+
+      
+      web::json::value h;
+      h[0]=3;h[1]=json::value::number(gmin+g*step);
+      web::json::value ph;
+      ph["header"]=h;
+      ph["nextevent"]=web::json::value::number(firstEvent+1);
+      utils::sendCommand(builder,"SETHEADER",ph);
+      printf("SETHEADER executed\n");
+      utils::sendCommand(mdcc,"RELOADCALIB",json::value::null());
+   
+
+      // Turn run type on
+
+      utils::sendCommand(mdcc,"RESUME",json::value::null());
+      int nloop=0,lastEvent=firstEvent,lastInBoard=firstInBoard;
+      while (lastInBoard < (firstInBoard + ntrg - 2))
+	{
+	  ::usleep(10000);
+	  for (auto x : _mpi->boards())
+	    if (x.second->data()->event()>lastInBoard) lastInBoard=x.second->data()->event();
+	  nloop++;if (nloop > 600 || !_running)  break;
+	}
+
+      while (lastEvent < (firstEvent + ntrg - 2))
+	{
+	  ::usleep(100000);
+	  auto rep = utils::sendCommand(builder, "STATUS", json::value::null());
+	  auto jrep = rep.extract_json();
+	  auto janswer = jrep.get().as_object()["answer"];
+	  lastEvent = janswer["event"].as_integer(); // A verifier
+	  nloop++;
+	  if (nloop > 100 || !_running)
+	    break;
+	}
+
+      PMF_INFO(_logGricv1,"Step:"<<g<<" Gain:"<<gmin+g*step<<" First:"<<firstEvent<<" Last:"<<lastEvent);
+
+      printf("Step %d Gain %d First %d Last %d loops %d \n",g,gmin+g*step,firstEvent,lastEvent,nloop);
+      utils::sendCommand(mdcc,"PAUSE",json::value::null());
+    }
+  utils::sendCommand(mdcc,"CALIBOFF",json::value::null());
+}
+
+
+void Gricv1Manager::thrd_gaincurve()
+{
+  _sc_running=true;
+  this->GainCurve(_sc_mode,_sc_gmin,_sc_gmax,_sc_step,_sc_threshold);
+  _sc_running=false;
+}
+
+
+void Gricv1Manager::GainCurve(int mode,int gmin,int gmax,int step,int threshold)
+{
+  std::string mdcc=utils::findUrl(session(),"lyon_mdcc",0);
+  //std::string builder=utils::findUrl(session(),"lyon_evb",0);
+  std::string builder=utils::findUrl(session(),"evb_builder",0);
+
+  if (mdcc.compare("")==0) return;
+  if (builder.compare("")==0) return;
+
+  uint64_t mask=0;
+
+  // All channel pedestal
+  if (mode==255)
+    {
+
+
+      mask=0xFFFFFFFFFFFFFFFF;
+      this->setAllMasks(mask);
+      this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
+      return;
+      
+    }
+
+  // Chanel per channel pedestal (CTEST is active)
+  if (mode==1023)
+    {
+      mask=0;
+      for (int i=0;i<64;i++)
+	{
+	  mask=(1ULL<<i);
+	  std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
+	  this->setAllMasks(mask);
+	  this->setCTEST(mask);
+	  this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
+	  //this->ScurveStep(mdcc,builder,thmin,thmax,step);
+	}
+      return;
+    }
+
+  // One channel pedestal
+  mask=(1ULL<<mode);
+  this->setAllMasks(mask);
+  this->setCTEST(mask);
+  //this->ScurveStep(mdcc,builder,thmin,thmax,step);
+  this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
+  
+}
+
+
+void Gricv1Manager::c_gaincurve(http_request m)
+{
+  auto par = json::value::object();
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+
+  uint32_t first = utils::queryIntValue(m,"first",80);
+  uint32_t last = utils::queryIntValue(m,"last",250);
+  uint32_t step = utils::queryIntValue(m,"step",1);
+  uint32_t mode = utils::queryIntValue(m,"channel",255);
+  uint32_t thr = utils::queryIntValue(m,"threshold",255);
+  PMF_INFO(_logGricv1, " GainCurve called " << mode << " first " << first << " last " << last <<" step "<<step<< " Threshold "<<thr);
+  
+  //this->Scurve(mode,first,last,step);
+
+  _sc_mode=mode;
+  _sc_gmin=first;
+  _sc_gmax=last;
+  _sc_step=step;
+  _sc_threshold=thr;
+  if (_sc_running)
+    {
+      par["GAINCURVE"]=web::json::value::string(U("ALREADY_RUNNING"));
+      return;
+    }
+ 
+  g_scurve=std::thread(std::bind(&Gricv1Manager::thrd_gaincurve, this));
+  par["GAINCURVE"]=web::json::value::string(U("RUNNING"));
+  Reply(status_codes::OK,par);
+
+
+}
+
 extern "C" 
 {
     // loadDHCALAnalyzer function creates new LowPassDHCALAnalyzer object and returns it.  
