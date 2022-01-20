@@ -780,7 +780,12 @@ void Gricv1Manager::Scurve(int mode,int thmin,int thmax,int step)
 {
   std::string mdcc=utils::findUrl(session(),"lyon_mdcc",0);
   std::string builder=utils::findUrl(session(),"evb_builder",0);
-  if (mdcc.compare("")==0) return;
+  if (mdcc.compare("")==0)
+    {
+      mdcc=utils::findUrl(session(),"lyon_mbmdcc",0);
+      if (mdcc.compare("")==0)
+	return;
+    }
   if (builder.compare("")==0) return;
   uint64_t mask=0;
 
@@ -951,7 +956,14 @@ void Gricv1Manager::GainCurve(int mode,int gmin,int gmax,int step,int threshold)
   //std::string builder=utils::findUrl(session(),"lyon_evb",0);
   std::string builder=utils::findUrl(session(),"evb_builder",0);
 
-  if (mdcc.compare("")==0) return;
+
+  if (mdcc.compare("")==0)
+    {
+      mdcc=utils::findUrl(session(),"lyon_mbmdcc",0);
+      if (mdcc.compare("")==0)
+	return;
+    }
+
   if (builder.compare("")==0) return;
 
   uint64_t mask=0;
