@@ -22,6 +22,7 @@ def create_session(config):
     if ('apps' in j_sess):
         for x in j_sess['apps']:
             a=sac.serviceAccess(x['host'],x['port'],vsession,x['name'],x['instance'])
+            #print(x['host'],x['port'],vsession,x['name'],x['instance'],a.state)
             if (a.state=='VOID'):
                 par={}
                 if ('params' in x):

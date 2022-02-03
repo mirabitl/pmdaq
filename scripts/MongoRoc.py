@@ -744,6 +744,28 @@ class MongoRoc:
                 a["_id"]=None
             except Exception as e:
                 print(e.getMessage())
+                
+    def PR2_ChangeParam(self,pname,pval,idif=0, iasic=0):
+        """
+        Change all the ENable signals of PETIROC asic
+
+        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        :param iasic: asic number, if 0 all Asics are changed
+        :param pname: parameter name
+        :param pval: paramter value
+        """
+        for a in self.asiclist:
+            if (idif != 0 and a["dif"] != idif):
+                continue
+            if (iasic != 0 and a["num"] != iasic):
+                continue
+            try:
+                a["slc"][pname]=pval
+                a["_id"]=None
+
+            except Exception as e:
+                print(e.getMessage())
+
 
 # LIROC access
     def initLIROC(self,gain=0):
@@ -1402,10 +1424,10 @@ class MongoRoc:
                 continue
             if (iasic != 0 and a["num"] != iasic):
                 continue
-            for ipad in range(0,64):
-                a["slc"]["MASK0"][ipad]=ival
-                a["slc"]["MASK1"][ipad]=ival
-                a["slc"]["MASK2"][ipad]=ival
+
+            a["slc"]["MASK0"][ipad]=ival
+            a["slc"]["MASK1"][ipad]=ival
+            a["slc"]["MASK2"][ipad]=ival
             a["_id"]=None
 
     def HR2_setEnable(self,enable,idif=0,iasic=0):

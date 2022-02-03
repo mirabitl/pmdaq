@@ -13,6 +13,7 @@ class daqControl:
     def __init__(self, config_file):
         self.config_file = config_file
         # parse config file
+        #print(self.config_file)
         self.session = session.create_session(config_file)
         # DB access
         # DAQ PART

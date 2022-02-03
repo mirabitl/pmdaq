@@ -19,7 +19,7 @@ using namespace mpi;
 
 
 
-Gricv1Manager::Gricv1Manager() :_context(NULL),_hca(NULL),_mpi(NULL),_running(false){;}
+Gricv1Manager::Gricv1Manager() :_context(NULL),_hca(NULL),_mpi(NULL),_running(false),_run_mode(1){;}
 
 void Gricv1Manager::initialise()
 {
@@ -54,8 +54,10 @@ void Gricv1Manager::initialise()
   this->addCommand("WRITEREG",std::bind(&Gricv1Manager::c_writereg,this,std::placeholders::_1));
 
   this->addCommand("READBME",std::bind(&Gricv1Manager::c_readbme,this,std::placeholders::_1));
-  //std::cout<<"Service "<<name<<" started on port "<<port<<std::endl;
+  //std::cout<<"Service "<<name<<" started on port "<<port<<std::endl
   this->addCommand("GAINCURVE",std::bind(&Gricv1Manager::c_gaincurve,this,std::placeholders::_1));
+  this->addCommand("CTEST",std::bind(&Gricv1Manager::c_ctest,this,std::placeholders::_1));
+  this->addCommand("SETRUNMODE",std::bind(&Gricv1Manager::c_setrunmode,this,std::placeholders::_1));
  
  
   // Initialise NetLink
@@ -168,7 +170,9 @@ void Gricv1Manager::c_readbme(http_request m)
       r["TEMP"]=web::json::value::number(x.second->reg()->readRegister(gricv1::Message::Register::BME_TEMP));
       jl[mb++]=r;
     }
-  par["STATUS"]=jl; 
+  std::cout<<jl<<std::endl;
+  par["STATUS"]=jl;
+  Reply(status_codes::OK,par);
 }
 
 
@@ -645,7 +649,7 @@ void Gricv1Manager::start(http_request m)
   for (auto x:_mpi->boards())
     {
       // Automatic FSM (bit 1 a 0) , enabled (Bit 0 a 1)
-      x.second->reg()->writeRegister(gricv1::Message::Register::ACQ_CTRL,1);
+      x.second->reg()->writeRegister(gricv1::Message::Register::ACQ_CTRL,_run_mode);
       //x.second->reg()->writeRegister(gricv1::Message::Register::ACQ_CTRL,5);
     }
   _running=true;
@@ -704,7 +708,7 @@ void Gricv1Manager::destroy(http_request m)
 void Gricv1Manager::ScurveStep(std::string mdccUrl,std::string builderUrl,int thmin,int thmax,int step)
 {
 
-  int ncon=50000,ncoff=100,ntrg=50;
+  int ncon=_sc_win,ncoff=10000,ntrg=_sc_ntrg;
   utils::sendCommand(mdccUrl,"PAUSE",json::value::null());
   web::json::value p;
   p["nclock"]=web::json::value::number(ncon);  utils::sendCommand(mdccUrl,"SPILLON",p);
@@ -796,6 +800,7 @@ void Gricv1Manager::Scurve(int mode,int thmin,int thmax,int step)
       //for (int i=0;i<64;i++) mask|=(1<<i);
       mask=0xFFFFFFFFFFFFFFFF;
       this->setAllMasks(mask);
+      this->setCTEST(mask);
       this->ScurveStep(mdcc,builder,thmin,thmax,step);
       return;
       
@@ -813,6 +818,23 @@ void Gricv1Manager::Scurve(int mode,int thmin,int thmax,int step)
 	  //std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
 	  this->setAllMasks(mask);
 	  this->setCTEST(mask);
+	  this->ScurveStep(mdcc,builder,thmin,thmax,step);
+	}
+      return;
+    }
+
+  if (mode==1022)
+    {
+      mask=0;
+      for (int i=0;i<64;i++)
+	{
+	  mask=(1ULL<<i);
+	  PMF_INFO(_logGricv1,"Step HR2 "<<i<<"  channel"<<i<<std::dec);
+
+	  //std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
+	  this->setCTEST(mask);
+	  this->setAllMasks(0xFFFFFFFFFFFFFFFF);
+
 	  this->ScurveStep(mdcc,builder,thmin,thmax,step);
 	}
       return;
@@ -838,6 +860,8 @@ void Gricv1Manager::c_scurve(http_request m)
   uint32_t last = utils::queryIntValue(m,"last",250);
   uint32_t step = utils::queryIntValue(m,"step",1);
   uint32_t mode = utils::queryIntValue(m,"channel",255);
+  uint32_t win = utils::queryIntValue(m,"window",50000);
+  uint32_t ntrg = utils::queryIntValue(m,"ntrg",50);
   PMF_INFO(_logGricv1, " SCURVE/CTEST "<<mode<<" "<<step<<" "<<first<<" "<<last);
   
   //this->Scurve(mode,first,last,step);
@@ -846,6 +870,9 @@ void Gricv1Manager::c_scurve(http_request m)
   _sc_thmin=first;
   _sc_thmax=last;
   _sc_step=step;
+  _sc_win=win;
+  _sc_ntrg=ntrg;
+    
   if (_sc_running)
     {
       par["SCURVE"]=web::json::value::string(U("ALREADY_RUNNING"));
@@ -975,19 +1002,35 @@ void Gricv1Manager::GainCurve(int mode,int gmin,int gmax,int step,int threshold)
 
       mask=0xFFFFFFFFFFFFFFFF;
       this->setAllMasks(mask);
+      this->setCTEST(mask);
       this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
       return;
       
     }
 
   // Chanel per channel pedestal (CTEST is active)
-  if (mode==1023)
+  if (mode==1022)
     {
       mask=0;
       for (int i=0;i<64;i++)
 	{
 	  mask=(1ULL<<i);
 	  std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
+
+	  this->setCTEST(mask);
+	  this->setAllMasks(0xFFFFFFFFFFFFFFFF);
+	  this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
+	  //this->ScurveStep(mdcc,builder,thmin,thmax,step);
+	}
+      return;
+    }
+  if (mode==1023)
+    {
+      mask=0;
+      for (int i=0;i<64;i++)
+	{
+	  mask=(1ULL<<i);
+	  std::cout<<"Step HR2 CTEST "<<i<<" channel "<<i<<std::endl;
 	  this->setAllMasks(mask);
 	  this->setCTEST(mask);
 	  this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
@@ -1034,6 +1077,42 @@ void Gricv1Manager::c_gaincurve(http_request m)
  
   g_scurve=std::thread(std::bind(&Gricv1Manager::thrd_gaincurve, this));
   par["GAINCURVE"]=web::json::value::string(U("RUNNING"));
+  Reply(status_codes::OK,par);
+
+
+}
+void Gricv1Manager::c_ctest(http_request m)
+{
+  auto par = json::value::object();
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  uint32_t on = utils::queryIntValue(m,"on",1);
+  uint32_t delay = utils::queryIntValue(m,"delay",80);
+  uint32_t length = utils::queryIntValue(m,"length",100000);
+  uint32_t number = utils::queryIntValue(m,"number",1);
+  PMF_INFO(_logGricv1, " CTEST called " << on << " delay " <<delay << " length " << length <<" number "<<number);
+  
+  //this->Scurve(mode,first,last,step);
+  for (auto x:_mpi->boards())
+    {
+
+      x.second->reg()->writeRegister(gricv1::Message::Register::CTEST_DELAY,delay);
+      x.second->reg()->writeRegister(gricv1::Message::Register::CTEST_LENGTH,length);
+      x.second->reg()->writeRegister(gricv1::Message::Register::CTEST_NUMBER,number);
+      x.second->reg()->writeRegister(gricv1::Message::Register::CTEST_CTRL,on);
+    }
+  par["CTEST"]=web::json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);
+
+
+}
+void Gricv1Manager::c_setrunmode(http_request m)
+{
+  auto par = json::value::object();
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  _run_mode = utils::queryIntValue(m,"mode",1);
+  par["MODE"]=_run_mode;
   Reply(status_codes::OK,par);
 
 

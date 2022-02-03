@@ -30,7 +30,10 @@ static LoggerPtr _logGricv1(Logger::getLogger("PMDAQ_GRICV1"));
 		 BME_CAL1=0x40,BME_CAL2=0x41,BME_CAL3=0x42,BME_CAL4=0x43,
 		 BME_CAL5=0x44,BME_CAL6=0x45,BME_CAL7=0x46,BME_CAL8=0x47,
 		 BME_HUM=0x48,BME_PRES=0x49,BME_TEMP=0x4A,
-		 CTEST_CTRL=0x50,VERSION=0xFF};
+		 CTEST_CTRL=0x50,CTEST_DELAY=0x51,CTEST_LENGTH=0x52,CTEST_NUMBER=0x53,CTEST_VERSION=0xFF};
+        
+                                
+                        
 
       Message(): _address(0),_length(2) {;}
       inline uint64_t address(){return _address;}
