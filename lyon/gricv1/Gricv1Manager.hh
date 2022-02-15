@@ -67,7 +67,7 @@ private:
   bool _running;
  // Scurve parameters
   
-  int _sc_mode,_sc_thmin,_sc_thmax,_sc_step,_sc_gmin,_sc_gmax,_sc_threshold;
+  int _sc_mode,_sc_thmin,_sc_thmax,_sc_step,_sc_gmin,_sc_gmax,_sc_threshold,_sc_level;
   int _sc_win,_sc_ntrg;
   bool _sc_running;
   int _run_mode;

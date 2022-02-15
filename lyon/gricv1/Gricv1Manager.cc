@@ -723,8 +723,17 @@ void Gricv1Manager::ScurveStep(std::string mdccUrl,std::string builderUrl,int th
       if (!_running) break;
       utils::sendCommand(mdccUrl,"PAUSE",json::value::null());
       usleep(1000);
-      this->setThresholds(thmax-vth*step,512,512);
+
+      uint32_t threshold=thmax-vth*step;
+      //this->setThresholds(thmax-vth*step,512,512);
+      if (_sc_level==0)
+	this->setThresholds(threshold,512,512);
+      if (_sc_level==1)
+	this->setThresholds(512,threshold,512);
+      if (_sc_level==2)
+	this->setThresholds(512,512,threshold);
       
+
       web::json::value h;
       h[0]=2;h[1]=web::json::value::number(thmax-vth*step);
 
@@ -862,6 +871,7 @@ void Gricv1Manager::c_scurve(http_request m)
   uint32_t mode = utils::queryIntValue(m,"channel",255);
   uint32_t win = utils::queryIntValue(m,"window",50000);
   uint32_t ntrg = utils::queryIntValue(m,"ntrg",50);
+  _sc_level=utils::queryIntValue(m,"level",0);
   PMF_INFO(_logGricv1, " SCURVE/CTEST "<<mode<<" "<<step<<" "<<first<<" "<<last);
   
   //this->Scurve(mode,first,last,step);
@@ -911,7 +921,6 @@ void Gricv1Manager::GainCurveStep(std::string mdcc,std::string builder,int gmin,
       utils::sendCommand(mdcc,"PAUSE",json::value::null());
     
       usleep(1000);
-      this->setThresholds(threshold,512,512);
       this->setGain(gmin+g*step);
 
       int firstEvent=0,firstInBoard=0;
