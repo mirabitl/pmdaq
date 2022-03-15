@@ -28,6 +28,10 @@ grp_action.add_argument('--runs', action='store_true',help='List all the taken r
 grp_action.add_argument('--fsms', action='store_true',help='List all the acquisition status')
 grp_action.add_argument('--new-run', action='store_true',help='Find last run of a given setup (--location setup) and fill the lastrun.sjon with the next runid Optional: --comment=xxxx')
 
+grp_action.add_argument('--update-run', action='store_true',help='Update run info --number #run --location loc --tag tag --value string ')
+
+grp_action.add_argument('--info-run', action='store_true',help='Update run info --number #run --location loc ')
+
 
 # Arguments
 parser.add_argument('--version', action='store',type=int,default=1,dest='version',help='DB configuration version' )
@@ -39,6 +43,12 @@ parser.add_argument('--location', action='store', type=str,
                     default=None, dest='location', help='Setup name')
 parser.add_argument('--file', action='store', type=str,
                     default=None, dest='file', help='Configuration file')
+parser.add_argument('--number', action='store', type=int,
+                    default=None, dest='number', help='run number')
+parser.add_argument('--tag', action='store', type=str,
+                    default=None, dest='tag', help='Tag to update')
+parser.add_argument('--value', action='store', type=str,
+                    default=None, dest='value', help='String value of the tag')
 
 if len(sys.argv)==1:
     parser.print_help(sys.stderr)
@@ -98,6 +108,36 @@ if (results.configurations):
 
 if (results.runs):
     _wdd.runs()
+    exit(0)
+
+if (results.update_run):
+    if (results.number == None):
+        print('Please specify the run number --number=#run')
+        exit(0)
+    if (results.location == None):
+        print('Please specify the setup --location=name')
+        exit(0)
+    if (results.tag == None):
+        print('Please specify the tag to change --tag=tagname')
+        exit(0)
+    if (results.value == None):
+        print('Please specify the tag value --value=tagvalue')
+        exit(0)
+    _wdd.updateRun(results.number,results.location,results.tag,results.value)
+
+    
+    exit(0)
+if (results.info_run):
+    if (results.number == None):
+        print('Please specify the run number --number=#run')
+        exit(0)
+    if (results.location == None):
+        print('Please specify the setup --location=name')
+        exit(0)
+    
+    _wdd.runInfo(results.number,results.location)
+
+    
     exit(0)
 
 if (results.fsms):
