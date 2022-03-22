@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pymongo
 from pymongo import MongoClient
 import json
 from bson.objectid import ObjectId
@@ -41,10 +42,14 @@ class MongoJob:
         :param pwd: Remote access password
 
         """
-      
-        self.connection=MongoClient(host,port)
-        self.db=self.connection[dbname]
-        self.db.authenticate(username,pwd)
+        if (pymongo.version_tuple[0]<4):
+            self.connection=MongoClient(host,port)
+            self.db=self.connection[dbname]
+            self.db.authenticate(username,pwd)
+        else:
+            self.connection=MongoClient(host,port,username=username,password=pwd,authSource=dbname)
+            self.db=self.connection[dbname]
+
 
     def reset(self):
         """
