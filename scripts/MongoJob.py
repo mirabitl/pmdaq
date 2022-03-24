@@ -107,14 +107,15 @@ class MongoJob:
                     if ("run" in x):
                         print(x["location"],x["run"],x["comment"])
                 #print(x["time"],x["location"],x["run"],x["comment"])
-    def runInfo(self,run,loc):
+    def runInfo(self,run,loc,printout=True):
         """
         Eun info on a given run
         """
         res=self.db.runs.find({"run":run,"location":loc})
         for x in res:
-            for y in x.keys():
-                print(y,":",x[y])
+            if (printout):
+                for y in x.keys():
+                    print(y,":",x[y])
             #if ("comment" in x):
             #    print(x["time"],x["location"],x["run"],x["comment"])
             return x
