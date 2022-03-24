@@ -17,7 +17,9 @@ class MongoAccess {
     account = ac;
     db = new Db(account);
   }
-
+/*
+Open and close access to the DB
+*/  
   Future<void> open() async {
     await db.open();
     _log.fine(''' Db is Open ''');
@@ -28,6 +30,9 @@ class MongoAccess {
     _log.fine(''' Db is Closed ''');
   }
 
+/*
+List all process  configurations in the DB
+*/
   Future<void> listConfigurations() async {
     AnsiPen pen = new AnsiPen()..blue(bold: true);
 
@@ -46,6 +51,9 @@ class MongoAccess {
     }
   }
 
+/*
+List all runs in the DB , if location is set only runs from this setup are shown
+*/
   Future<void> listRuns({String location = ""}) async {
     AnsiPen pen = new AnsiPen()..blue(bold: true);
     AnsiPen gpen = new AnsiPen()..green(bold: true);
@@ -71,13 +79,16 @@ class MongoAccess {
       String sr = redTextBlueBackgroundPen(" ${v['run']} ${v['location']}") +
           "  ${DateTime.fromMicrosecondsSinceEpoch(mst)}" +
           pen(" ${v['comment']}");
-      for (var x in v.keys) {
+      /* for (var x in v.keys) {
         if (x == "P") sr = sr + gpen(" P=${v[x]}");
-      }
+      } */
       print(sr);
     }
   }
 
+  /*
+  Print the information for a given run in a given setup(location)
+  */
   Future<void> runInfo(String location, int run) async {
     AnsiPen pen = new AnsiPen()..blue(bold: true);
     AnsiPen gpen = new AnsiPen()..green(bold: true);
@@ -116,6 +127,9 @@ class MongoAccess {
     }
   }
 
+/*
+Update a run entry at a given location with a tag and a (string) tag value
+*/
   Future<void> updateRun(
       String location, int run, String tag, String vtag) async {
     var coll = db.collection('runs');
@@ -123,6 +137,10 @@ class MongoAccess {
         where.eq('run', run).eq('location', location), modify.set(tag, vtag));
   }
 
+/*
+Download a process configuration with its name and version
+The json file is stored in /dev/shm/mgjob/${name}_${version}.json
+*/
   Future<void> downloadConfiguration(String name, int version) async {
     String path = '/dev/shm/mgjob/${name}_${version}.json';
 
@@ -145,7 +163,8 @@ class MongoAccess {
     //conf.forEach((v) => print(json.encode(v['content'])));
   }
 
-  /// Get a run
+  /// Create a new run in the db.runs table
+  /// location: setup and comment are compulsory
   ///
   Future<int> getRun(String location, String comment) async {
     var coll = db.collection('runs');
