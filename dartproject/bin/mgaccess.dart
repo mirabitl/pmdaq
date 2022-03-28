@@ -19,7 +19,7 @@ class MongoAccess {
   }
 /*
 Open and close access to the DB
-*/  
+*/
   Future<void> open() async {
     await db.open();
     _log.fine(''' Db is Open ''');
@@ -160,6 +160,39 @@ The json file is stored in /dev/shm/mgjob/${name}_${version}.json
       File f = new File(path);
       f.writeAsString(s);
     }
+    //conf.forEach((v) => print(json.encode(v['content'])));
+  }
+
+/*
+upload a process configuration with its name , a json file  and a comment optionnal version set to 1
+*/
+  Future<void> uploadConfiguration(String name, String fname, String comment,
+      {version: 1}) async {
+    if (FileSystemEntity.typeSync(fname) == FileSystemEntityType.notFound) {
+      _log.severe("${fname} does not exist");
+      return;
+    }
+    var s = new Map<String, dynamic>();
+    s["name"] = name;
+    s["comment"] = comment;
+    s["version"] = version;
+    s["time"] = DateTime.now().millisecondsSinceEpoch / 1000;
+    s["content"] = json.decode(await new File(fname).readAsString());
+    print(s);
+    var coll = db.collection('configurations');
+
+    // var conf = await coll
+    //     .find(where.match("name", name).and(where.eq("version", version)))
+    //     .toList();
+    //print("${name} ${version} ${conf}");
+    var ret = await coll.insertOne(s);
+    if (!ret.isSuccess) {
+      print('Error detected in record insertion');
+    }
+
+    //var res = await coll.findOne();
+
+    //print('Fetched ${res?['name']}');
     //conf.forEach((v) => print(json.encode(v['content'])));
   }
 

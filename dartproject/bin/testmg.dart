@@ -25,12 +25,21 @@ void main(List<String> arguments) async {
     ..addOption('setup', defaultsTo: 'UNKNOWN')
     ..addOption('vtag', defaultsTo: '0')
     ..addOption('tag', defaultsTo: 'UNKNOWN')
+    ..addOption('version', defaultsTo: '0')
+    ..addOption('config', defaultsTo: 'UNKNOWN')
     ..addOption('comment', defaultsTo: 'Test run')
-    ..addFlag('listruns',
+    ..addFlag('list-runs',
         negatable: false, help: 'List all the run with optional setup')
-    ..addFlag('runinfo',
+    ..addFlag('run-info',
         negatable: false, help: 'runinfo  with non-optional setup and run')
-    ..addFlag('updaterun',
+    ..addFlag('update-run',
+        negatable: false,
+        help:
+            'update runinfo  with non-optional setup and run and tag and vtag')
+    ..addFlag('list-conf', negatable: false, help: 'List all the configuration')
+    ..addFlag('download-conf',
+        negatable: false, help: 'runinfo  with non-optional setup and run')
+    ..addFlag('upload-conf',
         negatable: false,
         help:
             'update runinfo  with non-optional setup and run and tag and vtag')
@@ -107,7 +116,31 @@ ${argParser.usage}
   int port = int.parse(hostinfo.split(":")[1]);
 
   _log.info(" Account is ${user} ${pwd} ${host} ${port} ${dbname}");
-  if (argResults["listruns"]) {
+
+  if (argResults["list-conf"]) {
+    _mongoAccess = new mg.MongoAccess(
+        "mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
+    await _mongoAccess.open();
+    //await _mongoAccess.listRuns(location: "TRICOT2M2");
+
+    await _mongoAccess.listConfigurations();
+
+    await _mongoAccess.close();
+  }
+  if (argResults["download-conf"]) {
+    _mongoAccess = new mg.MongoAccess(
+        "mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
+    await _mongoAccess.open();
+    //await _mongoAccess.listRuns(location: "TRICOT2M2");
+    if (argResults["config"] == "UNKNOWN" || argResults["version"] == '0') {
+      _log.severe(" config and version should be specify");
+    } else {
+      await _mongoAccess.downloadConfiguration(
+          argResults["config"], int.parse(argResults["version"]));
+    }
+    await _mongoAccess.close();
+  }
+  if (argResults["list-runs"]) {
     _mongoAccess = new mg.MongoAccess(
         "mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
     await _mongoAccess.open();
@@ -120,7 +153,7 @@ ${argParser.usage}
 
     await _mongoAccess.close();
   }
-  if (argResults["runinfo"]) {
+  if (argResults["run-info"]) {
     _mongoAccess = new mg.MongoAccess(
         "mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
     await _mongoAccess.open();
@@ -134,7 +167,7 @@ ${argParser.usage}
 
     await _mongoAccess.close();
   }
-  if (argResults["updaterun"]) {
+  if (argResults["update-run"]) {
     _mongoAccess = new mg.MongoAccess(
         "mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
     await _mongoAccess.open();
