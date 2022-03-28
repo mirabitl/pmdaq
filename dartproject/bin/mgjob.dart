@@ -22,12 +22,13 @@ void main(List<String> arguments) async {
     ..addOption('Parameters',
         abbr: 'p', defaultsTo: "{}", help: "Parameters list")
     ..addOption('run', defaultsTo: '0')
-    ..addOption('setup', defaultsTo: 'UNKNOWN')
+    ..addOption('setup', defaultsTo: 'NotSet')
     ..addOption('vtag', defaultsTo: '0')
-    ..addOption('tag', defaultsTo: 'UNKNOWN')
+    ..addOption('tag', defaultsTo: 'NotSet')
     ..addOption('version', defaultsTo: '0')
-    ..addOption('config', defaultsTo: 'UNKNOWN')
-    ..addOption('comment', defaultsTo: 'Test run')
+    ..addOption('config', defaultsTo: 'NotSet')
+    ..addOption('file', defaultsTo: 'NotSet')
+    ..addOption('comment', defaultsTo: 'NotSet')
     ..addFlag('list-runs',
         negatable: false, help: 'List all the run with optional setup')
     ..addFlag('run-info',
@@ -132,11 +133,23 @@ ${argParser.usage}
         "mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
     await _mongoAccess.open();
     //await _mongoAccess.listRuns(location: "TRICOT2M2");
-    if (argResults["config"] == "UNKNOWN" || argResults["version"] == '0') {
+    if (argResults["config"] == "NotSet" || argResults["version"] == '0') {
       _log.severe(" config and version should be specify");
     } else {
       await _mongoAccess.downloadConfiguration(
           argResults["config"], int.parse(argResults["version"]));
+    }
+    await _mongoAccess.close();
+  }
+   if (argResults["upload-conf"]) {
+    _mongoAccess = new mg.MongoAccess(
+        "mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
+    await _mongoAccess.open();
+    //await _mongoAccess.listRuns(location: "TRICOT2M2");
+    if ( argResults["file"] == "NotSet"  || argResults["comment"] == 'NotSet') {
+      _log.severe(" cfile and  comment should be specify");
+    } else {
+      await _mongoAccess.uploadConfiguration(argResults["file"],argResults["comment"]);
     }
     await _mongoAccess.close();
   }
@@ -145,7 +158,7 @@ ${argParser.usage}
         "mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
     await _mongoAccess.open();
     //await _mongoAccess.listRuns(location: "TRICOT2M2");
-    if (argResults["setup"] == "UNKNOWN") {
+    if (argResults["setup"] == "NotSet") {
       await _mongoAccess.listRuns();
     } else {
       await _mongoAccess.listRuns(location: argResults["setup"]);
@@ -158,7 +171,7 @@ ${argParser.usage}
         "mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
     await _mongoAccess.open();
     //await _mongoAccess.listRuns(location: "TRICOT2M2");
-    if (argResults["setup"] == "UNKNOWN" || argResults["run"] == '0') {
+    if (argResults["setup"] == "NotSet" || argResults["run"] == '0') {
       _log.severe(" run and setup should be specify");
     } else {
       await _mongoAccess.runInfo(
@@ -172,9 +185,9 @@ ${argParser.usage}
         "mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
     await _mongoAccess.open();
     //await _mongoAccess.listRuns(location: "TRICOT2M2");
-    if (argResults["setup"] == "UNKNOWN" ||
+    if (argResults["setup"] == "NotSet" ||
         argResults["run"] == '0' ||
-        argResults["tag"] == "UNKNOWN" ||
+        argResults["tag"] == "NotSet" ||
         argResults["vtag"] == '0') {
       _log.severe(" run and setup, tag and vtag should be specify");
     } else {
