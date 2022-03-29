@@ -143,6 +143,8 @@ Download a process configuration with its name and version
 The json file is stored in /dev/shm/mgjob/${name}_${version}.json
 */
   Future<void> downloadConfiguration(String name, int version) async {
+    var directory = await Directory('/dev/shm/mgjob').create(recursive: true);
+
     String path = '/dev/shm/mgjob/${name}_${version}.json';
 
     if (FileSystemEntity.typeSync(path) != FileSystemEntityType.notFound) {
@@ -244,6 +246,15 @@ upload a process configuration with its name , a json file  and a comment option
 
   // Download Asic configurations
   Future<void> downloadState(String state, int version) async {
+
+    var directory = await Directory('/dev/shm/mgroc').create(recursive: true);
+    //print(directory.path);
+    String path = '/dev/shm/mgroc/${state}_${version}.json';
+
+    if (FileSystemEntity.typeSync(path) != FileSystemEntityType.notFound) {
+      _log.info("${path} already exists");
+      return;
+    }
     AnsiPen pen = new AnsiPen()..blue(bold: true);
 
     AnsiPen redTextBlueBackgroundPen = AnsiPen()
@@ -278,13 +289,14 @@ upload a process configuration with its name , a json file  and a comment option
         slc["asics"].add(sa);
       }
       //print(slc);
+
       JsonEncoder encoder = new JsonSortedEncoder(); //.withIndent('  ');
       String sall = encoder.convert(slc);
-      File f = new File("toto.json");
+      File f = new File(path);
       f.writeAsString(sall);
     }
-    var oneasic = buildPR2(12);
-    print(oneasic);
+    // var oneasic = buildPR2(12);
+    // print(oneasic);
   }
 
   Map<String, dynamic> buildHR2(int num, {int gain = 128}) {
