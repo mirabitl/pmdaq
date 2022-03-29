@@ -106,6 +106,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "4.4.0"
+  json_sorter:
+    dependency: "direct main"
+    description:
+      name: json_sorter
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.0"
   lints:
     dependency: "direct dev"
     description:

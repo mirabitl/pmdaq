@@ -29,6 +29,7 @@ void main(List<String> arguments) async {
     ..addOption('config', defaultsTo: 'NotSet')
     ..addOption('file', defaultsTo: 'NotSet')
     ..addOption('comment', defaultsTo: 'NotSet')
+    ..addOption('state', defaultsTo: 'NotSet')
     ..addFlag('list-runs',
         negatable: false, help: 'List all the run with optional setup')
     ..addFlag('run-info',
@@ -44,6 +45,9 @@ void main(List<String> arguments) async {
         negatable: false,
         help:
             'update runinfo  with non-optional setup and run and tag and vtag')
+    ..addFlag('list-states', negatable: false, help: 'List all the states')
+    ..addFlag('download-state',
+        negatable: false, help: 'runinfo  with non-optional setup and run')
     ..addFlag('infos',
         abbr: 'i',
         negatable: false,
@@ -141,15 +145,16 @@ ${argParser.usage}
     }
     await _mongoAccess.close();
   }
-   if (argResults["upload-conf"]) {
+  if (argResults["upload-conf"]) {
     _mongoAccess = new mg.MongoAccess(
         "mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
     await _mongoAccess.open();
     //await _mongoAccess.listRuns(location: "TRICOT2M2");
-    if ( argResults["file"] == "NotSet"  || argResults["comment"] == 'NotSet') {
+    if (argResults["file"] == "NotSet" || argResults["comment"] == 'NotSet') {
       _log.severe(" cfile and  comment should be specify");
     } else {
-      await _mongoAccess.uploadConfiguration(argResults["file"],argResults["comment"]);
+      await _mongoAccess.uploadConfiguration(
+          argResults["file"], argResults["comment"]);
     }
     await _mongoAccess.close();
   }
@@ -195,6 +200,29 @@ ${argParser.usage}
           int.parse(argResults["run"]), argResults["tag"], argResults["vtag"]);
     }
 
+    await _mongoAccess.close();
+  }
+  if (argResults["list-states"]) {
+    _mongoAccess = new mg.MongoAccess(
+        "mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
+    await _mongoAccess.open();
+    //await _mongoAccess.listRuns(location: "TRICOT2M2");
+
+    await _mongoAccess.listStates();
+
+    await _mongoAccess.close();
+  }
+  if (argResults["download-state"]) {
+    _mongoAccess = new mg.MongoAccess(
+        "mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
+    await _mongoAccess.open();
+    //await _mongoAccess.listRuns(location: "TRICOT2M2");
+    if (argResults["state"] == "NotSet" || argResults["version"] == '0') {
+      _log.severe(" state and version should be specify");
+    } else {
+      await _mongoAccess.downloadState(
+          argResults["state"], int.parse(argResults["version"]));
+    }
     await _mongoAccess.close();
   }
 }

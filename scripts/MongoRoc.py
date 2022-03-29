@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import os
+import pymongo
 from pymongo import MongoClient
 import json
 from bson.objectid import ObjectId
 import time
 import prettyjson as pj
-
+import 'package:json_sorter/json_sorter';
 
 
 
@@ -41,9 +42,19 @@ class MongoRoc:
         :param pwd: Remote access password
 
         """
-        self.connection=MongoClient(host,port)
-        self.db=self.connection[dbname]
-        self.db.authenticate(username,pwd)
+
+        if (pymongo.version_tuple[0]<4):
+            self.connection=MongoClient(host,port)
+            self.db=self.connection[dbname]
+            self.db.authenticate(username,pwd)
+        else:
+            self.connection=MongoClient(host,port,username=username,password=pwd,authSource=dbname)
+            self.db=self.connection[dbname]
+
+
+
+
+        
         self.state = {}
         self.asiclist = []
         self.bson_id=[]
