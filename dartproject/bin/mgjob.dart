@@ -1,4 +1,8 @@
 import 'package:mgaccess/mgaccess.dart' as mg;
+import 'package:mgaccess/mgconfig.dart' as mgc;
+import 'package:mgaccess/mgrun.dart' as mgr;
+import 'package:mgaccess/mgasic.dart' as mgroc;
+
 import 'dart:io';
 import 'dart:convert';
 import 'package:logging/logging.dart';
@@ -14,22 +18,24 @@ void main(List<String> arguments) async {
   final ArgParser argParser = new ArgParser()
     ..addOption('Mongo',
         abbr: 'm', defaultsTo: Platform.environment['MGDBLOGIN'])
-    ..addOption('Configuration',
-        abbr: 'c', defaultsTo: Platform.environment['DAQMONGO'])
-    ..addOption('Command', abbr: 'M', defaultsTo: "NONE", help: "Command name")
-    ..addOption('Application',
-        abbr: 'a', defaultsTo: "BUILDER", help: "Application name")
-    ..addOption('Parameters',
-        abbr: 'p', defaultsTo: "{}", help: "Parameters list")
-    ..addOption('run', defaultsTo: '0')
+    ..addOption('run', abbr: 'r', defaultsTo: '0')
     ..addOption('setup', defaultsTo: 'NotSet')
     ..addOption('vtag', defaultsTo: '0')
     ..addOption('tag', defaultsTo: 'NotSet')
-    ..addOption('version', defaultsTo: '0')
+    ..addOption('version', abbr: 'v', defaultsTo: '0')
     ..addOption('config', defaultsTo: 'NotSet')
     ..addOption('file', defaultsTo: 'NotSet')
     ..addOption('comment', defaultsTo: 'NotSet')
     ..addOption('state', defaultsTo: 'NotSet')
+    ..addFlag('CONFIG', abbr: 'C', negatable: false, help: 'Configuration menu')
+    ..addFlag('RUN', abbr: 'R', negatable: false, help: 'Run menu')
+    ..addFlag('ASICS', abbr: 'A', negatable: false, help: 'Asics menu')
+    ..addFlag('LIST', abbr: 'L', negatable: false, help: " List option")
+    ..addFlag('DOWNLOAD', abbr: 'D', negatable: false, help: " Download option")
+    ..addFlag('UPLOAD', abbr: 'U', negatable: false, help: " upload option")
+    ..addFlag('UPDATE',
+        abbr: 'M', negatable: false, help: " update/modify option")
+    ..addFlag('INFO', abbr: 'I', negatable: false, help: " info option")
     ..addFlag('list-runs',
         negatable: false, help: 'List all the run with optional setup')
     ..addFlag('run-info',
@@ -48,32 +54,6 @@ void main(List<String> arguments) async {
     ..addFlag('list-states', negatable: false, help: 'List all the states')
     ..addFlag('download-state',
         negatable: false, help: 'runinfo  with non-optional setup and run')
-    ..addFlag('infos',
-        abbr: 'i',
-        negatable: false,
-        help: "Displays all processes information.")
-    ..addFlag('verbose', abbr: 'v', negatable: false, help: "Verbose mode")
-    ..addFlag('jobcontrol',
-        abbr: 'j', negatable: false, help: "jobcontrol flag")
-    ..addFlag('daqcontrol',
-        abbr: 'd', negatable: false, help: "daqcontrol flag")
-    ..addFlag('create', abbr: 'R', negatable: false, help: "Create transition ")
-    ..addFlag('initialise',
-        abbr: 'I', negatable: false, help: "Initialise transition ")
-    ..addFlag('configure',
-        abbr: 'C', negatable: false, help: "Initialise transition ")
-    ..addFlag('start', abbr: 'A', negatable: false, help: "Start transition ")
-    ..addFlag('stop', abbr: 'O', negatable: false, help: "Stop transition ")
-    ..addFlag('kill',
-        abbr: 'K', negatable: false, help: "Kill transition of the job control")
-    ..addFlag('destroy',
-        abbr: 'D',
-        negatable: false,
-        help: "Destroy transition of the job control")
-    ..addFlag('status', abbr: 's', negatable: false, help: "Status command ")
-    ..addFlag('builder', negatable: false, help: "Event Builder flag ")
-    ..addFlag('source', negatable: false, help: "Data Source flag ")
-    ..addFlag('trigger', negatable: false, help: "trigger flag ")
     ..addFlag('help',
         abbr: 'h', negatable: false, help: "Displays this help information.");
   argResults = argParser.parse(arguments);
@@ -85,25 +65,6 @@ ${argParser.usage}
     """);
     exit(0);
   }
-
-  //print("job ${argResults['jobcontrol']} ${argResults['start']}");
-
-  // print(argResults['server'] +
-  //     " " +
-  //     argResults['port'] +
-  //     " " +
-  //     argResults['mongo'] +
-  //     " " +
-  //     argResults['configuration']);
-
-  // var rep = json.decode(await d.BuilderStatus());
-  // print(rep);
-
-  // rep = json.decode(await d.SourceStatus("EXSERVER"));
-  // print(rep);
-
-  // rep = json.decode(await d.TriggerStatus("TRIGGER"));
-  // print(rep);
 
   /// Use flag requests
 
@@ -120,17 +81,110 @@ ${argParser.usage}
   String host = hostinfo.split(":")[0];
   int port = int.parse(hostinfo.split(":")[1]);
 
-  _log.info(" Account is ${user} ${pwd} ${host} ${port} ${dbname}");
+  //_log.info(" Account is ${user} ${pwd} ${host} ${port} ${dbname}");
 
-  if (argResults["list-conf"]) {
-    _mongoAccess = new mg.MongoAccess(
-        "mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
-    await _mongoAccess.open();
+  if (argResults["CONFIG"]) {
+    var _mgc =
+        new mgc.mgConfig("mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
+    // _mongoAccess = new mg.MongoAccess(
+    //     "mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
+    await _mgc.open();
     //await _mongoAccess.listRuns(location: "TRICOT2M2");
 
-    await _mongoAccess.listConfigurations();
+    if (argResults["LIST"]) await _mgc.list();
 
-    await _mongoAccess.close();
+    if (argResults["DOWNLOAD"]) {
+      if (argResults["config"] == "NotSet" || argResults["version"] == '0') {
+        _log.severe(" config and version should be specify");
+      } else {
+        await _mgc.download(
+            argResults["config"], int.parse(argResults["version"]));
+      }
+    }
+    if (argResults["UPLOAD"]) {
+      if (argResults["file"] == "NotSet" || argResults["comment"] == 'NotSet') {
+        _log.severe(" cfile and  comment should be specify");
+      } else {
+        await _mgc.upload(argResults["file"], argResults["comment"]);
+      }
+    }
+
+    await _mgc.close();
+  }
+
+  if (argResults["ASICS"]) {
+    var _mgr =
+        new mgroc.mgRoc("mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
+
+    await _mgr.open();
+
+    if (argResults["LIST"]) {
+      if (argResults["state"] == "NotSet")
+        await _mgr.list();
+      else
+        await _mgr.list(state: argResults["state"]);
+    }
+    if (argResults["DOWNLOAD"]) {
+      if (argResults["state"] == "NotSet" || argResults["version"] == '0') {
+        _log.severe(" state and version should be specify");
+      } else {
+        await _mgr.download(
+            argResults["state"], int.parse(argResults["version"]));
+      }
+    }
+
+    if (argResults["INFO"]) {
+      if (argResults["state"] == "NotSet" || argResults["version"] == '0') {
+        _log.severe(" state and version should be specify");
+      } else {
+        await _mgr.info(argResults["state"], int.parse(argResults["version"]));
+      }
+    }
+    if (argResults["UPDATE"]) {
+      if (argResults["state"] == "NotSet" ||
+          argResults["version"] == '0' ||
+          argResults["tag"] == "NotSet" ||
+          argResults["vtag"] == '0') {
+        _log.severe(" state and version, tag and vtag should be specify");
+      } else {
+        await _mgr.update(argResults["state"], int.parse(argResults["version"]),
+            argResults["tag"], argResults["vtag"]);
+      }
+    }
+
+    await _mgr.close();
+  }
+
+  if (argResults["RUN"]) {
+    var _mgr =
+        new mgr.mgRun("mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
+    // _mongoAccess = new mg.MongoAccess(
+    //     "mongodb://${user}:${pwd}@${host}:${port}/${dbname}");
+    await _mgr.open();
+    //await _mongoAccess.listRuns(location: "TRICOT2M2");
+
+    if (argResults["LIST"]) await _mgr.list();
+
+    if (argResults["INFO"]) {
+      if (argResults["setup"] == "NotSet" || argResults["run"] == '0') {
+        _log.severe(" setup and run should be specify");
+      } else {
+        await _mgr.info(argResults["setup"], int.parse(argResults["run"]));
+      }
+    }
+    if (argResults["UPDATE"]) {
+      if (argResults["setup"] == "NotSet" ||
+          argResults["run"] == '0' ||
+          argResults["tag"] == "NotSet" ||
+          argResults["vtag"] == '0') {
+        _log.severe(" run and setup, tag and vtag should be specify");
+      } else {
+        await _mgr.update(argResults["setup"], int.parse(argResults["run"]),
+            argResults["tag"], argResults["vtag"]);
+      }
+    }
+
+    await _mgr.close();
   }
   if (argResults["download-conf"]) {
     _mongoAccess = new mg.MongoAccess(
