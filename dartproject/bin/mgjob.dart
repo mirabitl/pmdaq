@@ -1,4 +1,4 @@
-import 'mgaccess.dart' as mg;
+import 'package:mgaccess/mgaccess.dart' as mg;
 import 'dart:io';
 import 'dart:convert';
 import 'package:logging/logging.dart';

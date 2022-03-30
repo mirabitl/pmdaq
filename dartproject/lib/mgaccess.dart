@@ -7,33 +7,39 @@ import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:json_sorter/json_sorter.dart';
 
+/// A class to access the MongoDb database
+///
+/// It is used bothe to store process configuration and
+/// asics slowcontrol value
+///
+///
 class MongoAccess {
-  // field
+  /// [dbname] MongoDb database name
   final dbName = "LYONROC";
   late String account;
   late Db db;
   final _log = Logger('MongoAccess');
-  // Constructor
+
+  /// Constructor
+  /// [ac] is the account define by user/pwd@host:port@dbname
   MongoAccess(String ac) {
     account = ac;
     db = new Db(account);
   }
-/*
-Open and close access to the DB
-*/
+
+  /// database access open
   Future<void> open() async {
     await db.open();
     _log.fine(''' Db is Open ''');
   }
 
+  /// database access close
   Future<void> close() async {
     db.close();
     _log.fine(''' Db is Closed ''');
   }
 
-/*
-List all process  configurations in the DB
-*/
+  /// List all process  configurations in the DB
   Future<void> listConfigurations() async {
     AnsiPen pen = new AnsiPen()..blue(bold: true);
 
@@ -52,9 +58,9 @@ List all process  configurations in the DB
     }
   }
 
-/*
-List all runs in the DB , if location is set only runs from this setup are shown
-*/
+  ///List all runs in the DB ,
+  ///
+  ///if [location] is set only runs from this setup are shown
   Future<void> listRuns({String location = ""}) async {
     AnsiPen pen = new AnsiPen()..blue(bold: true);
     AnsiPen gpen = new AnsiPen()..green(bold: true);
@@ -87,9 +93,8 @@ List all runs in the DB , if location is set only runs from this setup are shown
     }
   }
 
-  /*
-  Print the information for a given run in a given setup(location)
-  */
+  ///Print the information for a given [run] in a given setup([location])
+  ///
   Future<void> runInfo(String location, int run) async {
     AnsiPen pen = new AnsiPen()..blue(bold: true);
     AnsiPen gpen = new AnsiPen()..green(bold: true);
@@ -128,9 +133,10 @@ List all runs in the DB , if location is set only runs from this setup are shown
     }
   }
 
-/*
-Update a run entry at a given location with a tag and a (string) tag value
-*/
+  /// Update a run entry
+  ///
+  /// for a given [location] and [run] with a String [tag] and [vtag] value
+  ///
   Future<void> updateRun(
       String location, int run, String tag, String vtag) async {
     var coll = db.collection('runs');
@@ -246,7 +252,6 @@ upload a process configuration with its name , a json file  and a comment option
 
   // Download Asic configurations
   Future<void> downloadState(String state, int version) async {
-
     var directory = await Directory('/dev/shm/mgroc').create(recursive: true);
     //print(directory.path);
     String path = '/dev/shm/mgroc/${state}_${version}.json';

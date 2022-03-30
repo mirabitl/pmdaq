@@ -1,5 +1,5 @@
-name: testmg
-description: A simple command-line application.
+name: mgaccess
+description: Acces to mongodb pmdaq/roc chips.
 version: 1.0.0
 # homepage: https://www.example.com
 
