@@ -20,7 +20,6 @@ void main(List<String> arguments) async {
         abbr: 'm', defaultsTo: Platform.environment['MGDBLOGIN'])
     ..addOption('run', abbr: 'r', defaultsTo: '0')
     ..addOption('setup', defaultsTo: 'NotSet')
-    
     ..addOption('vtag', defaultsTo: '0')
     ..addOption('dif', defaultsTo: '0')
     ..addOption('asic', defaultsTo: '0')
@@ -140,15 +139,14 @@ ${argParser.usage}
       if (argResults["state"] == "NotSet" || argResults["version"] == '0') {
         _log.severe(" state and version should be specify");
       } else {
-        if (argResults["dif"]!='0' && argResults["asic"]!='0')
-        {
-        await _mgr.asicInfo(argResults["state"], int.parse(argResults["version"]),wdif:int.parse(argResults["dif"]),wasic:int.parse(argResults["asic"]));
-
-        }
-        else
-        {
-        await _mgr.asicInfo(argResults["state"], int.parse(argResults["version"]));
-
+        if (argResults["dif"] != '0' && argResults["asic"] != '0') {
+          await _mgr.asicInfo(
+              argResults["state"], int.parse(argResults["version"]),
+              wdif: int.parse(argResults["dif"]),
+              wasic: int.parse(argResults["asic"]));
+        } else {
+          await _mgr.asicInfo(
+              argResults["state"], int.parse(argResults["version"]));
         }
       }
     }

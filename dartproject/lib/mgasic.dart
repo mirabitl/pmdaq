@@ -444,16 +444,10 @@ class mgRoc extends mg.MongoAccess {
     var mdt = List<int>.filled(32, 0);
     var idc = List<int>.filled(32, 1);
     _jasic["InputDac"] = idac;
-    ;
     _jasic["6bDac"] = bdac;
-    ;
     _jasic["MaskDiscriCharge"] = mdc;
-    ;
     _jasic["MaskDiscriTime"] = mdt;
-    ;
     _jasic["InputDacCommand"] = idc;
-    ;
-
     _jasic["VthDiscriCharge"] = 863;
     _jasic["VthTime"] = 610;
 
