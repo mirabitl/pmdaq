@@ -8,8 +8,18 @@ import 'package:logging/logging.dart';
 import 'package:json_sorter/json_sorter.dart';
 
 class mgRoc extends mg.MongoAccess {
+  final difList = Map<int, dynamic>();
+  final asicIds = List.empty(growable: true);
+  late String currentStateName;
+  late int currentVersion;
+
   /// Constructor
-  mgRoc(String account) : super(account) {}
+  mgRoc(String account) : super(account) {
+    difList.clear();
+    asicIds.clear();
+    currentVersion = 0;
+    currentStateName = "";
+  }
 
   ///List all states in the DB ,
   ///
@@ -72,9 +82,55 @@ class mgRoc extends mg.MongoAccess {
     }
   }
 
-///Print ASIC information for a given [state] in a given [version]
-///
-  Future<void> asicInfo(String state, int version,{int wdif=0,int wasic=0}) async {
+  /// Last version of a given state
+  ///
+  ///
+  Future<int> lastVersion(String state) async {
+    var coll = db.collection('states');
+    var conf = await coll.find(where.eq('name', state)).toList();
+    int last = 1;
+    for (var v in conf) {
+      if (v["version"] > last) last = v["version"];
+    }
+    return last;
+  }
+
+  /// Memory storage of a given version
+  ///
+  ///
+  Future<void> memoryStore(String state, int version) async {
+    var coll = db.collection('states');
+    var cola = this.db.collection('asics');
+    var conf = await coll
+        .find(where.eq('name', state).eq('version', version))
+        .toList();
+    for (var v in conf) {
+      /// Build DIF list
+      ///
+      difList.clear();
+      var asconf = await cola.find(where.oneFrom('_id', v['asics'])).toList();
+
+      for (var x in asconf) {
+        //print(x);
+        int difid = x["dif"];
+        int anum = x["num"];
+
+        if (!difList.containsKey(difid)) {
+          //print("adding dif entry ${difList.length}");
+          difList[difid] = new Map<int, dynamic>();
+        }
+        if (x.containsKey("slc") && difList.containsKey(difid)) {
+          difList[difid][anum] = x;
+          //print("adding asic entry ${difList[difid].length}  ${difList[difid][anum]}");
+        }
+      }
+    }
+  }
+
+  ///Print ASIC information for a given [state] in a given [version]
+  ///
+  Future<void> asicInfo(String state, int version,
+      {int wdif = 0, int wasic = 0}) async {
     AnsiPen pen = new AnsiPen()..blue(bold: true);
     AnsiPen gpen = new AnsiPen()..green(bold: true);
     AnsiPen ypen = new AnsiPen()..cyan(bold: true);
@@ -106,48 +162,45 @@ class mgRoc extends mg.MongoAccess {
 
         print(gpen(" ${x} -> ${v[x]}"));
       }
+
       /// Build DIF list
-      /// 
-      var difList=Map<int,dynamic>();
-     
-    var slc = new Map<String, dynamic>();
-    slc["state"] = state;
-    slc["version"] = version;
-    slc["asics"] = List.empty(growable: true);
-  
-    var asconf = await cola.find(where.oneFrom('_id', v['asics'])).toList();
-    
- for (var x in asconf)
-      {
+      ///
+      difList.clear();
+
+      var slc = new Map<String, dynamic>();
+      slc["state"] = state;
+      slc["version"] = version;
+      slc["asics"] = List.empty(growable: true);
+
+      var asconf = await cola.find(where.oneFrom('_id', v['asics'])).toList();
+
+      for (var x in asconf) {
         //print(x);
-        int difid=x["dif"];
-        int anum=x["num"];
-        
-        if (! difList.containsKey(difid)) {
+        int difid = x["dif"];
+        int anum = x["num"];
+
+        if (!difList.containsKey(difid)) {
           //print("adding dif entry ${difList.length}");
-           difList[difid]=new Map<int,dynamic>();
-         }
-         if (x.containsKey("slc") && difList.containsKey(difid))
-         {
-           
-         difList[difid][anum]=x;
-         //print("adding asic entry ${difList[difid].length}  ${difList[difid][anum]}");
-         }      
+          difList[difid] = new Map<int, dynamic>();
+        }
+        if (x.containsKey("slc") && difList.containsKey(difid)) {
+          difList[difid][anum] = x;
+          //print("adding asic entry ${difList[difid].length}  ${difList[difid][anum]}");
+        }
       }
+
       /// Loop on dif
-      /// 
-      for (var x in difList.keys)
-      {
-        if (wdif!=0 && x!=wdif) continue;
+      ///
+      for (var x in difList.keys) {
+        if (wdif != 0 && x != wdif) continue;
         print(ypen(" \t DIF ${x} has ${difList[x]?.length} asics"));
-        if (wasic!=0 && x==wdif)
-        {
-          print(gpen(" ASIC ${wdif} ${wasic}") +pen("${difList[x][wasic]}"));
+        if (wasic != 0 && x == wdif) {
+          print(gpen(" ASIC ${wdif} ${wasic}") + pen("${difList[x][wasic]}"));
         }
       }
     }
-    }
-  
+  }
+
   /// update a state entry
   ///
   /// for a given [state] and [version] with a String [tag] and [vtag] value
