@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import os
+import pymongo
 from pymongo import MongoClient
 import json
 from bson.objectid import ObjectId
 import time
 import prettyjson as pj
-
 
 
 
@@ -41,9 +41,19 @@ class MongoRoc:
         :param pwd: Remote access password
 
         """
-        self.connection=MongoClient(host,port)
-        self.db=self.connection[dbname]
-        self.db.authenticate(username,pwd)
+
+        if (pymongo.version_tuple[0]<4):
+            self.connection=MongoClient(host,port)
+            self.db=self.connection[dbname]
+            self.db.authenticate(username,pwd)
+        else:
+            self.connection=MongoClient(host,port,username=username,password=pwd,authSource=dbname)
+            self.db=self.connection[dbname]
+
+
+
+
+        
         self.state = {}
         self.asiclist = []
         self.bson_id=[]
@@ -744,6 +754,28 @@ class MongoRoc:
                 a["_id"]=None
             except Exception as e:
                 print(e.getMessage())
+                
+    def PR2_ChangeParam(self,pname,pval,idif=0, iasic=0):
+        """
+        Change all the ENable signals of PETIROC asic
+
+        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        :param iasic: asic number, if 0 all Asics are changed
+        :param pname: parameter name
+        :param pval: paramter value
+        """
+        for a in self.asiclist:
+            if (idif != 0 and a["dif"] != idif):
+                continue
+            if (iasic != 0 and a["num"] != iasic):
+                continue
+            try:
+                a["slc"][pname]=pval
+                a["_id"]=None
+
+            except Exception as e:
+                print(e.getMessage())
+
 
 # LIROC access
     def initLIROC(self,gain=0):
@@ -1385,7 +1417,29 @@ class MongoRoc:
                 a["slc"]["MASK1"][ipad]=a["slc"]["MASK1"][ipad]& (im1n>>ipad)
                 a["slc"]["MASK2"][ipad]=a["slc"]["MASK2"][ipad]& (im2n>>ipad)
             a["_id"]=None
-            
+
+    def HR2_setChannelMask(self,idif,iasic,ipad,ival):
+        """
+        Set the 3 masks  for specified  asics, modified asics are tagged for upload
+        
+
+        :param idif: DIF_ID
+        :param iasic: asic number
+        :param ipad: pad from 0
+        :param ival: 0 Off 1 On
+
+        """
+        for a in self.asiclist:
+            if (idif != 0 and a["dif"] != idif):
+                continue
+            if (iasic != 0 and a["num"] != iasic):
+                continue
+
+            a["slc"]["MASK0"][ipad]=ival
+            a["slc"]["MASK1"][ipad]=ival
+            a["slc"]["MASK2"][ipad]=ival
+            a["_id"]=None
+
     def HR2_setEnable(self,enable,idif=0,iasic=0):
         """
         Set the ENABLE tag for specified  asics, modified asics are tagged for upload

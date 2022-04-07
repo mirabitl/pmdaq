@@ -117,7 +117,7 @@ int16_t gricv1::socketHandler::checkBuffer(uint8_t* b,uint32_t maxidx)
 
 void gricv1::socketHandler::processBuffer(uint64_t id, uint16_t l,char* bb)
 {
-  PM_DEBUG(_logGricv1,"Entering procesBuffer "<<std::hex<<id<<std::dec<<" Length "<<l);
+  PM_INFO(_logGricv1,"Entering procesBuffer "<<std::hex<<id<<std::dec<<" Length "<<l);
   //if (l>16) getchar();
   //memcpy(_b,bb,l);
   memcpy(&_buf[_idx],bb,l);

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pymongo
 from pymongo import MongoClient
 import json
 from bson.objectid import ObjectId
@@ -41,10 +42,14 @@ class MongoJob:
         :param pwd: Remote access password
 
         """
-      
-        self.connection=MongoClient(host,port)
-        self.db=self.connection[dbname]
-        self.db.authenticate(username,pwd)
+        if (pymongo.version_tuple[0]<4):
+            self.connection=MongoClient(host,port)
+            self.db=self.connection[dbname]
+            self.db.authenticate(username,pwd)
+        else:
+            self.connection=MongoClient(host,port,username=username,password=pwd,authSource=dbname)
+            self.db=self.connection[dbname]
+
 
     def reset(self):
         """
@@ -80,28 +85,44 @@ class MongoJob:
                 print(time.ctime(x["time"]),x["version"],x["name"],x["comment"])
                 cl.append((x["name"],x['version'],x['comment']))
         return cl
+    def updateRun(self,run,loc,tag,vtag):
+        filter = { 'run': run,'location':loc }
+ 
+        # Values to be updated.
+        newvalues = { "$set": { tag: vtag } }
+ 
+        # Using update_one() method for single
+        # updation.
+        print(filter,newvalues)
+        self.db.runs.update_one(filter, newvalues)
     def runs(self):
         """
         List all the run informations stored
         """
         res=self.db.runs.find({})
         for x in res:
+            #print(x)
             if ("run" in x):
+                if ("comment" in x and "time" in x and "P" in x):
+                    print(time.ctime(x["time"]),x["location"],x["run"],x["P"],x["comment"])
+                    continue
                 if ("comment" in x and "time" in x):
                     print(time.ctime(x["time"]),x["location"],x["run"],x["comment"])
                 else:
                     if ("run" in x):
                         print(x["location"],x["run"],x["comment"])
                 #print(x["time"],x["location"],x["run"],x["comment"])
-    def runInfo(self,run,loc):
+    def runInfo(self,run,loc,printout=True):
         """
         Eun info on a given run
         """
         res=self.db.runs.find({"run":run,"location":loc})
         for x in res:
-
-            if ("comment" in x):
-                print(x["time"],x["location"],x["run"],x["comment"])
+            if (printout):
+                for y in x.keys():
+                    print(y,":",x[y])
+            #if ("comment" in x):
+            #    print(x["time"],x["location"],x["run"],x["comment"])
             return x
         return None
 
@@ -193,17 +214,17 @@ class MongoJob:
         :return: a dictionnary corresponding to the base insertion {run,location,time,comment}
         """
         res=self.db.runs.find({'location':location})
-        runid={}
+        runod={}
         for x in res:
             #print(x["location"],x["run"],x["comment"])
             #var=raw_input()
-            runid=x
-        if ("location" in runid):
-            runid["run"]=runid["run"]+1
-            del runid["_id"]
-        else:
-            runid["run"]=1000
-            runid["location"]=location
+            runod=x
+        runnb=1000
+        if ("location" in runod):
+            runnb=runod["run"]+1
+        runid={}
+        runid["run"]=runnb
+        runid["location"]=location
         runid["time"]=time.time()
         runid["comment"]=comment
         os.system("mkdir -p /dev/shm/mgjob")
