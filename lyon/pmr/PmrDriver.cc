@@ -283,7 +283,8 @@ int32_t pmr::PmrDriver::loadSLC(unsigned char* SLC,uint32_t slc_size)
     printf ("           SLC OK\n");
   else
     printf ("           SLC fail\n");
-
+ret=registerRead(PMR_TEST_REG,&tdata);
+  printf ("LOADSLC  Apres reg read, ret=%d , data =0x%x\n",ret,tdata);
   return tdata;
 }
 
