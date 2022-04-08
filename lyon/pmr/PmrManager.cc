@@ -657,7 +657,7 @@ void PmrManager::ScurveStep(std::string mdccUrl, std::string builderUrl, int thm
     if (!_running)
       break;
     utils::sendCommand(mdccUrl, "PAUSE", json::value::null());
-    usleep(1000);
+    usleep(100000);
     this->setThresholds(thmax - vth * step, 512, 512);
 
     uint32_t threshold = thmax - vth * step;
