@@ -45,7 +45,7 @@ void pmr::PmrInterface::initialise(pm::pmSender* p)
 
   try
     {
-
+      PM_INFO(_logPmr,"creating Driver for  "<<difid);
       _rd = new PmrDriver(_ftd.name,_ftd.productid);
       _status->id= _rd->difId();
     }

@@ -188,7 +188,7 @@ void PmrManager::fsm_initialise(http_request m)
 
   for (auto x : _vDif)
   {
-    PMF_INFO(_logPmr, " Creating pusher to ");
+    PMF_INFO(_logPmr, " Creating pusher for "<<x->detectorId()<<" "<< x->status()->id);
     /** Old single method
   zmPusher* push=new zmPusher(_context,x->detectorId(),x->status()->id);
   push->connect(params()["publish"].as_string());
@@ -200,7 +200,7 @@ void PmrManager::fsm_initialise(http_request m)
     // for (uint32_t i=0;i<_mStream.size();i++)
     //	ds->connect(_mStream[i]);
     push->collectorRegister();
-
+    PMF_INFO(_logPmr, " Call initialise "<<x->detectorId()<<" "<< x->status()->id);
     x->initialise(push);
   }
 
