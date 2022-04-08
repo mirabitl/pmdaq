@@ -188,7 +188,7 @@ void PmrManager::fsm_initialise(http_request m)
 
   for (auto x : _vDif)
   {
-    PMF_INFO(_logPmr, " Creating pusher to " << params()["publish"].as_string());
+    PMF_INFO(_logPmr, " Creating pusher to ");
     /** Old single method
   zmPusher* push=new zmPusher(_context,x->detectorId(),x->status()->id);
   push->connect(params()["publish"].as_string());
@@ -204,7 +204,7 @@ void PmrManager::fsm_initialise(http_request m)
     x->initialise(push);
   }
 
-  par["status"] = json::value::string(U("Configured"));
+  par["status"] = json::value::string(U("initialised"));
   Reply(status_codes::OK, par);
 }
 
@@ -446,8 +446,8 @@ void PmrManager::c_status(http_request m)
 web::json::value PmrManager::configureHR2()
 {
   /// A reecrire
-  uint32_t external = params()["external"].as_integer();
-  printf("TRigger EXT %x \n", external);
+  //uint32_t external = params()["external"].as_integer();
+  //printf("TRigger EXT %x \n", external);
   int32_t rc = 1;
   std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
   web::json::value array_slc;
@@ -472,7 +472,7 @@ web::json::value PmrManager::configureHR2()
 void PmrManager::configure(http_request m)
 {
   auto par = json::value::object();
-  PMF_DEBUG(_logPmr, " CMD: Configuring");
+  PMF_INFO(_logPmr, " CMD: Configuring");
 
   int32_t rc = 1;
 
