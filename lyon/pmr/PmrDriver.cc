@@ -239,7 +239,7 @@ int32_t pmr::PmrDriver::loadSLC(unsigned char* SLC,uint32_t slc_size)
 
   for (i = 0;i<slc_size; i=i+4)
     {
-      printf ("0x%02x 0x%02x 0x%02x 0x%02x\n",SLC[i],SLC[i+1],SLC[i+2], SLC[i+3]); 
+      
       if ((i+3) >= (slc_size))
 	tdata = (SLC[i]<<24)+ (SLC[i+1]<<16)+(SLC[i+2]<<8);		
       else if ((i+2)>= (slc_size))
@@ -249,7 +249,11 @@ int32_t pmr::PmrDriver::loadSLC(unsigned char* SLC,uint32_t slc_size)
       else
 	tdata = (SLC[i]<<24)+ (SLC[i+1]<<16)+(SLC[i+2]<<8)+SLC[i+3];		
       ret=registerWrite(PMR_SLC_DATA_REG,tdata);
-      printf ("%d reg write 0x%08x at 0x%x, ret=%d\n",i,tdata,taddr, ret);
+      if (ret!=0)
+	{
+	  printf ("0x%02x 0x%02x 0x%02x 0x%02x\n",SLC[i],SLC[i+1],SLC[i+2], SLC[i+3]); 
+	  printf ("%d reg write 0x%08x at 0x%x, ret=%d\n",i,tdata,taddr, ret);
+	}
       // getchar();
     }
 
@@ -271,7 +275,7 @@ int32_t pmr::PmrDriver::loadSLC(unsigned char* SLC,uint32_t slc_size)
 
   //}
   usleep(500000);// attendre la fin su slc pour lire status...
-  ::sleep(1);
+
   ret=registerRead(PMR_SLC_STATUS_REG,&tdata);
   printf ("slc status read, ret=%d data = 0x%08x\n",ret,tdata);
   if ((tdata&0x03)==3)
