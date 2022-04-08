@@ -197,16 +197,16 @@ int32_t pmr::PmrDriver::setup()
 
   // Check test Register
   ret=registerWrite(PMR_TEST_REG,0x12345678);
-  //printf ("test ....reg write, ret=%d\n",ret);
+  printf ("test ....reg write, ret=%d\n",ret);
   ret=registerRead(PMR_TEST_REG,&tdata);
-  //printf ("test ....reg read, ret=%d data = 0x%x\n",ret,tdata);
+  printf ("test ....reg read, ret=%d data = 0x%x\n",ret,tdata);
 
   if (tdata!=0x12345678)
     PM_ERROR(_logPmr,"Invalid Test register test "<<std::hex<<tdata<<std::dec);
   ret=registerWrite(PMR_TEST_REG,0xABCD1234);
-  //printf ("test ....reg write, ret=%d\n",ret);
+  printf ("test ....reg write, ret=%d\n",ret);
   ret=registerRead(PMR_TEST_REG,&tdata);
-  //  printf ("test ....reg read, ret=%d , data =0x%x\n",ret,tdata);
+  printf ("test ....reg read, ret=%d , data =0x%x\n",ret,tdata);
   if (tdata!=0xABCD1234)
     PM_ERROR(_logPmr,"Invalid Test register test 2 "<<std::hex<<tdata<<std::dec);
   // Unset PowerPulsing
