@@ -75,6 +75,17 @@ class MongoRoc:
         self.state["name"]=name
         self.state["version"]=1
         self.state["asics"]=[]
+
+    def updateStateInfo(self,statename,vers,tag,vtag):
+        filter = { 'name': statename,'version':vers}
+ 
+        # Values to be updated.
+        newvalues = { "$set": { tag: vtag } }
+ 
+        # Using update_one() method for single
+        # updation.
+        print(filter,newvalues)
+        self.db.states.update_one(filter, newvalues)
     def addFEB(self,ipname,nasic,asictype="PR2"):
         """
         Add a FEBV1 with asics
