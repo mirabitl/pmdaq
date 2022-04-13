@@ -198,7 +198,7 @@ class MongoRoc:
                     continue
                 if (y=="asics"):
                     continue
-                print(colored(y,'magenta'),x[y])
+                print(colored(y,'cyan','on_white'),x[y])
 
         return 
         

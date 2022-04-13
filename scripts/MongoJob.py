@@ -95,6 +95,18 @@ class MongoJob:
         # updation.
         print(filter,newvalues)
         self.db.runs.update_one(filter, newvalues)
+
+    def updateConfigurationInfo(self,cname,version,tag,vtag):
+        filter = {'name':cname,'version':version}
+ 
+        # Values to be updated.
+        newvalues = { "$set": { tag: vtag } }
+ 
+        # Using update_one() method for single
+        # updation.
+        print(filter,newvalues)
+        self.db.configurations.update_one(filter, newvalues)
+        
     def runs(self):
         """
         List all the run informations stored
