@@ -6,7 +6,7 @@ import json
 from bson.objectid import ObjectId
 import time
 import prettyjson as pj
-
+from termcolor import colored
 
 
 def IP2Int(ip):
@@ -172,13 +172,35 @@ class MongoRoc:
             if (not ("name" in x)):
                 continue
             if ("comment" in x):
-                print(x["name"],x["version"],x["comment"])
+                print(colored(x["name"],'red','on_yellow'),colored(x["version"],'green'),x["comment"])
                 cl.append((x["name"],x['version'],x['comment']))
             else:
-                print(x["name"],x["version"] )
+                print(colored(x["name"],'red','on_yellow'),colored(x["version"],'green'))
+
                 cl.append((x["name"],x['version'],"None"))
         return cl
     
+    def stateInfo(self,sname,svers):
+        """
+        List all states in the DB
+        """
+        res=self.db.states.find({"name":sname,"version":svers})
+        for x in res:
+            if (not ("name" in x)):
+                continue
+            if ("comment" in x):
+                print(colored(x["name"],'red','on_yellow'),colored(x["version"],'green'),x["comment"])
+            else:
+                print(colored(x["name"],'red','on_yellow'),colored(x["version"],'green'))
+
+            for y in x.keys():
+                if (y=="_id"):
+                    continue
+                if (y=="asics"):
+                    continue
+                print(colored(y,'magenta'),x[y])
+
+        return 
         
     def download(self,statename,version,toFileOnly=False):
         """

@@ -1,0 +1,109 @@
+#!/usr/bin/env python3
+import os
+#import socks
+import socket
+import json
+from copy import deepcopy
+import base64
+import time
+import argparse
+import requests
+import MongoAsic as mga
+import MongoHR2 as mghr2
+import MongoPR2 as mgpr2
+import MongoLiroc as mgli
+from termcolor import colored
+def argHandler(res):
+    _wdd=mga.instance()
+    if (res.states):
+        _wdd.states()
+        return
+    if (res.info):
+        if (res.state==None or res.version==None):
+            print("State name (--state) and version (--version) should be provided")
+        else:
+            _wdd.stateInfo(res.state,res.version)
+        return
+
+
+
+# create the default access
+
+#print("COUCOU")
+parser = argparse.ArgumentParser()
+
+# configure all the actions
+grp_action = parser.add_mutually_exclusive_group()
+grp_action.add_argument('--states', action='store_true',help='List all the available states')
+grp_action.add_argument('--info', action='store_true',help='print all tags of a given --state and a given --version')
+grp_action.add_argument('--download', action='store_true',
+                        help='download the state specified in --state=state --version=version')
+# Arguments
+parser.add_argument('--version', action='store',type=int,default=1,dest='version',help='DB state version' )
+parser.add_argument('--state', action='store', type=str,
+                    default=None, dest='state', help='DB State')
+
+parser.add_argument('--type', action='store', type=str,
+                    default=None, dest='type', help='Type HR2,PR2,LIROC')
+parser.add_argument('--comment', action='store', type=str,
+                    default=None, dest='comment', help='Comment')
+parser.add_argument('--file', action='store', type=str,
+                    default=None, dest='file', help='file to be parsed ')
+
+
+results = parser.parse_args()
+
+
+# Analyse results
+# analyse the command
+lcgi = {}
+r_cmd = None
+#print(colored(results,'blue','on_yellow'),results.__dict__)
+argHandler(results)
+exit(0)
+if (results.upload_config):
+    r_cmd = 'upload_config'
+    version=1
+    comment="No comment given"
+    if (results.name == None):
+        print('Please specify the name --name=name')
+        exit(0)
+    if (results.file == None):
+        print('Please specify the file --file=ver')
+    if (results.version != None):
+       version=results.version
+       #print(version)
+    if (results.comment != None):
+       comment=results.comment
+       #print(comment)
+    _wdd.uploadConfig(results.name,results.file,comment,version)
+    exit(0)
+
+
+
+
+if (results.download):
+    r_cmd = 'download'
+    if (results.state != None):
+        if (results.version == None):
+            print('Please specify the version --version=ver')
+            exit(0)
+        _wdd.download(results.state,results.version,True)
+        exit(0)
+    if (results.name != None):
+        if (results.version == None):
+            print('Please specify the version --version=ver')
+            exit(0)
+        _wdd.downloadConfig(results.name,results.version)
+        exit(0)
+    else:
+        print(" Specify either --name for configuration or --state for ASICs")
+        exit(0)
+if (results.states):
+    r_cmd = 'states'
+    _wdd.states()
+    exit(0)
+if (results.configurations):
+    r_cmd = 'configurations'
+    _wdd.configurations()
+    exit(0)
