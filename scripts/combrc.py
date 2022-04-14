@@ -56,6 +56,11 @@ class combRC(pmdaqrc.pmdaqControl):
             s = json.loads(
                 self.session.apps['lyon_mdcc'][0].sendTransition("INITIALISE", m))
             r["lyon_mdcc"] = s
+        if ("lyon_ipdc" in self.session.apps):
+            s = json.loads(
+                self.session.apps['lyon_ipdc'][0].sendTransition("INITIALISE", m))
+            r["lyon_ipdc"] = s
+            self.md_name = "lyon_ipdc"
         if ("lyon_mbmdcc" in self.session.apps):
             s = json.loads(
                 self.session.apps['lyon_mbmdcc'][0].sendTransition("INITIALISE", m))
@@ -282,6 +287,10 @@ class combRC(pmdaqrc.pmdaqControl):
             s = json.loads(
                 self.session.apps['lyon_mdcc'][0].sendCommand("ECALRESUME", m))
             r["lyon_mdcc"] = s
+        if ("lyon_ipdc" in self.session.apps):
+            s = json.loads(
+                self.session.apps['lyon_ipdc'][0].sendTransition("INITIALISE", m))
+            r["lyon_ipdc"] = s
 
         if ("lyon_mbmdcc" in self.session.apps):
             s = json.loads(
