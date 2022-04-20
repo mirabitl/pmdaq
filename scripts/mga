@@ -24,7 +24,12 @@ def argHandler(res):
         else:
             _wdd.stateInfo(res.state,res.version)
         return
-
+    if (res.asic_info):
+        if (res.state==None or res.version==None or res.dif==None or res.num==None):
+            print("State name (--state) and version (--version) and dif (--dif) and asic number (--num) should be provided")
+        else:
+            _wdd.asicInfo(res.state,res.version,res.dif,res.num,param=res.param)
+        return
     if (res.download):
         if (res.state==None or res.version==None):
             print("State name (--state) and version (--version) should be provided")
@@ -48,6 +53,8 @@ parser = argparse.ArgumentParser()
 grp_action = parser.add_mutually_exclusive_group()
 grp_action.add_argument('--states', action='store_true',help='List all the available states')
 grp_action.add_argument('--info', action='store_true',help='print all tags of a given --state and a given --version')
+grp_action.add_argument('--asic-info', action='store_true',help='print all tags of a given --state and a given --version --dif dif --num asicnum')
+
 grp_action.add_argument('--update-info', action='store_true',help='Update a given --state and a given --version with --tag and --value arguments')
 
 grp_action.add_argument('--download', action='store_true',
@@ -59,6 +66,9 @@ parser.add_argument('--value', action='store',default=None,dest='value',help='JS
 
 parser.add_argument('--state', action='store', type=str,
                     default=None, dest='state', help='DB State')
+parser.add_argument('--dif', action='store',type=int,default=0,dest='dif',help='dif ID' )
+parser.add_argument('--num', action='store',type=int,default=0,dest='num',help='Asic ID' )
+parser.add_argument('--param', action='store',type=str,default="all",dest='param',help='json slc param' )
 
 parser.add_argument('--type', action='store', type=str,
                     default=None, dest='type', help='Type HR2,PR2,LIROC')

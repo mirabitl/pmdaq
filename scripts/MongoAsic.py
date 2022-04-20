@@ -254,6 +254,51 @@ class MongoRoc:
             #f.write(pj.prettyjson(slc, maxlinelength=255))
             f.close()
             return slc
+
+    def asicInfo(self,statename,version,difnum,asicnum,param="all"):
+        """
+        Download a state configuration to /dev/shm/mgroc/ directory and load it in the MongoRoc object
+        
+        :param statename: State name
+        :param version: State version
+        :param difnum: Dif number
+        :param asicnum: Asic number
+        """        
+        res=self.db.states.find({'name':statename,'version':version})
+        for x in res:
+            if (not ("name" in x)):
+                continue
+            if ("comment" in x):
+                print(colored(x["name"],'red','on_yellow'),colored(x["version"],'green'),x["comment"])
+            else:
+                print(colored(x["name"],'red','on_yellow'),colored(x["version"],'green'))
+
+            for y in x.keys():
+                if (y=="_id"):
+                    continue
+                if (y=="asics"):
+                    continue
+                print(colored(y,'cyan','on_white'),x[y])
+            #print(x["asics"])
+            #self.asiclist=[]
+            #for y in x["asics"]:
+            #    resa=self.db.asics.find_one({'_id':y})
+            #print(x["asics"])
+            resl=self.db.asics.find({'_id': {'$in': x["asics"]}})
+            
+            for resa in resl:
+                #print(resa)
+                if (resa["dif"] != difnum and difnum!=0):
+                    continue
+                if (resa["num"] != asicnum and asicnum!=0):
+                    continue    
+                if (param=="all"):
+                    print(colored("DIF  %d(%x)  ASIC %d \n" % (resa["dif"],resa["dif"],resa["num"]),'cyan','on_white'),resa["slc"])
+                else:
+                    print(colored("DIF  %d(%x)  ASIC %d %s" % (resa["dif"],resa["dif"],resa["num"],param),'cyan','on_white'),resa["slc"][param])
+
+            
+            return 
     
     def uploadChanges(self,statename,comment):
         """
