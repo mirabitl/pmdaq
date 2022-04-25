@@ -69,6 +69,7 @@ web::json::value syx27Plugin::channelStatus(uint32_t channel)
       PMF_ERROR(_logSyx27,"No HVCaenInterface opened");
        return r;
     }
+   if (!_hv->isConnected()) _hv->Connect();
    // std::cout<<channel<<" gives "<<_hv->getOutputVoltage(channel/8,channel%8)<<std::endl;
    
 
@@ -81,7 +82,8 @@ web::json::value syx27Plugin::channelStatus(uint32_t channel)
    r["iout"]=json::value::number(_hv->GetCurrentRead(channel));
    r["vout"]=json::value::number(_hv->GetVoltageRead(channel));
    r["status"]=json::value::number(_hv->GetStatus(channel));
-   
+   if (_hv->isConnected()) _hv->Disconnect();
+
    return r;
 }
 web::json::value syx27Plugin::status()
@@ -203,11 +205,11 @@ void syx27Plugin::c_on(http_request m)
       return;
     }
 
-
+   if (!_hv->isConnected()) _hv->Connect();
   //
    for (uint32_t i=first;i<=last;i++)
     _hv->SetOn(i);
-  
+   if (_hv->isConnected()) _hv->Disconnect();
   par["status"] = this->status(first,last);
   Reply(status_codes::OK,par);
 }
@@ -247,8 +249,11 @@ void syx27Plugin::c_off(http_request m)
 
 
   //
+  if (!_hv->isConnected()) _hv->Connect();
    for (uint32_t i=first;i<=last;i++)
     _hv->SetOff(i);
+   if (_hv->isConnected()) _hv->Disconnect();
+
   par["status"] = this->status(first,last);
   Reply(status_codes::OK,par);
 }
@@ -330,8 +335,11 @@ void syx27Plugin::c_vset(http_request m)
 
 
   //
+    if (!_hv->isConnected()) _hv->Connect();
+
     for (uint32_t i=first;i<=last;i++)
     _hv->SetVoltage(i,vset);
+  if (_hv->isConnected()) _hv->Disconnect();
   
   par["status"] = this->status(first,last);
   Reply(status_codes::OK,par);
@@ -374,9 +382,12 @@ void syx27Plugin::c_iset(http_request m)
     }
 
 
-  // 
+  //
+  if (!_hv->isConnected()) _hv->Connect();
+
   for (uint32_t i=first;i<=last;i++)
     _hv->SetCurrent(i,iset);
+  if (_hv->isConnected()) _hv->Disconnect();
 
   
   par["status"] = this->status(first,last);
@@ -421,9 +432,12 @@ void syx27Plugin::c_rampup(http_request m)
 
 
   // 
-  
+  if (!_hv->isConnected()) _hv->Connect();
+
   for (uint32_t i=first;i<=last;i++)
     _hv->SetVoltageRampUp(i,rup);
+  if (_hv->isConnected()) _hv->Disconnect();
+
   par["status"] = this->status(first,last);
   Reply(status_codes::OK,par);
 }

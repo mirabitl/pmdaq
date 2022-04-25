@@ -25,7 +25,7 @@ using namespace std;
     // Status
     virtual web::json::value status();
     web::json::value status(int32_t f,int32_t l);
-    virtual std::string hardware(){return "ISEG";}
+    virtual std::string hardware(){return "SYX27";}
     web::json::value channelStatus(uint32_t channel);
     
     // Commande
