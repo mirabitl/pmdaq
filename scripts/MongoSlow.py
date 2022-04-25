@@ -44,9 +44,15 @@ class MongoSlow:
 
         """
       
-        self.connection=MongoClient(host,port)
-        self.db=self.connection[dbname]
-        self.db.authenticate(username,pwd)
+
+        if (pymongo.version_tuple[0]<4):
+            self.connection=MongoClient(host,port)
+            self.db=self.connection[dbname]
+            self.db.authenticate(username,pwd)
+        else:
+            self.connection=MongoClient(host,port,username=username,password=pwd,authSource=dbname)
+            self.db=self.connection[dbname]
+
 
     def reset(self):
         """
