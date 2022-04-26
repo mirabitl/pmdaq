@@ -51,6 +51,9 @@ grp_action.add_argument('--slow-destroy', action='store_true',
 # Status
 grp_action.add_argument('--slow-status', action='store_true',
                         help=' display SLOW status of all processes')
+# SetHV
+grp_action.add_argument('--slow-sethv', action='store_true',
+                        help=' display SLOW status of all processes')
 # Arguments
 parser.add_argument('--config', action='store', dest='config',
                     default=None, help='json config file')
@@ -64,6 +67,8 @@ parser.add_argument('--last', action='store', type=int,
 # Job
 parser.add_argument('--value', action='store', type=int,
                     dest='value', default=None, help='value to pass')
+parser.add_argument('--period', action='store', type=int,
+                    dest='period', default=600, help='value to pass')
 parser.add_argument('--address', action='store', type=int,
                     dest='address', default=None, help='address to pass')
 parser.add_argument('--comment', action='store', default=None,
@@ -147,6 +152,16 @@ elif(results.slow_stop):
     exit(0)
 elif(results.slow_destroy):
     fdc.halt()
+    exit(0)
+elif(results.slow_sethv):
+    if (results.channel == None):
+        print("channel must be given ")
+        exit(0)
+    if (results.value == None):
+        print("value must be given ")
+        exit(0)
+    
+    fdc.keepHv(results.value,results.channel,period=results.period)
     exit(0)
 
 elif (results.method!=None):

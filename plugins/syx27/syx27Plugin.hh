@@ -20,7 +20,9 @@ using namespace std;
     virtual void close();
     virtual void registerCommands();
     // Access to the interface
- 
+    void lock() {_bsem.lock();}
+    void unlock() {_bsem.unlock();}
+
     caen::HVCaenInterface* getHVCaenInterface(){return _hv;}
     // Status
     virtual web::json::value status();
@@ -40,6 +42,7 @@ using namespace std;
   private:
     //zdaq::fsm* _fsm;
     caen::HVCaenInterface* _hv;
+    std::mutex _bsem;
 
   };
 

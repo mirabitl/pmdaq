@@ -72,15 +72,18 @@ void caen::HVCaenInterface::Connect()
   int sysHndl;
   int sysType=0;
   int link=LINKTYPE_TCPIP;
+  int ntry=0;
+ tryconnect:
   ret = CAENHV_InitSystem((CAENHV_SYSTEM_TYPE_t)sysType, link,(char*) theIp_.c_str(),theUser_.c_str(),thePassword_.c_str(), &sysHndl);
 
-  //std::cout<<theIp_<<"<- IP "<<theUser_<<"<-User "<<thePassword_<<"<- Pwd "<<std::endl;
+  std::cout<<theIp_<<"<- IP "<<theUser_<<"<-User "<<thePassword_<<"<- Pwd "<<std::endl;
   if( ret == CAENHV_OK )
     {
       theID_=ret;
       theHandle_=sysHndl;
       printf("Connection done %d \n",theHandle_);
       connected_=true;
+      return;
     }
   else
     if (ret== CAENHV_DEVALREADYOPEN)
@@ -90,9 +93,13 @@ void caen::HVCaenInterface::Connect()
     }
     else
     {
-    printf("\nCAENHV_InitSystem: %s (num. %d) handle %d \n\n", CAENHV_GetError(sysHndl), ret,sysHndl);    
+      fprintf(stderr,"\nCAENHV_InitSystem: %s (num. %d) handle %d \n\n", CAENHV_GetError(sysHndl), ret,sysHndl);    
   connected_=false;
   theHandle_=-1;
+  ntry++;
+  if (ntry>10) return;
+  ::sleep(15);
+  goto tryconnect;
     }
   
 }
