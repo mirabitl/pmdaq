@@ -97,7 +97,7 @@ void caen::HVCaenInterface::Connect()
   connected_=false;
   theHandle_=-1;
   ntry++;
-  if (ntry>10) return;
+  if (ntry>2) return;
   ::sleep(15);
   goto tryconnect;
     }
