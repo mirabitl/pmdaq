@@ -79,6 +79,9 @@ class MongoSlow:
             if (device=="ISEG" and x["status"]["name"]==device):
                 print(sti)
                 for y in x["status"]["channels"]:
+                    if (not isinstance(y["status"],str)):
+                        print(y)
+                        continue
                     sstat=y["status"].split("=")[1]
                     
                     #print("ch%.3d %12.2f %12.2f %12.2f %s" %(y["id"],y["vset"],y["vout"],y["iout"]*1E6,sstat[:len(sstat)-1]))
@@ -93,6 +96,7 @@ class MongoSlow:
                 #print("%s VSET=%.2f V VOut=%.2f V IOut=%.2f V Status %s " % (sti,x["status"]["vset"],x["status"]["vout"],x["status"]["iout"],x["status"]["status"]))
                 print(" VSET=%.2f V VOut=%.2f V IOut=%.2f A Imax=%.2f A  Status %s  Bit Status %s " % (x["status"]["vset"],x["status"]["vout"],x["status"]["iout"],x["status"]["iset"],x["status"]["status"],bin(x["status"]["pwrstatus"])))
 
+                
     def csv(self,path,depth=50000,from_time=0,file_name="/tmp/mgslow.csv"):
         """
         List all the run informations stored
@@ -171,6 +175,13 @@ class MongoSlow:
                 #print("%s VSET=%.2f V VOut=%.2f V IOut=%.2f V Status %s " % (sti,x["status"]["vset"],x["status"]["vout"],x["status"]["iout"],x["status"]["status"]))
                 print(" VSET=%.2f V VOut=%.2f V IOut=%.2f A Imax=%.2f A  Status %s  Bit Status %s " % (x["status"]["vset"],x["status"]["vout"],x["status"]["iout"],x["status"]["iset"],x["status"]["status"],bin(x["status"]["pwrstatus"])))
                 writer.writerow([sti,x["status"]["vout"],x["status"]["iout"]])
+    def last(self,path):
+        """
+        List all the run informations stored
+        """
+        res=self.db.MONITORED_ITEMS.find({"path":{'$regex':path}},{"_id":0}).limit(1).sort("ctime",pymongo.DESCENDING)
+        for x in res:
+            return x
 
 
                 

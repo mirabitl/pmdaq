@@ -3,7 +3,7 @@ from __future__ import print_function
 import serviceAccess as sac
 import pnsAccess as pns
 import session
-# import MongoJob as mg
+import MongoSlow as mgs
 import json
 import time
 import os
@@ -111,13 +111,67 @@ class slowControl:
                 print(v2apply,vwanted," too large",P," ",T)
                 time.sleep(period)
                 continue
-            print("applying ",v2apply,"for ",vwanted,P," ",T)
+            print("applying %d for %d P=%5.1f T=%5.1f " % (int(v2apply),vwanted,P,T))
             m={}
             m["first"]=channel
             m["last"]=channel
-            m["value"]=v2apply
+            m["value"]=int(v2apply)
             mrhvset = json.loads(shv.sendCommand("VSET",m))
-            print(mrhvset)
-            mrhv = json.loads(shv.sendCommand("STATUS", {}))
-            print(mrhv)
+            #print(mrhvset)
+            for y in mrhvset["status"]["channels"]:
+                if (hvname == 'app_wiener'):
+                    sstat=y["status"].split("=")[1]
+                    
+                    print("ch%.3d %8.2f %8.2f %8.2f %8.2f %8.2f %s" %(y["id"],y["vset"],y["iset"]*1E6,y["rampup"],y["vout"],y["iout"]*1E6,sstat[:len(sstat)-1]))
+                else:
+                    print(mrhvset)
+            #mrhv = json.loads(shv.sendCommand("STATUS", {}))
+            #print(mrhv)
+            time.sleep(period)
+            
+    def checkHv(self,fname,period=600,ntimes=10000):
+        st=json.loads(open(fname).read())
+        if ( not 'monitoring' in st):
+            print("Missing monitoring section")
+            return
+        if ( not 'conditions' in st):
+            print("Missing conditions section")
+            return
+        smon=st["monitoring"]
+        scond=st["conditions"]
+        if ( not 'account' in smon):
+            print("Missing account in monitoring section")
+            return
+        os.environ['MGDBMON']=smon['account']
+        _wmon=mgs.instance()
+        for i in range(ntimes):
+            mrbmp=_wmon.last(smon["bmppath"])
+
+            x=mrbmp["status"]
+            P=x["pressure"]
+            T=x["temperature"]+273.15
+            vcorr=(1.0*P/990.*293.15/T)
+            sti=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(mrbmp["ctime"]))
+            print("%s ::::  Correction for P %5.1f and T %5.1f is %5.3f " %(sti,P,T,vcorr))
+            mhv=_wmon.last(smon["hvpath"])
+            if (not 'HV' in scond):
+                return
+            shv=scond['HV']
+            if (not 'channels' in shv):
+                return
+            for x in shv['channels']:
+                ch=x["id"]
+                vreq=x["hv"]
+                vset=0
+                for y in mhv["status"]["channels"]:
+                    if (y["id"]==ch):
+                        vset=y["vset"]
+                        break
+                print(ch,vreq,vset,vcorr*vreq)
+                param={}
+                param["first"]=ch
+                param["last"]=ch
+                param["value"]=vcorr*vreq
+                rep=sac.executeCMD(shv["host"],shv["port"],shv["path"]+"VSET",param)
+                print(rep)
             time.sleep(period)

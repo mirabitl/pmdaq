@@ -54,6 +54,8 @@ grp_action.add_argument('--slow-status', action='store_true',
 # SetHV
 grp_action.add_argument('--slow-sethv', action='store_true',
                         help=' display SLOW status of all processes')
+grp_action.add_argument('--slow-checkhv', action='store_true',
+                        help=' display SLOW status of all processes')
 # Arguments
 parser.add_argument('--config', action='store', dest='config',
                     default=None, help='json config file')
@@ -73,6 +75,10 @@ parser.add_argument('--address', action='store', type=int,
                     dest='address', default=None, help='address to pass')
 parser.add_argument('--comment', action='store', default=None,
                     dest='comment', help=' Comment for start run')
+parser.add_argument('--alim', action='store', default="app_wiener",
+                    dest='alim', help='Application name of the HV crate')
+parser.add_argument('--settings', action='store', default=None,
+                    dest='settings', help='Slow control settings for run')
 
 parser.add_argument('-M', '--Method', action='store', dest='method',
                     default=None, help='Command name')
@@ -161,7 +167,16 @@ elif(results.slow_sethv):
         print("value must be given ")
         exit(0)
     
-    fdc.keepHv(results.value,results.channel,period=results.period)
+    fdc.keepHv(results.value,results.channel,period=results.period,hvname=results.alim)
+    exit(0)
+
+elif(results.slow_checkhv):
+    if (results.settings == None):
+        print("settings must be given ")
+        exit(0)
+    
+
+    fdc.checkHv(results.settings,period=results.period)
     exit(0)
 
 elif (results.method!=None):
