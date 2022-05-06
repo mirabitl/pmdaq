@@ -15,7 +15,7 @@ void mqttStore::loadParameters(web::json::value params)
 
 void mqttStore::mqtt_setup(){
 
-  int keepalive = 60;
+  int keepalive = 0;
   bool clean_session = true;
   
   mosquitto_lib_init();
