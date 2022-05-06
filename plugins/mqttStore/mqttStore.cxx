@@ -9,7 +9,7 @@ using namespace monitoring;
 mqttStore::mqttStore() : _mosq(NULL) {} 
 void mqttStore::loadParameters(web::json::value params)
 {
-    _params=params["grstore"];
+    _params=params["mqttstore"];
 }
 
 
