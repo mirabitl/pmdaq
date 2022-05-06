@@ -41,7 +41,7 @@ void mqttStore::mqtt_setup(){
 int  mqttStore::mqtt_send(const char* topic,float val,uint32_t ti){
  
   std::stringstream ss;
-  ss<<ti<<" "<<val;
+  ss<<val;
   const char* msg=ss.str().c_str();
   return mosquitto_publish(_mosq, NULL, topic, strlen(msg),msg, 0, 0);
 }
@@ -63,11 +63,11 @@ void mqttStore::store(std::string loc,std::string hw,uint32_t ti,web::json::valu
     {
       spath.str(std::string());
       spath.clear();
-      spath<<loc<<"."<<hw<<".T";
+      spath<<loc<<"/"<<hw<<"/T";
       mqtt_send(spath.str().c_str(),status["temperature"].as_double(),ti);
       spath.str(std::string());
       spath.clear();
-      spath<<loc<<"."<<hw<<".P";
+      spath<<loc<<"/"<<hw<<"/P";
       mqtt_send(spath.str().c_str(),status["pressure"].as_double(),ti);
       return;
     }
@@ -76,21 +76,21 @@ void mqttStore::store(std::string loc,std::string hw,uint32_t ti,web::json::valu
     {
       spath.str(std::string());
       spath.clear();
-      spath<<loc<<"."<<hw<<".H0";
+      spath<<loc<<"/"<<hw<<"/H0";
       mqtt_send(spath.str().c_str(),status["humidity0"].as_double(),ti);
       spath.str(std::string());
       spath.clear();
-      spath<<loc<<"."<<hw<<".T0";
+      spath<<loc<<"/"<<hw<<"/T0";
       mqtt_send(spath.str().c_str(),status["temperature0"].as_double(),ti);
       
       spath.str(std::string());
       spath.clear();
-      spath<<loc<<"."<<hw<<".H1";
+      spath<<loc<<"/"<<hw<<"/H1";
       mqtt_send(spath.str().c_str(),status["humidity1"].as_double(),ti);
       
       spath.str(std::string());
       spath.clear();
-      spath<<loc<<"."<<hw<<".T1";
+      spath<<loc<<"/"<<hw<<"/T1";
       mqtt_send(spath.str().c_str(),status["temperature1"].as_double(),ti);
       
       return;
@@ -100,16 +100,16 @@ void mqttStore::store(std::string loc,std::string hw,uint32_t ti,web::json::valu
     {
       spath.str(std::string());
       spath.clear();
-      spath<<loc<<"."<<hw<<".VSET";
+      spath<<loc<<"/"<<hw<<"/VSET";
       mqtt_send(spath.str().c_str(),status["vset"].as_double(),ti);
       spath.str(std::string());
       spath.clear();
-      spath<<loc<<"."<<hw<<".VOUT";
+      spath<<loc<<"/"<<hw<<"/VOUT";
       mqtt_send(spath.str().c_str(),status["vout"].as_double(),ti);
       
       spath.str(std::string());
       spath.clear();
-      spath<<loc<<"."<<hw<<".IOUT";
+      spath<<loc<<"/"<<hw<<"/IOUT";
       mqtt_send(spath.str().c_str(),status["iout"].as_double(),ti);
 
 
@@ -118,7 +118,7 @@ void mqttStore::store(std::string loc,std::string hw,uint32_t ti,web::json::valu
 	
       spath.str(std::string());
       spath.clear();
-      spath<<loc<<"."<<hw<<".ON";
+      spath<<loc<<"/"<<hw<<"/ON";
       mqtt_send(spath.str().c_str(),1,ti);
       return;
     }
@@ -127,26 +127,26 @@ void mqttStore::store(std::string loc,std::string hw,uint32_t ti,web::json::valu
     {
       spath.str(std::string());
       spath.clear();
-      spath<<loc<<"."<<hw<<".VSET";
+      spath<<loc<<"/"<<hw<<"/VSET";
       mqtt_send(spath.str().c_str(),status["vset"].as_double(),ti);
       spath.str(std::string());
       spath.clear();
-      spath<<loc<<"."<<hw<<".VOUT";
+      spath<<loc<<"/"<<hw<<"/VOUT";
       mqtt_send(spath.str().c_str(),status["vout"].as_double(),ti);
       
       spath.str(std::string());
       spath.clear();
-      spath<<loc<<"."<<hw<<".ISET";
+      spath<<loc<<"/"<<hw<<"/ISET";
       mqtt_send(spath.str().c_str(),status["iset"].as_double(),ti);
 
       spath.str(std::string());
       spath.clear();
-      spath<<loc<<"."<<hw<<".PWR";
+      spath<<loc<<"/"<<hw<<"/PWR";
       mqtt_send(spath.str().c_str(),status["pwrstatus"].as_integer(),ti);
       
       spath.str(std::string());
       spath.clear();
-      spath<<loc<<"."<<hw<<".IOUT";
+      spath<<loc<<"/"<<hw<<"/IOUT";
       mqtt_send(spath.str().c_str(),status["iout"].as_double(),ti);
 
 
@@ -159,7 +159,7 @@ void mqttStore::store(std::string loc,std::string hw,uint32_t ti,web::json::valu
 	
       spath.str(std::string());
       spath.clear();
-      spath<<loc<<"."<<hw<<".ON";
+      spath<<loc<<"/"<<hw<<"/ON";
       mqtt_send(spath.str().c_str(),ist,ti);
       return;
     }
@@ -173,28 +173,28 @@ void mqttStore::store(std::string loc,std::string hw,uint32_t ti,web::json::valu
 	  
 	  spath.str(std::string());
 	  spath.clear();
-	  spath<<loc<<"."<<hw<<"."<<jsch["id"].as_integer()<<".VSET";
+	  spath<<loc<<"/"<<hw<<"/"<<jsch["id"].as_integer()<<"/VSET";
 	  mqtt_send(spath.str().c_str(),jsch["vset"].as_double(),ti);
 	  
 	  spath.str(std::string());
 	  spath.clear();
-	  spath<<loc<<"."<<hw<<"."<<jsch["id"].as_integer()<<".VOUT";
+	  spath<<loc<<"/"<<hw<<"/"<<jsch["id"].as_integer()<<"/VOUT";
 	  mqtt_send(spath.str().c_str(),jsch["vout"].as_double(),ti);
 	  
 	  spath.str(std::string());
 	  spath.clear();
-	  spath<<loc<<"."<<hw<<"."<<jsch["id"].as_integer()<<".ISET";
+	  spath<<loc<<"/"<<hw<<"/"<<jsch["id"].as_integer()<<"/ISET";
 	  mqtt_send(spath.str().c_str(),jsch["vset"].as_double(),ti);
 	  
 	  spath.str(std::string());
 	  spath.clear();
-	  spath<<loc<<"."<<hw<<"."<<jsch["id"].as_integer()<<".IOUT";
+	  spath<<loc<<"/"<<hw<<"/"<<jsch["id"].as_integer()<<"/IOUT";
 	  //std::cout<<"IOUT"<<jsch["iout"].as_double()<<std::endl;
 	  mqtt_send(spath.str().c_str(),jsch["iout"].as_double()*1E6,ti);
 
 	  spath.str(std::string());
 	  spath.clear();
-	  spath<<loc<<"."<<hw<<"."<<jsch["id"].as_integer()<<".RAMP";
+	  spath<<loc<<"/"<<hw<<"/"<<jsch["id"].as_integer()<<"/RAMP";
 	  mqtt_send(spath.str().c_str(),jsch["rampup"].as_double(),ti);
 
 	 }
@@ -210,32 +210,32 @@ void mqttStore::store(std::string loc,std::string hw,uint32_t ti,web::json::valu
 		  
 	  spath.str(std::string());
 	  spath.clear();
-	  spath<<loc<<"."<<hw<<"."<<jsch["slot"].as_integer()<<"."<<jsch["channel"].as_integer()<<".VSET";
+	  spath<<loc<<"/"<<hw<<"/"<<jsch["slot"].as_integer()<<"/"<<jsch["channel"].as_integer()<<"/VSET";
 	  mqtt_send(spath.str().c_str(),jsch["vset"].as_double(),ti);
 	  
 	  spath.str(std::string());
 	  spath.clear();
-	  spath<<loc<<"."<<hw<<"."<<jsch["slot"].as_integer()<<"."<<jsch["channel"].as_integer()<<".VOUT";
+	  spath<<loc<<"/"<<hw<<"/"<<jsch["slot"].as_integer()<<"/"<<jsch["channel"].as_integer()<<"/VOUT";
 	  mqtt_send(spath.str().c_str(),jsch["vout"].as_double(),ti);
 	  
 	  spath.str(std::string());
 	  spath.clear();
-	  spath<<loc<<"."<<hw<<"."<<jsch["slot"].as_integer()<<"."<<jsch["channel"].as_integer()<<".ISET";
+	  spath<<loc<<"/"<<hw<<"/"<<jsch["slot"].as_integer()<<"/"<<jsch["channel"].as_integer()<<"/ISET";
 	  mqtt_send(spath.str().c_str(),jsch["vset"].as_double(),ti);
 	  
 	  spath.str(std::string());
 	  spath.clear();
-	  spath<<loc<<"."<<hw<<"."<<jsch["slot"].as_integer()<<"."<<jsch["channel"].as_integer()<<".IOUT";
+	  spath<<loc<<"/"<<hw<<"/"<<jsch["slot"].as_integer()<<"/"<<jsch["channel"].as_integer()<<"/IOUT";
 	  mqtt_send(spath.str().c_str(),jsch["iout"].as_double(),ti);
 
 	  spath.str(std::string());
 	  spath.clear();
-	  spath<<loc<<"."<<hw<<"."<<jsch["slot"].as_integer()<<"."<<jsch["channel"].as_integer()<<".RAMP";
+	  spath<<loc<<"/"<<hw<<"/"<<jsch["slot"].as_integer()<<"/"<<jsch["channel"].as_integer()<<"/RAMP";
 	  mqtt_send(spath.str().c_str(),jsch["rampup"].as_double(),ti);
 
 	  spath.str(std::string());
 	  spath.clear();
-	  spath<<loc<<"."<<hw<<"."<<jsch["slot"].as_integer()<<"."<<jsch["channel"].as_integer()<<".STATUS";
+	  spath<<loc<<"/"<<hw<<"/"<<jsch["slot"].as_integer()<<"/"<<jsch["channel"].as_integer()<<"/STATUS";
 	  mqtt_send(spath.str().c_str(),jsch["status"].as_double(),ti);
 
 	 }
