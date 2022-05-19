@@ -29,7 +29,7 @@ void PmrManager::prepareDevices()
       delete it->second;
   _PmrInterfaceMap.clear();
   int ier = system("/bin/rm /var/log/pi/ftdi_devices");
-  ier = system("/opt/dhcal/bin/ListDevices.py");
+  ier = system("/usr/local/bin/ListDevices.py");
   std::string line;
   std::ifstream myfile("/var/log/pi/ftdi_devices");
   std::stringstream diflist;
