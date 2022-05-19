@@ -31,6 +31,7 @@ class IpdcManager : public fsmw
     void c_writereg(http_request m);
     void c_spillon(http_request m);
     void c_spilloff(http_request m);
+    void c_enable(http_request m);
     void c_setcalibcount(http_request m);
     void c_reloadcalib(http_request m);
     void c_calibon(http_request m);

@@ -324,6 +324,19 @@ void IpdcManager::c_settrigext(http_request m)
   par["BUSY"]=web::json::value::number(busy);
   Reply(status_codes::OK,par);  
 }
+void IpdcManager::c_enable(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logIpdc," Busy enable setting called ");
+  if (_ipdc==NULL)    {par["STATUS"]=web::json::value::string(U("NO Ipdc created"));        Reply(status_codes::OK,par);  return;}
+  uint32_t mask=utils::queryIntValue(m,"value",1);
+
+  _ipdc->setBusyEnable(mask);
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  par["MASK"]=web::json::value::number(mask);
+  Reply(status_codes::OK,par);  
+}
 
 void IpdcManager::c_status(http_request m)
 {
@@ -335,6 +348,7 @@ void IpdcManager::c_status(http_request m)
   rc["id"]=json::value::number(_ipdc->id());
   rc["mask"]=json::value::number(_ipdc->mask());
   rc["hard"]=json::value::number(_ipdc->hardReset());
+  rc["enable"]=json::value::number(_ipdc->busyEnable());
   rc["spill"]=json::value::number(_ipdc->spillCount());
   rc["busy1"]=json::value::number(_ipdc->busyCount(0));
   rc["spillon"]=json::value::number(_ipdc->spillOn());
@@ -392,6 +406,7 @@ void IpdcManager::initialise()
   this->addCommand("GETREG",std::bind(&IpdcManager::c_getregister,this,std::placeholders::_1));
 
   this->addCommand("SETEXTERNAL",std::bind(&IpdcManager::c_setexternaltrigger,this,std::placeholders::_1));
+  this->addCommand("ENABLE",std::bind(&IpdcManager::c_enable,this,std::placeholders::_1));
  
   
 }

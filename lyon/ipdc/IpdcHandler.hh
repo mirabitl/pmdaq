@@ -29,8 +29,10 @@ namespace ipdc
     uint32_t busyCount(uint8_t b);
     uint32_t spillOn();
     uint32_t spillOff();
+    uint32_t busyEnable();
     void setSpillOn(uint32_t nc);
     void setSpillOff(uint32_t nc);
+    void setBusyEnable(uint32_t nc);
     uint32_t beam();
     void setBeam(uint32_t nc);
     uint32_t hardReset();

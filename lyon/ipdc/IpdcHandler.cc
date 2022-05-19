@@ -128,8 +128,14 @@ uint32_t ipdc::IpdcHandler::spillCount(){return this->readRegister(USBDC_NSPILL)
 void ipdc::IpdcHandler::resetCounter(){this->writeRegister(USBDC_RESET_COUNTER,0x1);this->writeRegister(USBDC_RESET_COUNTER,0x0);}
 uint32_t ipdc::IpdcHandler::spillOn(){return this->readRegister(IPDC_SPILL_ON);}
 uint32_t ipdc::IpdcHandler::spillOff(){return this->readRegister(IPDC_SPILL_OFF);}
+uint32_t ipdc::IpdcHandler::busyEnable(){return this->readRegister(IPDC_BUSY_ENABLE);}
 void ipdc::IpdcHandler::setSpillOn(uint32_t nc){this->writeRegister(IPDC_SPILL_ON,nc);}
 void ipdc::IpdcHandler::setSpillOff(uint32_t nc){this->writeRegister(IPDC_SPILL_OFF,nc);}
+
+void ipdc::IpdcHandler::setBusyEnable(uint32_t nc){this->writeRegister(IPDC_BUSY_ENABLE,nc);}
+
+
+
 void ipdc::IpdcHandler::calibOn(){this->writeRegister(IPDC_CALIB_CTRL,0x2);}
 void ipdc::IpdcHandler::calibOff(){this->writeRegister(IPDC_CALIB_CTRL,0x0);}
 uint32_t ipdc::IpdcHandler::calibCount(){return this->readRegister(IPDC_CALIB_COUNT);}
