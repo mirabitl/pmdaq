@@ -227,6 +227,10 @@ int32_t pmr::PmrDriver::loadSLC(unsigned char* SLC,uint32_t slc_size)
   // SLC Size 
   //ret=registerRead(PMR_TEST_REG,&tdata);
   //printf ("LOADSLC ....reg read, ret=%d , data =0x%x\n",ret,tdata);
+  tdata = nb_asic; //0x0A;
+  ret=registerWrite(PMR_NBASIC_REG, tdata);// SLc size
+  printf ("NBASIC reg write(0x%08x at 0x%x), ret=%d\n",tdata, taddr, ret);
+  
   tdata = slc_size; //0x0A;
   ret=registerWrite(PMR_SLC_SIZE_REG, tdata);// SLc size
   printf ("SLc size reg write(0x%08x at 0x%x), ret=%d\n",tdata, taddr, ret);
