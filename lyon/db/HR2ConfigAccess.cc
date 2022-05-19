@@ -42,6 +42,7 @@ void HR2ConfigAccess::parseJsonFile(std::string jsf)
   
   try
     {
+      fprintf(stderr,"reading the file %s\n",jsf.c_str());
       // Open the file stream
       std::ifstream f(jsf);
       // String stream for holding the JSON file
@@ -50,9 +51,13 @@ void HR2ConfigAccess::parseJsonFile(std::string jsf)
       // Stream file stream into string stream
       strStream << f.rdbuf();
       f.close();  // Close the filestream
-      
+
+
+      //
+      fprintf(stderr,"Parsing the string\n");
       // Parse the string stream into a JSON object
       output = web::json::value::parse(strStream);
+      fprintf(stderr,"Parsing done\n");
     }
   catch (web::json::json_exception excep)
     {
@@ -66,7 +71,7 @@ void HR2ConfigAccess::parseJsonFile(std::string jsf)
       return;
     }
   
-
+  fprintf(stderr,"Call parseJson\n");
   this->parseJson();
 }
 void HR2ConfigAccess::parseJson()
