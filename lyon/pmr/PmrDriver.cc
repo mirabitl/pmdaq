@@ -356,8 +356,9 @@ uint32_t pmr::PmrDriver::readOneEvent(unsigned char* cbuf)
   while (header_size<PMR_HEADER_SIZE)
     {
       tret=ftdi_read_data(&theFtdi,&cbuf[idx],PMR_HEADER_SIZE);
-      //fprintf(stderr," tret header %d \n",tret);
+      
       if (tret==0) return 0; // No data on bus
+      fprintf(stderr," tret header %d \n",tret);
       header_size+=tret;
       idx+=tret;
     }
