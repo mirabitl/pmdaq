@@ -740,7 +740,7 @@ void PmrManager::Scurve(int mode, int thmin, int thmax, int step)
     mdcc = utils::findUrl(session(), "lyon_mbmdcc", 0);
     if (mdcc.compare("") == 0)
       {
-	mdcc = utils::findUrl(session(), "lyon_ipdcc", 0);
+	mdcc = utils::findUrl(session(), "lyon_ipdc", 0);
 	if (mdcc.compare("") == 0)
 	  return;
       }
