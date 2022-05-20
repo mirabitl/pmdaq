@@ -358,7 +358,7 @@ uint32_t pmr::PmrDriver::readOneEvent(unsigned char* cbuf)
       tret=ftdi_read_data(&theFtdi,&cbuf[idx],PMR_HEADER_SIZE);
       
       if (tret==0) return 0; // No data on bus
-      fprintf(stderr," tret header %d \n",tret);
+      fprintf(stderr,"%d tret header %d \n",_difId,tret);
       header_size+=tret;
       idx+=tret;
     }
@@ -369,11 +369,13 @@ uint32_t pmr::PmrDriver::readOneEvent(unsigned char* cbuf)
       while(frame_size <PMR_FRAME_SIZE)
 	{
 	  tret=ftdi_read_data(&theFtdi,&cbuf[idx],PMR_FRAME_SIZE);
-	  fprintf(stderr," tret frame %d \n",tret);
+	  if (tret!=0)
+	    fprintf(stderr," %d tret frame %d \n",_difId,tret);
 	  frame_size+=tret;
 	  idx+=tret;
 	  if ((tret<PMR_FRAME_SIZE) && (cbuf[idx-4]==PMR_EVENT_STOP))
 	    {
+	      fprintf(stderr," %d trailer seen \n",_difId);
 	      trailer=1;					
 	      break;
 	    }	
