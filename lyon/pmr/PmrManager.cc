@@ -276,11 +276,11 @@ void PmrManager::setAllMasks(uint64_t mask)
   PMF_INFO(_logPmr, " Changing Mask: " << std::hex << mask << std::dec);
   for (auto it = _hca->asicMap().begin(); it != _hca->asicMap().end(); it++)
   {
-    it->second.dumpBinary();
+    //it->second.dumpBinary();
     it->second.setMASK(0, mask);
     it->second.setMASK(1, mask);
     it->second.setMASK(2, mask);
-    it->second.dumpBinary();
+    //it->second.dumpBinary();
   }
   // Now loop on slowcontrol socket
   this->configureHR2();
@@ -296,7 +296,7 @@ void PmrManager::setCTEST(uint64_t mask)
     {
       bool on = ((mask >> i) & 1) == 1;
       it->second.setCTEST(i, on);
-      PMF_INFO(_logPmr, "CTEST: " << std::hex << mask << std::dec << " channel " << i << " " << on);
+      PMF_DEBUG(_logPmr, "CTEST: " << std::hex << mask << std::dec << " channel " << i << " " << on);
     }
   }
   // Now loop on slowcontrol socket
