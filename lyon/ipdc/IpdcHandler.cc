@@ -116,7 +116,7 @@ Bit 2 reload calib count
 #define USBDC_ID 0x1
 #define USBDC_NSPILL 0x3
 #define USBDC_VERSION 0x100
-#define USBDC_BUSY 0x11
+#define USBDC_BUSY 0x50
 #define USBDC_RESET_COUNTER 0x4
 
 uint32_t ipdc::IpdcHandler::version(){return this->readRegister(USBDC_VERSION);}

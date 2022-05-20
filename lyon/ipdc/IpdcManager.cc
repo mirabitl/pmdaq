@@ -344,13 +344,22 @@ void IpdcManager::c_status(http_request m)
   PMF_INFO(_logIpdc," Status called ");
   if (_ipdc==NULL)    {par["STATUS"]=web::json::value::string(U("NO Ipdc created"));        Reply(status_codes::OK,par);  return;}
   web::json::value rc;
+  uint32_t chen=_ipdc->busyEnable();
   rc["version"]=json::value::number(_ipdc->version());
   rc["id"]=json::value::number(_ipdc->id());
   rc["mask"]=json::value::number(_ipdc->mask());
   rc["hard"]=json::value::number(_ipdc->hardReset());
   rc["enable"]=json::value::number(_ipdc->busyEnable());
   rc["spill"]=json::value::number(_ipdc->spillCount());
-  rc["busy1"]=json::value::number(_ipdc->busyCount(0));
+  for (int i=0;i<16;i++)
+    {
+      if ((chen>>i)&1)
+	{
+	  std::stringstream sb;
+	  sb<<"busy"<<i;
+	  rc[sb.str()]=json::value::number(_ipdc->busyCount(i));
+	}
+    }
   rc["spillon"]=json::value::number(_ipdc->spillOn());
   rc["spilloff"]=json::value::number(_ipdc->spillOff());
   rc["calib"]=json::value::number(_ipdc->calibCount());
