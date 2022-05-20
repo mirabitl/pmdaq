@@ -178,7 +178,7 @@ void ipdc::IpdcHandler::reloadCalibCount(){
 void ipdc::IpdcHandler::resetTDC(uint8_t b){this->writeRegister(IPDC_HARD_RESET,b);}
 uint32_t ipdc::IpdcHandler::busyCount(uint8_t b)
 {
-  if (b==0)
+  if (b<16)
     return this->readRegister(USBDC_BUSY+(b&0xF));
   else
     return 0xbad;}
