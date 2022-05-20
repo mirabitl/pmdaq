@@ -363,6 +363,7 @@ uint32_t pmr::PmrDriver::readOneEvent(unsigned char* cbuf)
       idx+=tret;
     }
   // Read Frames
+  uint32_t nf=0;
   for (;;)
     {
       // Read on frame or A0
@@ -370,7 +371,7 @@ uint32_t pmr::PmrDriver::readOneEvent(unsigned char* cbuf)
 	{
 	  tret=ftdi_read_data(&theFtdi,&cbuf[idx],PMR_FRAME_SIZE);
 	  if (tret!=0)
-	    fprintf(stderr," %d tret frame %d \n",_difId,tret);
+	    fprintf(stderr," %d %d tret frame %d \n",_difId,nf++,tret);
 	  frame_size+=tret;
 	  idx+=tret;
 	  if ((tret<PMR_FRAME_SIZE) && (cbuf[idx-4]==PMR_EVENT_STOP))
