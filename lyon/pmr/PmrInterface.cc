@@ -109,7 +109,7 @@ void pmr::PmrInterface::readout()
     }
 
   _rd->resetFSM();
-  unsigned char cbuf[48*128*20+8];
+  unsigned char cbuf[64*128*20+8];
   _readoutCompleted=false;
   while (_readoutStarted)
     {
