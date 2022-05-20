@@ -457,6 +457,7 @@ web::json::value PmrManager::configureHR2()
   {
     std::stringstream ips;
     // Dummy IP address for Pmrs
+    ::usleep(50000);
     ips << "0.0.0." << it->first;
     _hca->prepareSlowControl(ips.str(), true);
 

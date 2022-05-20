@@ -279,9 +279,16 @@ int32_t pmr::PmrDriver::loadSLC(unsigned char* SLC,uint32_t slc_size)
   //	printf ("reset start slc load reg write (0x%08x at 0x%x), ret=%d\n",tdata, taddr, ret);
 
   //}
-  usleep(700000);// attendre la fin su slc pour lire status...
+  tdata=0;
+  uint32_t ntryr=0;
+  while (tdata==0)
+    {
+      usleep(500000);// attendre la fin su slc pour lire status...
 
-  ret=registerRead(PMR_SLC_STATUS_REG,&tdata);
+      ret=registerRead(PMR_SLC_STATUS_REG,&tdata);
+      ntryr++;
+      if (ntryr>10) break;
+    }
   printf ("slc status read, @%x ret=%d data = 0x%08x\n",PMR_SLC_STATUS_REG,ret,tdata);
   if ((tdata&0x03)==3)
     printf ("           SLC OK\n");
