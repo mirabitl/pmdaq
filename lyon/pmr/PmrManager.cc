@@ -703,10 +703,10 @@ void PmrManager::ScurveStep(std::string mdccUrl, std::string builderUrl, int thm
         if (it->second->status()->gtc > lastInBoard)
           lastInBoard = it->second->status()->gtc;
       nloop++;
-      if (nloop > 600 || !_running)
+      if (nloop > 6000 || !_running)
         break;
     }
-
+    nloop=0;
     while (lastEvent < (firstEvent + ntrg - 2))
     {
       ::usleep(100000);
