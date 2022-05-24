@@ -209,10 +209,10 @@ int32_t pmr::PmrDriver::setup()
   printf ("test ....reg read, ret=%d , data =0x%x\n",ret,tdata);
   if (tdata!=0xABCD1234)
     PM_ERROR(_logPmr,"Invalid Test register test 2 "<<std::hex<<tdata<<std::dec);
-  // Unset PowerPulsing
+  // set PowerPulsing
 
   ret=registerWrite(PMR_ID_REG,_difId);
-  this->setPowerPulsing(false);	
+  this->setPowerPulsing(true);	
   return 0;
 }
 
