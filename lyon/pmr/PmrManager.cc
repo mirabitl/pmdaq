@@ -669,7 +669,7 @@ void PmrManager::ScurveStep(std::string mdccUrl, std::string builderUrl, int thm
       this->setThresholds(512, threshold, 512);
     if (_sc_level == 2)
       this->setThresholds(512, 512, threshold);
-    ::sleep(2);
+    ::usleep(500000);
 
     web::json::value h;
     web::json::value ph;
