@@ -96,7 +96,7 @@ void pmr::PmrInterface::stop()
   this->publishState("STOPPED");
   
 }
-
+void pmr::PmrInterface::setRunning(bool t){_running=t;}
 void pmr::PmrInterface::readout()
 {
   PM_INFO(_logPmr,"Thread of dif "<<_status->id<<" is started");

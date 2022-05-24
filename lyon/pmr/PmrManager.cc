@@ -659,6 +659,7 @@ void PmrManager::ScurveStep(std::string mdccUrl, std::string builderUrl, int thm
       break;
     utils::sendCommand(mdccUrl, "PAUSE", json::value::null());
     usleep(100000);
+    for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++) it->second->setRunning(false);
     //this->setThresholds(thmax - vth * step, 512, 512);
     //::sleep(2);
     uint32_t threshold = thmax - vth * step;
@@ -692,6 +693,8 @@ void PmrManager::ScurveStep(std::string mdccUrl, std::string builderUrl, int thm
     ph["nextevent"] = json::value::number(firstEvent + 1);
     utils::sendCommand(builderUrl, "SETHEADER", ph);
     utils::sendCommand(mdccUrl, "RELOADCALIB", json::value::null());
+    for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++) it->second->setRunning(true);
+
     utils::sendCommand(mdccUrl, "RESUME", json::value::null());
 
     int nloop = 0, lastEvent = firstEvent, lastInBoard = firstInBoard;
@@ -722,6 +725,8 @@ void PmrManager::ScurveStep(std::string mdccUrl, std::string builderUrl, int thm
     PMF_INFO(_logPmr, "Step:" << vth << " Threshold:" << thmax - vth * step << " First:" << firstEvent << " Last:" << lastEvent);
     // printf("Step %d Th %d First %d Last %d \n",vth,thmax-vth*step,firstEvent,lastEvent);
     utils::sendCommand(mdccUrl, "PAUSE", json::value::null());
+    for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++) it->second->setRunning(false);
+
   }
   utils::sendCommand(mdccUrl, "CALIBOFF", json::value::null());
 }
