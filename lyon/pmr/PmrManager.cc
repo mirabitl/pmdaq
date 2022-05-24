@@ -669,7 +669,7 @@ void PmrManager::ScurveStep(std::string mdccUrl, std::string builderUrl, int thm
       this->setThresholds(512, threshold, 512);
     if (_sc_level == 2)
       this->setThresholds(512, 512, threshold);
-    ::sleep(2);
+    ::usleep(2000);
 
     web::json::value h;
     web::json::value ph;
@@ -695,7 +695,7 @@ void PmrManager::ScurveStep(std::string mdccUrl, std::string builderUrl, int thm
     utils::sendCommand(mdccUrl, "RESUME", json::value::null());
 
     int nloop = 0, lastEvent = firstEvent, lastInBoard = firstInBoard;
-    while (lastInBoard < (firstInBoard + ntrg - 2))
+    while (lastInBoard < (firstInBoard + ntrg - 0))
     {
       ::usleep(10000);
       for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
