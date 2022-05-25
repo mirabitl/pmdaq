@@ -13,6 +13,7 @@ pmr::PmrInterface::PmrInterface(pmr::FtdiDeviceInfo* ftd) : _rd(NULL),_state("CR
   sscanf(ftd->name,"FT101%d",&(_status->id));
   _readoutStarted=false;
   _readoutCompleted=true;
+  _sem.unlock();
 
 }
 void pmr::PmrInterface::setExternalTrigger(bool t) {_external=t;}
@@ -74,7 +75,9 @@ void pmr::PmrInterface::start()
       this->publishState("START_FAILED");
       return;
     }
+  _sem.lock();
   _rd->setAcquisitionMode(true,false,_external);
+  _sem.unlock();
   // _rd->setAcquisitionMode(true,true,_external);
   this->publishState("STARTED");
   PM_INFO(_logPmr,"Pmr "<<_status->id<<" is started");
@@ -92,7 +95,9 @@ void pmr::PmrInterface::stop()
       this->publishState("STOP_FAILED");
       return;
     }
+  _sem.lock();
   _rd->setAcquisitionMode(false,false,_external);
+  _sem.unlock();
   this->publishState("STOPPED");
   
 }
@@ -107,8 +112,9 @@ void pmr::PmrInterface::readout()
       _readoutStarted=false;
       return;
     }
-
+  _sem.lock();
   _rd->resetFSM();
+  _sem.unlock();
   unsigned char cbuf[64*128*20+8];
   _readoutCompleted=false;
   while (_readoutStarted)
@@ -119,10 +125,14 @@ void pmr::PmrInterface::readout()
 		
 		
       //printf("Trying to read \n");fflush(stdout);
+      _sem.lock();
       uint32_t nread=_rd->readOneEvent(cbuf);
+      _sem.unlock();
       //printf(" Je lis %d => %d \n",_status->id,nread);
       if (nread==0) continue;
+      _sem.lock();
       _rd->resetFSM();
+      _sem.unlock();
       //printf(" Je lis %d bytes => %d %x\n",_status->id,nread,_dsData);fflush(stdout);
       //this->publishData(nread);
       
@@ -181,9 +191,11 @@ void pmr::PmrInterface::destroy()
 
 void pmr::PmrInterface::configure(unsigned char* b,uint32_t nb)
 {
+  _sem.lock();
   _rd->loadSLC(b,nb);
   uint32_t tdata;
   _rd->registerRead(PMR_SLC_STATUS_REG,&tdata);
+  _sem.unlock();
   _status->slc=tdata;
   this->publishState("CONFIGURED");
 
