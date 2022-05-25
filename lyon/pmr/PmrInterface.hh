@@ -84,7 +84,7 @@ private:
   uint32_t _detid;
   bool _running,_readoutStarted,_readoutCompleted;
   bool _external;
-  std::mutex _sem;
+    std::mutex _sem;
 
 
 };
