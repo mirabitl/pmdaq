@@ -107,6 +107,7 @@ void  HR2ConfigAccess::prepareSlowControl(std::string ipadr,bool inverted)
   // Initialise
   _slcBytes=0;
   uint64_t eid=((uint64_t) utils::convertIP(ipadr))<<32;
+  bool debug=false;
   // Loop on 48 Asic maximum
   for (int ias=48;ias>=1;ias--)
     {
@@ -118,7 +119,8 @@ void  HR2ConfigAccess::prepareSlowControl(std::string ipadr,bool inverted)
 	  printf("\t ===> DIF %s ,Asic %d disabled\n",ipadr.c_str(),ias);
 	  continue;
 	}
-      printf("DIF %s ,Asic %d Found\n",ipadr.c_str(),ias);
+      if (debug)
+	printf("DIF %s ,Asic %d Found\n",ipadr.c_str(),ias);
       if (!inverted)
 	memcpy(&_slcBuffer[_slcBytes],im->second.ucPtr(),109);
       else
