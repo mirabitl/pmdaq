@@ -767,7 +767,7 @@ void PmrManager::Scurve(int mode, int thmin, int thmax, int step)
     // for (int i=0;i<64;i++) mask|=(1<<i);
     mask = 0xFFFFFFFFFFFFFFFF;
     this->setAllMasks(mask);
-    this->setCTEST(mask);
+    this->setCTEST(0);
     this->ScurveStep(mdcc, builder, thmin, thmax, step);
     return;
   }
