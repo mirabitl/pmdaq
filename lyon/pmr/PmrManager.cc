@@ -659,7 +659,7 @@ void PmrManager::ScurveStep(std::string mdccUrl, std::string builderUrl, int thm
       break;
     utils::sendCommand(mdccUrl, "PAUSE", json::value::null());
 
-    for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++) it->second->setRunning(false);
+    //for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++) it->second->setRunning(false);
     usleep(100000);
     //this->setThresholds(thmax - vth * step, 512, 512);
     //::sleep(2);
@@ -699,13 +699,16 @@ void PmrManager::ScurveStep(std::string mdccUrl, std::string builderUrl, int thm
     utils::sendCommand(mdccUrl, "RESUME", json::value::null());
 
     int nloop = 0, lastEvent = firstEvent, lastInBoard = firstInBoard;
-    while (lastInBoard < (firstInBoard + ntrg - 0))
+    while (lastInBoard < (firstInBoard + ntrg))
     {
       ::usleep(10000);
+      uint32_t mingtc=0xFFFFFFFF;
       for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
 
-        if (it->second->status()->gtc > lastInBoard)
-          lastInBoard = it->second->status()->gtc;
+        if (it->second->status()->gtc < mingtc)
+          mingtc = it->second->status()->gtc;
+
+      if (mingtc>lastInBoard) lastInBoard=mingtc;
       nloop++;
       if (nloop > 6000 || !_running)
         break;

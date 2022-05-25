@@ -147,16 +147,20 @@ void pmr::PmrInterface::readout()
 	((uint64_t) cbuf[PMR_ABCID_SHIFT+5]);
 
       _status->bcid=LBC;//PmrABCID(cbuf);
-      fprintf(stderr,"ABCID %lx \n",LBC);
+      //fprintf(stderr,"ABCID %lx \n",LBC);
       _status->bytes+=nread;
       if (_dsData==NULL) continue;;
       memcpy((unsigned char*) _dsData->payload(),cbuf,nread);
       //printf(" Je envoie %d => %d  avec %x \n",_status->id,nread,_dsData);fflush(stdout);
       _dsData->publish(_status->bcid,_status->gtc,nread);
-      //if (_status->gtc%50 ==0)
-      fprintf(stderr,"ICI Je publie ABCID  %lx \n",_status->bcid);
-      fprintf(stderr,"ICI Je publie  GTC %d \n",_status->gtc);
-      fprintf(stderr,"ICI Je publie  NREAD %d \n",nread);
+      if (_status->gtc%10 ==0)
+	PM_INFO(_logPmr,"dif "<<_status->id<<" bcid "<<std::hex<<
+		_status->bcid<<std::dec<<
+		" gtc "<<_status->gtc<<
+		" size"<<nread);
+      //fprintf(stderr,"ICI Je publie ABCID  %lx \n",_status->bcid);
+      //fprintf(stderr,"ICI Je publie  GTC %d \n",_status->gtc);
+      //fprintf(stderr,"ICI Je publie  NREAD %d \n",nread);
 
       //_rd->resetFSM();
     }
