@@ -1,0 +1,12 @@
+#!/bin/bash
+sudo systemctl disable BmpPaho.service 
+sudo service BmpPaho stop
+
+g++ -o ../bin/BmpPaho.exe -I../include ../src/PahoInterface.cc BmpPaho.cc -lcpprest -lpaho-mqtt3a -l paho-mqttpp3 -lpthread 
+
+sudo mkdir -p /usr/local/paho/bin
+sudo cp ../bin/BmpPaho.exe /usr/local/paho/bin/
+sudo sed -e 's,SERVICENAME,BmpPaho,g' ../etc/example.service > BmpPaho.service
+sudo cp BmpPaho.service /lib/systemd/system/
+sudo systemctl enable BmpPaho.service 
+sudo service BmpPaho start

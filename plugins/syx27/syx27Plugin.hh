@@ -20,8 +20,8 @@ using namespace std;
     virtual void close();
     virtual void registerCommands();
     // Access to the interface
-    void lock() {_bsem.lock();}
-    void unlock() {_bsem.unlock();}
+    void lock() {;}//_bsem.lock();}
+    void unlock() {;}//_bsem.unlock();}
 
     caen::HVCaenInterface* getHVCaenInterface(){return _hv;}
     // Status

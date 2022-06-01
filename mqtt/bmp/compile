@@ -1,0 +1,1 @@
+g++ -o ../bin/bmppaho.exe -I../include ../src/PahoInterface.cc BmpPaho.cc -lcpprest -lpaho-mqtt3a -l paho-mqttpp3 -lpthread 

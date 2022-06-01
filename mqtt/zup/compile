@@ -1,0 +1,1 @@
+g++ -o ../bin/ZupPaho.exe -I../include ../src/PahoInterface.cc Zup.cxx ZupPaho.cc -lcpprest  -lpaho-mqtt3a -lpaho-mqttpp3 -lpthread

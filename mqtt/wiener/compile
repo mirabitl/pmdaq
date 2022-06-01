@@ -1,0 +1,1 @@
+g++ -o ../bin/WienerPaho.exe -I../include ../src/PahoInterface.cc WienerSnmp.cc WienerPaho.cc -lcpprest  -lpaho-mqtt3a -lpaho-mqttpp3 -lpthread 
