@@ -1,7 +1,7 @@
 #!/bin/bash
 sudo systemctl disable WienerPaho.service 
 sudo service WienerPaho stop
-
+mkdir -p ../bin
 g++ -o ../bin/WienerPaho.exe -I../include ../src/PahoInterface.cc WienerSnmp.cc WienerPaho.cc -lcpprest  -lpaho-mqtt3a -lpaho-mqttpp3 -lpthread 
 
 sudo mkdir -p /usr/local/paho/bin
@@ -9,4 +9,4 @@ sudo cp ../bin/WienerPaho.exe /usr/local/paho/bin/
 sudo sed -e 's,SERVICENAME,WienerPaho,g' ../etc/example.service > WienerPaho.service
 sudo cp WienerPaho.service /lib/systemd/system/
 sudo systemctl enable WienerPaho.service 
-sudo service WienerPaho start
+sudo service WienerPaho stop
