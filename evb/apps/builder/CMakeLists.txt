@@ -22,7 +22,7 @@ add_library(evb_builder SHARED ${SRCS} ${HEADERS})
 include(../../../CMake.defs)
 
 
-target_link_libraries(evb_builder PRIVATE  zmq pmdaq evb ${PMDAQ_LIBS} )
+target_link_libraries(evb_builder PRIVATE  paho-mqtt3a paho-mqttpp3  zmq pmdaq evb ${PMDAQ_LIBS} )
 
 
 
