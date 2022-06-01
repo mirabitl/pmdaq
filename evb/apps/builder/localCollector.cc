@@ -68,7 +68,7 @@ void pm::builder::collector::publish(std::string topic,std::string value)
    PMF_INFO(_logCollector,"\nSending message...");
    mqtt::message_ptr pubmsg = mqtt::make_message(mqtt::string_ref(si.str().c_str()), mqtt::binary_ref(value.c_str()));
    pubmsg->set_qos(0);
-    _cli->publish(pubmsg)->wait_for(std::chrono::seconds(4));
+    _cli->publish(pubmsg)->wait_for(std::chrono::seconds(2));
 }
 void pm::builder::collector::end()
 {
@@ -161,8 +161,10 @@ void pm::builder::collector::configure(http_request m)
   par["status"]=json::value::string(U("OK"));
   par["sourceRegistered"] = array_keys;
   par["processorRegistered"] = parray_keys;
-  Reply(status_codes::OK,par);
+
   publish("STATE",state());
+  Reply(status_codes::OK,par);
+
   return;
 }
 
@@ -183,8 +185,10 @@ void pm::builder::collector::start(http_request m)
   PMF_INFO(_logCollector, "Builder Run " << run << " is started ");
   par["status"] = json::value::string(U("STARTED"));
   par["run"] = json::value::number(run);
-  Reply(status_codes::OK,par);
+
   publish("STATE",state());
+  Reply(status_codes::OK,par);
+
   return;
 }
 void pm::builder::collector::stop(http_request m)
@@ -196,8 +200,9 @@ void pm::builder::collector::stop(http_request m)
   PMF_INFO(_logCollector, "Builder is stopped \n");
   fflush(stdout);
   par["status"] = json::value::string(U("STOPPED"));
-  Reply(status_codes::OK,par);
   publish("STATE",state());
+  Reply(status_codes::OK,par);
+
   return;
 
 }
@@ -217,8 +222,9 @@ void pm::builder::collector::halt(http_request m)
   _merger->clear();
 
   par["status"] = json::value::string(U("HALTED"));
-  Reply(status_codes::OK,par);
   publish("STATE",state());
+  Reply(status_codes::OK,par);
+
   return;
 
 }
@@ -238,9 +244,11 @@ void pm::builder::collector::status(http_request m)
       
       par["answer"] = json::value::string(U("NO merger created yet"));
     }
-  PMF_DEBUG(_logCollector, "STATUS"<<par);  
-  Reply(status_codes::OK,par);
+  PMF_DEBUG(_logCollector, "STATUS"<<par);
+  publish("STATE",state());
   publish("STATUS",par.serialize());
+  Reply(status_codes::OK,par);
+
 }
 
 void pm::builder::collector::purge(http_request m)
