@@ -3,7 +3,7 @@
 #include "pmMerger.hh"
 #include "stdafx.hh"
 #include <chrono>
-#include "mqtt/async_client.h"
+#include "mqtt/client.h"
 #include "mqtt/message.h"
 #include "utils.hh"
 
@@ -37,7 +37,7 @@ namespace pm
       pm::pmMerger* _merger;
       bool _running,_readout;
       zmq::context_t* _context;
-      std::shared_ptr<mqtt::async_client> _cli;
+      std::shared_ptr<mqtt::client> _cli;
       std::thread g_loop;
       uint32_t _period;
       bool _looping;

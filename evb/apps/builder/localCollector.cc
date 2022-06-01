@@ -36,7 +36,7 @@ void pm::builder::collector::initialise()
       std::stringstream ss;
       ss<<session()<<"/"<<name()<<"/"<<instance();
       _brokerid=ss.str();
-      _cli = std::make_shared<mqtt::async_client>(params()["broker"].as_string(), _brokerid);
+      _cli = std::make_shared<mqtt::client>(params()["broker"].as_string(), _brokerid);
       int keepalive = 0;
 
       auto connOpts = mqtt::connect_options_builder()
@@ -49,10 +49,8 @@ void pm::builder::collector::initialise()
       // Connect to the server
 
       PMF_INFO(_logCollector,"Connecting to the MQTT server " <<params()["broker"].as_string());
-      auto tok = _cli->connect(connOpts);
-
-      PMF_INFO(_logCollector,"Waiting for the connection...");
-      tok->wait();
+      _cli->connect(connOpts);
+      
       PMF_INFO(_logCollector,"  ...OK");
     }
   publish("STATE",state());
@@ -68,7 +66,7 @@ void pm::builder::collector::publish(std::string topic,std::string value)
    PMF_INFO(_logCollector,"\nSending message...");
    mqtt::message_ptr pubmsg = mqtt::make_message(mqtt::string_ref(si.str().c_str()), mqtt::binary_ref(value.c_str()));
    pubmsg->set_qos(0);
-    _cli->publish(pubmsg)->wait_for(std::chrono::seconds(2));
+   _cli->publish(pubmsg);
 }
 void pm::builder::collector::end()
 {
