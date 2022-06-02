@@ -1,7 +1,7 @@
 import time
 import json
 import paho.mqtt.client as paho
-
+import os
 class monitor:
     def __init__(self,host,port,session):
         """
@@ -54,7 +54,8 @@ class monitor:
                 sta=json.loads(message.payload.decode("utf-8"))
                 #print(loc,hw,ti,sta)
     def Connect(self):
-        self.client= paho.Client("client-001") 
+        self.cname="monitor-%d" % os.getpid()
+        self.client= paho.Client(self.cname) 
         ######Bind function to callback
        
 
@@ -109,6 +110,21 @@ class monitor:
             sti=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x["ctime"]))
             #if (device=="BMP" and x["status"]["name"]==device):
             print("%s P=%.2f mbar T=%.2f K %.2f C " % (sti,x["content"]["pressure"],x["content"]["temperature"]+273.15,x["content"]["temperature"]))
+
+    def printZup(self,npmax=1):
+        topic=self.session+"/ZupPaho/0/STATUS"
+        if (not topic in self.rcv_msg.keys()):
+            return
+        nm=len(self.rcv_msg[topic])
+        nr=0
+        for i in range(nm-1,-1,-1):
+            if (nr>=npmax):
+                break
+            nr=nr+1
+            x=self.rcv_msg[topic][i]
+            sti=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x["ctime"]))
+            #if (device=="BMP" and x["status"]["name"]==device):
+            print("%s Vset %.2f  Vout %.2f  Iout %.2f Status %d " % (sti,x["content"]["vset"],x["content"]["vout"],x["content"]["iout"],x["content"]["status"]))
 
     def LV_ON(self,hw="ZupPaho"):
         self.sendCommand(hw,"ON",{})
