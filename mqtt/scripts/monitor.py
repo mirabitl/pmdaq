@@ -125,6 +125,21 @@ class monitor:
             sti=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x["ctime"]))
             #if (device=="BMP" and x["status"]["name"]==device):
             print("%s Vset %.2f  Vout %.2f  Iout %.2f Status %d " % (sti,x["content"]["vset"],x["content"]["vout"],x["content"]["iout"],x["content"]["status"]))
+            
+    def printGenesys(self,npmax=1):
+        topic=self.session+"/GenesysPaho/0/STATUS"
+        if (not topic in self.rcv_msg.keys()):
+            return
+        nm=len(self.rcv_msg[topic])
+        nr=0
+        for i in range(nm-1,-1,-1):
+            if (nr>=npmax):
+                break
+            nr=nr+1
+            x=self.rcv_msg[topic][i]
+            sti=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x["ctime"]))
+            #if (device=="BMP" and x["status"]["name"]==device):
+            print("%s Vset %.2f  Vout %.2f  Iout %.2f  " % (sti,x["content"]["vset"],x["content"]["vout"],x["content"]["iout"]))
 
     def LV_ON(self,hw="ZupPaho"):
         self.sendCommand(hw,"ON",{})
