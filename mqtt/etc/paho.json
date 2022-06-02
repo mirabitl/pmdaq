@@ -3,6 +3,8 @@
     "port":1883,
     "session":"dome_sdhcal",
     "wiener":{"address":"lyoilchv01.ipnl.in2p3.fr","first":0,"last":15},
-    "zup":{"device":"/dev/ttyUSB0","port":1}
+    "sy1527":{"account":"admin/admin@lyoac28.in2p3.fr","first":6,"last":11},
+    "zup":{"device":"/dev/ttyUSB0","port":1},
+    "genesys":{"device":"/dev/ttyUSB1","port":1}
 
 }

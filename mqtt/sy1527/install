@@ -1,0 +1,13 @@
+#!/bin/bash
+sudo systemctl disable Sy1517Paho.service 
+sudo service Sy1517Paho stop
+mkdir -p ../bin
+
+g++ -o ../bin/Sy1527Paho.exe -DUNIX -I../include ../src/PahoInterface.cc HVCaenInterface.cxx Sy1527Paho.cc -lcpprest  -lpaho-mqtt3a -lpaho-mqttpp3 -lpthread -lcaenhvwrapper
+
+sudo mkdir -p /usr/local/paho/bin
+sudo cp ../bin/Sy1517Paho.exe /usr/local/paho/bin/
+sudo sed -e 's,SERVICENAME,Sy1517Paho,g' ../etc/example.service > Sy1517Paho.service
+sudo cp Sy1517Paho.service /lib/systemd/system/
+sudo systemctl enable Sy1517Paho.service 
+sudo service Sy1517Paho stop
