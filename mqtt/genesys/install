@@ -1,0 +1,11 @@
+#!/bin/bash
+sudo systemctl disable GenesysPaho.service 
+sudo service GenesysPaho stop
+mkdir -p ../bin
+g++ -o ../bin/GenesysPaho.exe -I../include ../src/PahoInterface.cc Genesys.cxx GenesysPaho.cc -lcpprest  -lpaho-mqtt3a -lpaho-mqttpp3 -lpthread
+sudo mkdir -p /usr/local/paho/bin
+sudo cp ../bin/GenesysPaho.exe /usr/local/paho/bin/
+sudo sed -e 's,SERVICENAME,GenesysPaho,g' ../etc/example.service > GenesysPaho.service
+sudo cp GenesysPaho.service /lib/systemd/system/
+sudo systemctl enable GenesysPaho.service 
+sudo service GenesysPaho stop

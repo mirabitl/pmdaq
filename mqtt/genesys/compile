@@ -1,0 +1,1 @@
+g++ -o ../bin/GenesysPaho.exe -I../include ../src/PahoInterface.cc Genesys.cxx GenesysPaho.cc -lcpprest  -lpaho-mqtt3a -lpaho-mqttpp3 -lpthread
