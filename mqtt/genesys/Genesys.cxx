@@ -222,7 +222,7 @@ void genesys::GsDevice::readCommand(std::string cmd)
       //  fprintf(stderr,"waiting for select \n");
       rv = select(fd1 + 1, &set, NULL, NULL, &timeout);
       ntry++;
-      if (ntry>10) break;
+      if (ntry>100) break;
       if(rv == -1)
 	{
 	  cout<<" select failed"<<endl;
@@ -231,7 +231,7 @@ void genesys::GsDevice::readCommand(std::string cmd)
 	}
       else if(rv == 0)
 	{
-	  cout<<" select empty "<<ntry<<endl;
+	  //cout<<" select empty "<<ntry<<endl;
 	  //fprintf(stderr,"Nothing in select \n"); /* a timeout occured */
 	  break;
 	}
@@ -266,11 +266,12 @@ void genesys::GsDevice::INFO()
   int ntry=0;
   do
     {
+      ::usleep(100000);
       this->readCommand("IDN?\r");
       ntry++;
       if (ntry>10) return;
       //std::cout<<boost::format(" Device %s \n") % _value;
-    } while (_value.compare("LAMBDA,GEN6-200")!=0);
+    } while (_value.substr(0,6).compare("LAMBDA")!=0);
   
   std::cout<<" ID: "<<_value<<endl;
   this->readCommand("MODE?\r");
@@ -299,6 +300,10 @@ void genesys::GsDevice::INFO()
   this->readCommand("OUT?\r");
   //std::cout<<boost::format("Output Status=>\n\t %s \n") % _value;
   std::cout<<" Out: "<<_value<<std::endl;
+  if (_value.compare("ON")==0)
+    _status=1;
+  else
+    _status=0;
   _lastInfo=time(0);
   /*
     wr=write(fd1,":MDL?;",6);usleep(50000);
@@ -338,6 +343,6 @@ web::json::value genesys::GsDevice::Status()
   r["vout"]=web::json::value::number(_vRead);
   r["iset"]=web::json::value::number(_iSet);
   r["iout"]=web::json::value::number(_iRead);
-  //  r["status"]=web::json::value::number(_status);
+  r["status"]=web::json::value::number(_status);
   return r;
 }

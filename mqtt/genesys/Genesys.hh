@@ -56,7 +56,7 @@ namespace genesys
     
     unsigned char buff[1024];
     std::string _value;
-    int wr,rd,nbytes,tries;
+    int wr,rd,nbytes,tries,_status;
     float _vSet,_vRead,_iSet,_iRead;
     time_t _lastInfo;
   };
