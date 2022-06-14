@@ -35,33 +35,33 @@ void PmrManager::prepareDevices()
   std::stringstream diflist;
 
   if (myfile.is_open())
-  {
-    while (myfile.good())
     {
-      getline(myfile, line);
-      pmr::FtdiDeviceInfo *difi = new pmr::FtdiDeviceInfo();
-      memset(difi, 0, sizeof(pmr::FtdiDeviceInfo));
-      sscanf(line.c_str(), "%x %x %s", &difi->vendorid, &difi->productid, difi->name);
-      if (strncmp(difi->name, "FT101", 5) == 0)
-      {
-        sscanf(difi->name, "FT101%d", &difi->id);
-        difi->type = 0;
-        std::pair<uint32_t, pmr::FtdiDeviceInfo *> p(difi->id, difi);
-        theFtdiDeviceInfoMap_.insert(p);
-      }
-      if (strncmp(difi->name, "DCCCCC", 6) == 0)
-      {
-        sscanf(difi->name, "DCCCCC%d", &difi->id);
-        difi->type = 0x10;
-      }
+      while (myfile.good())
+	{
+	  getline(myfile, line);
+	  pmr::FtdiDeviceInfo *difi = new pmr::FtdiDeviceInfo();
+	  memset(difi, 0, sizeof(pmr::FtdiDeviceInfo));
+	  sscanf(line.c_str(), "%x %x %s", &difi->vendorid, &difi->productid, difi->name);
+	  if (strncmp(difi->name, "FT101", 5) == 0)
+	    {
+	      sscanf(difi->name, "FT101%d", &difi->id);
+	      difi->type = 0;
+	      std::pair<uint32_t, pmr::FtdiDeviceInfo *> p(difi->id, difi);
+	      theFtdiDeviceInfoMap_.insert(p);
+	    }
+	  if (strncmp(difi->name, "DCCCCC", 6) == 0)
+	    {
+	      sscanf(difi->name, "DCCCCC%d", &difi->id);
+	      difi->type = 0x10;
+	    }
+	}
+      myfile.close();
     }
-    myfile.close();
-  }
   else
-  {
-    // std::cout << "Unable to open file"<<std::endl;
-    PMF_FATAL(_logPmr, " Unable to open /var/log/pi/ftdi_devices");
-  }
+    {
+      // std::cout << "Unable to open file"<<std::endl;
+      PMF_FATAL(_logPmr, " Unable to open /var/log/pi/ftdi_devices");
+    }
 
   for (auto it = theFtdiDeviceInfoMap_.begin(); it != theFtdiDeviceInfoMap_.end(); it++)
     PMF_INFO(_logPmr, "Device found and register " << it->first << " with info " << it->second->vendorid << " " << it->second->productid << " " << it->second->name << " " << it->second->type);
@@ -77,28 +77,28 @@ void PmrManager::scan(http_request m)
   std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
   PMF_INFO(_logPmr, " CMD: SCANDEVICE clear Maps");
   for (auto it = dm.begin(); it != dm.end(); it++)
-  {
-    if (it->second != NULL)
-      delete it->second;
-  }
+    {
+      if (it->second != NULL)
+	delete it->second;
+    }
   dm.clear();
   // _ndif=0;
   std::vector<uint32_t> vids;
   web::json::value array;
   uint32_t ndev = 0;
   for (auto it = fm.begin(); it != fm.end(); it++)
-  {
-    PMF_INFO(_logPmr, "Creating " << it->second->name);
-    PmrInterface *d = new PmrInterface(it->second);
-    PMF_INFO(_logPmr, "After Creating " << it->second->name);
-    this->getPmrMap().insert(std::make_pair(it->first, d));
-    PMF_INFO(_logPmr, " CMD: SCANDEVICE created PmrInterface @ " << std::hex << d << std::dec);
-    web::json::value jd;
-    jd["detid"] = json::value::number(d->detectorId());
-    jd["sourceid"] = json::value::number(it->first);
-    vids.push_back((d->detectorId() << 16 | it->first));
-    array[ndev++] = jd;
-  }
+    {
+      PMF_INFO(_logPmr, "Creating " << it->second->name);
+      PmrInterface *d = new PmrInterface(it->second);
+      PMF_INFO(_logPmr, "After Creating " << it->second->name);
+      this->getPmrMap().insert(std::make_pair(it->first, d));
+      PMF_INFO(_logPmr, " CMD: SCANDEVICE created PmrInterface @ " << std::hex << d << std::dec);
+      web::json::value jd;
+      jd["detid"] = json::value::number(d->detectorId());
+      jd["sourceid"] = json::value::number(it->first);
+      vids.push_back((d->detectorId() << 16 | it->first));
+      array[ndev++] = jd;
+    }
 
   par["status"] = json::value::string(U("done"));
   par["devices"] = array;
@@ -113,52 +113,52 @@ void PmrManager::fsm_initialise(http_request m)
   _vDif.clear();
 
   if (!utils::isMember(params(), "dif"))
-  {
-    PMF_ERROR(_logPmr, " No dif tag in params()");
-    par["status"] = json::value::string(U("Missing dif tag"));
-    Reply(status_codes::OK, par);
-    return;
-  }
+    {
+      PMF_ERROR(_logPmr, " No dif tag in params()");
+      par["status"] = json::value::string(U("Missing dif tag"));
+      Reply(status_codes::OK, par);
+      return;
+    }
   auto jPmr = params()["dif"];
 
   // Download the configuration
 
   if (_hca == NULL)
-  {
-    std::cout << "Create config acccess" << std::endl;
-    _hca = new HR2ConfigAccess();
-    _hca->clear();
-  }
+    {
+      std::cout << "Create config acccess" << std::endl;
+      _hca = new HR2ConfigAccess();
+      _hca->clear();
+    }
   std::cout << " jPmr " << jPmr << std::endl;
   if (utils::isMember(jPmr, "json"))
-  {
-    web::json::value jPmrjson = jPmr["json"];
-    if (utils::isMember(jPmrjson, "file"))
     {
-      _hca->parseJsonFile(jPmrjson["file"].as_string());
+      web::json::value jPmrjson = jPmr["json"];
+      if (utils::isMember(jPmrjson, "file"))
+	{
+	  _hca->parseJsonFile(jPmrjson["file"].as_string());
+	}
+      else if (utils::isMember(jPmrjson, "url"))
+	{
+	  _hca->parseJsonUrl(jPmrjson["url"].as_string());
+	}
     }
-    else if (utils::isMember(jPmrjson, "url"))
-    {
-      _hca->parseJsonUrl(jPmrjson["url"].as_string());
-    }
-  }
   if (utils::isMember(jPmr, "db"))
-  {
-    web::json::value jPmrdb = jPmr["db"];
-    PMF_ERROR(_logPmr, "Parsing:" << jPmrdb["state"].as_string() << jPmrdb["mode"].as_string());
+    {
+      web::json::value jPmrdb = jPmr["db"];
+      PMF_ERROR(_logPmr, "Parsing:" << jPmrdb["state"].as_string() << jPmrdb["mode"].as_string());
 
-    if (jPmrdb["mode"].as_string().compare("mongo") == 0)
-      _hca->parseMongoDb(jPmrdb["state"].as_string(), jPmrdb["version"].as_integer());
+      if (jPmrdb["mode"].as_string().compare("mongo") == 0)
+	_hca->parseMongoDb(jPmrdb["state"].as_string(), jPmrdb["version"].as_integer());
 
-    PMF_ERROR(_logPmr, "End of parseDB " << _hca->asicMap().size());
-  }
+      PMF_ERROR(_logPmr, "End of parseDB " << _hca->asicMap().size());
+    }
   if (_hca->asicMap().size() == 0)
-  {
-    PMF_ERROR(_logPmr, " No ASIC found in the configuration ");
-    par["status"] = json::value::string(U("No ASIC found in the configuration"));
-    Reply(status_codes::OK, par);
-    return;
-  }
+    {
+      PMF_ERROR(_logPmr, " No ASIC found in the configuration ");
+      par["status"] = json::value::string(U("No ASIC found in the configuration"));
+      Reply(status_codes::OK, par);
+      return;
+    }
   PMF_INFO(_logPmr, "ASIC found in the configuration " << _hca->asicMap().size());
   // Initialise the network
   std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
@@ -166,43 +166,43 @@ void PmrManager::fsm_initialise(http_request m)
 
   vint.clear();
   for (auto x : _hca->asicMap())
-  {
-    // only MSB is used
-    uint32_t eip = ((x.first) >> 56) & 0XFF;
-    std::map<uint32_t, PmrInterface *>::iterator idif = dm.find(eip);
-    if (idif == dm.end())
-      continue;
-    if (std::find(vint.begin(), vint.end(), eip) != vint.end())
-      continue;
+    {
+      // only MSB is used
+      uint32_t eip = ((x.first) >> 56) & 0XFF;
+      std::map<uint32_t, PmrInterface *>::iterator idif = dm.find(eip);
+      if (idif == dm.end())
+	continue;
+      if (std::find(vint.begin(), vint.end(), eip) != vint.end())
+	continue;
 
-    PMF_INFO(_logPmr, " New Pmr found in db " << std::hex << eip << std::dec);
-    vint.push_back(eip);
+      PMF_INFO(_logPmr, " New Pmr found in db " << std::hex << eip << std::dec);
+      vint.push_back(eip);
 
-    _vDif.push_back(idif->second);
-    PMF_INFO(_logPmr, " Registration done for " << eip);
-  }
+      _vDif.push_back(idif->second);
+      PMF_INFO(_logPmr, " Registration done for " << eip);
+    }
   // std::string network=
   //  Connect to the event builder
   if (_context == NULL)
     _context = new zmq::context_t(1);
 
   for (auto x : _vDif)
-  {
-    PMF_INFO(_logPmr, " Creating pusher for "<<x->detectorId()<<" "<< x->status()->id);
-    /** Old single method
-  zmPusher* push=new zmPusher(_context,x->detectorId(),x->status()->id);
-  push->connect(params()["publish"].as_string());
-    */
+    {
+      PMF_INFO(_logPmr, " Creating pusher for "<<x->detectorId()<<" "<< x->status()->id);
+      /** Old single method
+	  zmPusher* push=new zmPusher(_context,x->detectorId(),x->status()->id);
+	  push->connect(params()["publish"].as_string());
+      */
 
-    pm::pmSender *push = new pm::pmSender(_context, x->detectorId(), x->status()->id);
-    // ds->connect(params()["pushdata"].as_string());
-    push->autoDiscover(session(), "evb_builder", "collectingPort");
-    // for (uint32_t i=0;i<_mStream.size();i++)
-    //	ds->connect(_mStream[i]);
-    push->collectorRegister();
-    PMF_INFO(_logPmr, " Call initialise "<<x->detectorId()<<" "<< x->status()->id);
-    x->initialise(push);
-  }
+      pm::pmSender *push = new pm::pmSender(_context, x->detectorId(), x->status()->id);
+      // ds->connect(params()["pushdata"].as_string());
+      push->autoDiscover(session(), "evb_builder", "collectingPort");
+      // for (uint32_t i=0;i<_mStream.size();i++)
+      //	ds->connect(_mStream[i]);
+      push->collectorRegister();
+      PMF_INFO(_logPmr, " Call initialise "<<x->detectorId()<<" "<< x->status()->id);
+      x->initialise(push);
+    }
 
   par["status"] = json::value::string(U("initialised"));
   Reply(status_codes::OK, par);
@@ -213,19 +213,19 @@ void PmrManager::setThresholds(uint16_t b0, uint16_t b1, uint16_t b2, uint32_t i
 
   PMF_INFO(_logPmr, " Changin thresholds: " << b0 << "," << b1 << "," << b2);
   for (auto it = _hca->asicMap().begin(); it != _hca->asicMap().end(); it++)
-  {
-    if (idif != 0)
     {
-      uint32_t ip = (((it->first) >> 32 & 0XFFFFFFFF) >> 16) & 0xFFFF;
-      printf("%lx %x %x \n", (it->first >> 32), ip, idif);
-      if (idif != ip)
-        continue;
+      if (idif != 0)
+	{
+	  uint32_t ip = (((it->first) >> 32 & 0XFFFFFFFF) >> 16) & 0xFFFF;
+	  printf("%lx %x %x \n", (it->first >> 32), ip, idif);
+	  if (idif != ip)
+	    continue;
+	}
+      it->second.setB0(b0);
+      it->second.setB1(b1);
+      it->second.setB2(b2);
+      // it->second.setHEADER(0x56);
     }
-    it->second.setB0(b0);
-    it->second.setB1(b1);
-    it->second.setB2(b2);
-    // it->second.setHEADER(0x56);
-  }
   // Now loop on slowcontrol socket
   this->configureHR2();
   ::usleep(10);
@@ -235,10 +235,10 @@ void PmrManager::setGain(uint16_t gain)
 
   PMF_INFO(_logPmr, " Changing Gain: " << gain);
   for (auto it = _hca->asicMap().begin(); it != _hca->asicMap().end(); it++)
-  {
-    for (int i = 0; i < 64; i++)
-      it->second.setPAGAIN(i, gain);
-  }
+    {
+      for (int i = 0; i < 64; i++)
+	it->second.setPAGAIN(i, gain);
+    }
   // Now loop on slowcontrol socket
   this->configureHR2();
   ::usleep(10);
@@ -248,10 +248,10 @@ void PmrManager::setMask(uint32_t level, uint64_t mask)
 {
   PMF_INFO(_logPmr, " Changing Mask: " << level << " " << std::hex << mask << std::dec);
   for (auto it = _hca->asicMap().begin(); it != _hca->asicMap().end(); it++)
-  {
+    {
 
-    it->second.setMASK(level, mask);
-  }
+      it->second.setMASK(level, mask);
+    }
   // Now loop on slowcontrol socket
   this->configureHR2();
 
@@ -261,10 +261,10 @@ void PmrManager::setChannelMask(uint16_t level, uint16_t channel, uint16_t val)
 {
   PMF_INFO(_logPmr, " Changing Mask: " << level << " " << std::hex << channel << std::dec);
   for (auto it = _hca->asicMap().begin(); it != _hca->asicMap().end(); it++)
-  {
+    {
 
-    it->second.setMASKChannel(level, channel, val == 1);
-  }
+      it->second.setMASKChannel(level, channel, val == 1);
+    }
   // Now loop on slowcontrol socket
   this->configureHR2();
 
@@ -275,13 +275,13 @@ void PmrManager::setAllMasks(uint64_t mask)
 {
   PMF_INFO(_logPmr, " Changing Mask: " << std::hex << mask << std::dec);
   for (auto it = _hca->asicMap().begin(); it != _hca->asicMap().end(); it++)
-  {
-    //it->second.dumpBinary();
-    it->second.setMASK(0, mask);
-    it->second.setMASK(1, mask);
-    it->second.setMASK(2, mask);
-    //it->second.dumpBinary();
-  }
+    {
+      //it->second.dumpBinary();
+      it->second.setMASK(0, mask);
+      it->second.setMASK(1, mask);
+      it->second.setMASK(2, mask);
+      //it->second.dumpBinary();
+    }
   // Now loop on slowcontrol socket
   this->configureHR2();
 
@@ -291,14 +291,14 @@ void PmrManager::setCTEST(uint64_t mask)
 {
   PMF_INFO(_logPmr, " Changing CTEST: " << std::hex << mask << std::dec);
   for (auto it = _hca->asicMap().begin(); it != _hca->asicMap().end(); it++)
-  {
-    for (int i = 0; i < 64; i++)
     {
-      bool on = ((mask >> i) & 1) == 1;
-      it->second.setCTEST(i, on);
-      PMF_DEBUG(_logPmr, "CTEST: " << std::hex << mask << std::dec << " channel " << i << " " << on);
+      for (int i = 0; i < 64; i++)
+	{
+	  bool on = ((mask >> i) & 1) == 1;
+	  it->second.setCTEST(i, on);
+	  PMF_DEBUG(_logPmr, "CTEST: " << std::hex << mask << std::dec << " channel " << i << " " << on);
+	}
     }
-  }
   // Now loop on slowcontrol socket
   this->configureHR2();
 
@@ -383,9 +383,9 @@ void PmrManager::c_external(http_request m)
     params()["external"] = external;
   std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
   for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
-  {
-    it->second->setExternalTrigger((external == 1));
-  }
+    {
+      it->second->setExternalTrigger((external == 1));
+    }
 
   // PMF_INFO(_logPmr,"CTRLREG called "<<std::hex<<ctrlreg<<std::dec);
   par["STATUS"] = web::json::value::string(U("DONE"));
@@ -402,13 +402,13 @@ void PmrManager::c_downloadDB(http_request m)
   uint32_t version = utils::queryIntValue(m, "version", 0);
   web::json::value jTDC = params()["dif"];
   if (utils::isMember(jTDC, "db"))
-  {
-    web::json::value jTDCdb = jTDC["db"];
-    _hca->clear();
+    {
+      web::json::value jTDCdb = jTDC["db"];
+      _hca->clear();
 
-    if (jTDCdb["mode"].as_string().compare("mongo") == 0)
-      _hca->parseMongoDb(dbstate, version);
-  }
+      if (jTDCdb["mode"].as_string().compare("mongo") == 0)
+	_hca->parseMongoDb(dbstate, version);
+    }
   par["DBSTATE"] = web::json::value::string(dbstate);
   Reply(status_codes::OK, par);
 }
@@ -422,20 +422,20 @@ void PmrManager::c_status(http_request m)
   uint32_t nd = 0;
 
   for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
-  {
+    {
 
-    web::json::value ds;
-    ds["detid"] = json::value::number(it->second->detectorId());
-    ds["state"] = json::value::string(U(it->second->state()));
-    ds["id"] = json::value::number(it->second->status()->id);
-    ds["status"] = json::value::number(it->second->status()->status);
-    ds["slc"] = json::value::number(it->second->status()->slc);
-    ds["gtc"] = json::value::number(it->second->status()->gtc);
-    ds["bcid"] = json::value::number(it->second->status()->bcid);
-    ds["bytes"] = json::value::number(it->second->status()->bytes);
-    ds["host"] = json::value::string(U(std::string((it->second->status()->host))));
-    array_slc[nd++] = ds;
-  }
+      web::json::value ds;
+      ds["detid"] = json::value::number(it->second->detectorId());
+      ds["state"] = json::value::string(U(it->second->state()));
+      ds["id"] = json::value::number(it->second->status()->id);
+      ds["status"] = json::value::number(it->second->status()->status);
+      ds["slc"] = json::value::number(it->second->status()->slc);
+      ds["gtc"] = json::value::number(it->second->status()->gtc);
+      ds["bcid"] = json::value::number(it->second->status()->bcid);
+      ds["bytes"] = json::value::number(it->second->status()->bytes);
+      ds["host"] = json::value::string(U(std::string((it->second->status()->host))));
+      array_slc[nd++] = ds;
+    }
   par["STATUS"] = web::json::value::string(U("DONE"));
   par["DIFLIST"] = array_slc;
   Reply(status_codes::OK, par);
@@ -454,19 +454,19 @@ web::json::value PmrManager::configureHR2()
   uint32_t nd = 0;
 
   for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
-  {
-    std::stringstream ips;
-    // Dummy IP address for Pmrs
-    ::usleep(50000);
-    ips << "0.0.0." << it->first;
-    _hca->prepareSlowControl(ips.str(), true);
+    {
+      std::stringstream ips;
+      // Dummy IP address for Pmrs
+      ::usleep(50000);
+      ips << "0.0.0." << it->first;
+      _hca->prepareSlowControl(ips.str(), true);
 
-    it->second->configure(_hca->slcBuffer(), _hca->slcBytes());
-    web::json::value ds;
-    ds["id"] = json::value::number(it->first);
-    ds["slc"] = json::value::number(it->second->status()->slc);
-    array_slc[nd++] = ds;
-  }
+      it->second->configure(_hca->slcBuffer(), _hca->slcBytes());
+      web::json::value ds;
+      ds["id"] = json::value::number(it->first);
+      ds["slc"] = json::value::number(it->second->status()->slc);
+      array_slc[nd++] = ds;
+    }
   return array_slc;
 }
 
@@ -494,10 +494,10 @@ void PmrManager::start(http_request m)
   int32_t rc = 1;
   std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
   for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
-  {
-    this->startReadoutThread(it->second);
-    it->second->start();
-  }
+    {
+      this->startReadoutThread(it->second);
+      it->second->start();
+    }
   _running = true;
   par["status"] = json::value::string(U("done"));
   Reply(status_codes::OK, par);
@@ -513,10 +513,10 @@ void PmrManager::stop(http_request m)
   std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
 
   for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
-  {
-    PMF_INFO(_logPmr, " Stopping thread of Pmr" << it->first);
-    it->second->stop();
-  }
+    {
+      PMF_INFO(_logPmr, " Stopping thread of Pmr" << it->first);
+      it->second->stop();
+    }
   _running = false;
   par["status"] = json::value::string(U("done"));
   Reply(status_codes::OK, par);
@@ -533,24 +533,24 @@ void PmrManager::destroy(http_request m)
 
   bool running = false;
   for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
-  {
-    running = running || it->second->readoutStarted();
-  }
-  if (running)
-  {
-    for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
     {
-      it->second->setReadoutStarted(false);
+      running = running || it->second->readoutStarted();
     }
+  if (running)
+    {
+      for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
+	{
+	  it->second->setReadoutStarted(false);
+	}
 
-    this->joinThreads();
-    // Clear thread vector
-    g_d.clear();
-  }
+      this->joinThreads();
+      // Clear thread vector
+      g_d.clear();
+    }
   for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
-  {
-    it->second->destroy();
-  }
+    {
+      it->second->destroy();
+    }
 
   par["status"] = json::value::string(U("done"));
   Reply(status_codes::OK, par);
@@ -590,6 +590,7 @@ void PmrManager::initialise()
   this->addCommand("DOWNLOADDB", std::bind(&PmrManager::c_downloadDB, this, std::placeholders::_1));
   this->addCommand("TRIGEXT", std::bind(&PmrManager::c_external, this, std::placeholders::_1));
   this->addCommand("SCURVE", std::bind(&PmrManager::c_scurve, this, std::placeholders::_1));
+  this->addCommand("GAINCURVE", std::bind(&PmrManager::c_gaincurve, this, std::placeholders::_1));
 
   _hca = NULL;
   // Initialise delays for
@@ -599,32 +600,32 @@ void PmrManager::end()
 {
   // Stop any running process
   if (_sc_running)
-  {
-    _sc_running = false;
-    g_scurve.join();
-  }
+    {
+      _sc_running = false;
+      g_scurve.join();
+    }
   // Stop listening
   if (g_d.size() != 0)
-  {
+    {
 
-    bool running = false;
-    std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
-    for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
-    {
-      running = running || it->second->readoutStarted();
-    }
-    if (running)
-    {
+      bool running = false;
+      std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
       for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
-      {
-        it->second->setReadoutStarted(false);
-      }
+	{
+	  running = running || it->second->readoutStarted();
+	}
+      if (running)
+	{
+	  for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
+	    {
+	      it->second->setReadoutStarted(false);
+	    }
 
-      this->joinThreads();
+	  this->joinThreads();
+	}
+      // Clear thread vector
+      g_d.clear();
     }
-    // Clear thread vector
-    g_d.clear();
-  }
 }
 
 void PmrManager::startReadoutThread(PmrInterface *d)
@@ -654,84 +655,84 @@ void PmrManager::ScurveStep(std::string mdccUrl, std::string builderUrl, int thm
 
   int thrange = (thmax - thmin + 1) / step;
   for (int vth = 0; vth <= thrange; vth++)
-  {
-    if (!_running)
-      break;
-    utils::sendCommand(mdccUrl, "PAUSE", json::value::null());
-
-    //for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++) it->second->setRunning(false);
-    usleep(100000);
-    //this->setThresholds(thmax - vth * step, 512, 512);
-    //::sleep(2);
-    uint32_t threshold = thmax - vth * step;
-    // this->setThresholds(thmax-vth*step,512,512);
-    if (_sc_level == 0)
-      this->setThresholds(threshold, 512, 512);
-    if (_sc_level == 1)
-      this->setThresholds(512, threshold, 512);
-    if (_sc_level == 2)
-      this->setThresholds(512, 512, threshold);
-    ::usleep(2000);
-
-    web::json::value h;
-    web::json::value ph;
-    h[0] = json::value::number(2);
-    h[1] = json::value::number(thmax - vth * step);
-
-    int firstEvent = 0, firstInBoard = 0;
-
-    for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
-
-      if (it->second->status()->gtc > firstInBoard)
-        firstInBoard = it->second->status()->gtc;
-
-    auto frep = utils::sendCommand(builderUrl, "STATUS", json::value::null());
-    auto jfrep = frep.extract_json();
-    auto jfanswer = jfrep.get().as_object()["answer"];
-    firstEvent = jfanswer["event"].as_integer();
-
-    ph["header"] = h;
-    ph["nextevent"] = json::value::number(firstEvent + 1);
-    utils::sendCommand(builderUrl, "SETHEADER", ph);
-    utils::sendCommand(mdccUrl, "RELOADCALIB", json::value::null());
-    for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++) it->second->setRunning(true);
-
-    utils::sendCommand(mdccUrl, "RESUME", json::value::null());
-
-    int nloop = 0, lastEvent = firstEvent, lastInBoard = firstInBoard;
-    while (lastInBoard < (firstInBoard + ntrg-1))
     {
-      ::usleep(10000);
-      uint32_t mingtc=0xFFFFFFFF;
+      if (!_running)
+	break;
+      utils::sendCommand(mdccUrl, "PAUSE", json::value::null());
+
+      //for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++) it->second->setRunning(false);
+      usleep(100000);
+      //this->setThresholds(thmax - vth * step, 512, 512);
+      //::sleep(2);
+      uint32_t threshold = thmax - vth * step;
+      // this->setThresholds(thmax-vth*step,512,512);
+      if (_sc_level == 0)
+	this->setThresholds(threshold, 512, 512);
+      if (_sc_level == 1)
+	this->setThresholds(512, threshold, 512);
+      if (_sc_level == 2)
+	this->setThresholds(512, 512, threshold);
+      ::usleep(2000);
+
+      web::json::value h;
+      web::json::value ph;
+      h[0] = json::value::number(2);
+      h[1] = json::value::number(thmax - vth * step);
+
+      int firstEvent = 0, firstInBoard = 0;
+
       for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
 
-        if (it->second->status()->gtc < mingtc)
-          mingtc = it->second->status()->gtc;
+	if (it->second->status()->gtc > firstInBoard)
+	  firstInBoard = it->second->status()->gtc;
 
-      if (mingtc>lastInBoard) lastInBoard=mingtc;
-      nloop++;
-      if (nloop > 6000 || !_running)
-        break;
+      auto frep = utils::sendCommand(builderUrl, "STATUS", json::value::null());
+      auto jfrep = frep.extract_json();
+      auto jfanswer = jfrep.get().as_object()["answer"];
+      firstEvent = jfanswer["event"].as_integer();
+
+      ph["header"] = h;
+      ph["nextevent"] = json::value::number(firstEvent + 1);
+      utils::sendCommand(builderUrl, "SETHEADER", ph);
+      utils::sendCommand(mdccUrl, "RELOADCALIB", json::value::null());
+      for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++) it->second->setRunning(true);
+
+      utils::sendCommand(mdccUrl, "RESUME", json::value::null());
+
+      int nloop = 0, lastEvent = firstEvent, lastInBoard = firstInBoard;
+      while (lastInBoard < (firstInBoard + ntrg-1))
+	{
+	  ::usleep(10000);
+	  uint32_t mingtc=0xFFFFFFFF;
+	  for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
+
+	    if (it->second->status()->gtc < mingtc)
+	      mingtc = it->second->status()->gtc;
+
+	  if (mingtc>lastInBoard) lastInBoard=mingtc;
+	  nloop++;
+	  if (nloop > 6000 || !_running)
+	    break;
+	}
+      nloop=0;
+      while (lastEvent < (firstEvent + ntrg - 2))
+	{
+	  ::usleep(100000);
+	  auto rep = utils::sendCommand(builderUrl, "STATUS", json::value::null());
+	  auto jrep = rep.extract_json();
+	  auto janswer = jrep.get().as_object()["answer"];
+	  lastEvent = janswer["event"].as_integer(); // A verifier
+	  nloop++;
+	  if (nloop > 100 || !_running)
+	    break;
+	}
+
+      PMF_INFO(_logPmr, "Step:" << vth << " Threshold:" << thmax - vth * step << " First:" << firstEvent << " Last:" << lastEvent);
+      // printf("Step %d Th %d First %d Last %d \n",vth,thmax-vth*step,firstEvent,lastEvent);
+      utils::sendCommand(mdccUrl, "PAUSE", json::value::null());
+      for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++) it->second->setRunning(false);
+
     }
-    nloop=0;
-    while (lastEvent < (firstEvent + ntrg - 2))
-    {
-      ::usleep(100000);
-      auto rep = utils::sendCommand(builderUrl, "STATUS", json::value::null());
-      auto jrep = rep.extract_json();
-      auto janswer = jrep.get().as_object()["answer"];
-      lastEvent = janswer["event"].as_integer(); // A verifier
-      nloop++;
-      if (nloop > 100 || !_running)
-        break;
-    }
-
-    PMF_INFO(_logPmr, "Step:" << vth << " Threshold:" << thmax - vth * step << " First:" << firstEvent << " Last:" << lastEvent);
-    // printf("Step %d Th %d First %d Last %d \n",vth,thmax-vth*step,firstEvent,lastEvent);
-    utils::sendCommand(mdccUrl, "PAUSE", json::value::null());
-    for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++) it->second->setRunning(false);
-
-  }
   utils::sendCommand(mdccUrl, "CALIBOFF", json::value::null());
 }
 
@@ -747,64 +748,68 @@ void PmrManager::Scurve(int mode, int thmin, int thmax, int step)
   std::string mdcc = utils::findUrl(session(), "lyon_mdcc", 0);
   std::string builder = utils::findUrl(session(), "evb_builder", 0);
   if (mdcc.compare("") == 0)
-  {
-    mdcc = utils::findUrl(session(), "lyon_mbmdcc", 0);
-    if (mdcc.compare("") == 0)
-      {
-	mdcc = utils::findUrl(session(), "lyon_ipdc", 0);
-	if (mdcc.compare("") == 0)
-	  return;
-      }
-  }
+    {
+      mdcc = utils::findUrl(session(), "lyon_mbmdcc", 0);
+      if (mdcc.compare("") == 0)
+	{
+	  mdcc = utils::findUrl(session(), "lyon_ipdc", 0);
+	  if (mdcc.compare("") == 0)
+	    {
+	      PMF_ERROR(_logPmr,"No MDCC/MBMDCC/IPDC available, exiting Scurve");
+
+	      return;
+	    }
+	}
+    }
   if (builder.compare("") == 0)
     return;
   uint64_t mask = 0;
 
   // All channel pedestal
   if (mode == 255)
-  {
+    {
 
-    // for (int i=0;i<64;i++) mask|=(1<<i);
-    mask = 0xFFFFFFFFFFFFFFFF;
-    this->setAllMasks(mask);
-    this->setCTEST(0);
-    this->ScurveStep(mdcc, builder, thmin, thmax, step);
-    return;
-  }
+      // for (int i=0;i<64;i++) mask|=(1<<i);
+      mask = 0xFFFFFFFFFFFFFFFF;
+      this->setAllMasks(mask);
+      this->setCTEST(0);
+      this->ScurveStep(mdcc, builder, thmin, thmax, step);
+      return;
+    }
 
   // Chanel per channel pedestal (CTEST is active)
   if (mode == 1023)
-  {
-    mask = 0;
-    for (int i = 0; i < 64; i++)
     {
-      mask = (1ULL << i);
-      PMF_INFO(_logPmr, "Step HR2 " << i << "  channel" << i << std::dec);
+      mask = 0;
+      for (int i = 0; i < 64; i++)
+	{
+	  mask = (1ULL << i);
+	  PMF_INFO(_logPmr, "Step HR2 " << i << "  channel" << i << std::dec);
 
-      // std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
-      this->setAllMasks(mask);
-      this->setCTEST(mask);
-      this->ScurveStep(mdcc, builder, thmin, thmax, step);
+	  // std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
+	  this->setAllMasks(mask);
+	  this->setCTEST(mask);
+	  this->ScurveStep(mdcc, builder, thmin, thmax, step);
+	}
+      return;
     }
-    return;
-  }
 
   if (mode == 1022)
-  {
-    mask = 0;
-    for (int i = 0; i < 64; i++)
     {
-      mask = (1ULL << i);
-      PMF_INFO(_logPmr, "Step HR2 " << i << "  channel" << i << std::dec);
+      mask = 0;
+      for (int i = 0; i < 64; i++)
+	{
+	  mask = (1ULL << i);
+	  PMF_INFO(_logPmr, "Step HR2 " << i << "  channel" << i << std::dec);
 
-      // std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
-      this->setCTEST(mask);
-      this->setAllMasks(0xFFFFFFFFFFFFFFFF);
+	  // std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
+	  this->setCTEST(mask);
+	  this->setAllMasks(0xFFFFFFFFFFFFFFFF);
 
-      this->ScurveStep(mdcc, builder, thmin, thmax, step);
+	  this->ScurveStep(mdcc, builder, thmin, thmax, step);
+	}
+      return;
     }
-    return;
-  }
 
   // One channel pedestal
 
@@ -839,11 +844,11 @@ void PmrManager::c_scurve(http_request m)
   _sc_ntrg = ntrg;
 
   if (_sc_running)
-  {
-    par["SCURVE"] = web::json::value::string(U("ALREADY_RUNNING"));
-    Reply(status_codes::OK, par);
-    return;
-  }
+    {
+      par["SCURVE"] = web::json::value::string(U("ALREADY_RUNNING"));
+      Reply(status_codes::OK, par);
+      return;
+    }
 
   _sc_running = true;
   g_scurve = std::thread(std::bind(&PmrManager::thrd_scurve, this));
@@ -851,6 +856,225 @@ void PmrManager::c_scurve(http_request m)
 
   Reply(status_codes::OK, par);
 }
+
+void PmrManager::GainCurveStep(std::string mdccUrl,std::string builderUrl,int gmin,int gmax,int step,int threshold)
+{
+  std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
+  int ncon = _sc_win, ncoff = 1000, ntrg = _sc_ntrg;
+  utils::sendCommand(mdccUrl, "PAUSE", json::value::null());
+  web::json::value p;
+  p["nclock"] = web::json::value::number(ncon);
+  utils::sendCommand(mdccUrl, "SPILLON", p);
+  p["nclock"] = web::json::value::number(ncoff);
+  utils::sendCommand(mdccUrl, "SPILLOFF", p);
+  printf("Clock On %d Off %d \n", ncon, ncoff);
+  p["value"] = web::json::value::number(4);
+  utils::sendCommand(mdccUrl, "SETSPILLREGISTER", p);
+  utils::sendCommand(mdccUrl, "CALIBON", json::value::null());
+  p["nclock"] = web::json::value::number(ntrg);
+  utils::sendCommand(mdccUrl, "SETCALIBCOUNT", p);
+
+  // Set the threshold
+  this->setThresholds(threshold, 512, 512);
+
+  int grange=(gmax-gmin+1)/step;
+  for (int g=0;g<=grange;g++)
+    {
+      if (!_running) break;
+      utils::sendCommand(mdccUrl,"PAUSE",json::value::null());
+      //for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++) it->second->setRunning(false);
+      ::usleep(100000);
+      this->setGain(gmin+g*step);
+
+      ::usleep(2000);
+
+      web::json::value h;
+      web::json::value ph;
+      h[0] = json::value::number(3);
+      h[1] = json::value::number(gmin+g*step);
+      int firstEvent = 0, firstInBoard = 0;
+
+      for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
+
+	if (it->second->status()->gtc > firstInBoard)
+	  firstInBoard = it->second->status()->gtc;
+
+      auto frep = utils::sendCommand(builderUrl, "STATUS", json::value::null());
+      auto jfrep = frep.extract_json();
+      auto jfanswer = jfrep.get().as_object()["answer"];
+      firstEvent = jfanswer["event"].as_integer();
+
+      ph["header"] = h;
+      ph["nextevent"] = json::value::number(firstEvent + 1);
+      utils::sendCommand(builderUrl, "SETHEADER", ph);
+      utils::sendCommand(mdccUrl, "RELOADCALIB", json::value::null());
+      for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++) it->second->setRunning(true);
+
+      utils::sendCommand(mdccUrl, "RESUME", json::value::null());
+
+      int nloop = 0, lastEvent = firstEvent, lastInBoard = firstInBoard;
+      while (lastInBoard < (firstInBoard + ntrg-1))
+	{
+	  ::usleep(10000);
+	  uint32_t mingtc=0xFFFFFFFF;
+	  for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
+
+	    if (it->second->status()->gtc < mingtc)
+	      mingtc = it->second->status()->gtc;
+
+	  if (mingtc>lastInBoard) lastInBoard=mingtc;
+	  nloop++;
+	  if (nloop > 6000 || !_running)
+	    break;
+	}
+      nloop=0;
+      while (lastEvent < (firstEvent + ntrg - 2))
+	{
+	  ::usleep(100000);
+	  auto rep = utils::sendCommand(builderUrl, "STATUS", json::value::null());
+	  auto jrep = rep.extract_json();
+	  auto janswer = jrep.get().as_object()["answer"];
+	  lastEvent = janswer["event"].as_integer(); // A verifier
+	  nloop++;
+	  if (nloop > 100 || !_running)
+	    break;
+	}
+
+      PMF_INFO(_logPmr,"Step:"<<g<<" Gain:"<<gmin+g*step<<" First:"<<firstEvent<<" Last:"<<lastEvent);
+
+      // printf("Step %d Th %d First %d Last %d \n",vth,thmax-vth*step,firstEvent,lastEvent);
+      utils::sendCommand(mdccUrl, "PAUSE", json::value::null());
+      for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++) it->second->setRunning(false);
+
+    }
+  utils::sendCommand(mdccUrl, "CALIBOFF", json::value::null());
+
+  
+}
+
+
+void PmrManager::thrd_gaincurve()
+{
+  _sc_running=true;
+  this->GainCurve(_sc_mode,_sc_gmin,_sc_gmax,_sc_step,_sc_threshold);
+  _sc_running=false;
+}
+
+
+void PmrManager::GainCurve(int mode,int gmin,int gmax,int step,int threshold)
+{
+  std::string mdcc=utils::findUrl(session(),"lyon_mdcc",0);
+  //std::string builder=utils::findUrl(session(),"lyon_evb",0);
+  std::string builder=utils::findUrl(session(),"evb_builder",0);
+  if (mdcc.compare("") == 0)
+    {
+      mdcc = utils::findUrl(session(), "lyon_mbmdcc", 0);
+      if (mdcc.compare("") == 0)
+	{
+	  mdcc = utils::findUrl(session(), "lyon_ipdc", 0);
+	  if (mdcc.compare("") == 0)
+	    {
+	      PMF_ERROR(_logPmr,"No MDCC/MBMDCC/IPDC available, exiting gain curve");
+	      return;
+	    }
+	}
+    }
+
+  if (builder.compare("")==0) return;
+
+  uint64_t mask=0;
+
+  // All channel pedestal
+  if (mode==255)
+    {
+
+
+      mask=0xFFFFFFFFFFFFFFFF;
+      this->setAllMasks(mask);
+      this->setCTEST(0);
+      this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
+      return;
+      
+    }
+
+  // Chanel per channel pedestal (CTEST is active)
+  if (mode==1022)
+    {
+      mask=0;
+      for (int i=0;i<64;i++)
+	{
+	  mask=(1ULL<<i);
+	  std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
+
+	  this->setCTEST(mask);
+	  this->setAllMasks(0xFFFFFFFFFFFFFFFF);
+	  this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
+	  //this->ScurveStep(mdcc,builder,thmin,thmax,step);
+	}
+      return;
+    }
+  if (mode==1023)
+    {
+      mask=0;
+      for (int i=0;i<64;i++)
+	{
+	  mask=(1ULL<<i);
+	  std::cout<<"Step HR2 CTEST "<<i<<" channel "<<i<<std::endl;
+	  this->setAllMasks(mask);
+	  this->setCTEST(mask);
+	  this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
+	  //this->ScurveStep(mdcc,builder,thmin,thmax,step);
+	}
+      return;
+    }
+
+  // One channel pedestal
+  mask=(1ULL<<mode);
+  this->setAllMasks(mask);
+  this->setCTEST(mask);
+  //this->ScurveStep(mdcc,builder,thmin,thmax,step);
+  this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
+  
+}
+
+
+void PmrManager::c_gaincurve(http_request m)
+{
+  auto par = json::value::object();
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+
+  uint32_t first = utils::queryIntValue(m,"first",80);
+  uint32_t last = utils::queryIntValue(m,"last",250);
+  uint32_t step = utils::queryIntValue(m,"step",1);
+  uint32_t mode = utils::queryIntValue(m,"channel",255);
+  uint32_t thr = utils::queryIntValue(m,"threshold",255);
+  PMF_INFO(_logPmr, " GainCurve called " << mode << " first " << first << " last " << last <<" step "<<step<< " Threshold "<<thr);
+  _sc_win = utils::queryIntValue(m, "window", 50000);
+  _sc_ntrg = utils::queryIntValue(m, "ntrg", 50);
+  //this->Scurve(mode,first,last,step);
+
+  _sc_mode=mode;
+  _sc_gmin=first;
+  _sc_gmax=last;
+  _sc_step=step;
+  _sc_threshold=thr;
+  if (_sc_running)
+    {
+      par["GAINCURVE"]=web::json::value::string(U("ALREADY_RUNNING"));
+      return;
+    }
+ 
+  g_scurve=std::thread(std::bind(&PmrManager::thrd_gaincurve, this));
+  par["GAINCURVE"]=web::json::value::string(U("RUNNING"));
+  Reply(status_codes::OK,par);
+
+
+}
+
+
+
+
 
 extern "C"
 {
