@@ -33,10 +33,12 @@ void pm::builder::collector::initialise()
   // Monitoring
   if (utils::isMember(params(),"broker") && _cli==NULL)
     {
-      std::stringstream ss;
+      std::stringstream ss,ssid;
       ss<<session()<<"/"<<name()<<"/"<<instance();
       _brokerid=ss.str();
-      _cli = std::make_shared<mqtt::client>(params()["broker"].as_string(), _brokerid);
+      ssid<<_brokerid<<getpid();
+
+      _cli = std::make_shared<mqtt::async_client>(params()["broker"].as_string(), ssid.str());
       int keepalive = 0;
 
       auto connOpts = mqtt::connect_options_builder()
@@ -49,11 +51,14 @@ void pm::builder::collector::initialise()
       // Connect to the server
 
       PMF_INFO(_logCollector,"Connecting to the MQTT server " <<params()["broker"].as_string());
-      _cli->connect(connOpts);
+      auto tok = _cli->connect(connOpts);
       
+      PMF_INFO(_logCollector,"Waiting for the connection...");
+      tok->wait();
       PMF_INFO(_logCollector,"  ...OK");
     }
-  publish("STATE",state());
+
+  publish("STATE","INITIALISED");
 }
 
 void pm::builder::collector::publish(std::string topic,std::string value)
@@ -63,10 +68,13 @@ void pm::builder::collector::publish(std::string topic,std::string value)
    std::stringstream si;
    si << _brokerid << "/"<<topic;
    
-   PMF_INFO(_logCollector,"\nSending message...");
+   PMF_INFO(_logCollector,"Sending message...");
    mqtt::message_ptr pubmsg = mqtt::make_message(mqtt::string_ref(si.str().c_str()), mqtt::binary_ref(value.c_str()));
    pubmsg->set_qos(0);
    _cli->publish(pubmsg);
+   //_cli->publish(pubmsg)->wait_for(std::chrono::seconds(0));
+   PMF_INFO(_logCollector,"message sent...");
+
 }
 void pm::builder::collector::end()
 {
@@ -160,7 +168,7 @@ void pm::builder::collector::configure(http_request m)
   par["sourceRegistered"] = array_keys;
   par["processorRegistered"] = parray_keys;
 
-  publish("STATE",state());
+  publish("STATE","CONFIGURED");
   Reply(status_codes::OK,par);
 
   return;
@@ -184,7 +192,7 @@ void pm::builder::collector::start(http_request m)
   par["status"] = json::value::string(U("STARTED"));
   par["run"] = json::value::number(run);
 
-  publish("STATE",state());
+  publish("STATE","STARTED");
   Reply(status_codes::OK,par);
 
   return;
@@ -198,7 +206,7 @@ void pm::builder::collector::stop(http_request m)
   PMF_INFO(_logCollector, "Builder is stopped \n");
   fflush(stdout);
   par["status"] = json::value::string(U("STOPPED"));
-  publish("STATE",state());
+  publish("STATE","STOPPED");
   Reply(status_codes::OK,par);
 
   return;
@@ -220,7 +228,7 @@ void pm::builder::collector::halt(http_request m)
   _merger->clear();
 
   par["status"] = json::value::string(U("HALTED"));
-  publish("STATE",state());
+  publish("STATE","HALTED");
   Reply(status_codes::OK,par);
 
   return;
@@ -243,7 +251,7 @@ void pm::builder::collector::status(http_request m)
       par["answer"] = json::value::string(U("NO merger created yet"));
     }
   PMF_DEBUG(_logCollector, "STATUS"<<par);
-  publish("STATE",state());
+  
   publish("STATUS",par.serialize());
   Reply(status_codes::OK,par);
 

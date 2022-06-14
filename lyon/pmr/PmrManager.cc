@@ -638,7 +638,7 @@ void PmrManager::startReadoutThread(PmrInterface *d)
 void PmrManager::ScurveStep(std::string mdccUrl, std::string builderUrl, int thmin, int thmax, int step)
 {
   std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
-  int ncon = _sc_win, ncoff = 10000, ntrg = _sc_ntrg;
+  int ncon = _sc_win, ncoff = 1000, ntrg = _sc_ntrg;
   utils::sendCommand(mdccUrl, "PAUSE", json::value::null());
   web::json::value p;
   p["nclock"] = web::json::value::number(ncon);
@@ -699,7 +699,7 @@ void PmrManager::ScurveStep(std::string mdccUrl, std::string builderUrl, int thm
     utils::sendCommand(mdccUrl, "RESUME", json::value::null());
 
     int nloop = 0, lastEvent = firstEvent, lastInBoard = firstInBoard;
-    while (lastInBoard < (firstInBoard + ntrg))
+    while (lastInBoard < (firstInBoard + ntrg-1))
     {
       ::usleep(10000);
       uint32_t mingtc=0xFFFFFFFF;
