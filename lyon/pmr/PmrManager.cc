@@ -886,8 +886,10 @@ void PmrManager::GainCurveStep(std::string mdccUrl,std::string builderUrl,int gm
       ::usleep(100000);
       this->setGain(gmin+g*step);
 
-      ::usleep(2000);
-
+      ::usleep(100000);
+      this->setThresholds(threshold, 512, 512);
+      ::usleep(100000);
+      
       web::json::value h;
       web::json::value ph;
       h[0] = json::value::number(3);
