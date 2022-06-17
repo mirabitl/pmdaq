@@ -452,25 +452,51 @@ web::json::value PmrManager::configureHR2()
   std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
   web::json::value array_slc;
   uint32_t nd = 0;
-
+#ifdef ONETHREAD
   for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
     {
       std::stringstream ips;
       // Dummy IP address for Pmrs
       ::usleep(50000);
-      fprintf(stderr,"Debug 2");
+      //fprintf(stderr,"Debug 2");
       ips << "0.0.0." << it->first;
       _hca->prepareSlowControl(ips.str(), true);
-      fprintf(stderr,"Debug 3");
+      //fprintf(stderr,"Debug 3");
       it->second->configure(_hca->slcBuffer(), _hca->slcBytes());
-      fprintf(stderr,"Debug 4");
+      //fprintf(stderr,"Debug 4");
       web::json::value ds;
       ds["id"] = json::value::number(it->first);
-      fprintf(stderr,"Debug 4");
+      //fprintf(stderr,"Debug 4");
       ds["slc"] = json::value::number(it->second->status()->slc);
       array_slc[nd++] = ds;
-      fprintf(stderr,"Debug 5");
+      //fprintf(stderr,"Debug 5");
     }
+#else
+  for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
+    {
+      std::stringstream ips;
+      // Dummy IP address for Pmrs
+      ::usleep(50000);
+      //fprintf(stderr,"Debug 2");
+      ips << "0.0.0." << it->first;
+      _hca->prepareSlowControl(ips.str(), true);
+      //fprintf(stderr,"Debug 3");
+      this->configureThread(it->second,_hca->slcBuffer(), _hca->slcBytes());
+      //fprintf(stderr,"Debug 4");
+    }
+  this->joinConfigureThreads();
+  for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
+    {
+
+      web::json::value ds;
+      ds["id"] = json::value::number(it->first);
+      //fprintf(stderr,"Debug 4");
+      ds["slc"] = json::value::number(it->second->status()->slc);
+      array_slc[nd++] = ds;
+      //fprintf(stderr,"Debug 5");
+    }
+
+#endif
   return array_slc;
 }
 
@@ -632,6 +658,17 @@ void PmrManager::end()
       g_d.clear();
     }
 }
+
+
+void PmrManager::configureThread(PmrInterface *d,unsigned char* b,uint32_t nb)
+{
+  uint8_t slowb[65536];
+  memcpy(slowb,b,nb);
+  g_c.push_back(std::thread(std::bind(&PmrInterface::configure, d,slowb,nb)));
+}
+
+
+
 
 void PmrManager::startReadoutThread(PmrInterface *d)
 {

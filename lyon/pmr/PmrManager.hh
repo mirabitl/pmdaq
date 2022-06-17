@@ -119,6 +119,7 @@ public:
   web::json::value configureHR2();
 
   void prepareDevices();
+  void configureThread(PmrInterface *d,unsigned char* b,uint32_t nb);
   void startReadoutThread(PmrInterface *d);
   // DimRpc interface
   std::map<uint32_t, pmr::FtdiDeviceInfo *> &getFtdiMap() { return theFtdiDeviceInfoMap_; }
@@ -136,6 +137,12 @@ public:
   {
     for (auto i = g_d.begin(); i != g_d.end(); i++)
       (*i).join();
+  }
+  void joinConfigureThreads()
+  {
+    for (auto i = g_c.begin(); i != g_c.end(); i++)
+      (*i).join();
+    g_c.clear();
   }
 
   void setAllMasks(uint64_t mask);
@@ -156,6 +163,7 @@ private:
   HR2ConfigAccess *_hca;
 
   std::vector<std::thread> g_d;
+  std::vector<std::thread> g_c;
   zmq::context_t *_context;
 
   bool _running;
