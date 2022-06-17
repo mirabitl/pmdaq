@@ -97,20 +97,25 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
     public:
       enum Fmt {HEADER=0,LEN=1,TRANS=3,CMD=4,PAYLOAD=6};
       enum  command { WRITEREG=1,READREG=2,SLC=4,DATA=8,ACKNOWLEDGE=16,ERROR=32};
-      enum Register {TEST=0x0,ID=0x1,
+      enum Register {TEST=0x0,
+		     ID=0x1,
 		     MASK=0x2,
 		     SPILL_CNT=0x3,
 		     ACQ_CTRL=0x4,
 		     SPILL_ON=0x5,
 		     SPILL_OFF=0x6,
-		     CHANNEL_ENABLE=0x7,
 		     CALIB_CTRL=0x8,
 		     CALIB_NWIN=0xA,
 		     RESET_FE=0xC,
 		     WIN_CTRL=0xD,
 		     TRG_EXT_DELAY=0xE,
 		     TRG_EXT_LEN=0xF,
-		     BUSY_0=0x10,
+		     TRG_EXT_CONFIG=0x10,
+		     TRG_EXT_COUNT=0x11,
+		     CLK_ENABLE=0x1D,
+		     MIN_BUSY_LENGTH=0x20,
+		     CHANNEL_ENABLE=0x21,
+		     TRG_EXT_NB=0x22,
 		     EN_BUSY_TRG=0x20,
 		     DEBOUNCE_BUSY=0x21,
 		     TDC_CTRL=0x30,
@@ -122,7 +127,11 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
 		     TDC_T5=0x3A,TDC_CNT5=0x3B,
 		     TDC_T6=0x3C,TDC_CNT6=0x3D,
 		     TDC_CAL1=0x40,TDC_CAL2=0x41,
+		     BUSY_0=0x50,
 		     RESET_FSM=0x60,
+		     SPS_SPILL_DURATION=0x70,
+		     SPS_SPILL_CTRL=0x71,
+		     LEMO_MASK=0xA0,
 		     VERSION=0x100};
 		     
 

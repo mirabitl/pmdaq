@@ -227,18 +227,19 @@ int32_t pmr::PmrDriver::loadSLC(unsigned char* SLC,uint32_t slc_size)
   // SLC Size 
   //ret=registerRead(PMR_TEST_REG,&tdata);
   //printf ("LOADSLC ....reg read, ret=%d , data =0x%x\n",ret,tdata);
+  fprintf(stderr,"Debug Driver 1 %d\n",nb_asic);
   tdata = nb_asic; //0x0A;
   ret=registerWrite(PMR_NBASIC_REG, tdata);// SLc size
-  printf ("NBASIC reg write(0x%08x at 0x%x), ret=%d\n",tdata, taddr, ret);
+  fprintf (stderr,"NBASIC reg write(0x%08x at 0x%x), ret=%d\n",tdata, taddr, ret);
   
   tdata = slc_size; //0x0A;
   ret=registerWrite(PMR_SLC_SIZE_REG, tdata);// SLc size
-  printf ("SLc size reg write(0x%08x at 0x%x), ret=%d\n",tdata, taddr, ret);
+  fprintf (stderr,"SLc size reg write(0x%08x at 0x%x), ret=%d\n",tdata, taddr, ret);
 
   // SLC Control Enable LOAD
   tdata = 0x01;
   ret=registerWrite(PMR_SLC_CONTROL_REG, tdata);// enable SLc load
-  //	printf ("SLc ctrl reg write( 0x%x at 0x%x), ret=%d\n",tdata, taddr,ret);
+  fprintf (stderr,"SLc ctrl reg write( 0x%x at 0x%x), ret=%d\n",tdata, taddr,ret);
 
   //getchar();
 
@@ -263,8 +264,10 @@ int32_t pmr::PmrDriver::loadSLC(unsigned char* SLC,uint32_t slc_size)
     }
 
   // SLC Control disable LOAD
+  fprintf(stderr,"Debug Driver 2\n");
   tdata = 0x00;
   ret=registerWrite(PMR_SLC_CONTROL_REG,tdata);// disable SLc load
+  fprintf(stderr,"Debug Driver 3\n");
   //	printf ("disable SLC load( 0x%08x at 0x%x), ret=%d\n",tdata, taddr,ret);
 
   // SLC Control SLC to ASIC

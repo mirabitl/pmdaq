@@ -176,6 +176,10 @@ void MbmdccManager::fsm_initialise(http_request m)
     {
       this->setSpillRegister(params()["spillregister"].as_integer());
     }
+  if (utils::isMember(params(),"channels"))
+    {
+      this->setChannels(params()["channels"].as_integer());
+    }
  
   PMF_INFO(_logMbmdcc," Init done  ");
   par["status"]=json::value::string(U("done"));
@@ -593,16 +597,16 @@ void MbmdccManager::c_status(http_request m)
   rc["mask"]=json::value::number(this->mask());
   rc["hard"]=json::value::number(this->hardReset());
   rc["spill"]=json::value::number(this->spillCount());
-  rc["busy1"]=json::value::number(this->busyCount(1));
-  rc["busy2"]=json::value::number(this->busyCount(2));
-  rc["busy3"]=json::value::number(this->busyCount(3));
-  rc["busy4"]=json::value::number(this->busyCount(4));
-  rc["busy5"]=json::value::number(this->busyCount(5));
-  rc["busy6"]=json::value::number(this->busyCount(6));
-  rc["busy7"]=json::value::number(this->busyCount(7));
-  rc["busy8"]=json::value::number(this->busyCount(8));
-  rc["busy9"]=json::value::number(this->busyCount(9));
-  rc["busy10"]=json::value::number(this->busyCount(10));
+  uint32_t chen=this->Channels();
+    for (int i=0;i<16;i++)
+    {
+      if ((chen>>i)&1)
+	{
+	  std::stringstream sb;
+	  sb<<"busy"<<i;
+	  rc[sb.str()]=json::value::number(this->busyCount(i));
+	}
+    }
   rc["spillon"]=json::value::number(this->spillOn());
   rc["spilloff"]=json::value::number(this->spillOff());
   rc["channels"]=json::value::number(this->Channels());

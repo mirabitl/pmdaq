@@ -458,20 +458,25 @@ web::json::value PmrManager::configureHR2()
       std::stringstream ips;
       // Dummy IP address for Pmrs
       ::usleep(50000);
+      fprintf(stderr,"Debug 2");
       ips << "0.0.0." << it->first;
       _hca->prepareSlowControl(ips.str(), true);
-
+      fprintf(stderr,"Debug 3");
       it->second->configure(_hca->slcBuffer(), _hca->slcBytes());
+      fprintf(stderr,"Debug 4");
       web::json::value ds;
       ds["id"] = json::value::number(it->first);
+      fprintf(stderr,"Debug 4");
       ds["slc"] = json::value::number(it->second->status()->slc);
       array_slc[nd++] = ds;
+      fprintf(stderr,"Debug 5");
     }
   return array_slc;
 }
 
 void PmrManager::configure(http_request m)
 {
+  fprintf(stderr,"Debug 1");
   auto par = json::value::object();
   PMF_INFO(_logPmr, " CMD: Configuring");
 
