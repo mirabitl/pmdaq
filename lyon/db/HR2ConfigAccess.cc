@@ -15,7 +15,7 @@
 #include "utils.hh"
 #include <sys/time.h>
 #include <sys/resource.h>
-
+#include "inttypes.h"
 int file_select_3(const struct direct *entry)  
 {  
   if ((strcmp(entry->d_name, ".") == 0) || (strcmp(entry->d_name, "..") == 0))  
@@ -103,9 +103,9 @@ void HR2ConfigAccess::parseMongoDb2(std::string state,uint32_t version)
     {
       uint32_t dif,asic;
       uint64_t eid;
-      sscanf(x.c_str(),"%d_%d_%lu64",&dif,&asic,&eid);
+      sscanf(x.c_str(),"%d_%d_%" SCNu64,&dif,&asic,&eid);
 
-      //std::cout<<x<<" "<<dif<<" "<<asic<<" "<<std::dec<<eid<<std::dec<<std::endl;
+      std::cout<<x<<" "<<dif<<" "<<asic<<" "<<std::dec<<eid<<std::dec<<" "<<_asicMap.size()<<std::endl;
 
       std::stringstream fn;
       fn<<"/dev/shm/db/"<<state<<"_"<<version<<"/"<<x;
