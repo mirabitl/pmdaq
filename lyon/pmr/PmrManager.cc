@@ -484,6 +484,7 @@ web::json::value PmrManager::configureHR2()
       this->configureThread(it->second,_hca->slcBuffer(), _hca->slcBytes());
       //fprintf(stderr,"Debug 4");
     }
+  ::usleep(100000);
   this->joinConfigureThreads();
   for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
     {
