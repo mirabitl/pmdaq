@@ -158,7 +158,7 @@ void pmr::PmrInterface::readout()
 	PM_INFO(_logPmr,"dif "<<_status->id<<" bcid "<<std::hex<<
 		_status->bcid<<std::dec<<
 		" gtc "<<_status->gtc<<
-		" size"<<nread);
+		" size"<<nread<<" time "<<time(0));
       //fprintf(stderr,"ICI Je publie ABCID  %lx \n",_status->bcid);
       //fprintf(stderr,"ICI Je publie  GTC %d \n",_status->gtc);
       //fprintf(stderr,"ICI Je publie  NREAD %d \n",nread);

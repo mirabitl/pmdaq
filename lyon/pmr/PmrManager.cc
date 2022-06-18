@@ -218,15 +218,18 @@ void PmrManager::fsm_initialise(http_request m)
 void PmrManager::setThresholds(uint16_t b0, uint16_t b1, uint16_t b2, uint32_t idif)
 {
 
-  PMF_INFO(_logPmr, " Changin thresholds: " << b0 << "," << b1 << "," << b2);
+  PMF_INFO(_logPmr, " Changin thresholds: " << b0 << "," << b1 << "," << b2<<","<<idif);
   for (auto it = _hca.asicMap().begin(); it != _hca.asicMap().end(); it++)
     {
       if (idif != 0)
 	{
-	  uint32_t ip = (((it->first) >> 32 & 0XFFFFFFFF) >> 16) & 0xFFFF;
-	  printf("%lx %x %x \n", (it->first >> 32), ip, idif);
+	  
+	  uint32_t ip1 = (((it->first) >> 32) & 0XFFFFFFFF);
+	  uint32_t ip = (ip1>>24);
 	  if (idif != ip)
 	    continue;
+	  printf("%x %d %d %d \n",ip1, ip, idif,it->first & 0xFF);
+
 	}
       it->second.setB0(b0);
       it->second.setB1(b1);
@@ -462,12 +465,13 @@ web::json::value PmrManager::configureHR2()
   std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
   web::json::value array_slc;
   uint32_t nd = 0;
+#define ONETHREAD
 #ifdef ONETHREAD
   for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
     {
       std::stringstream ips;
       // Dummy IP address for Pmrs
-      ::usleep(50000);
+      ::usleep(5000);
       //fprintf(stderr,"Debug 2");
       ips << "0.0.0." << it->first;
       _hca.prepareSlowControl(ips.str(), true);
@@ -701,6 +705,7 @@ void PmrManager::configureThread(PmrInterface *d,unsigned char* b,uint32_t nb)
 {
   uint8_t slowb[65536];
   memcpy(slowb,b,nb);
+  ::usleep(500000);
   g_c.push_back(std::thread(std::bind(&PmrInterface::configure, d,slowb,nb)));
 }
 
