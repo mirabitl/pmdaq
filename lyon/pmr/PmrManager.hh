@@ -138,20 +138,8 @@ public:
     for (auto i = g_d.begin(); i != g_d.end(); i++)
       (*i).join();
   }
-  void joinConfigureThreads()
-  {
-    bool joinable=false;
-    do {
-      ::usleep(10000);
-      for (auto& i: g_c)
-	{
-	  joinable|=i.joinable();
-	  if (i.joinable())
-	    i.join();
-	}
-    } while(joinable);
-    g_c.clear();
-  }
+  void joinConfigureThreads();
+
 
   void setAllMasks(uint64_t mask);
   void setCTEST(uint64_t mask);

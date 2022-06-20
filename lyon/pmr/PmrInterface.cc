@@ -149,6 +149,7 @@ void pmr::PmrInterface::readout()
       _status->bcid=LBC;//PmrABCID(cbuf);
       //fprintf(stderr,"ABCID %lx \n",LBC);
       _status->bytes+=nread;
+      _status->published++;
       if (_dsData==NULL) continue;;
       memcpy((unsigned char*) _dsData->payload(),cbuf,nread);
       //printf(" Je envoie %d => %d  avec %x \n",_status->id,nread,_dsData);fflush(stdout);
@@ -196,17 +197,17 @@ void pmr::PmrInterface::destroy()
 void pmr::PmrInterface::configure(unsigned char* b,uint32_t nb)
 {
   _sem.lock();
-  fprintf(stderr,"Debug Interface 1 %d\n",nb);
+  //fprintf(stderr,"Debug Interface 1 %d\n",nb);
 
   _rd->loadSLC(b,nb);
-  fprintf(stderr,"Debug Interface 2\n");
+  //fprintf(stderr,"Debug Interface 2\n");
   uint32_t tdata;
   _rd->registerRead(PMR_SLC_STATUS_REG,&tdata);
-  fprintf(stderr,"Debug Interface 3\n");
+  //fprintf(stderr,"Debug Interface 3\n");
   _sem.unlock();
   _status->slc=tdata;
   this->publishState("CONFIGURED");
-  fprintf(stderr,"Debug Interface 4");
+  //fprintf(stderr,"Debug Interface 4");
   PM_INFO(_logPmr, "Pmr   id ("<<_status->id << ") ="<<tdata);
   return;
 }

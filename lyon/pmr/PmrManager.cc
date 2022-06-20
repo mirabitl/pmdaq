@@ -432,6 +432,7 @@ void PmrManager::c_status(http_request m)
       ds["slc"] = json::value::number(it->second->status()->slc);
       ds["gtc"] = json::value::number(it->second->status()->gtc);
       ds["bcid"] = json::value::number(it->second->status()->bcid);
+      ds["published"] = json::value::number(it->second->status()->published);
       ds["bytes"] = json::value::number(it->second->status()->bytes);
       ds["host"] = json::value::string(U(std::string((it->second->status()->host))));
       array_slc[nd++] = ds;
@@ -660,7 +661,23 @@ void PmrManager::end()
     }
 }
 
+void PmrManager::joinConfigureThreads()
+  {
 
+    int joins=0;
+    do {
+      ::usleep(10000);
+      for (auto& i: g_c)
+	{
+	  if (i.joinable())
+	    {
+	      fprintf(stderr,"Joining thread %d \n",joins++);
+	    i.join();
+	    }
+	}
+    } while(joins<g_c.size());
+    g_c.clear();
+  }
 void PmrManager::configureThread(PmrInterface *d,unsigned char* b,uint32_t nb)
 {
   uint8_t slowb[65536];
