@@ -74,6 +74,38 @@ class MongoJob:
         resconf=self.db.configurations.insert_one(s)
         print(resconf)
 
+    def uploadCalibration(self,name,calib,comment):
+        """
+        jobcontrol configuration upload
+
+        :param name: Name of the calibration
+        :param calib: dictionnary
+        :param comment: A comment on the configuration
+
+        """
+        s={}
+        s["content"]=calib
+        s["name"]=name
+        s["time"]=time.time()
+        s["comment"]=comment
+        s["setup"]=calib["setup"]
+        s["run"]=calib["chambers"][0]["info"]["run"]
+        resconf=self.db.calibrations.insert_one(s)
+        print(resconf)
+
+    def calibrations(self):
+        """
+        List all the calibrations stored
+        """
+        cl=[]
+        res=self.db.calibrations.find({})
+        for x in res:
+            if ("comment" in x):
+                print(time.ctime(x["time"]),x["setup"],x["run"],x["name"],x["comment"])
+                cl.append((x["name"],x['run'],x['comment']))
+        return cl
+
+
     def configurations(self):
         """
         List all the configurations stored
@@ -216,7 +248,31 @@ class MongoJob:
             f.write(json.dumps(slc, indent=2, sort_keys=True))
             f.close()
             return slc
+    def downloadCalibration(self,cname,setup,run,toFileOnly=False):
+        """
+        Download a jobcontrol configuration to /dev/shm/mgjob/ directory
         
+        :param cname: Configuration name
+        :param version: Configuration version
+        :param toFileOnly:if True and /dev/shm/mgjob/cname_version.json exists, then it exits
+        """
+        os.system("mkdir -p /dev/shm/mgjob")
+        fname="/dev/shm/mgjob/calib_%s_%s_%d.json" % (cname,setup,run)
+        if os.path.isfile(fname) and toFileOnly:
+            print('%s already download, Exiting' % fname)
+            return
+        res=self.db.calibrations.find({'name':cname,'setup':setup,'run':run})
+        for x in res:
+            print(x["name"],x["setup"],x["run"],x["comment"])
+            #var=raw_input()
+            slc=x["content"]
+            os.system("mkdir -p /dev/shm/mgjob")
+            fname="/dev/shm/mgjob/calib_%s_%s_%d.json" % (cname,setup,run)
+            f=open(fname,"w+")
+            f.write(json.dumps(slc))
+            f.close()
+            return slc
+       
     def getRun(self,location,comment="Not set"):
         """
         Get a new run number for a given setup
