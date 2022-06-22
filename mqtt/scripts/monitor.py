@@ -2,6 +2,7 @@ import time
 import json
 import paho.mqtt.client as paho
 import os
+import MongoSlow as ms
 class monitor:
     def __init__(self,host,port,session):
         """
@@ -15,6 +16,10 @@ class monitor:
         self.topicinfos=[]
         self.subtop=[]
         self.rcv_msg={}
+        self.msi=None
+    def connectMongo(self):
+        self.msi=ms.instance()
+        
     def on_topics(self,client, userdata, message):
         #time.sleep(1)
 
@@ -41,8 +46,12 @@ class monitor:
         r_m["timestamp"]=message.timestamp
         r_m["content"]=json.loads(str(message.payload.decode("utf-8")));
         self.rcv_msg[message.topic].append(r_m)
-        if (len( self.rcv_msg[message.topic])>100):
+        if (len( self.rcv_msg[message.topic])>1000):
             self.rcv_msg[message.topic].pop(0)
+
+        # Store in Mongo DB if connected
+        if (self.msi!=None):
+            self.msi.store(p[0],p[1], r_m["ctime"], r_m["content"])
         #print(r_m)
         ## BMP data
         if (p[1]=="BmpPaho"):

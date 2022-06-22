@@ -58,7 +58,14 @@ class MongoSlow:
         """
         Reset connection to download another configuration
         """
-        self.bson_id=[] 
+        self.bson_id=[]
+    def store(self,location,harware,cti,status):
+        mondoc={}
+        mondoc["path"]=","+location+","+hardware
+        mondoc["ctime"]=cti
+        mondoc["status"]=status
+        self.db.MONITORED_ITEMS.insert_one(mondoc)
+        
     def items(self,path,depth=50000,from_time=0):
         """
         List all the run informations stored
