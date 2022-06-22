@@ -61,7 +61,7 @@ class MongoSlow:
         self.bson_id=[]
     def store(self,location,harware,cti,status):
         mondoc={}
-        mondoc["path"]=","+location+","+hardware
+        mondoc["path"]=","+location+","+hardware+","
         mondoc["ctime"]=cti
         mondoc["status"]=status
         self.db.MONITORED_ITEMS.insert_one(mondoc)
