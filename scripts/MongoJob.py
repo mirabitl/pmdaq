@@ -74,17 +74,30 @@ class MongoJob:
         resconf=self.db.configurations.insert_one(s)
         print(resconf)
 
-    def uploadCalibration(self,name,calib,comment):
+    def uploadCalibration(self,name,calib,ctype,comment):
         """
         jobcontrol configuration upload
 
         :param name: Name of the calibration
         :param calib: dictionnary
-        :param comment: A comment on the configuration
+        :param ctype: SCURVE or GAIN
+        :param comment: A comment on the calibration
 
         """
         s={}
+        res=self.db.calibrations.find({'name':name})
+        last=0
+        for x in res:
+            if (last<x["version"]):
+                last=x["version"]
+        if (last==0):
+            s["version"]=1
+        else:
+            s["version"]=last+1
+
+
         s["content"]=calib
+        s["type"]=ctype
         s["name"]=name
         s["time"]=time.time()
         s["comment"]=comment
@@ -101,8 +114,8 @@ class MongoJob:
         res=self.db.calibrations.find({})
         for x in res:
             if ("comment" in x):
-                print(time.ctime(x["time"]),x["setup"],x["run"],x["name"],x["comment"])
-                cl.append((x["name"],x['run'],x['comment']))
+                print(time.ctime(x["time"]),x["name"],x["version"],x["type"],x["setup"],x["run"],x["comment"])
+                cl.append((x["name"],x["version"],x['run'],x['comment']))
         return cl
 
 
@@ -248,26 +261,26 @@ class MongoJob:
             f.write(json.dumps(slc, indent=2, sort_keys=True))
             f.close()
             return slc
-    def downloadCalibration(self,cname,setup,run,toFileOnly=False):
+    def downloadCalibration(self,cname,version,toFileOnly=False):
         """
-        Download a jobcontrol configuration to /dev/shm/mgjob/ directory
+        Download a calibration to /dev/shm/mgjob/ directory
         
-        :param cname: Configuration name
-        :param version: Configuration version
+        :param cname: calibration name
+        :param version: calibration version
         :param toFileOnly:if True and /dev/shm/mgjob/cname_version.json exists, then it exits
         """
         os.system("mkdir -p /dev/shm/mgjob")
-        fname="/dev/shm/mgjob/calib_%s_%s_%d.json" % (cname,setup,run)
+        fname="/dev/shm/mgjob/calib_%s_%d.json" % (cname,version)
         if os.path.isfile(fname) and toFileOnly:
             print('%s already download, Exiting' % fname)
             return
-        res=self.db.calibrations.find({'name':cname,'setup':setup,'run':run})
+        res=self.db.calibrations.find({'name':cname,'version':version})
         for x in res:
-            print(x["name"],x["setup"],x["run"],x["comment"])
+            print(x["name"],x["version"],x["type"],x["setup"],x["run"],x["comment"])
             #var=raw_input()
             slc=x["content"]
             os.system("mkdir -p /dev/shm/mgjob")
-            fname="/dev/shm/mgjob/calib_%s_%s_%d.json" % (cname,setup,run)
+            fname="/dev/shm/mgjob/calib_%s_%d.json" % (cname,version)
             f=open(fname,"w+")
             f.write(json.dumps(slc))
             f.close()

@@ -52,7 +52,11 @@ class monitor:
         # Store in Mongo DB if connected
         if (self.msi!=None):
             self.msi.store(p[0],p[1], r_m["ctime"], r_m["content"])
-        #print(r_m)
+            #print(p[0],p[1], r_m["ctime"], r_m["content"])
+        else:
+            if (False):
+                print("No db storage")
+            #print(r_m)
         ## BMP data
         if (p[1]=="BmpPaho"):
             #print(p[3],message.payload.decode("utf-8"))
