@@ -23,13 +23,19 @@
 void mbmdcc::Interface::dolisten()
 {
   // _running=true;
+  uint64_t nl=0;
   while(!_onClientDisconnect->disconnected()) {
     //    PM_INFO(_logMbmdcc,"Thread is "<<_running);
 
     if (!_running) break;
-    if(!_group->listen(1000))
-      std::cout << "\nNo msg recieved during the last 4 seconds"<<std::endl<<std::flush;
-    //::usleep(1000);
+    //std::cout << "\n calling listen"<<std::endl<<std::flush;
+    if(!_group->listen())
+      {
+	if (nl%10000==0)
+	  std::cout << "\nNo msg recieved during the last 10 seconds"<<std::endl<<std::flush;
+	nl++;
+      }
+    ::usleep(1000);
 
   }
   PM_INFO(_logMbmdcc,"Thread is finished");
@@ -52,7 +58,11 @@ void mbmdcc::Interface::terminate()
     _running=false;
     ::sleep(2);
     PM_INFO(_logMbmdcc,"Joining");
-    g_store.join();
+    if (g_store.joinable())
+      {
+	PM_INFO(_logMbmdcc,"calling Join");
+	g_store.join();
+      }
     fprintf(stderr,"On est sorti \n");
     }
   PM_INFO(_logMbmdcc,"Terminated");

@@ -82,6 +82,7 @@ if (_mpi!=NULL)
       _mpi->terminate();
       PMF_INFO(_logMbmdcc,"=> CLOSE");
       _mpi->close();
+
       PMF_INFO(_logMbmdcc,"=> DELETE");
       if (_mpi!=NULL) delete _mpi;
       _mpi=NULL;
