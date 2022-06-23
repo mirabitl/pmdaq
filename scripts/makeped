@@ -1,0 +1,251 @@
+#!/usr/bin/env python3
+from __future__ import absolute_import
+from __future__ import print_function
+import os
+import socks
+import socket
+import six.moves.http_client
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
+from six.moves.urllib.error import URLError, HTTPError
+import json
+from copy import deepcopy
+import base64
+import time
+import argparse
+import requests
+import combrc
+import serviceAccess as sac
+import pnsAccess
+import MongoJob as mg
+import sys
+from six.moves import range
+from six.moves import input
+import fitpmr
+
+
+class idaq:
+    def __init__(self):
+        self.account = os.getenv("MGDBLOGIN", "NONE")
+        if (self.account == "NONE"):
+            print("The ENV varaible MGDBLOGIN=user/pwd@host:port@dbname mut be set")
+            exit(0)
+
+        self.config = os.getenv("DAQMONGO", "NONE")
+        self.file_config=None
+        self.session_name=None
+        if (self.config == "NONE"):
+            print("The ENV varaible DAQMONGO=name:version must be set")
+            exit(0)
+        else:
+            self.w=mg.instance()
+            #print(config.split(':')[0],config.split(':')[1],True)
+            self.w.downloadConfig(self.config.split(':')[0],int(self.config.split(':')[1]),True)
+            self.file_config="/dev/shm/mgjob/%s_%s.json" % (self.config.split(':')[0],self.config.split(':')[1])
+            #exit(0)
+            self.session_name=self.config.split(':')[0]
+
+        # PN access
+        self.fpns=pnsAccess.pnsAccess()
+        self.fdc = combrc.combRC(self.file_config)
+
+
+
+
+
+        lcgi = {}
+        r_cmd = None
+    def REMOVE(self,name=None):
+        if (name!=None):
+            self.fpns.pns_remove(name)
+        else:
+            self.fpns.pns_remove(self.session_name)
+    def pns_list(self,name=None):
+        if (name!=None):
+            self.fpns.pns_list(name)
+        else:
+            self.fpns.pns_list(self.session_name)
+    def pns_session(self):
+        rep=self.fpns.pns_session_list()
+        print(rep)
+
+    def VIEW(self):
+        self.fpns.Print(self.session_name,True)
+
+    def REGISTER(self):
+        self.fdc.session.Print(True)
+
+    def INIT(self,dead=None):
+        self.fdc.getStoredState()
+        delay=0
+        if (dead!=None):
+            self.fdc.reset=dead
+        self.fdc.initialise()
+        
+    def CONFIGURE(self):
+        self.fdc.configure()
+    
+    def SPY(self):
+        if (self.fdc.state!="CREATED"):
+            self.fdc.BuilderStatus(True)
+            self.fdc.SourceStatus(True)
+            self.fdc.TriggerStatus(True)
+
+    def tdc_status(self):
+        sr = self.fdc.SourceStatus(False)
+        print(sr)
+    
+
+    def RUN(self,comment):
+        if (comment != None):
+            self.fdc.comment=comment
+            self.fdc.start()
+        else:
+            self.fdc.start()
+    def STOP(self):
+        self.fdc.stop()
+
+    def DESTROY(self):
+        self.fdc.destroy()
+
+    def evb_status(self):
+        sr = self.fdc.BuilderStatus()
+        #print(sr)
+        return sr
+        #elif(results.daq_downloaddb):
+    def DOWNLOADDB(self,name,state,version):
+        lcgi = {}
+        lcgi['state'] = state
+        lcgi['version'] = version
+        print(self.fdc.processCommand("DOWNLOADDB", name, lcgi))
+
+
+
+        # FEB
+
+        # MDCC
+
+    def trig_status(self):
+        res = self.fdc.TriggerStatus(True)
+
+
+    def beamon(self,nc):
+        self.fdc.mdcc_setBeamOn(nc)
+        
+    def spillon(self,nc):
+        self.fdc.mdcc_setSpillOn(nc)
+    def spilloff(self,nc):
+        self.fdc.mdcc_setSpillOff(nc)
+
+    def PAUSE(self):
+        self.fdc.mdcc_Pause()
+    def RESUME(self):
+        self.fdc.mdcc_Resume()
+            
+    def Command(self,method,application,params):
+        rep =self.fdc.processCommand(method,application,params)
+        print(rep)
+
+    def makeAnalysis(self,run,chamber,slot,difd,difc,difg):
+
+        s={}
+        s["plugins"]=["proc_pmr"]
+        s["runs"]=[[run,"/data/srv02/RAID6/SDHCAL2022/PED_TEST"]]
+        s["process"]={
+	    "directory":"./",
+	    "noise":0,
+	    "display":0,
+	    "trigger":1,
+	    "coinc":0,
+	    "minplan":3,
+	    "dcut":5,
+	    "minbot":1,
+	    "pcut":0.1,
+	    "thetacut":3.0,
+	    "cpacut":2.0,
+	    "wmin":22,
+	    "wmax":32
+        }
+        s["difs"]=[]
+        s["difs"].append({"id":difd,"chamber":chamber,"di":0.0,"dj":0.0,"poli":1.0,"polj":1.0,"type":"HR2PAD"})
+        s["difs"].append({"id":difc,"chamber":chamber,"di":0.0,"dj":32.0,"poli":1.0,"polj":1.0,"type":"HR2PAD"})
+        s["difs"].append({"id":difg,"chamber":chamber,"di":0.0,"dj":64.0,"poli":1.0,"polj":1.0,"type":"HR2PAD"})
+        s["chambers"]=[]
+        s["chambers"].append({"num":chamber,"name":"slot-%.2d" % slot,"id":slot,"z":slot*2.5,"x":0.0,"y":0.0,"type":1})
+        fname='run%d_ch%d_sl%d.json' % (run,chamber,slot)
+        with open(fname, 'w') as f:
+            f.write(json.dumps(s, sort_keys=True, indent=4))
+        os.system("${HOME}/processped %s" % fname)
+
+        return s
+
+
+if __name__=='__main__':
+    chamber=input("Numero de chambre?: ")
+    slot=input("Slot?: ")
+    difd=input("DIF droite?: ")
+    difc=input("DIF centre?: ")
+    difg=input("DIF gauche?: ")
+
+    
+    d=idaq()
+    d.REMOVE()
+    del d
+    d=idaq()
+    d.REMOVE()
+    del d
+    d=idaq()
+    d.REGISTER()
+    d.VIEW()
+    d.INIT()
+
+    d.SPY()
+    cominit=input("comment for INIT: ")    
+    print(cominit)
+    d.Command('ENABLE','lyon_ipdc',{"value":7})
+    d.Command('SETTRIGEXT','lyon_ipdc',{"delay":200,"busy":20})
+    d.Command('SPILLON','lyon_ipdc',{"nclock":200000001})
+    d.Command('SETSPILLREGISTER','lyon_ipdc',{"value":4})
+    d.Command('SPILLOFF','lyon_ipdc',{"nclock":1000})
+    d.Command('SETEXTERNAL','lyon_ipdc',{"value":0})
+    d.Command('TRIGEXT','lyon_pmr',{"value":0})
+    d.DOWNLOADDB("lyon_pmr","Dome_42chambres_first",4)
+    
+    d.CONFIGURE()
+    d.SPY()
+    comconf=input("comment for Configure: ")    
+    print(comconf)
+   
+    comrun=input("comment for the run: ")
+    
+    d.RUN(comrun)
+    d.Command('SCURVE','lyon_pmr',{"last":140,"first":80,"channel":255,"step":2,"window":50000,"ntrg":20,"level":0})
+
+    time.sleep(10)
+    nbl=0
+    run=0
+    while True:
+        time.sleep(10)
+        #d.SPY()
+        sevb=json.loads(d.evb_status())
+        for x,y in sevb.items():
+            print("run %d Built %d \n" %(y['run'],y['built']))
+            nb=y["built"]
+            run=y["run"]
+        if (nb ==nbl):
+            break
+        else:
+            nbl=nb
+        #doileave=input("On sort  (Y/N): ")
+        #if (doileave=="Y"):
+        #    break
+        
+    d.STOP()
+    d.SPY()
+    comrun1=input("comment after the run: ")
+
+    print(run,cominit,comconf,comrun,comrun1)
+    d.makeAnalysis(run,int(chamber),int(slot),int(difd),int(difc),int(difg))
+    fitpmr.fitchamber(run,80,200,int(difd),int(difc),int(difg),int(chamber),int(slot))
+    d.REMOVE()
+                  

@@ -244,12 +244,13 @@ class serviceAccess:
                         self.state=o.state
     def services_request(self):
         r_services=executeCMD(self.host,self.port,"/SERVICES",{})
+        #print(r_services)
         if (type(r_services) is bytes):
             r_services=r_services.decode("utf-8")
         services=json.loads(r_services);
         if ("http_error" in services):
             return
-
+        #print(services)
         #print(services)
         for x in services:
             v=x.split(self.path)
