@@ -1,0 +1,2131 @@
+{
+  "difs": [
+    {
+      "id": 181,
+      "chamber": 1,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 94,
+      "chamber": 1,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 30,
+      "chamber": 1,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 117,
+      "chamber": 2,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 149,
+      "chamber": 2,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 115,
+      "chamber": 2,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 122,
+      "chamber": 3,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 123,
+      "chamber": 3,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 130,
+      "chamber": 3,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 129,
+      "chamber": 4,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 118,
+      "chamber": 4,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 119,
+      "chamber": 4,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 164,
+      "chamber": 5,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 152,
+      "chamber": 5,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 151,
+      "chamber": 5,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 74,
+      "chamber": 6,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 61,
+      "chamber": 6,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 75,
+      "chamber": 6,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 156,
+      "chamber": 7,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 111,
+      "chamber": 7,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 110,
+      "chamber": 7,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 102,
+      "chamber": 8,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 177,
+      "chamber": 8,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 103,
+      "chamber": 8,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 133,
+      "chamber": 9,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 136,
+      "chamber": 9,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 134,
+      "chamber": 9,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 128,
+      "chamber": 10,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 120,
+      "chamber": 10,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 121,
+      "chamber": 10,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 65,
+      "chamber": 11,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 64,
+      "chamber": 11,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 58,
+      "chamber": 11,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 148,
+      "chamber": 12,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 72,
+      "chamber": 12,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 73,
+      "chamber": 12,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 78,
+      "chamber": 13,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 79,
+      "chamber": 13,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 60,
+      "chamber": 13,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 44,
+      "chamber": 14,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 43,
+      "chamber": 14,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 113,
+      "chamber": 14,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 66,
+      "chamber": 15,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 69,
+      "chamber": 15,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 68,
+      "chamber": 15,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 186,
+      "chamber": 16,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 127,
+      "chamber": 16,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 154,
+      "chamber": 16,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 147,
+      "chamber": 17,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 70,
+      "chamber": 17,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 71,
+      "chamber": 17,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 47,
+      "chamber": 18,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 139,
+      "chamber": 18,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 140,
+      "chamber": 18,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 143,
+      "chamber": 19,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 77,
+      "chamber": 19,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 76,
+      "chamber": 19,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 159,
+      "chamber": 20,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 91,
+      "chamber": 20,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 36,
+      "chamber": 20,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 179,
+      "chamber": 21,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 178,
+      "chamber": 21,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 183,
+      "chamber": 21,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 41,
+      "chamber": 22,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 42,
+      "chamber": 22,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 67,
+      "chamber": 22,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 137,
+      "chamber": 23,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 46,
+      "chamber": 23,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 138,
+      "chamber": 23,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 131,
+      "chamber": 24,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 173,
+      "chamber": 24,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 144,
+      "chamber": 24,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 189,
+      "chamber": 25,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 184,
+      "chamber": 25,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 160,
+      "chamber": 25,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 172,
+      "chamber": 26,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 167,
+      "chamber": 26,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 171,
+      "chamber": 26,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 146,
+      "chamber": 27,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 135,
+      "chamber": 27,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 145,
+      "chamber": 27,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 185,
+      "chamber": 28,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 170,
+      "chamber": 28,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 180,
+      "chamber": 28,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 187,
+      "chamber": 29,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 188,
+      "chamber": 29,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 190,
+      "chamber": 29,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 169,
+      "chamber": 30,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 165,
+      "chamber": 30,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 166,
+      "chamber": 30,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 155,
+      "chamber": 31,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 57,
+      "chamber": 31,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 50,
+      "chamber": 31,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 153,
+      "chamber": 32,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 108,
+      "chamber": 32,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 25,
+      "chamber": 32,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 51,
+      "chamber": 33,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 56,
+      "chamber": 33,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 109,
+      "chamber": 33,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 107,
+      "chamber": 34,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 150,
+      "chamber": 34,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 116,
+      "chamber": 34,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 126,
+      "chamber": 35,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 124,
+      "chamber": 35,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 49,
+      "chamber": 35,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 174,
+      "chamber": 36,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 175,
+      "chamber": 36,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 176,
+      "chamber": 36,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 48,
+      "chamber": 37,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 45,
+      "chamber": 37,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 114,
+      "chamber": 37,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 98,
+      "chamber": 38,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 93,
+      "chamber": 38,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 40,
+      "chamber": 38,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 92,
+      "chamber": 39,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 97,
+      "chamber": 39,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 100,
+      "chamber": 39,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 62,
+      "chamber": 40,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 106,
+      "chamber": 40,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 132,
+      "chamber": 40,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 101,
+      "chamber": 41,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 35,
+      "chamber": 41,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 99,
+      "chamber": 41,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 158,
+      "chamber": 42,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 142,
+      "chamber": 42,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 141,
+      "chamber": 42,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 163,
+      "chamber": 43,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 161,
+      "chamber": 43,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 162,
+      "chamber": 43,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 104,
+      "chamber": 44,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 29,
+      "chamber": 44,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 112,
+      "chamber": 44,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 59,
+      "chamber": 45,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 53,
+      "chamber": 45,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 54,
+      "chamber": 45,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 96,
+      "chamber": 46,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 90,
+      "chamber": 46,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 27,
+      "chamber": 46,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 95,
+      "chamber": 47,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 8,
+      "chamber": 47,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 5,
+      "chamber": 47,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 63,
+      "chamber": 48,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 87,
+      "chamber": 48,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 18,
+      "chamber": 48,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 243,
+      "chamber": 49,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 242,
+      "chamber": 49,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 241,
+      "chamber": 49,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 105,
+      "chamber": 50,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 182,
+      "chamber": 50,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 80,
+      "chamber": 50,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 205,
+      "chamber": 51,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 206,
+      "chamber": 51,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 207,
+      "chamber": 51,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 208,
+      "chamber": 52,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 209,
+      "chamber": 52,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 210,
+      "chamber": 52,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 211,
+      "chamber": 53,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 212,
+      "chamber": 53,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 213,
+      "chamber": 53,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 214,
+      "chamber": 54,
+      "di": 0,
+      "dj": 64,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "G"
+    },
+    {
+      "id": 215,
+      "chamber": 54,
+      "di": 0,
+      "dj": 32,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "C"
+    },
+    {
+      "id": 216,
+      "chamber": 54,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    },
+    {
+      "id": 125,
+      "chamber": 57,
+      "di": 0,
+      "dj": 0,
+      "poli": 1,
+      "polj": 1,
+      "type": "HR2PAD",
+      "pos": "D"
+    }
+  ],
+  "chambers": [
+    {
+      "num": 1,
+      "id": 1,
+      "name": "slot-01",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "type": 1
+    },
+    {
+      "num": 2,
+      "id": 2,
+      "name": "slot-02",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 2.8,
+      "type": 1
+    },
+    {
+      "num": 3,
+      "id": 3,
+      "name": "slot-03",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 5.6,
+      "type": 1
+    },
+    {
+      "num": 4,
+      "id": 4,
+      "name": "slot-04",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 8.399999999999999,
+      "type": 1
+    },
+    {
+      "num": 5,
+      "id": 5,
+      "name": "slot-05",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 11.2,
+      "type": 1
+    },
+    {
+      "num": 6,
+      "id": 6,
+      "name": "slot-06",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 14.0,
+      "type": 1
+    },
+    {
+      "num": 7,
+      "id": 7,
+      "name": "slot-07",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 16.799999999999997,
+      "type": 1
+    },
+    {
+      "num": 8,
+      "id": 8,
+      "name": "slot-08",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 19.599999999999998,
+      "type": 1
+    },
+    {
+      "num": 9,
+      "id": 9,
+      "name": "slot-09",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 22.4,
+      "type": 1
+    },
+    {
+      "num": 10,
+      "id": 10,
+      "name": "slot-10",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 25.2,
+      "type": 1
+    },
+    {
+      "num": 11,
+      "id": 11,
+      "name": "slot-11",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 28.0,
+      "type": 1
+    },
+    {
+      "num": 12,
+      "id": 12,
+      "name": "slot-12",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 30.799999999999997,
+      "type": 1
+    },
+    {
+      "num": 13,
+      "id": 13,
+      "name": "slot-13",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 33.599999999999994,
+      "type": 1
+    },
+    {
+      "num": 14,
+      "id": 14,
+      "name": "slot-14",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 36.4,
+      "type": 1
+    },
+    {
+      "num": 15,
+      "id": 15,
+      "name": "slot-15",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 39.199999999999996,
+      "type": 1
+    },
+    {
+      "num": 16,
+      "id": 16,
+      "name": "slot-16",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 42.0,
+      "type": 1
+    },
+    {
+      "num": 17,
+      "id": 17,
+      "name": "slot-17",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 44.8,
+      "type": 1
+    },
+    {
+      "num": 18,
+      "id": 18,
+      "name": "slot-18",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 47.599999999999994,
+      "type": 1
+    },
+    {
+      "num": 19,
+      "id": 19,
+      "name": "slot-19",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 50.4,
+      "type": 1
+    },
+    {
+      "num": 20,
+      "id": 20,
+      "name": "slot-20",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 53.199999999999996,
+      "type": 1
+    },
+    {
+      "num": 21,
+      "id": 21,
+      "name": "slot-21",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 56.0,
+      "type": 1
+    },
+    {
+      "num": 22,
+      "id": 22,
+      "name": "slot-22",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 58.8,
+      "type": 1
+    },
+    {
+      "num": 23,
+      "id": 23,
+      "name": "slot-23",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 61.599999999999994,
+      "type": 1
+    },
+    {
+      "num": 24,
+      "id": 24,
+      "name": "slot-24",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 64.39999999999999,
+      "type": 1
+    },
+    {
+      "num": 25,
+      "id": 25,
+      "name": "slot-25",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 67.19999999999999,
+      "type": 1
+    },
+    {
+      "num": 26,
+      "id": 26,
+      "name": "slot-26",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 70.0,
+      "type": 1
+    },
+    {
+      "num": 27,
+      "id": 27,
+      "name": "slot-27",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 72.8,
+      "type": 1
+    },
+    {
+      "num": 28,
+      "id": 28,
+      "name": "slot-28",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 75.6,
+      "type": 1
+    },
+    {
+      "num": 29,
+      "id": 29,
+      "name": "slot-29",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 78.39999999999999,
+      "type": 1
+    },
+    {
+      "num": 30,
+      "id": 30,
+      "name": "slot-30",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 81.19999999999999,
+      "type": 1
+    },
+    {
+      "num": 31,
+      "id": 31,
+      "name": "slot-31",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 84.0,
+      "type": 1
+    },
+    {
+      "num": 32,
+      "id": 32,
+      "name": "slot-32",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 86.8,
+      "type": 1
+    },
+    {
+      "num": 33,
+      "id": 33,
+      "name": "slot-33",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 89.6,
+      "type": 1
+    },
+    {
+      "num": 34,
+      "id": 34,
+      "name": "slot-34",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 92.39999999999999,
+      "type": 1
+    },
+    {
+      "num": 35,
+      "id": 35,
+      "name": "slot-35",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 95.19999999999999,
+      "type": 1
+    },
+    {
+      "num": 36,
+      "id": 36,
+      "name": "slot-36",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 98.0,
+      "type": 1
+    },
+    {
+      "num": 37,
+      "id": 37,
+      "name": "slot-37",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 100.8,
+      "type": 1
+    },
+    {
+      "num": 38,
+      "id": 38,
+      "name": "slot-38",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 103.6,
+      "type": 1
+    },
+    {
+      "num": 39,
+      "id": 39,
+      "name": "slot-39",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 106.39999999999999,
+      "type": 1
+    },
+    {
+      "num": 40,
+      "id": 40,
+      "name": "slot-40",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 109.19999999999999,
+      "type": 1
+    },
+    {
+      "num": 41,
+      "id": 41,
+      "name": "slot-41",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 112.0,
+      "type": 1
+    },
+    {
+      "num": 42,
+      "id": 42,
+      "name": "slot-42",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 114.8,
+      "type": 1
+    },
+    {
+      "num": 43,
+      "id": 43,
+      "name": "slot-43",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 117.6,
+      "type": 1
+    },
+    {
+      "num": 44,
+      "id": 44,
+      "name": "slot-44",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 120.39999999999999,
+      "type": 1
+    },
+    {
+      "num": 45,
+      "id": 45,
+      "name": "slot-45",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 123.19999999999999,
+      "type": 1
+    },
+    {
+      "num": 46,
+      "id": 46,
+      "name": "slot-46",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 125.99999999999999,
+      "type": 1
+    },
+    {
+      "num": 47,
+      "id": 47,
+      "name": "slot-47",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 128.79999999999998,
+      "type": 1
+    },
+    {
+      "num": 48,
+      "id": 48,
+      "name": "slot-48",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 131.6,
+      "type": 1
+    },
+    {
+      "num": 49,
+      "id": 49,
+      "name": "slot-49",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 134.39999999999998,
+      "type": 1
+    },
+    {
+      "num": 50,
+      "id": 50,
+      "name": "slot-50",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 137.2,
+      "type": 1
+    },
+    {
+      "num": 51,
+      "id": 51,
+      "name": "slot-51",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 140.0,
+      "type": 1
+    },
+    {
+      "num": 52,
+      "id": 52,
+      "name": "slot-52",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 142.79999999999998,
+      "type": 1
+    },
+    {
+      "num": 53,
+      "id": 53,
+      "name": "slot-53",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 145.6,
+      "type": 1
+    },
+    {
+      "num": 54,
+      "id": 54,
+      "name": "slot-54",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 148.39999999999998,
+      "type": 1
+    },
+    {
+      "num": 57,
+      "id": 57,
+      "name": "slot-57",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 156.79999999999998,
+      "type": 1
+    }
+  ]
+}

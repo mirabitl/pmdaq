@@ -181,12 +181,45 @@ class idaq:
 
 
 if __name__=='__main__':
-    chamber=input("Numero de chambre?: ")
-    slot=input("Slot?: ")
-    difd=input("DIF droite?: ")
-    difc=input("DIF centre?: ")
-    difg=input("DIF gauche?: ")
+    slot=0
+    difd=0
+    difc=0
+    difg=0
+    os.system("sudo ListDevices.py")
+    f=open("/var/log/pi/ftdi_devices")
+    ldv=f.readlines()
+    sgeom=json.load(open("m3_geom.json"))
+    for x in ldv:
+        if (x.split()[2][0:5] =="FT101"):
+            d=int(x.split()[2][5:8])
+            print("DIF Found ID %d " % d)
+            for  gd in sgeom["difs"]:
+                if (gd["id"]==d):
+                    print(gd)
+                    if(gd["pos"]=="G"):
+                        difg=d
+                    if(gd["pos"]=="C"):
+                        difc=d
+                    if(gd["pos"]=="D"):
+                        difd=d
+                    slot=gd["chamber"]
+                    break
 
+
+    if (slot==0):
+        slot=int(input("Slot?: "))
+    if (difd==0):
+        difd=int(input("DIF droite?: "))
+    if (difc==0):
+        difc=int(input("DIF centre?: "))
+    if (difg==0):
+        difg=int(input("DIF gauche?: "))
+
+    chamber=int(input("Numero de chambre?: "))
+
+    vok=input("\t == Make a Run piedestal pour le Slot %d Chambre %d DIFs (%d,%d,%d)== ? (Y/N)" % (slot,chamber,difd,difc,difg))
+    if (vok=="N"):
+        exit(0)
     
     d=idaq()
     d.REMOVE()
