@@ -13,7 +13,8 @@ class HR2ConfigAccess
 {
 public:
   HR2ConfigAccess();
-  ~HR2ConfigAccess(){;}
+  ~HR2ConfigAccess(){_asicMap.clear();  _jall=web::json::value::null();}
+
   void parseMongoDb(std::string state,uint32_t version);
   void parseJsonFile(std::string jsf);
   void parseJson();
@@ -27,7 +28,7 @@ public:
 private:
   std::map<uint64_t,HR2Slow> _asicMap;
   json::value _jall;
-  json::value _jasic;
+  //json::value _jasic;
   uint8_t _slcBuffer[65536];
   uint32_t _slcBytes;
 };

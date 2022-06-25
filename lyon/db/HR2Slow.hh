@@ -15,7 +15,9 @@ using namespace web;
 class HR2Slow
   {
   public:
-    HR2Slow(){ memset(_l,0,28*sizeof(uint32_t));}
+    HR2Slow(){
+      memset(_l,0,28*sizeof(uint32_t));}
+    ~HR2Slow(){;}
     bool getBit(uint32_t* l,int b){return (l[b/32]>>(b%32))&1;}
     void setBit(uint32_t* l,int b){ l[b/32]|=(1<<(b%32));};
     void clearBit(uint32_t* l,int b){ l[b/32]&= ~(1<<(b%32));};
@@ -47,9 +49,10 @@ class HR2Slow
 
     
     }
-    void toJson()
+    
+    web::json::value toJson()
     {
-      web::json::value _jjasic;
+      auto _jjasic=web::json::value::object();
 
       _jjasic["ENABLED"]=1;
       _jjasic["EN_OTAQ"]=getEN_OTAQ();
@@ -133,12 +136,12 @@ class HR2Slow
       _jjasic["MASK2"]=m2;
       _jjasic["PAGAIN"]=pag;
    
-      _jasic=_jjasic;
+      return _jjasic;
     }
     void dumpJson()
     {
      
-      std::cout <<_jasic << std::endl;
+      std::cout <<this->toJson() << std::endl;
     }
     void dumpBinary()
     {
@@ -168,51 +171,52 @@ class HR2Slow
 	}
       catch (web::json::json_exception excep)
 	{
-	  _jasic=web::json::value::null();
+	  //_jasic=web::json::value::null();
 	  //throw web::json::json_exception("Error Parsing JSON file " + jsonFileName);
 	}
-      _jasic=output;
+      //_jasic=output;
       return;
 
 
 
       
     }
-    void setFromJson()
+    
+    void setFromJson(web::json::value vasic)
     {
     
       
 
       uint8_t ch=0;
-      for (auto it = _jasic["PAGAIN"].as_array().begin(); it !=_jasic["PAGAIN"].as_array().end(); it++)
+      for (auto it = vasic["PAGAIN"].as_array().begin(); it !=vasic["PAGAIN"].as_array().end(); it++)
 	{
 	  uint8_t sid=(*it).as_integer();
 	  setPAGAIN(ch,sid);
 	  ch++;
 	}
       ch=0;
-      for (auto it = _jasic["CTEST"].as_array().begin(); it !=_jasic["CTEST"].as_array().end(); it++)
+      for (auto it = vasic["CTEST"].as_array().begin(); it !=vasic["CTEST"].as_array().end(); it++)
 	{
 	  uint8_t sid=(*it).as_integer();
 	  setCTEST(ch,sid);
 	  ch++;
 	}
       ch=0;
-      for (auto it = _jasic["MASK0"].as_array().begin(); it !=_jasic["MASK0"].as_array().end(); it++)
+      for (auto it = vasic["MASK0"].as_array().begin(); it !=vasic["MASK0"].as_array().end(); it++)
 	{
 	  uint8_t sid=(*it).as_integer();
 	  setMASKChannel(0,ch,sid);
 	  ch++;
 	}
       ch=0;
-      for (auto it = _jasic["MASK1"].as_array().begin(); it !=_jasic["MASK1"].as_array().end(); it++)
+      for (auto it = vasic["MASK1"].as_array().begin(); it !=vasic["MASK1"].as_array().end(); it++)
 	{
 	  uint8_t sid=(*it).as_integer();
 	  setMASKChannel(1,ch,sid);
 	  ch++;
 	}
       ch=0;
-      for (auto it = _jasic["MASK2"].as_array().begin(); it !=_jasic["MASK2"].as_array().end(); it++)
+      for (auto it = vasic["MASK2"].as_array().begin(); it !=vasic["MASK2"].as_array().end(); it++)
 	{
 	  uint8_t sid=(*it).as_integer();
 	  setMASKChannel(2,ch,sid);
@@ -220,76 +224,78 @@ class HR2Slow
 	}
 
       
-      setEN_OTAQ(_jasic["EN_OTAQ"].as_integer());
-      setDACSW(_jasic["DACSW"].as_integer());
-      setSEL0(_jasic["SEL0"].as_integer());
-      setCMDB2FSB2(_jasic["CMDB2FSB2"].as_integer());
-      setCMDB0FSB2(_jasic["CMDB0FSB2"].as_integer());
-      setENOCTRANSMITON1B(_jasic["ENOCTRANSMITON1B"].as_integer());
-      setSEL1(_jasic["SEL1"].as_integer());
-      setCMDB2FSB1(_jasic["CMDB2FSB1"].as_integer());
-      setOTABGSW(_jasic["OTABGSW"].as_integer());
-      setSW50F0(_jasic["SW50F0"].as_integer());
-      setENOCDOUT2B(_jasic["ENOCDOUT2B"].as_integer());
-      setSW50K0(_jasic["SW50K0"].as_integer());
-      setSMALLDAC(_jasic["SMALLDAC"].as_integer());
-      setSELENDREADOUT(_jasic["SELENDREADOUT"].as_integer());
-      setCMDB3FSB1(_jasic["CMDB3FSB1"].as_integer());
-      setSWSSC(_jasic["SWSSC"].as_integer());
-      setPWRONBUFF(_jasic["PWRONBUFF"].as_integer());
-      setENOCDOUT1B(_jasic["ENOCDOUT1B"].as_integer());
-      setSW50K2(_jasic["SW50K2"].as_integer());
-      setCMDB2SS(_jasic["CMDB2SS"].as_integer());
-      setTRIG1B(_jasic["TRIG1B"].as_integer());
-      setCMDB1SS(_jasic["CMDB1SS"].as_integer());
-      setPWRONPA(_jasic["PWRONPA"].as_integer());
-      setPWRONSS(_jasic["PWRONSS"].as_integer());
-      setRAZCHNINTVAL(_jasic["RAZCHNINTVAL"].as_integer());
-      setSW100K1(_jasic["SW100K1"].as_integer());
-      setCLKMUX(_jasic["CLKMUX"].as_integer());
-      setSW50F1(_jasic["SW50F1"].as_integer());
-      setPWRONFSB0(_jasic["PWRONFSB0"].as_integer());
-      setENOCTRANSMITON2B(_jasic["ENOCTRANSMITON2B"].as_integer());
-      setENOCCHIPSATB(_jasic["ENOCCHIPSATB"].as_integer());
-      setCMDB3SS(_jasic["CMDB3SS"].as_integer());
-      setDISCRI1(_jasic["DISCRI1"].as_integer());
-      setSW50F2(_jasic["SW50F2"].as_integer());
-      setSW100K0(_jasic["SW100K0"].as_integer());
-      setCMDB3FSB2(_jasic["CMDB3FSB2"].as_integer());
-      setSCON(_jasic["SCON"].as_integer());
-      setTRIG2B(_jasic["TRIG2B"].as_integer());
-      setSW100K2(_jasic["SW100K2"].as_integer());
-      setSW100F1(_jasic["SW100F1"].as_integer());
-      setTRIGEXTVAL(_jasic["TRIGEXTVAL"].as_integer());
-      setPWRONFSB2(_jasic["PWRONFSB2"].as_integer());
-      setRS_OR_DISCRI(_jasic["RS_OR_DISCRI"].as_integer());
-      setTRIG0B(_jasic["TRIG0B"].as_integer());
-      setPWRONFSB1(_jasic["PWRONFSB1"].as_integer());
-      setSW100F2(_jasic["SW100F2"].as_integer());
-      setPWRONW(_jasic["PWRONW"].as_integer());
-      setRAZCHNEXTVAL(_jasic["RAZCHNEXTVAL"].as_integer());
-      setDISCRI2(_jasic["DISCRI2"].as_integer());
-      setSELSTARTREADOUT(_jasic["SELSTARTREADOUT"].as_integer());
-      setSW50K1(_jasic["SW50K1"].as_integer());
-      setCMDB1FSB1(_jasic["CMDB1FSB1"].as_integer());
-      setENTRIGOUT(_jasic["ENTRIGOUT"].as_integer());
-      setCMDB0SS(_jasic["CMDB0SS"].as_integer());
-      setSW100F0(_jasic["SW100F0"].as_integer());
-      setCMDB1FSB2(_jasic["CMDB1FSB2"].as_integer());
-      setOTAQ_PWRADC(_jasic["OTAQ_PWRADC"].as_integer());
-      setCMDB0FSB1(_jasic["CMDB0FSB1"].as_integer());
-      setDISCROROR(_jasic["DISCROROR"].as_integer());
-      setDISCRI0(_jasic["DISCRI0"].as_integer());
+      setEN_OTAQ(vasic["EN_OTAQ"].as_integer());
+      setDACSW(vasic["DACSW"].as_integer());
+      setSEL0(vasic["SEL0"].as_integer());
+      setCMDB2FSB2(vasic["CMDB2FSB2"].as_integer());
+      setCMDB0FSB2(vasic["CMDB0FSB2"].as_integer());
+      setENOCTRANSMITON1B(vasic["ENOCTRANSMITON1B"].as_integer());
+      setSEL1(vasic["SEL1"].as_integer());
+      setCMDB2FSB1(vasic["CMDB2FSB1"].as_integer());
+      setOTABGSW(vasic["OTABGSW"].as_integer());
+      setSW50F0(vasic["SW50F0"].as_integer());
+      setENOCDOUT2B(vasic["ENOCDOUT2B"].as_integer());
+      setSW50K0(vasic["SW50K0"].as_integer());
+      setSMALLDAC(vasic["SMALLDAC"].as_integer());
+      setSELENDREADOUT(vasic["SELENDREADOUT"].as_integer());
+      setCMDB3FSB1(vasic["CMDB3FSB1"].as_integer());
+      setSWSSC(vasic["SWSSC"].as_integer());
+      setPWRONBUFF(vasic["PWRONBUFF"].as_integer());
+      setENOCDOUT1B(vasic["ENOCDOUT1B"].as_integer());
+      setSW50K2(vasic["SW50K2"].as_integer());
+      setCMDB2SS(vasic["CMDB2SS"].as_integer());
+      setTRIG1B(vasic["TRIG1B"].as_integer());
+      setCMDB1SS(vasic["CMDB1SS"].as_integer());
+      setPWRONPA(vasic["PWRONPA"].as_integer());
+      setPWRONSS(vasic["PWRONSS"].as_integer());
+      setRAZCHNINTVAL(vasic["RAZCHNINTVAL"].as_integer());
+      setSW100K1(vasic["SW100K1"].as_integer());
+      setCLKMUX(vasic["CLKMUX"].as_integer());
+      setSW50F1(vasic["SW50F1"].as_integer());
+      setPWRONFSB0(vasic["PWRONFSB0"].as_integer());
+      setENOCTRANSMITON2B(vasic["ENOCTRANSMITON2B"].as_integer());
+      setENOCCHIPSATB(vasic["ENOCCHIPSATB"].as_integer());
+      setCMDB3SS(vasic["CMDB3SS"].as_integer());
+      setDISCRI1(vasic["DISCRI1"].as_integer());
+      setSW50F2(vasic["SW50F2"].as_integer());
+      setSW100K0(vasic["SW100K0"].as_integer());
+      setCMDB3FSB2(vasic["CMDB3FSB2"].as_integer());
+      setSCON(vasic["SCON"].as_integer());
+      setTRIG2B(vasic["TRIG2B"].as_integer());
+      setSW100K2(vasic["SW100K2"].as_integer());
+      setSW100F1(vasic["SW100F1"].as_integer());
+      setTRIGEXTVAL(vasic["TRIGEXTVAL"].as_integer());
+      setPWRONFSB2(vasic["PWRONFSB2"].as_integer());
+      setRS_OR_DISCRI(vasic["RS_OR_DISCRI"].as_integer());
+      setTRIG0B(vasic["TRIG0B"].as_integer());
+      setPWRONFSB1(vasic["PWRONFSB1"].as_integer());
+      setSW100F2(vasic["SW100F2"].as_integer());
+      setPWRONW(vasic["PWRONW"].as_integer());
+      setRAZCHNEXTVAL(vasic["RAZCHNEXTVAL"].as_integer());
+      setDISCRI2(vasic["DISCRI2"].as_integer());
+      setSELSTARTREADOUT(vasic["SELSTARTREADOUT"].as_integer());
+      setSW50K1(vasic["SW50K1"].as_integer());
+      setCMDB1FSB1(vasic["CMDB1FSB1"].as_integer());
+      setENTRIGOUT(vasic["ENTRIGOUT"].as_integer());
+      setCMDB0SS(vasic["CMDB0SS"].as_integer());
+      setSW100F0(vasic["SW100F0"].as_integer());
+      setCMDB1FSB2(vasic["CMDB1FSB2"].as_integer());
+      setOTAQ_PWRADC(vasic["OTAQ_PWRADC"].as_integer());
+      setCMDB0FSB1(vasic["CMDB0FSB1"].as_integer());
+      setDISCROROR(vasic["DISCROROR"].as_integer());
+      setDISCRI0(vasic["DISCRI0"].as_integer());
 
-      setB0(_jasic["B0"].as_integer());
-      setB1(_jasic["B1"].as_integer());
-      setB2(_jasic["B2"].as_integer());
+      setB0(vasic["B0"].as_integer());
+      setB1(vasic["B1"].as_integer());
+      setB2(vasic["B2"].as_integer());
 
-      std::cout<<" ASIC HEADER "<<_jasic["HEADER"].as_integer()<<std::endl;
-      setHEADER(_jasic["HEADER"].as_integer());
-      std::cout<<"GET HEADER "<<(int) getHEADER()<<std::endl;
-
-    
+      //std::cout<<" ASIC HEADER "<<vasic["HEADER"].as_integer()<<std::endl;
+      setHEADER(vasic["HEADER"].as_integer());
+      //std::cout<<"GET HEADER "<<(int) getHEADER()<<std::endl;
+      if (vasic.as_object().find("ENABLED")!=vasic.as_object().end())
+	enabled=vasic["ENABLED"].as_integer()==1;
+      else
+	enabled=true;
     }
    
     uint32_t* ptr(){return _l;}
@@ -507,14 +513,9 @@ class HR2Slow
 
     bool isEnabled()
     {
-
-      if (_jasic.as_object().find("ENABLED")!=_jasic.as_object().end())
-
-	return (_jasic["ENABLED"]==1);
-      else
-	return true;
+      return enabled;
     }
-    void setEnable(bool i) {_jasic["ENABLED"]=i;}
+    void setEnable(bool i) {enabled=i;}
     void invertBits(HR2Slow* r)
     {
 
@@ -532,12 +533,13 @@ class HR2Slow
       return (uint8_t*) _li;
     }
  
-    web::json::value& getJson(){return _jasic;}
-    void setJson(web::json::value v){_jasic=v; this->setFromJson();}
+    web::json::value getJson(){return this->toJson();}
+    void setJson(web::json::value v){this->setFromJson(v);}
 
     
   private:
     uint32_t _l[28];
     uint32_t _li[28];
-    web::json::value _jasic;
+    bool enabled;
+    //web::json::value _jasic;
   };

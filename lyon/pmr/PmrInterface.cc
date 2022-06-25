@@ -115,7 +115,7 @@ void pmr::PmrInterface::readout()
   _sem.lock();
   _rd->resetFSM();
   _sem.unlock();
-  unsigned char cbuf[64*128*20+8];
+  //unsigned char cbuf[64*128*20+8];
   _readoutCompleted=false;
   while (_readoutStarted)
     {
@@ -126,7 +126,7 @@ void pmr::PmrInterface::readout()
 		
       //printf("Trying to read \n");fflush(stdout);
       _sem.lock();
-      uint32_t nread=_rd->readOneEvent(cbuf);
+      uint32_t nread=_rd->readOneEvent(_cbuf);
       _sem.unlock();
       //printf(" Je lis %d => %d \n",_status->id,nread);
       if (nread==0) continue;
@@ -136,22 +136,22 @@ void pmr::PmrInterface::readout()
       //printf(" Je lis %d bytes => %d %x\n",_status->id,nread,_dsData);fflush(stdout);
       //this->publishData(nread);
       
-      _status->gtc=PmrGTC(cbuf);
+      _status->gtc=PmrGTC(_cbuf);
       //unsigned long long Shift=16777216ULL;//to shift the value from the 24 first bits
-      //unsigned long long LBC= ( (cbuf[Pmr_ABCID_SHIFT]<<16) | (cbuf[Pmr_ABCID_SHIFT+1]<<8) | (cbuf[PMR_ABCID_SHIFT+2]))*Shift+( (cbuf[PMR_ABCID_SHIFT+3]<<16) | (cbuf[PMR_ABCID_SHIFT+4]<<8) | (cbuf[PMR_ABCID_SHIFT+5]));
-      uint64_t LBC=((uint64_t)cbuf[PMR_ABCID_SHIFT]<<40) |
-	((uint64_t) cbuf[PMR_ABCID_SHIFT+1]<<32) |
-	((uint64_t) cbuf[PMR_ABCID_SHIFT+2]<<24)|
-        ((uint64_t) cbuf[PMR_ABCID_SHIFT+3]<<16 )|
-	((uint64_t) cbuf[PMR_ABCID_SHIFT+4]<<8)  |
-	((uint64_t) cbuf[PMR_ABCID_SHIFT+5]);
+      //unsigned long long LBC= ( (_cbuf[Pmr_ABCID_SHIFT]<<16) | (_cbuf[Pmr_ABCID_SHIFT+1]<<8) | (_cbuf[PMR_ABCID_SHIFT+2]))*Shift+( (_cbuf[PMR_ABCID_SHIFT+3]<<16) | (_cbuf[PMR_ABCID_SHIFT+4]<<8) | (_cbuf[PMR_ABCID_SHIFT+5]));
+      uint64_t LBC=((uint64_t)_cbuf[PMR_ABCID_SHIFT]<<40) |
+	((uint64_t) _cbuf[PMR_ABCID_SHIFT+1]<<32) |
+	((uint64_t) _cbuf[PMR_ABCID_SHIFT+2]<<24)|
+        ((uint64_t) _cbuf[PMR_ABCID_SHIFT+3]<<16 )|
+	((uint64_t) _cbuf[PMR_ABCID_SHIFT+4]<<8)  |
+	((uint64_t) _cbuf[PMR_ABCID_SHIFT+5]);
 
-      _status->bcid=LBC;//PmrABCID(cbuf);
+      _status->bcid=LBC;//PmrABCID(_cbuf);
       //fprintf(stderr,"ABCID %lx \n",LBC);
       _status->bytes+=nread;
       _status->published++;
       if (_dsData==NULL) continue;;
-      memcpy((unsigned char*) _dsData->payload(),cbuf,nread);
+      memcpy((unsigned char*) _dsData->payload(),_cbuf,nread);
       //printf(" Je envoie %d => %d  avec %x \n",_status->id,nread,_dsData);fflush(stdout);
       _dsData->publish(_status->bcid,_status->gtc,nread);
       if (_status->gtc%10 ==0)

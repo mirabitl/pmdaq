@@ -79,7 +79,7 @@ private:
   pmr::FtdiDeviceInfo _ftd;
   pmr::DIFStatus* _status;
   std::string _state;
-  uint32_t _data[32768];
+  uint8_t _cbuf[262144];
   pmr::PmrDriver* _rd;
   pm::pmSender* _dsData;
   uint32_t _detid;

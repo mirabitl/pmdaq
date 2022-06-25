@@ -111,7 +111,6 @@ void PmrManager::fsm_initialise(http_request m)
   auto par = json::value::object();
   PMF_INFO(_logPmr, " CMD: INITIALISING");
   _vDif.clear();
-
   if (!utils::isMember(params(), "dif"))
     {
       PMF_ERROR(_logPmr, " No dif tag in params()");
@@ -122,24 +121,28 @@ void PmrManager::fsm_initialise(http_request m)
   auto jPmr = params()["dif"];
 
   // Download the configuration
-
+  /*
   if (_hca == NULL)
     {
       std::cout << "Create config acccess" << std::endl;
+
       _hca = new HR2ConfigAccess();
-      _hca->clear();
+      _hca.clear();
+
+      
     }
+  */
   std::cout << " jPmr " << jPmr << std::endl;
   if (utils::isMember(jPmr, "json"))
     {
       web::json::value jPmrjson = jPmr["json"];
       if (utils::isMember(jPmrjson, "file"))
 	{
-	  _hca->parseJsonFile(jPmrjson["file"].as_string());
+	  _hca.parseJsonFile(jPmrjson["file"].as_string());
 	}
       else if (utils::isMember(jPmrjson, "url"))
 	{
-	  _hca->parseJsonUrl(jPmrjson["url"].as_string());
+	  _hca.parseJsonUrl(jPmrjson["url"].as_string());
 	}
     }
   if (utils::isMember(jPmr, "db"))
@@ -148,24 +151,27 @@ void PmrManager::fsm_initialise(http_request m)
       PMF_ERROR(_logPmr, "Parsing:" << jPmrdb["state"].as_string() << jPmrdb["mode"].as_string());
 
       if (jPmrdb["mode"].as_string().compare("mongo") == 0)
-	_hca->parseMongoDb(jPmrdb["state"].as_string(), jPmrdb["version"].as_integer());
+	_hca.parseMongoDb(jPmrdb["state"].as_string(), jPmrdb["version"].as_integer());
 
-      PMF_ERROR(_logPmr, "End of parseDB " << _hca->asicMap().size());
+      PMF_ERROR(_logPmr, "End of parseDB " << _hca.asicMap().size());
     }
-  if (_hca->asicMap().size() == 0)
+
+
+  
+  if (_hca.asicMap().size() == 0)
     {
       PMF_ERROR(_logPmr, " No ASIC found in the configuration ");
       par["status"] = json::value::string(U("No ASIC found in the configuration"));
       Reply(status_codes::OK, par);
       return;
     }
-  PMF_INFO(_logPmr, "ASIC found in the configuration " << _hca->asicMap().size());
+  PMF_INFO(_logPmr, "ASIC found in the configuration " << _hca.asicMap().size());
   // Initialise the network
   std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
   std::vector<uint32_t> vint;
 
   vint.clear();
-  for (auto x : _hca->asicMap())
+  for (auto x : _hca.asicMap())
     {
       // only MSB is used
       uint32_t eip = ((x.first) >> 56) & 0XFF;
@@ -193,13 +199,14 @@ void PmrManager::fsm_initialise(http_request m)
 	  zmPusher* push=new zmPusher(_context,x->detectorId(),x->status()->id);
 	  push->connect(params()["publish"].as_string());
       */
-
+      //pm::pmSender *push =NULL;
       pm::pmSender *push = new pm::pmSender(_context, x->detectorId(), x->status()->id);
       // ds->connect(params()["pushdata"].as_string());
       push->autoDiscover(session(), "evb_builder", "collectingPort");
       // for (uint32_t i=0;i<_mStream.size();i++)
       //	ds->connect(_mStream[i]);
       push->collectorRegister();
+
       PMF_INFO(_logPmr, " Call initialise "<<x->detectorId()<<" "<< x->status()->id);
       x->initialise(push);
     }
@@ -212,7 +219,7 @@ void PmrManager::setThresholds(uint16_t b0, uint16_t b1, uint16_t b2, uint32_t i
 {
 
   PMF_INFO(_logPmr, " Changin thresholds: " << b0 << "," << b1 << "," << b2);
-  for (auto it = _hca->asicMap().begin(); it != _hca->asicMap().end(); it++)
+  for (auto it = _hca.asicMap().begin(); it != _hca.asicMap().end(); it++)
     {
       if (idif != 0)
 	{
@@ -234,7 +241,7 @@ void PmrManager::setGain(uint16_t gain)
 {
 
   PMF_INFO(_logPmr, " Changing Gain: " << gain);
-  for (auto it = _hca->asicMap().begin(); it != _hca->asicMap().end(); it++)
+  for (auto it = _hca.asicMap().begin(); it != _hca.asicMap().end(); it++)
     {
       for (int i = 0; i < 64; i++)
 	it->second.setPAGAIN(i, gain);
@@ -247,7 +254,7 @@ void PmrManager::setGain(uint16_t gain)
 void PmrManager::setMask(uint32_t level, uint64_t mask)
 {
   PMF_INFO(_logPmr, " Changing Mask: " << level << " " << std::hex << mask << std::dec);
-  for (auto it = _hca->asicMap().begin(); it != _hca->asicMap().end(); it++)
+  for (auto it = _hca.asicMap().begin(); it != _hca.asicMap().end(); it++)
     {
 
       it->second.setMASK(level, mask);
@@ -260,7 +267,7 @@ void PmrManager::setMask(uint32_t level, uint64_t mask)
 void PmrManager::setChannelMask(uint16_t level, uint16_t channel, uint16_t val)
 {
   PMF_INFO(_logPmr, " Changing Mask: " << level << " " << std::hex << channel << std::dec);
-  for (auto it = _hca->asicMap().begin(); it != _hca->asicMap().end(); it++)
+  for (auto it = _hca.asicMap().begin(); it != _hca.asicMap().end(); it++)
     {
 
       it->second.setMASKChannel(level, channel, val == 1);
@@ -274,7 +281,7 @@ void PmrManager::setChannelMask(uint16_t level, uint16_t channel, uint16_t val)
 void PmrManager::setAllMasks(uint64_t mask)
 {
   PMF_INFO(_logPmr, " Changing Mask: " << std::hex << mask << std::dec);
-  for (auto it = _hca->asicMap().begin(); it != _hca->asicMap().end(); it++)
+  for (auto it = _hca.asicMap().begin(); it != _hca.asicMap().end(); it++)
     {
       //it->second.dumpBinary();
       it->second.setMASK(0, mask);
@@ -290,7 +297,7 @@ void PmrManager::setAllMasks(uint64_t mask)
 void PmrManager::setCTEST(uint64_t mask)
 {
   PMF_INFO(_logPmr, " Changing CTEST: " << std::hex << mask << std::dec);
-  for (auto it = _hca->asicMap().begin(); it != _hca->asicMap().end(); it++)
+  for (auto it = _hca.asicMap().begin(); it != _hca.asicMap().end(); it++)
     {
       for (int i = 0; i < 64; i++)
 	{
@@ -403,11 +410,13 @@ void PmrManager::c_downloadDB(http_request m)
   web::json::value jTDC = params()["dif"];
   if (utils::isMember(jTDC, "db"))
     {
-      web::json::value jTDCdb = jTDC["db"];
-      _hca->clear();
+	  web::json::value jTDCdb = jTDC["db"];
+	  _hca.clear();
+	  //delete _hca;
+	  //_hca = new HR2ConfigAccess();
+	  if (jTDCdb["mode"].as_string().compare("mongo") == 0)
+	    _hca.parseMongoDb(dbstate, version);
 
-      if (jTDCdb["mode"].as_string().compare("mongo") == 0)
-	_hca->parseMongoDb(dbstate, version);
     }
   par["DBSTATE"] = web::json::value::string(dbstate);
   Reply(status_codes::OK, par);
@@ -461,9 +470,9 @@ web::json::value PmrManager::configureHR2()
       ::usleep(50000);
       //fprintf(stderr,"Debug 2");
       ips << "0.0.0." << it->first;
-      _hca->prepareSlowControl(ips.str(), true);
+      _hca.prepareSlowControl(ips.str(), true);
       //fprintf(stderr,"Debug 3");
-      it->second->configure(_hca->slcBuffer(), _hca->slcBytes());
+      it->second->configure(_hca.slcBuffer(), _hca.slcBytes());
       //fprintf(stderr,"Debug 4");
       web::json::value ds;
       ds["id"] = json::value::number(it->first);
@@ -480,9 +489,9 @@ web::json::value PmrManager::configureHR2()
       ::usleep(50000);
       //fprintf(stderr,"Debug 2");
       ips << "0.0.0." << it->first;
-      _hca->prepareSlowControl(ips.str(), true);
+      _hca.prepareSlowControl(ips.str(), true);
       //fprintf(stderr,"Debug 3");
-      this->configureThread(it->second,_hca->slcBuffer(), _hca->slcBytes());
+      this->configureThread(it->second,_hca.slcBuffer(), _hca.slcBytes());
       //fprintf(stderr,"Debug 4");
     }
   ::usleep(100000);
@@ -625,7 +634,7 @@ void PmrManager::initialise()
   this->addCommand("SCURVE", std::bind(&PmrManager::c_scurve, this, std::placeholders::_1));
   this->addCommand("GAINCURVE", std::bind(&PmrManager::c_gaincurve, this, std::placeholders::_1));
 
-  _hca = NULL;
+  //_hca = NULL;
   // Initialise delays for
 }
 
@@ -638,11 +647,12 @@ void PmrManager::end()
       g_scurve.join();
     }
   // Stop listening
+  std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
+
   if (g_d.size() != 0)
     {
 
       bool running = false;
-      std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
       for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
 	{
 	  running = running || it->second->readoutStarted();
@@ -659,6 +669,14 @@ void PmrManager::end()
       // Clear thread vector
       g_d.clear();
     }
+  for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
+    {
+      delete it->second;
+    }
+   this->getPmrMap().clear();
+
+   // Delet the ASICS
+   //delete _hca;
 }
 
 void PmrManager::joinConfigureThreads()

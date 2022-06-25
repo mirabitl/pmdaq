@@ -11,6 +11,7 @@ export LD_LIBRARY_PATH=/usr/local/pmdaq/lib:/usr/local/lib:/usr/lib:$LD_LIBRARY_
 #export PATH=/opt/zdaq/scripts:$PATH
 export PYTHONPATH=/usr/local/pmdaq/share:$PYTHONPATH
 export PATH=/usr/local/pmdaq/bin:$PATH
+export MALLOC_ARENA_MAX=1
 
 
 . /etc/pmdaq.conf

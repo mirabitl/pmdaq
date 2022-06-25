@@ -13,22 +13,34 @@
 #include <arpa/inet.h>
 #include <boost/format.hpp>
 #include "utils.hh"
+#include <sys/time.h>
+#include <sys/resource.h>
+
 
 using namespace web;
 HR2ConfigAccess::HR2ConfigAccess()
 {
  
-  _jall=web::json::value::null();
-  _jasic=web::json::value::null();
+  _jall=web::json::value::object();
+  //_jasic=web::json::value::null();
 }
+
 void HR2ConfigAccess::parseMongoDb(std::string state,uint32_t version)
 {
+  struct rusage r_usage;
+  getrusage(RUSAGE_SELF,&r_usage);
+  // Print the maximum resident set size used (in kilobytes).
+  fprintf(stderr,"%s %d Memory usage: %ld Mb\n",__FUNCTION__,__LINE__,r_usage.ru_maxrss/1024);
+  
   std::stringstream scmd;
   scmd<<"/bin/bash -c 'mgroc --download --state="<<state<<" --version="<<version<<"'";
   system(scmd.str().c_str());
   std::stringstream sname;
   sname<<"/dev/shm/mgroc/"<<state<<"_"<<version<<".json";
 
+  getrusage(RUSAGE_SELF,&r_usage);
+  // Print the maximum resident set size used (in kilobytes).
+  fprintf(stderr,"%s %d Memory usage: %ld Mb\n",__FUNCTION__,__LINE__,r_usage.ru_maxrss/1024);
 
   fprintf(stderr,"Parsing the file %s\n",sname.str().c_str());
   this->parseJsonFile(sname.str());
@@ -39,7 +51,12 @@ void HR2ConfigAccess::parseJsonFile(std::string jsf)
 {
 
   web::json::value output;  // JSON read from input file
-  
+  struct rusage r_usage;
+  getrusage(RUSAGE_SELF,&r_usage);
+  // Print the maximum resident set size used (in kilobytes).
+  fprintf(stderr,"%s %d Memory usage: %ld Mb\n",__FUNCTION__,__LINE__,r_usage.ru_maxrss/1024);
+
+
   try
     {
       fprintf(stderr,"reading the file %s\n",jsf.c_str());
@@ -56,29 +73,43 @@ void HR2ConfigAccess::parseJsonFile(std::string jsf)
       //
       fprintf(stderr,"Parsing the string\n");
       // Parse the string stream into a JSON object
-      output = web::json::value::parse(strStream);
+      _jall = web::json::value::parse(strStream);
       fprintf(stderr,"Parsing done\n");
+
+      getrusage(RUSAGE_SELF,&r_usage);
+      // Print the maximum resident set size used (in kilobytes).
+      fprintf(stderr,"%s %d Memory usage: %ld Mb\n",__FUNCTION__,__LINE__,r_usage.ru_maxrss/1024);
+
     }
   catch (web::json::json_exception excep)
     {
       _jall=web::json::value::null();
 	  //throw web::json::json_exception("Error Parsing JSON file " + jsonFileName);
     }
-  _jall=output;
+  //_jall=output;
+  
   if (_jall.as_object().find("asics")==_jall.as_object().end())
     {
       std::cout<<" No asics tag found "<<std::endl;
       return;
     }
-  
+  getrusage(RUSAGE_SELF,&r_usage);
+  // Print the maximum resident set size used (in kilobytes).
+  fprintf(stderr,"%s %d Memory usage: %ld Mb\n",__FUNCTION__,__LINE__,r_usage.ru_maxrss/1024);
+
   fprintf(stderr,"Call parseJson\n");
   this->parseJson();
+  getrusage(RUSAGE_SELF,&r_usage);
+  // Print the maximum resident set size used (in kilobytes).
+  fprintf(stderr,"%s %d Memory usage: %ld Mb\n",__FUNCTION__,__LINE__,r_usage.ru_maxrss/1024);
+
+
 }
 void HR2ConfigAccess::parseJson()
 {
-  web::json::value asics = _jall["asics"];
+  //web::json::value asics = _jall["asics"];
   
-  for (auto ita = asics.as_array().begin(); ita != asics.as_array().end(); ita++)
+  for (auto ita =_jall["asics"].as_array().begin(); ita != _jall["asics"].as_array().end(); ita++)
 	{
 	  web::json::value asic = (*ita);
 	  std::string ipadr = asic["address"].as_string();
@@ -87,15 +118,18 @@ void HR2ConfigAccess::parseJson()
 	  uint64_t eid=utils::asicTag(ipadr,header);
 	  //((uint64_t) TdcConfigAccess::convertIP(ipadr))<<32|header;
 	  _asicMap.insert(std::pair<uint64_t,HR2Slow>(eid,prs));
-
+	  //(*ita).erase("slc");
 	}
+  // _jall.erase("asics");
+  // _jall=web::json::value::null();
 
 }
 
 void HR2ConfigAccess::parseJsonUrl(std::string jsf)
 {
   http_response r=utils::requesturl(jsf);
-  _jall=r.extract_json().get();
+  auto jall=r.extract_json().get();
+  _jall=jall;
   this->parseJson();
 }
 uint8_t* HR2ConfigAccess::slcBuffer(){return _slcBuffer;}

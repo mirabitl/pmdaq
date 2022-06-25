@@ -156,7 +156,7 @@ private:
   std::map<uint32_t, pmr::FtdiDeviceInfo *> theFtdiDeviceInfoMap_;
   std::map<uint32_t, PmrInterface *> _PmrInterfaceMap;
   std::vector<PmrInterface *> _vDif;
-  HR2ConfigAccess *_hca;
+  HR2ConfigAccess _hca;
 
   std::vector<std::thread> g_d;
   std::vector<std::thread> g_c;
