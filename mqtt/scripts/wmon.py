@@ -14,14 +14,14 @@ import time
 _wdd=None
 _wjobc=None
 _wsl=None
-
-class wddService(ServiceBase):
-    @srpc(_returns=Iterable(String))
+class MyApplication(Application):
     def createAccess():    
         global _wdd
+        if (_wdd!=None):
+            del _wdd;
         sconf=json.load(open("/etc/wmon.json"))
         if (not "broker" in sconf.keys()):
-            yield "Missing broker configuration"
+            print("Missing broker configuration")
         sbroker=sconf["broker"]
         _wdd=mon.monitor(sbroker["host"],sbroker["port"],sbroker["session"])
         _wdd.Connect()
@@ -31,30 +31,25 @@ class wddService(ServiceBase):
             os.environ["MGDBMON"]=sconf["mongo"]
             _wdd.connectMongo()
         # stop all monitoring loops
+        for x in sconf["tasks"]:
+            _wdd.sendCommand(x["name"],"END",{})
+        # restart loop with correct period
+        for x in sconf["tasks"]:
+            _wdd.sendCommand(x["name"],"BEGIN",{"period":x["period"]})
         
         _wdd.loop()
                         
-        if (_wdd==None):
-            _wdd=Ld.LDaq()
-            yield 'Daq is created'
-        else:
-            yield 'Daq is already created'
+        print('Wmon is running')
 
+    def call_wrapper(self, ctx):
+        try:
+            return super(MyApplication, self).call_wrapper(ctx)
+
+        except KeyError:
+            raise ResourceNotFoundError(ctx.in_object)
+
+class wddService(ServiceBase):
     @srpc(_returns=Iterable(String))
-    def available():    
-        global _wdd
-        global _wjobc
-        global _wsl
-        daq="NONE"
-        job="NONE"
-        slow="NONE"
-        if (_wdd!=None):
-            daq="CREATED"
-        if (_wjobc!=None):
-            job="CREATED"
-        if (_wsl!=None):
-            slow="CREATED"
-        yield '{"DAQ":"%s","JOB":"%s","SLOW":"%s" }' % (daq,job,slow)
 
     @srpc( String, _returns=Iterable(String))
     def setParameters(name):
@@ -444,7 +439,7 @@ if __name__=='__main__':
     #   * A namespace string.
     #   * An input protocol.
     #   * An output protocol.
-    application = Application([wddService], 'spyne.examples.hello.http',
+    application = MyApplication([wddService], 'spyne.examples.hello.http',
           # The input protocol is set as HttpRpc to make our service easy to
           # call. Input validation via the 'soft' engine is enabled. (which is
           # actually the the only validation method for HttpRpc.)
@@ -457,7 +452,7 @@ if __name__=='__main__':
           #out_protocol=YamlDocument(),
           out_protocol=JsonDocument(ignore_wrappers=False),
       )
-
+    application.createAccess()
     # Now that we have our application, we must wrap it inside a transport.
     # In this case, we use Spyne's standard Wsgi wrapper. Spyne supports 
     # popular Http wrappers like Twisted, Django, Pyramid, etc. as well as
