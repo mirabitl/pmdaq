@@ -1,0 +1,11 @@
+{
+"broker":{"host":"lyocms09.in2p3.fr","port":1883,"session":"dome_sdhcal"},
+"mongo":"acqilc/RPC_2008@lyocms09:27017@LYONROC",
+"tasks":
+[
+{"name":"BmpPaho","period":30},
+{"name":"ZupPaho","period":30},
+{"name":"WienerPaho","period":120}
+
+]
+}
