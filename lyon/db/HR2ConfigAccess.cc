@@ -16,6 +16,13 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
+int file_select_3(const struct direct *entry)  
+{  
+  if ((strcmp(entry->d_name, ".") == 0) || (strcmp(entry->d_name, "..") == 0))  
+    return (0);  
+  else  
+    return (1);  
+}  
 
 using namespace web;
 HR2ConfigAccess::HR2ConfigAccess()
@@ -47,6 +54,70 @@ void HR2ConfigAccess::parseMongoDb(std::string state,uint32_t version)
   
 }
 
+void HR2ConfigAccess::ls(std::string state,uint32_t version,std::vector<std::string>& res)
+{
+ 
+  res.clear();
+  int count,i;  
+  struct direct **files;  
+  std::stringstream sc;
+  sc.str(std::string());
+  sc<<"/dev/shm/db/"<<state<<"_"<<version<<"/";
+  
+  count = scandir(sc.str().c_str(), &files, file_select_3, alphasort);          
+  /* If no files found, make a non-selectable menu item */  
+  if(count <= 0)    {return ;}
+       
+  std::stringstream sd;         
+  //printf("Number of files = %d\n",count);  
+  for (i=1; i<count+1; ++i)  
+    {
+      // file name
+      std::string fName;
+      fName.assign(files[i-1]->d_name);
+      res.push_back(fName);
+       free(files[i-1]);
+    }
+  free(files);
+  return;
+}
+
+void HR2ConfigAccess::parseMongoDb2(std::string state,uint32_t version)
+{
+  struct rusage r_usage;
+  getrusage(RUSAGE_SELF,&r_usage);
+  // Print the maximum resident set size used (in kilobytes).
+  fprintf(stderr,"%s %d Memory usage: %ld Mb\n",__FUNCTION__,__LINE__,r_usage.ru_maxrss/1024);
+  
+  std::stringstream scmd;
+  scmd<<"/bin/bash -c 'dbt "<<state<<" "<<version<<"'";
+  system(scmd.str().c_str());
+
+  getrusage(RUSAGE_SELF,&r_usage);
+  // Print the maximum resident set size used (in kilobytes).
+  fprintf(stderr,"%s %d Memory usage: %ld Mb\n",__FUNCTION__,__LINE__,r_usage.ru_maxrss/1024);
+
+  std::vector<std::string> vnames;
+  this->ls(state,version,vnames);
+  for (auto x :vnames)
+    {
+      uint32_t dif,asic;
+      unsigned long long eid;
+      sscanf(x.c_str(),"%d_%d_%lld",&dif,&asic,&eid);
+
+      std::cout<<x<<" "<<dif<<" "<<asic<<" "<<std::hex<<eid<<std::dec<<std::endl;
+
+      std::stringstream fn;
+      fn<<"/dev/shm/db/"<<state<<"_"<<version<<"/"<<x;
+      HR2Slow prs;prs.load(fn.str());
+      //((uint64_t) TdcConfigAccess::convertIP(ipadr))<<32|header;
+      _asicMap.insert(std::pair<uint64_t,HR2Slow>(eid,prs));
+      //(*ita).erase("slc");
+    }
+    
+
+  
+}
 void HR2ConfigAccess::parseJsonFile(std::string jsf)
 {
 

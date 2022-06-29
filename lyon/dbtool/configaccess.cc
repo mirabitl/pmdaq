@@ -130,7 +130,8 @@ void lmdbtool::ConfigAccess::parseJson()
       uint64_t eid = ((uint64_t)  convertIP(ipadr)) << 32 | header;
       std::stringstream s("");
       s<<_directory<<"/"<<dif<<"_"<<header<<"_"<<eid;
-      prs.store(s.str());
+      if (prs.isEnabled())
+	prs.store(s.str());
 
       _asicMap.insert(std::pair<uint64_t, lmdbtool::hr2>(eid, prs));
       //prs.dumpBinary();

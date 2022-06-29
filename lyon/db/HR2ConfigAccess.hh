@@ -25,6 +25,9 @@ public:
   void  prepareSlowControl(std::string ipadr,bool inverted=false);
   uint8_t* slcBuffer();
   uint32_t slcBytes();
+
+  void parseMongoDb2(std::string state,uint32_t version);
+  void ls(std::string state,uint32_t version,std::vector<std::string>& res);
 private:
   std::map<uint64_t,HR2Slow> _asicMap;
   json::value _jall;
