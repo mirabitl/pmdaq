@@ -233,8 +233,11 @@ if __name__=='__main__':
     d.INIT()
 
     d.SPY()
-    cominit=input("comment for INIT: ")    
+    cominit=input("Is  INIT OK:(Y/N)? ")    
     print(cominit)
+    if (cominit=="N"):
+        exit(0)
+
     d.Command('ENABLE','lyon_ipdc',{"value":7})
     d.Command('SETTRIGEXT','lyon_ipdc',{"delay":200,"busy":20})
     d.Command('SPILLON','lyon_ipdc',{"nclock":200000001})
@@ -246,9 +249,12 @@ if __name__=='__main__':
     
     d.CONFIGURE()
     d.SPY()
-    comconf=input("comment for Configure: ")    
+
+    comconf=input("Is  CONFIGURE OK:(Y/N)? ")    
     print(comconf)
-   
+    if (comconf=="N"):
+        exit(0)
+
     comrun=input("comment for the run: ")
     
     d.RUN(comrun)
@@ -275,7 +281,11 @@ if __name__=='__main__':
         
     d.STOP()
     d.SPY()
-    comrun1=input("comment after the run: ")
+
+    comrun1=input("Is RUN OK:(Y/N)? ")    
+    print(comrun1)
+    if (comrun1=="N"):
+        exit(0)
 
     print(run,cominit,comconf,comrun,comrun1)
     d.makeAnalysis(run,int(chamber),int(slot),int(difd),int(difc),int(difg))
