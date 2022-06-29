@@ -567,6 +567,8 @@ public:
     int size_buf=::read(fd,_l,28*sizeof(uint32_t));
       
     ::close(fd);
+    enabled=true;
+    //std::cout<<toJson()<<std::endl;
 
   }
 

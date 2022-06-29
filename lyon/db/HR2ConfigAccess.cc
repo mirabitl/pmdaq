@@ -102,10 +102,10 @@ void HR2ConfigAccess::parseMongoDb2(std::string state,uint32_t version)
   for (auto x :vnames)
     {
       uint32_t dif,asic;
-      unsigned long long eid;
-      sscanf(x.c_str(),"%d_%d_%lld",&dif,&asic,&eid);
+      uint64_t eid;
+      sscanf(x.c_str(),"%d_%d_%lu64",&dif,&asic,&eid);
 
-      std::cout<<x<<" "<<dif<<" "<<asic<<" "<<std::hex<<eid<<std::dec<<std::endl;
+      //std::cout<<x<<" "<<dif<<" "<<asic<<" "<<std::dec<<eid<<std::dec<<std::endl;
 
       std::stringstream fn;
       fn<<"/dev/shm/db/"<<state<<"_"<<version<<"/"<<x;
@@ -217,8 +217,11 @@ void  HR2ConfigAccess::prepareSlowControl(std::string ipadr,bool inverted)
   for (int ias=48;ias>=1;ias--)
     {
       uint64_t eisearch= eid|ias;
+      //std::cout<<eisearch<<std::endl;
       std::map<uint64_t,HR2Slow>::iterator im=_asicMap.find(eisearch);
       if (im==_asicMap.end()) continue;
+      //std::cout<<ipadr<<" "<<ias<<" "<<eisearch<<"  found"<<std::endl;
+
       if (!im->second.isEnabled())
 	{
 	  printf("\t ===> DIF %s ,Asic %d disabled\n",ipadr.c_str(),ias);

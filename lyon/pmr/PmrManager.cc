@@ -151,7 +151,7 @@ void PmrManager::fsm_initialise(http_request m)
       PMF_ERROR(_logPmr, "Parsing:" << jPmrdb["state"].as_string() << jPmrdb["mode"].as_string());
 
       if (jPmrdb["mode"].as_string().compare("mongo") == 0)
-	_hca.parseMongoDb(jPmrdb["state"].as_string(), jPmrdb["version"].as_integer());
+	_hca.parseMongoDb2(jPmrdb["state"].as_string(), jPmrdb["version"].as_integer());
 
       PMF_ERROR(_logPmr, "End of parseDB " << _hca.asicMap().size());
     }
@@ -415,7 +415,7 @@ void PmrManager::c_downloadDB(http_request m)
 	  //delete _hca;
 	  //_hca = new HR2ConfigAccess();
 	  if (jTDCdb["mode"].as_string().compare("mongo") == 0)
-	    _hca.parseMongoDb(dbstate, version);
+	    _hca.parseMongoDb2(dbstate, version);
 
     }
   par["DBSTATE"] = web::json::value::string(dbstate);
@@ -489,8 +489,9 @@ web::json::value PmrManager::configureHR2()
       ::usleep(50000);
       //fprintf(stderr,"Debug 2");
       ips << "0.0.0." << it->first;
+      //fprintf(stderr,"Debug 2 %s \n",ips.str().c_str());
       _hca.prepareSlowControl(ips.str(), true);
-      //fprintf(stderr,"Debug 3");
+      //fprintf(stderr,"Debug 3 %d \n",_hca.slcBytes());
       this->configureThread(it->second,_hca.slcBuffer(), _hca.slcBytes());
       //fprintf(stderr,"Debug 4");
     }
