@@ -114,9 +114,12 @@ mdcc::FtdiUsbDriver::FtdiUsbDriver(char * deviceIdentifier, uint32_t productid )
   //         printf("ret=%d write 0x1234567 \n",ret);
   //         }
   //         usleep(100);
-  // 	ret=UsbRegisterRead(2,&regctrl);
-  // 	printf(" \t ret=%d read %x \n",ret,regctrl);
-
+  for (int i=0;i<10;i++)
+    {
+      ::usleep(100000);
+    ret=UsbRegisterRead(1,&regctrl);
+    printf(" \t ret=%d read %x \n",ret,regctrl);
+    }
   // 	UsbRegisterWrite(2,0xfedcdead);
   //         printf("ret=%d write 0xfedcdead \n",ret);
   // 	//getchar();

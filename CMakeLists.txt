@@ -72,6 +72,7 @@ add_subdirectory(lyon/dif)
 add_subdirectory(lyon/sdcc)
 add_subdirectory(lyon/mbdaq0)
 add_subdirectory(lyon/liboard)
+add_subdirectory(lyon/dbtool)
 
 include(CPack)
 
