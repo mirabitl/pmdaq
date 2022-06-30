@@ -205,7 +205,12 @@ class monitor:
     def HV_ISET(self,channels,vset,hw="WienerPaho"):
         for ch in channels:
             self.sendCommand(hw,"ISET",{"first":ch,"last":ch,"iset":vset})
-            
+
+    def HV_CLEAR(self,channels,hw="WienerPaho"):
+        for ch in channels:
+            self.sendCommand(hw,"CLEARALARM",{"first":ch,"last":ch})
+
+
 
     def printWiener(self,npmax=1,channel=-1):
         topic=self.session+"/WienerPaho/0/STATUS"
@@ -231,8 +236,22 @@ class monitor:
                     #print("ch%.3d %12.2f %12.2f %12.2f %s" %(y["id"],y["vset"],y["vout"],y["iout"]*1E6,sstat[:len(sstat)-1]))
                 print("ch%.3d %8.2f %8.2f %8.2f %8.2f %8.2f %s" %(y["id"],y["vset"],y["iset"]*1E6,y["rampup"],y["vout"],y["iout"]*1E6,sstat[:len(sstat)-1]))
 
-
-
+    def WienerInfo(self,npmax=1):
+        topic=self.session+"/WienerPaho/0/STATUS"
+        if (not topic in self.rcv_msg.keys()):
+            return
+        nm=len(self.rcv_msg[topic])
+        nr=0
+        res=[]
+        for i in range(nm-1,-1,-1):
+            if (nr>=npmax):
+                break
+            nr=nr+1
+            x=self.rcv_msg[topic][i]
+            sti=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x["ctime"]))
+            res.append(x)
+        return res
+        
 
 
             
