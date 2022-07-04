@@ -1,5 +1,5 @@
 #!/bin/bash
-sudo systemctl disable ZupPaho.service 
+sudo systemctl disable ZupPaho 
 sudo service ZupPaho stop
 mkdir -p ../bin
 g++ -o ../bin/ZupPaho.exe -I../include ../src/PahoInterface.cc Zup.cxx ZupPaho.cc -lcpprest  -lpaho-mqtt3a -lpaho-mqttpp3 -lpthread 
@@ -8,5 +8,5 @@ sudo mkdir -p /usr/local/paho/bin
 sudo cp ../bin/ZupPaho.exe /usr/local/paho/bin/
 sudo sed -e 's,SERVICENAME,ZupPaho,g' ../etc/example.service > ZupPaho.service
 sudo cp ZupPaho.service /lib/systemd/system/
-sudo systemctl enable ZupPaho.service 
+sudo systemctl enable ZupPaho
 sudo service ZupPaho stop
