@@ -207,7 +207,12 @@ elif(results.update):
     exit(0)
 elif(results.zup_info):
     rep=json.loads(executeCMD(results.host,results.port,"/ZupInfo",{"hw":results.lv_hardware,"npmax":results.nmax}))
-    print(rep["ZupInfoResponse"]["ZupInfoResult"])
+    #print(rep["ZupInfoResponse"]["ZupInfoResult"])
+    for  mes in rep["ZupInfoResponse"]["ZupInfoResult"]:
+        for x in mes:
+            sti=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x["ctime"]))
+            #if (device=="BMP" and x["status"]["name"]==device):
+            print("%s Vset %.2f  Vout %.2f  Iout %.2f Status %d " % (sti,x["content"]["vset"],x["content"]["vout"],x["content"]["iout"],x["content"]["status"]))
     exit(0)
 elif(results.lv_on):
     rep=json.loads(executeCMD(results.host,results.port,"/LV_ON",{"hw":results.lv_hardware}))
@@ -285,6 +290,7 @@ elif(results.wiener_info):
     exit(0)
 elif(results.bmp_info):
     rep=json.loads(executeCMD(results.host,results.port,"/BMPInfo",{"npmax":results.nmax}))
+    #print(rep)
     #print(rep["BMPInfoResponse"]["BMPInfoResult"])
     for  mes in rep["BMPInfoResponse"]["BMPInfoResult"]:
         for x in mes:
