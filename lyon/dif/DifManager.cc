@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string.h>
+#include <inttypes.h>
 
 //using namespace Ftdi;
 using namespace dif;
@@ -161,7 +162,7 @@ void DifManager::setThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t idif
       if (idif!=0)
 	{
 	  uint32_t ip=(((it->first)>>32&0XFFFFFFFF)>>16)&0xFFFF;
-	  printf("%x %x %x \n",(it->first>>32),ip,idif);
+	  printf("%" PRIx64 " %x  %x \n",(it->first>>32),ip,idif);
 	  if (idif!=ip) continue;
 	}
       it->second.setB0(b0);
@@ -366,7 +367,7 @@ void DifManager::c_status(http_request m)
 web::json::value DifManager::configureHR2()
 {
   uint32_t ctrlreg=params()["ctrlreg"].as_integer();
-  printf("CTRLREG %lx \n",ctrlreg);
+  printf("CTRLREG %" PRIx32 " \n",ctrlreg);
   int32_t rc=1;
   std::map<uint32_t,dif::interface*> dm=this->getDifMap();
   web::json::value array_slc;uint32_t nd=0;
