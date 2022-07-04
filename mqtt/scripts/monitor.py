@@ -15,6 +15,7 @@ class monitor:
         self.topics=[]
         self.topicinfos=[]
         self.subtop=[]
+        self.hws=[]
         self.rcv_msg={}
         self.msi=None
     def connectMongo(self):
@@ -96,6 +97,11 @@ class monitor:
                 ss=p[0]+"/"+p[1]+"/"+p[2]+"/STATUS"
                 if (not ss in self.subtop):
                     self.subtop.append(ss)
+                    self.hws.append(p[1])
+    def UpdateInfos(self):
+        for hw in self.hws:
+            self.sendCommand(hw,"STATUS",{})
+
     def loop(self):
         self.client.on_message=self.on_message
         self.client.loop_start() #start loop to process received messages
@@ -192,8 +198,6 @@ class monitor:
         self.sendCommand(hw,"ON",{})
     def LV_OFF(self,hw="ZupPaho"):
         self.sendCommand(hw,"OFF",{})
-    def LV_STATUS(self,hw="ZupPaho"):
-        self.sendCommand(hw,"STATUS",{})
     def HV_ON(self,channels,hw="WienerPaho"):
         for ch in channels:
             self.sendCommand(hw,"ON",{"first":ch,"last":ch})

@@ -89,12 +89,12 @@ class wddService(ServiceBase):
             yield 'LV is OFF for %s' % hw
         else:
             yield " No slow control access"
-    @srpc(String,_returns=Iterable(String))
-    def LV_STATUS(hw):
+    @srpc(_returns=Iterable(String))
+    def UPDATE():
         global _wdd
         if (_wdd!=None):
-            _wdd.LV_STATUS(hw)
-            yield 'LV STATUS reuqired for %s' % hw
+            _wdd.UpdateInfos()
+            yield 'Update required for all hardware'
         else:
             yield " No slow control access"
 
