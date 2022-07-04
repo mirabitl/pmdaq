@@ -89,6 +89,14 @@ class wddService(ServiceBase):
             yield 'LV is OFF for %s' % hw
         else:
             yield " No slow control access"
+    @srpc(String,_returns=Iterable(String))
+    def LV_STATUS(hw):
+        global _wdd
+        if (_wdd!=None):
+            _wdd.LV_STATUS(hw)
+            yield 'LV STATUS reuqired for %s' % hw
+        else:
+            yield " No slow control access"
 
     @srpc( UnsignedInteger,_returns=Iterable(String))
     def ZupInfo(npmax):

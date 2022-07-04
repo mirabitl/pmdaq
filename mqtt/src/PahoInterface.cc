@@ -136,7 +136,11 @@ void PahoInterface::loop()
   {
     auto v= web::json::value::object();
     status(v);
-    ::sleep(_period);
+    for (int i=0;i<_period;i++)
+      {
+	if (!_looping) return;
+	::sleep(1);
+      }
   }
 }
 void PahoInterface::addCommand(std::string s, MqttCmdFunctor f)

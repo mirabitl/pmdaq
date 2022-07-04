@@ -192,7 +192,8 @@ class monitor:
         self.sendCommand(hw,"ON",{})
     def LV_OFF(self,hw="ZupPaho"):
         self.sendCommand(hw,"OFF",{})
-
+    def LV_STATUS(self,hw="ZupPaho"):
+        self.sendCommand(hw,"STATUS",{})
     def HV_ON(self,channels,hw="WienerPaho"):
         for ch in channels:
             self.sendCommand(hw,"ON",{"first":ch,"last":ch})
