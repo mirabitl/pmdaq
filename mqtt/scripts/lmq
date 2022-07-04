@@ -1,0 +1,295 @@
+#!/usr/bin/env python3
+from __future__ import absolute_import
+from __future__ import print_function
+import os
+import socks
+import socket
+import six.moves.http_client
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
+from six.moves.urllib.error import URLError, HTTPError
+import json
+from copy import deepcopy
+import base64
+import time
+import argparse
+import requests
+import combrc
+import serviceAccess as sac
+import pnsAccess
+import MongoJob as mg
+import sys
+from six.moves import range
+from six.moves import input
+
+
+try:
+    from urllib.parse import urlparse
+except ImportError:
+     from six.moves.urllib.parse import urlparse
+# Sock support
+sockport = None
+sp = os.getenv("SOCKPORT", "Not Found")
+if (sp != "Not Found"):
+    sockport = int(sp)
+if (sockport != None):
+    # print "Using SOCKPORT ",sockport
+    socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, "127.0.0.1", sockport)
+    socket.socket = socks.socksocket
+    # socks.wrapmodule(urllib2)
+
+def executeRequest(url):
+    """
+    Acces to an url
+    
+   :param surl: The url
+   :return: url answer
+   """
+    try:
+        r = requests.get(url)
+    except requests.exceptions.RequestException as e:
+        print(e)
+        p_rep={}
+        p_rep["STATE"]="DEAD"
+        p_rep["http_error"] = e.code
+        return json.dumps(p_rep,sort_keys=True)
+    return r.text
+
+
+def executeCMD(host,port,path,params):
+    """
+        Access to the CoMmanDs of a zdaq::baseApplication
+        
+        :param host: Host name
+        :param port: Application port
+        :param prefix: Prefix of the application , ie, http:://host:port/prefix/.....
+        :param cmd: Command name
+        :param params: CGI additional parameters
+        :return: url answer
+    """
+
+    if (params!=None ):
+        myurl = "http://"+host+ ":%d" % (port)
+
+        lq={}
+        for x,y in six.iteritems(params):
+            if (type(y) is dict):
+                y=json.dumps(y).replace(" ","").encode("utf8")
+            lq[x]=y
+
+        try:
+            r = requests.get(myurl+path, params=lq)
+        except requests.exceptions.RequestException as e:
+            print(e)
+            p_rep={}
+            p_rep["STATE"]="DEAD"
+            p_rep["http_error"] = e.code
+            return json.dumps(p_rep,sort_keys=True)
+        return r.text
+
+
+
+        
+    else:
+        myurl = "http://"+host+ ":%d%s" % (port,path)
+        try:
+            r = requests.get(myurl)
+        except requests.exceptions.RequestException as e:
+            print(e)
+            p_rep={}
+            p_rep["STATE"]="DEAD"
+            p_rep["http_error"] = e.code
+            return json.dumps(p_rep,sort_keys=True)
+        return r.text
+        req=six.moves.urllib.request.Request(myurl)
+        try:
+            r1=six.moves.urllib.request.urlopen(req)
+        except URLError as e:
+            print(e)
+            print(e.code)
+            print(e.reason)
+            p_rep={}
+            p_rep["STATE"]="DEAD"
+            p_rep["http_error"] = e.code
+            return json.dumps(p_rep,sort_keys=True)
+        else:
+            return r1.read()
+
+
+#rep=json.loads(executeCMD("lyocms09",18018,"/ZupInfo",{"npmax":10}))
+#print(rep["ZupInfoResponse"]["ZupInfoResult"])
+#os.exit(0)
+
+
+
+
+
+parser = argparse.ArgumentParser()
+
+# configure all the actions
+grp_action = parser.add_mutually_exclusive_group()
+
+
+# Arguments
+parser.add_argument('--host', action='store', type=str,
+                    default="lyocms09", dest='host', help='set the wmon host')
+parser.add_argument('--port', action='store', type=int,
+                    default=18018, dest='port', help='set the wmon port')
+
+parser.add_argument('--lv-hardware', action='store', type=str,
+                    default="ZupPaho", dest='lv_hardware', help='set the wmon LV hardware')
+
+parser.add_argument('--hv-hardware', action='store', type=str,
+                    default="WienerPaho", dest='hv_hardware', help='set the wmon HV hardware')
+
+parser.add_argument('--nmax', action='store', type=int,
+                    default=1, dest='nmax', help='set the maximum history dump')
+
+parser.add_argument('--channels', action='store', type=str,
+                    default=None, dest='channels', help='channels list as an array')
+parser.add_argument('--vset', action='store', type=float,
+                    default=None, dest='vset', help='HV voltage (V) to be set')
+
+parser.add_argument('--iset', action='store', type=float,
+                    default=None, dest='iset', help='HV max current(A) to be set')
+
+
+
+# Control
+
+grp_action.add_argument('--start', action='store_true',
+                        help='Start monitoring loop ')
+grp_action.add_argument('--stop', action='store_true',
+                        help='Stop monitoring loop ')
+grp_action.add_argument('--zup-info', action='store_true',
+                        help='print ZUP last published ')
+grp_action.add_argument('--wiener-info', action='store_true',
+                        help='print Wiener last published ')
+grp_action.add_argument('--bmp-info', action='store_true',
+                        help='print BMP last published ')
+grp_action.add_argument('--lv-on', action='store_true',
+                        help='Put LV on')
+grp_action.add_argument('--lv-off', action='store_true',
+                        help='Put LV off')
+grp_action.add_argument('--update', action='store_true',
+                        help='Update all status')
+grp_action.add_argument('--hv-on', action='store_true',
+                        help='Put HV on on --channels [x,y,z...]')
+grp_action.add_argument('--hv-clear', action='store_true',
+                        help='Clear HV alarm on --channels [x,y,z...]')
+grp_action.add_argument('--hv-off', action='store_true',
+                        help='Put HV off on --channels [x,y,z...]')
+grp_action.add_argument('--hv-vset', action='store_true',
+                        help='Put HV voltage to --vset #value on channels --channels [x,y,z...]')
+grp_action.add_argument('--hv-iset', action='store_true',
+                        help='Put HV maximum current to --iset #value on channels --channels [x,y,z...]')
+if len(sys.argv) == 1:
+    parser.print_help(sys.stderr)
+    sys.exit(1)
+results = parser.parse_args()
+
+# analyse the command
+lcgi = {}
+r_cmd = None
+
+if(results.start):
+    rep=json.loads(executeCMD(results.host,results.port,"/START_LOOP",{}))
+    print(rep["START_LOOPResponse"]["START_LOOPResult"])
+    exit(0)
+elif(results.stop):
+    rep=json.loads(executeCMD(results.host,results.port,"/STOP_LOOP",{}))
+    print(rep["STOP_LOOPResponse"]["STOP_LOOPResult"])
+    exit(0)
+elif(results.update):
+    rep=json.loads(executeCMD(results.host,results.port,"/UPDATE",{}))
+    print(rep)
+    #print(rep["LV_STATUSResponse"]["LV_STATUSResult"])
+    exit(0)
+elif(results.zup_info):
+    rep=json.loads(executeCMD(results.host,results.port,"/ZupInfo",{"hw":results.lv_hardware,"npmax":results.nmax}))
+    print(rep["ZupInfoResponse"]["ZupInfoResult"])
+    exit(0)
+elif(results.lv_on):
+    rep=json.loads(executeCMD(results.host,results.port,"/LV_ON",{"hw":results.lv_hardware}))
+    print(rep["LV_ONResponse"]["LV_ONResult"])
+    exit(0)
+elif(results.lv_off):
+    rep=json.loads(executeCMD(results.host,results.port,"/LV_OFF",{"hw":results.lv_hardware}))
+    print(rep["LV_OFFResponse"]["LV_OFFResult"])
+    exit(0)
+elif(results.hv_on):
+    if (results.channels==None):
+        print("please speciy --channels [x,y,z,w...]")
+        exit(0)
+    parms={"hardware":results.hv_hardware,"channels":results.channels}
+    rep=json.loads(executeCMD(results.host,results.port,"/HV_ON",parms))
+    print(rep["HV_ONResponse"]["HV_ONResult"])
+    exit(0)
+elif(results.hv_clear):
+    if (results.channels==None):
+        print("please speciy --channels [x,y,z,w...]")
+        exit(0)
+    parms={"hardware":results.hv_hardware,"channels":results.channels}
+    rep=json.loads(executeCMD(results.host,results.port,"/HV_CLEAR",parms))
+    print(rep["HV_CLEARResponse"]["HV_CLEARResult"])
+    exit(0)
+elif(results.hv_off):
+    if (results.channels==None):
+        print("please speciy --channels [x,y,z,w...]")
+        exit(0)
+    parms={"hardware":results.hv_hardware,"channels":results.channels}
+    rep=json.loads(executeCMD(results.host,results.port,"/HV_OFF",parms))
+    print(rep["HV_OFFResponse"]["HV_OFFResult"])
+    exit(0)
+elif(results.hv_vset):
+    if (results.channels==None):
+        print("please speciy --channels [x,y,z,w...]")
+        exit(0)
+    if (results.vset==None):
+        print("please speciy --vset #value")
+        exit(0)
+    parms={"hardware":results.hv_hardware,"channels":results.channels,"vset":results.vset}
+    rep=json.loads(executeCMD(results.host,results.port,"/HV_VSET",parms))
+    print(rep["HV_VSETResponse"]["HV_VSETResult"])
+    exit(0)
+elif(results.hv_iset):
+    if (results.channels==None):
+        print("please speciy --channels [x,y,z,w...]")
+        exit(0)
+    if (results.iset==None):
+        print("please speciy --iset #value")
+        exit(0)
+    parms={"hardware":results.hv_hardware,"channels":results.channels,"iset":results.iset}
+    rep=json.loads(executeCMD(results.host,results.port,"/HV_ISET",parms))
+    print(rep["HV_ISETResponse"]["HV_ISETResult"])
+    exit(0)
+elif(results.lv_off):
+    rep=json.loads(executeCMD(results.host,results.port,"/LV_OFF",{"hw":results.lv_hardware}))
+    print(rep["LV_OFFResponse"]["LV_OFFResult"])
+    exit(0)
+elif(results.wiener_info):
+    rep=json.loads(executeCMD(results.host,results.port,"/WienerInfo",{"hw":results.hv_hardware,"npmax":results.nmax}))
+    #print(rep["WienerInfoResponse"]["WienerInfoResult"])
+    for  mes in rep["WienerInfoResponse"]["WienerInfoResult"]:
+        for x in mes:
+            sti=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x["ctime"]))
+            print(sti)
+            for y in x["content"]["channels"]:
+                if (not isinstance(y["status"],str)):
+                    print(y)
+                    continue
+                sstat=y["status"].split("=")[1]
+                print("ch%.3d %8.2f %8.2f %8.2f %8.2f %8.2f %s" %(y["id"],y["vset"],y["iset"]*1E6,y["rampup"],y["vout"],y["iout"]*1E6,sstat[:len(sstat)-1]))                    
+
+
+    exit(0)
+elif(results.bmp_info):
+    rep=json.loads(executeCMD(results.host,results.port,"/BMPInfo",{"npmax":results.nmax}))
+    #print(rep["BMPInfoResponse"]["BMPInfoResult"])
+    for  mes in rep["BMPInfoResponse"]["BMPInfoResult"]:
+        for x in mes:
+            sti=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x["ctime"]))
+            
+            
+            print("%s P=%.2f mbar T=%.2f K %.2f C " % (sti,x["content"]["pressure"],x["content"]["temperature"]+273.15,x["content"]["temperature"]))
+    exit(0)
