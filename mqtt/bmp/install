@@ -1,5 +1,5 @@
 #!/bin/bash
-sudo systemctl disable BmpPaho.service 
+sudo systemctl disable BmpPaho
 sudo service BmpPaho stop
 
 mkdir -p ../bin
@@ -9,5 +9,5 @@ sudo mkdir -p /usr/local/paho/bin
 sudo cp ../bin/BmpPaho.exe /usr/local/paho/bin/
 sudo sed -e 's,SERVICENAME,BmpPaho,g' ../etc/example.service > BmpPaho.service
 sudo cp BmpPaho.service /lib/systemd/system/
-sudo systemctl enable BmpPaho.service 
+sudo systemctl enable BmpPaho
 sudo service BmpPaho stop
