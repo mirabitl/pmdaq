@@ -116,11 +116,11 @@ class MongoSlow:
         fout=open(file_name, 'w')
         writer=None
         device=path.split(",")[2]
-        if (device=="BMP"):
+        if (device=="BMP" or device=="BmpPaho" ):
             fieldnames = ['Date','Pressure', 'Temperature']
             writer = csv.writer(fout, delimiter="|")
             writer.writerow(fieldnames)
-        if (device=="GENESYS" or device =="ZUP"):
+        if (device=="GENESYS" or device =="ZUP" or device=="ZupPaho"  or device=="GenesysPaho"  ):
             fieldnames = ['Date','VOUT', 'IOUT']
             writer = csv.writer(fout, delimiter="|")
             writer.writerow(fieldnames)
@@ -132,12 +132,12 @@ class MongoSlow:
         for x in res:
             #print(x)
             sti=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x["ctime"]))
-            if (device=="BMP" and x["status"]["name"]==device):
+            if ( (device=="BMP" and x["status"]["name"]==device) or device=="BmpPaho" ):
                 print("%s P=%.2f mbar T=%.2f K " % (sti,x["status"]["pressure"],x["status"]["temperature"]+273.15))
                 writer.writerow([sti,x["status"]["pressure"],x["status"]["temperature"]+273.15])
             if (device=="HIH" and x["status"]["name"]==device):
                 print("%s H0=%.2f %% T0=%.2f K H1=%.2f %% T1=%.2f K " % (sti,x["status"]["humidity0"],x["status"]["temperature0"],x["status"]["humidity1"],x["status"]["temperature1"]))
-            if (device=="ISEG" and x["status"]["name"]==device):
+            if ( (device=="ISEG" and x["status"]["name"]==device) or device=="WienerPaho" ):
                 print(sti)
                 if (writer==None):
                     fieldnames=["date"]
@@ -156,11 +156,11 @@ class MongoSlow:
                 writer.writerow(measure)
                     #print("ch%.3d %12.2f %12.2f %12.2f %s" %(y["id"],y["vset"],y["vout"],y["iout"]*1E6,sstat[:len(sstat)-1]))
                     #print("ch%.3d %8.2f %8.2f %8.2f %8.2f %8.2f %s" %(y["id"],y["vset"],y["iset"]*1E6,y["rampup"],y["vout"],y["iout"]*1E6,sstat[:len(sstat)-1]))
-            if (device=="GENESYS" and x["status"]["name"]==device):
+            if ((device=="GENESYS" and x["status"]["name"]==device) or device=="GenesysPaho") :
                 print("%s VSET=%.2f V VOut=%.2f V IOut=%.2f V Status %s " % (sti,x["status"]["vset"],x["status"]["vout"],x["status"]["iout"],x["status"]["status"]))
                 writer.writerow([sti,x["status"]["vout"],x["status"]["iout"]])
 
-            if (device=="SYX27" and x["status"]["name"]==device):
+            if ((device=="SYX27" and x["status"]["name"]==device) or device=="Sy1527Paho") :
                 print(sti)
                 for y in x["status"]["channels"]:
                     print("%12s %8.2f %8.2f %8.2f %8.2f %8.2f %d" %(y["name"],y["vset"],y["iset"],y["rampup"],y["vout"],y["iout"],y["status"]))
@@ -183,7 +183,7 @@ class MongoSlow:
                     measure.append(y["iset"])
                 writer.writerow(measure)
 
-            if (device=="ZUP" and x["status"]["name"]==device):
+            if ((device=="ZUP" and x["status"]["name"]==device) or device=="ZupPaho" ):
                 #print("%s VSET=%.2f V VOut=%.2f V IOut=%.2f V Status %s " % (sti,x["status"]["vset"],x["status"]["vout"],x["status"]["iout"],x["status"]["status"]))
                 print(" VSET=%.2f V VOut=%.2f V IOut=%.2f A Imax=%.2f A  Status %s  Bit Status %s " % (x["status"]["vset"],x["status"]["vout"],x["status"]["iout"],x["status"]["iset"],x["status"]["status"],bin(x["status"]["pwrstatus"])))
                 writer.writerow([sti,x["status"]["vout"],x["status"]["iout"]])
