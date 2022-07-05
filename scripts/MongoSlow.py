@@ -85,7 +85,7 @@ class MongoSlow:
                 print("%s P=%.2f mbar T=%.2f K %.2f C" % (sti,x["status"]["pressure"],x["status"]["temperature"]+273.15,x["status"]["temperature"]))
             if (device=="HIH" and x["status"]["name"]==device):
                 print("%s H0=%.2f %% T0=%.2f K H1=%.2f %% T1=%.2f K " % (sti,x["status"]["humidity0"],x["status"]["temperature0"],x["status"]["humidity1"],x["status"]["temperature1"]))
-            if (device=="ISEG" and x["status"]["name"]==device):
+            if ((device=="ISEG" and x["status"]["name"]==device)or device=="WienerPaho") :
                 print(sti)
                 for y in x["status"]["channels"]:
                     if (not isinstance(y["status"],str)):
