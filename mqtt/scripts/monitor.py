@@ -3,6 +3,8 @@ import json
 import paho.mqtt.client as paho
 import os
 import MongoSlow as ms
+import logging
+
 class monitor:
     def __init__(self,host,port,session):
         """
@@ -18,6 +20,8 @@ class monitor:
         self.hws=[]
         self.rcv_msg={}
         self.msi=None
+        logging.basicConfig(level=logging.INFO)
+
     def connectMongo(self):
         self.msi=ms.instance()
         
@@ -53,7 +57,8 @@ class monitor:
         # Store in Mongo DB if connected
         if (self.msi!=None):
             self.msi.store(p[0],p[1], r_m["ctime"], r_m["content"])
-            #print(p[0],p[1], r_m["ctime"], r_m["content"])
+            sm=p[0]+p[1]+json.dumps(r_m)
+            logging.debug(sm)
         else:
             if (False):
                 print("No db storage")
@@ -81,7 +86,7 @@ class monitor:
         self.client.loop_start() #start loop to process received messages
         print("subscribing all ")
         self.client.subscribe("#")#subscribe
-        time.sleep(1)
+        time.sleep(6)
         self.client.unsubscribe("#")
         print(self.topics)
         self.client.loop_stop()
@@ -100,6 +105,7 @@ class monitor:
                     self.hws.append(p[1])
     def UpdateInfos(self):
         for hw in self.hws:
+            logging.info("sending Status to %s \n",hw)
             self.sendCommand(hw,"STATUS",{})
 
     def loop(self):
