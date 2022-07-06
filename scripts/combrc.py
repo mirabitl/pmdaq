@@ -18,6 +18,12 @@ class combRC(pmdaqrc.pmdaqControl):
         self.md_name = "lyon_mdcc"
         self.db = mg.instance()
         self.state = self.getStoredState()
+        self.pm_hosts=[]
+        j_sess=json.loads(open(config).read())
+        for x in j_sess["apps"]:
+            sh="http://%s:%d" % (x["host"],x["port"])
+            if (not sh in self.pm_hosts):
+                self.pm_hosts.append(sh)
     # daq
     # Initialising implementation
 
@@ -396,6 +402,10 @@ class combRC(pmdaqrc.pmdaqControl):
             if (v != None):
                 for x in v:
                     print("\t \t", x)
+    # RESTART
+    def restart(self):
+        for x in self.pm_hosts:
+            print(x+"/EXIT")
 
     # FEBV1 specific
 
