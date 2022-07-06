@@ -38,6 +38,8 @@ grp_action.add_argument('--jc-pns-session', action='store_true',
                         help='List all session in PNS ')
 # DAQ preparation
 # Running
+grp_action.add_argument('--daq-restart', action='store_true',
+                        help='Restart all PMDAQ daemons')
 grp_action.add_argument('--daq-initialise', action='store_true',
                         help='Initialise DAQ, data source discovery and Builder final configuration')
 grp_action.add_argument('--daq-register', action='store_true',
@@ -254,6 +256,12 @@ elif(results.jc_info):
 fdc = combrc.combRC(file_config)
 if(results.daq_register):
     fdc.session.Print(True)
+    exit(0)
+elif(results.daq_restart):
+    fdc.restart()
+    print("waiting 10 s")
+    time.sleep(10)
+    fpns.pns_remove(session_name)
     exit(0)
 elif(results.daq_initialise):
     delay=0

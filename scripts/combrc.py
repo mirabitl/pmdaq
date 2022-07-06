@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import pmdaqrc
+import serviceAccess as sac
 import time
 import MongoJob as mg
 import json
@@ -405,8 +406,8 @@ class combRC(pmdaqrc.pmdaqControl):
     # RESTART
     def restart(self):
         for x in self.pm_hosts:
-            print(x+"/EXIT")
-
+            print(x+"/EXIT will be called")
+            sac.executeRequest(x+"/EXIT")
     # FEBV1 specific
 
     def set6BDac(self, dac):
