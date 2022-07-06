@@ -5,7 +5,7 @@ using namespace utility;
 using namespace http::experimental::listener;
 #include <dlfcn.h>
 
-baseServer::baseServer(utility::string_t urla) : m_listener(urla), req(0), _url(urla)
+baseServer::baseServer(utility::string_t urla) : m_listener(urla), req(0), _url(urla),_running(true)
 {
 
   m_listener.support(methods::GET, std::bind(&baseServer::handle_get_or_post, this, std::placeholders::_1));

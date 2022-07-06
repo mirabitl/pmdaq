@@ -70,6 +70,7 @@ DOMConfigurator::configure("/etc/Log4cxxConfig.xml");
   // std::getline(std::cin, line);
   while (handler.isRunning())
     ::sleep(1);
+  PM_INFO (_logPdaq,utility::string_t(U("Exiting : ")) << addr );
   handler.close().wait();
  }
  catch (std::exception& ex)
