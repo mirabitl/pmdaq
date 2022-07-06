@@ -19,12 +19,13 @@ using namespace http::experimental::listener;
 class baseServer
 {
 public:
-  baseServer() {}
+  baseServer() {_running=true;}
   baseServer(utility::string_t url);
   pplx::task<void> open() { return m_listener.open(); }
   pplx::task<void> close() { return m_listener.close(); }
   void registerPlugin(std::string name,std::string query);
   std::string url(){return _url;}
+  bool isRunning(){return _running;}
 private:
  void handle_get_or_post(http_request message);
  http_listener m_listener;
@@ -35,4 +36,5 @@ private:
   std::map<std::string,pluginInfo<handlerPlugin>*> _plugins;
   #endif
   std::string _url;
+  bool _running;
 };

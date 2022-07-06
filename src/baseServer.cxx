@@ -150,6 +150,13 @@ void baseServer::handle_get_or_post(http_request message)
     }
     message.reply(status_codes::OK, par);
   }
+   else if (uri::decode(message.relative_uri().path()).compare("/EXIT") == 0)
+  {
+    PM_INFO(_logPdaq, "Pmdaq will soon stop");
+    _running=false;
+    auto rep = json::value::string(U("PMDAQ will stop"));
+    message.reply(status_codes::OK, rep);
+  }
   else
   {
     auto itp = _plugins.find(uri::decode(message.relative_uri().path()));

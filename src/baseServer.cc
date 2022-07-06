@@ -68,8 +68,8 @@ DOMConfigurator::configure("/etc/Log4cxxConfig.xml");
   // ucout << U("Press ENTER key to quit...") << std::endl;
   // std::string line;
   // std::getline(std::cin, line);
-  while (1)
-    ::sleep(100);
+  while (handler.isRunning())
+    ::sleep(1);
   handler.close().wait();
  }
  catch (std::exception& ex)
