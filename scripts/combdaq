@@ -196,6 +196,8 @@ parser.add_argument('-A', '--Application', action='store', dest='application',
                     default=None, help='Application name')
 parser.add_argument('-P', '--Parameter', action='store', dest='parameter',
                     default=None, help='parameter set')
+parser.add_argument('-u', '--url', action='store', dest='url',
+                    default=None, help='url for daq-restart command')
 
 account = os.getenv("MGDBLOGIN", "NONE")
 if (account == "NONE"):
@@ -258,7 +260,10 @@ if(results.daq_register):
     fdc.session.Print(True)
     exit(0)
 elif(results.daq_restart):
-    fdc.restart()
+    if (results.url==None):
+        fdc.restart()
+    else:
+        fdc.restart(results.url)
     print("waiting 10 s")
     time.sleep(10)
     fpns.pns_remove(session_name)

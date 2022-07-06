@@ -404,10 +404,15 @@ class combRC(pmdaqrc.pmdaqControl):
                 for x in v:
                     print("\t \t", x)
     # RESTART
-    def restart(self):
-        for x in self.pm_hosts:
-            print(x+"/EXIT will be called")
-            sac.executeRequest(x+"/EXIT")
+    def restart(self,url=None):
+        if (url==None):
+            for x in self.pm_hosts:
+                print(x+"/EXIT will be called")
+                sac.executeRequest(x+"/EXIT")
+            else:
+                print(url+"/EXIT will be called")
+                sac.executeRequest(url+"/EXIT")
+
     # FEBV1 specific
 
     def set6BDac(self, dac):
