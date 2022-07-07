@@ -409,9 +409,9 @@ class combRC(pmdaqrc.pmdaqControl):
             for x in self.pm_hosts:
                 print(x+"/EXIT will be called")
                 sac.executeRequest(x+"/EXIT")
-            else:
-                print(url+"/EXIT will be called")
-                sac.executeRequest(url+"/EXIT")
+        else:
+            print(url+"/EXIT will be called")
+            sac.executeRequest(url+"/EXIT")
 
     # FEBV1 specific
 
