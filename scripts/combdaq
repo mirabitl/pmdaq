@@ -234,24 +234,29 @@ lcgi = {}
 r_cmd = None
 
 if(results.jc_destroy):
+    fpns.check(True)
     if (results.name!=None):
         fpns.pns_remove(results.name)
     else:
         fpns.pns_remove(session_name)
     exit(0)
 elif(results.jc_pns_list):
+    fpns.check()
     if (results.name!=None):
         rep=fpns.pns_list(results.name)
         print(rep)
     else:
+        print(session_name)
         rep=fpns.pns_list(session_name)
         print(rep)
     exit(0)
 elif(results.jc_pns_session):
+    fpns.check()
     rep=fpns.pns_session_list()
     print(rep)
     exit(0)
 elif(results.jc_info):
+    fpns.check()
     fpns.Print(session_name,True)
     exit(0)
 # DAQ
@@ -266,7 +271,6 @@ elif(results.daq_restart):
         fdc.restart(results.url)
     print("waiting 10 s")
     time.sleep(10)
-    fpns.pns_remove(session_name)
     exit(0)
 elif(results.daq_initialise):
     delay=0

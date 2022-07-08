@@ -56,7 +56,7 @@ void mbmdcc::Interface::terminate()
   if (_running)
     {
     _running=false;
-    ::sleep(2);
+    //::sleep(2);
     PM_INFO(_logMbmdcc,"Joining");
     if (g_store.joinable())
       {

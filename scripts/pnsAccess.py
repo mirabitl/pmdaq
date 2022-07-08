@@ -24,8 +24,8 @@ class pnsAccess:
         if (self.pns_host == "NONE"):
             print("The ENV varaible PNS_NAME mut be set")
             exit(0)
-        self.check()
-    def check(self):
+        #self.check()
+    def check(self,donotaccess=False):
         self.process_list= self.pns_list()
         #print("process  list: ",self.process_list)
         self.session_list=self.pns_session_list()
@@ -37,6 +37,8 @@ class pnsAccess:
                 self.registered.append(sac.strip_pns_string(x))
 
         #xf=None
+        if (donotaccess):
+            return
         for x in self.registered:
             #print("Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state)
             rep=json.loads(sac.executeCMD(x.host,x.port,x.path+"INFO",None))
