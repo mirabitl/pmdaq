@@ -58,7 +58,7 @@ class pmdaqControl(daqrc.daqControl):
         if ("lyon_liboard" in self.session.apps): 
             pn="lyon_liboard"
         mr = json.loads(self.mdcc_Status())
-        print(mr)
+        #print(mr)
         #print("ON DEBUG ",mr)
         #print("ON DEBUG ",mr)
         if (not verbose):
@@ -73,7 +73,11 @@ class pmdaqControl(daqrc.daqControl):
                 print("\t ",tk)
                 if ("COUNTERS" in tv):
                     for k,v in tv["COUNTERS"].items():
-                        print("\t \t ",k,v)
+                        if (k =="version"):
+                            print("\t \t %s %x" % (k,v))
+                        else:
+                            print("\t \t ",k,v)
+                        
     # Builder
 
     def builder_setHeader(self, rtype, rval, mask):
