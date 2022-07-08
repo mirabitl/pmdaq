@@ -29,7 +29,7 @@ void mbmdcc::Interface::dolisten()
 
     if (!_running) break;
     //std::cout << "\n calling listen"<<std::endl<<std::flush;
-    if(!_group->listen(1))
+    if(!_group->listen(10))
       {
 	if (nl%10==0)
 	  std::cout << "\nNo msg recieved during the last 10 seconds"<<std::endl<<std::flush;
