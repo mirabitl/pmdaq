@@ -465,7 +465,7 @@ web::json::value PmrManager::configureHR2()
   std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
   web::json::value array_slc;
   uint32_t nd = 0;
-#define ONETHREAD
+#undef ONETHREAD
 #ifdef ONETHREAD
   for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
     {
@@ -486,6 +486,10 @@ web::json::value PmrManager::configureHR2()
       //fprintf(stderr,"Debug 5");
     }
 #else
+  uint8_t slowb[65536*255];
+  uint8_t nb[255];
+  //memcpy(slowb,b,nb);
+
   for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
     {
       std::stringstream ips;
@@ -496,7 +500,9 @@ web::json::value PmrManager::configureHR2()
       //fprintf(stderr,"Debug 2 %s \n",ips.str().c_str());
       _hca.prepareSlowControl(ips.str(), true);
       //fprintf(stderr,"Debug 3 %d \n",_hca.slcBytes());
-      this->configureThread(it->second,_hca.slcBuffer(), _hca.slcBytes());
+      nb[it->first]=_hca.slcBytes();
+      memcpy(&slowb[it->first*65536],_hca.slcBuffer(),_hca.slcBytes());
+      this->configureThread(it->second,&slowb[it->first*65536], nb[it->first]);
       //fprintf(stderr,"Debug 4");
     }
   ::usleep(100000);
@@ -703,10 +709,8 @@ void PmrManager::joinConfigureThreads()
   }
 void PmrManager::configureThread(PmrInterface *d,unsigned char* b,uint32_t nb)
 {
-  uint8_t slowb[65536];
-  memcpy(slowb,b,nb);
-  ::usleep(500000);
-  g_c.push_back(std::thread(std::bind(&PmrInterface::configure, d,slowb,nb)));
+  ::usleep(100000);
+  g_c.push_back(std::thread(std::bind(&PmrInterface::configure, d,b,nb)));
 }
 
 
