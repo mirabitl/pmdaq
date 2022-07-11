@@ -499,7 +499,7 @@ web::json::value PmrManager::configureHR2()
       ips << "0.0.0." << it->first;
       //fprintf(stderr,"Debug 2 %s \n",ips.str().c_str());
       _hca.prepareSlowControl(ips.str(), true);
-      //fprintf(stderr,"Debug 3 %d \n",_hca.slcBytes());
+      fprintf(stderr,"Debug 3 %d %d \n",it->first,_hca.slcBytes());
       nb[it->first]=_hca.slcBytes();
       memcpy(&slowb[it->first*65536],_hca.slcBuffer(),_hca.slcBytes());
       this->configureThread(it->second,&slowb[it->first*65536], nb[it->first]);
@@ -710,6 +710,7 @@ void PmrManager::joinConfigureThreads()
 void PmrManager::configureThread(PmrInterface *d,unsigned char* b,uint32_t nb)
 {
   ::usleep(100000);
+  fprintf(stderr," Configuring %d  bytes\n",nb);
   g_c.push_back(std::thread(std::bind(&PmrInterface::configure, d,b,nb)));
 }
 
