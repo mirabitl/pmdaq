@@ -256,13 +256,16 @@ void PmrManager::setGain(uint16_t gain)
 
 void PmrManager::setMask(uint32_t level, uint64_t mask)
 {
+  //  fprintf(stderr,"\t looping on map \n");
   PMF_INFO(_logPmr, " Changing Mask: " << level << " " << std::hex << mask << std::dec);
+  //fprintf(stderr,"\t looping on map \n");
   for (auto it = _hca.asicMap().begin(); it != _hca.asicMap().end(); it++)
     {
-
+      //  fprintf(stderr,"\t ASIC %d \n",it->first);
       it->second.setMASK(level, mask);
     }
   // Now loop on slowcontrol socket
+  //fprintf(stderr,"Calling configure \n");
   this->configureHR2();
 
   ::usleep(10);
@@ -291,8 +294,10 @@ void PmrManager::setAllMasks(uint64_t mask)
       it->second.setMASK(1, mask);
       it->second.setMASK(2, mask);
       //it->second.dumpBinary();
+      //fprintf(stderr,"\t ASIC %d \n",it->first);
     }
   // Now loop on slowcontrol socket
+  fprintf(stderr,"Calling configure \n");
   this->configureHR2();
 
   ::usleep(10);
@@ -458,6 +463,7 @@ void PmrManager::c_status(http_request m)
 
 web::json::value PmrManager::configureHR2()
 {
+  fprintf(stderr,"On rentre Debug Configure HR2\n");
   /// A reecrire
   //uint32_t external = params()["external"].as_integer();
   //printf("TRigger EXT %x \n", external);
@@ -486,8 +492,7 @@ web::json::value PmrManager::configureHR2()
       //fprintf(stderr,"Debug 5");
     }
 #else
-  uint8_t slowb[65536*255];
-  uint32_t nb[255];
+  fprintf(stderr,"Debug Configure HR2\n");
   //memcpy(slowb,b,nb);
 
   for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
@@ -499,7 +504,7 @@ web::json::value PmrManager::configureHR2()
       ips << "0.0.0." << it->first;
       //fprintf(stderr,"Debug 2 %s \n",ips.str().c_str());
       _hca.prepareSlowControl(ips.str(), true);
-      fprintf(stderr,"Debug 3 %d %d \n",it->first,_hca.slcBytes());
+      //fprintf(stderr,"Debug 3 %d %d \n",it->first,_hca.slcBytes());
       nb[it->first]=_hca.slcBytes();
       memcpy(&slowb[it->first*65536],_hca.slcBuffer(),_hca.slcBytes());
       this->configureThread(it->second,&slowb[it->first*65536], nb[it->first]);
@@ -524,7 +529,7 @@ web::json::value PmrManager::configureHR2()
 
 void PmrManager::configure(http_request m)
 {
-  fprintf(stderr,"Debug 1");
+  //fprintf(stderr,"Debug 1");
   auto par = json::value::object();
   PMF_INFO(_logPmr, " CMD: Configuring");
 
@@ -710,7 +715,7 @@ void PmrManager::joinConfigureThreads()
 void PmrManager::configureThread(PmrInterface *d,unsigned char* b,uint32_t nb)
 {
   ::usleep(100000);
-  fprintf(stderr," Configuring %d  bytes\n",nb);
+  //fprintf(stderr," Configuring %d  bytes\n",nb);
   g_c.push_back(std::thread(std::bind(&PmrInterface::configure, d,b,nb)));
 }
 

@@ -293,9 +293,9 @@ namespace lmdbtool
       setB1(_jasic["B1"].asUInt());
       setB2(_jasic["B2"].asUInt());
 
-      std::cout << " ASIC HEADER " << _jasic["HEADER"].asUInt() << std::endl;
+      //std::cout << " ASIC HEADER " << _jasic["HEADER"].asUInt() << std::endl;
       setHEADER(_jasic["HEADER"].asUInt());
-      std::cout << "GET HEADER " << (int)getHEADER() << std::endl;
+      //std::cout << "GET HEADER " << (int)getHEADER() << std::endl;
     }
 
     uint32_t *ptr() { return _l; }

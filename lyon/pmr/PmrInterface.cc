@@ -197,7 +197,7 @@ void pmr::PmrInterface::destroy()
 void pmr::PmrInterface::configure(unsigned char* b,uint32_t nb)
 {
   _sem.lock();
-  fprintf(stderr,"Debug Interface 1 %d\n",nb);
+  //  fprintf(stderr,"Debug Interface 1 %d\n",nb);
 
   _rd->loadSLC(b,nb);
   //fprintf(stderr,"Debug Interface 2\n");

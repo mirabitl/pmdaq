@@ -169,4 +169,7 @@ private:
   bool _sc_running;
   int _run_mode;
   std::thread g_scurve;
+  uint8_t slowb[65536*255];
+  uint32_t nb[255];
+
 };
