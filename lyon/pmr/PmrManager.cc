@@ -487,7 +487,7 @@ web::json::value PmrManager::configureHR2()
     }
 #else
   uint8_t slowb[65536*255];
-  uint8_t nb[255];
+  uint32_t nb[255];
   //memcpy(slowb,b,nb);
 
   for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
