@@ -13,7 +13,8 @@
 #include <sstream>
 #include <arpa/inet.h>
 
-
+#include <errno.h>
+#include <sys/utsname.h>
 
 
 
@@ -22,22 +23,57 @@
 
 void mbmdcc::Interface::dolisten()
 {
+  struct utsname buffer;
+
+   errno = 0;
+   if (uname(&buffer) < 0) {
+      perror("uname");
+      exit(EXIT_FAILURE);
+   }
+
+   printf("system name = %s\n", buffer.sysname);
+   printf("node name   = %s\n", buffer.nodename);
+   printf("release     = %s\n", buffer.release);
+   printf("version     = %s\n", buffer.version);
+   printf("machine     = %s\n", buffer.machine);
+   std::string smach(buffer.machine);
   // _running=true;
   uint64_t nl=0;
-  while(!_onClientDisconnect->disconnected()) {
+  if (smach.compare("armv7l")==0)
+    while(!_onClientDisconnect->disconnected()) {
     //    PM_INFO(_logMbmdcc,"Thread is "<<_running);
 
-    if (!_running) break;
-    //std::cout << "\n calling listen"<<std::endl<<std::flush;
-    if(!_group->listen(1000))
-      {
-	if (nl%10==0)
-	  std::cout << "\nNo msg recieved during the last 10 seconds"<<std::endl<<std::flush;
-	nl++;
-      }
-    ::usleep(1000);
+      if (!_running) break;
+      //std::cout << "\n calling listen"<<std::endl<<std::flush;
+      
+      if(!_group->listen())
+	{
+	  if (nl%10000==0)
+	    std::cout << "\nNo msg recieved during the last 10 seconds"<<std::endl<<std::flush;
+	  nl++;
+	}
+      ::usleep(100);
 
-  }
+    }
+  else
+    {
+          while(!_onClientDisconnect->disconnected()) {
+    //    PM_INFO(_logMbmdcc,"Thread is "<<_running);
+
+      if (!_running) break;
+      //std::cout << "\n calling listen"<<std::endl<<std::flush;
+      
+      if(!_group->listen(1000))
+	{
+	  if (nl%10==0)
+	    std::cout << "\nNo msg recieved during the last 10 seconds"<<std::endl<<std::flush;
+	  nl++;
+	}
+      ::usleep(1000);
+
+    }
+
+    }
   PM_INFO(_logMbmdcc,"Thread is finished");
 }
     
