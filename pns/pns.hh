@@ -30,6 +30,7 @@ class pns : public handlerPlugin
     void update(http_request message);
     void remove(http_request message);
     void purge(http_request message);
+    void clear(http_request message);
 
 
     web::json::value session_registered(std::string r_session="NONE");

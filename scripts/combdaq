@@ -235,11 +235,19 @@ if(results.daq_restart):
         for x in pm_hosts:
             print(x+"/EXIT will be called")
             sac.executeRequest(x+"/EXIT")
+        # clear PNS
+        pns_host=os.getenv("PNS_NAME","NONE")
+        if (pns_host == "NONE"):
+            print("The ENV varaible PNS_NAME mut be set")
+            exit(0)
+        pnsurl="http://"+pns_host+":8888/PNS/CLEAR"
+        sac.executeRequest(pnsurl)
     else:
         print(results.url+"/EXIT will be called")
         sac.executeRequest(results.url+"/EXIT")
 
     time.sleep(10)
+    
     exit(0)
 
 

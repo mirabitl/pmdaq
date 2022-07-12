@@ -54,6 +54,7 @@ std::vector<std::string> pns::getPaths(std::string query)
   v.push_back("/PNS/LIST");
   v.push_back("/PNS/REMOVE");
   v.push_back("/PNS/PURGE");
+  v.push_back("/PNS/CLEAR");
   v.push_back("/PNS/SESSION/UPDATE");
   v.push_back("/PNS/SESSION/LIST");
   v.push_back("/PNS/SESSION/PURGE");
@@ -71,6 +72,8 @@ void pns::processRequest(http_request &message)
     this->remove(message);
   else if (cmd.compare("/PNS/PURGE") == 0)
     this->purge(message);
+  else if (cmd.compare("/PNS/CLEAR") == 0)
+    this->clear(message);
   else if (cmd.compare("/PNS/SESSION/LIST") == 0)
     this->session_list(message);
   else if (cmd.compare("/PNS/SESSION/UPDATE") == 0)
@@ -266,6 +269,33 @@ void pns::session_update(http_request message)
   // Return the registered list
   rep["REGISTERED"] =session_registered(r_session);
   message.reply(status_codes::OK, rep);
+}
+void pns::clear(http_request message)
+{
+  for (auto it2 = _sessions.cbegin(); it2 != _sessions.cend() /* not hoisted */; /* no increment */)
+  {
+    //auto v=split(it2->second,'?');
+    ucout << "Session " << it2->first << " state " << it2->second << std::endl;
+    ucout << "removing " << it2->first << std::endl;
+    _sessions.erase(it2++); // or "it = m.erase(it)" since C++11
+  }
+  // Return the registered list
+  auto rep = json::value();
+  rep["SESSION_REGISTERED"] = session_registered();
+    //Decode and build path
+  for (auto it2 = _services.cbegin(); it2 != _services.cend() /* not hoisted */; /* no increment */)
+  {
+    //auto v=split(it2->second,'?');
+    ucout << "path " << it2->first << " state " << it2->second << std::endl;
+    ucout << "removing " << it2->first << std::endl;
+    _services.erase(it2++); // or "it = m.erase(it)" since C++11
+  }
+  // Return the registered list
+
+  rep["REGISTERED"] = registered();
+
+  message.reply(status_codes::OK, rep);
+  
 }
 void pns::session_purge(http_request message)
 {
