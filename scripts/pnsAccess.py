@@ -24,7 +24,7 @@ class pnsAccess:
         if (self.pns_host == "NONE"):
             print("The ENV varaible PNS_NAME mut be set")
             exit(0)
-        #self.check()
+        self.check()
     def check(self,donotaccess=False):
         self.process_list= self.pns_list()
         #print("process  list: ",self.process_list)

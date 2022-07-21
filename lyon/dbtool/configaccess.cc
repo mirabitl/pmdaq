@@ -122,7 +122,7 @@ void lmdbtool::ConfigAccess::parseJson()
       uint32_t header = asic["num"].asUInt();
       uint32_t dif = asic["dif"].asUInt();
 
-      fprintf(stderr,"Insering %d %d\n",dif,header);
+      //fprintf(stderr,"Insering %d %d\n",dif,header);
       lmdbtool::hr2 prs;
       prs.setJson(asic["slc"]);
 
