@@ -14,7 +14,8 @@ import base64
 import time
 import argparse
 import requests
-import combrc
+#import combrc as crc
+import combrc_threaded as crc
 import serviceAccess as sac
 import pnsAccess
 import MongoJob as mg
@@ -289,7 +290,7 @@ elif(results.jc_info):
     fpns.Print(session_name,True)
     exit(0)
 # DAQ
-fdc = combrc.combRC(file_config)
+fdc = crc.combRC(file_config)
 if(results.daq_register):
     fdc.session.Print(True)
     exit(0)
