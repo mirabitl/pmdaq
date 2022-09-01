@@ -6,7 +6,7 @@
 
 #include "PmrDriver.hh"
 
-using namespace pmr;
+using namespace Pmr;
 
 Pmr::PmrDriver::PmrDriver(char * deviceIdentifier, uint32_t productid ) 
 {
