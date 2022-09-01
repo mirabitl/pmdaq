@@ -16,11 +16,11 @@
 #include <string.h>
 
 // using namespace Ftdi;
-using namespace pmr;
+using namespace Pmr;
 
 void PmrManager::prepareDevices()
 {
-  for (std::map<uint32_t, pmr::FtdiDeviceInfo *>::iterator it = theFtdiDeviceInfoMap_.begin(); it != theFtdiDeviceInfoMap_.end(); it++)
+  for (std::map<uint32_t, Pmr::FtdiDeviceInfo *>::iterator it = theFtdiDeviceInfoMap_.begin(); it != theFtdiDeviceInfoMap_.end(); it++)
     if (it->second != NULL)
       delete it->second;
   theFtdiDeviceInfoMap_.clear();
@@ -39,14 +39,14 @@ void PmrManager::prepareDevices()
       while (myfile.good())
 	{
 	  getline(myfile, line);
-	  pmr::FtdiDeviceInfo *difi = new pmr::FtdiDeviceInfo();
-	  memset(difi, 0, sizeof(pmr::FtdiDeviceInfo));
+	  Pmr::FtdiDeviceInfo *difi = new Pmr::FtdiDeviceInfo();
+	  memset(difi, 0, sizeof(Pmr::FtdiDeviceInfo));
 	  sscanf(line.c_str(), "%x %x %s", &difi->vendorid, &difi->productid, difi->name);
 	  if (strncmp(difi->name, "FT101", 5) == 0)
 	    {
 	      sscanf(difi->name, "FT101%d", &difi->id);
 	      difi->type = 0;
-	      std::pair<uint32_t, pmr::FtdiDeviceInfo *> p(difi->id, difi);
+	      std::pair<uint32_t, Pmr::FtdiDeviceInfo *> p(difi->id, difi);
 	      theFtdiDeviceInfoMap_.insert(p);
 	    }
 	  if (strncmp(difi->name, "DCCCCC", 6) == 0)
@@ -73,7 +73,7 @@ void PmrManager::scan(http_request m)
   PMF_INFO(_logPmr, " CMD: SCanning");
   // Fill Ftdi Map
   this->prepareDevices();
-  std::map<uint32_t, pmr::FtdiDeviceInfo *> &fm = this->getFtdiMap();
+  std::map<uint32_t, Pmr::FtdiDeviceInfo *> &fm = this->getFtdiMap();
   std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
   PMF_INFO(_logPmr, " CMD: SCANDEVICE clear Maps");
   for (auto it = dm.begin(); it != dm.end(); it++)
@@ -228,7 +228,7 @@ void PmrManager::setThresholds(uint16_t b0, uint16_t b1, uint16_t b2, uint32_t i
 	  uint32_t ip = (ip1>>24);
 	  if (idif != ip)
 	    continue;
-	  printf("%x %d %d %d \n",ip1, ip, idif,it->first & 0xFF);
+	  printf("%x %d %d %lu \n",ip1, ip, idif,it->first & 0xFF);
 
 	}
       it->second.setB0(b0);

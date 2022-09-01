@@ -33,7 +33,7 @@
 
 #include "HR2ConfigAccess.hh"
 
-using namespace pmr;
+using namespace Pmr;
 #include <sstream>
 #include <map>
 #include <vector>
@@ -122,10 +122,10 @@ public:
   void configureThread(PmrInterface *d,unsigned char* b,uint32_t nb);
   void startReadoutThread(PmrInterface *d);
   // DimRpc interface
-  std::map<uint32_t, pmr::FtdiDeviceInfo *> &getFtdiMap() { return theFtdiDeviceInfoMap_; }
+  std::map<uint32_t, Pmr::FtdiDeviceInfo *> &getFtdiMap() { return theFtdiDeviceInfoMap_; }
   std::map<uint32_t, PmrInterface *> &getPmrMap() { return _PmrInterfaceMap; }
 
-  pmr::FtdiDeviceInfo *getFtdiDeviceInfo(uint32_t i)
+  Pmr::FtdiDeviceInfo *getFtdiDeviceInfo(uint32_t i)
   {
     if (theFtdiDeviceInfoMap_.find(i) != theFtdiDeviceInfoMap_.end())
       return theFtdiDeviceInfoMap_[i];
@@ -153,8 +153,8 @@ public:
   void GainCurve(int mode,int thmin,int thmax,int step,int thr);
   void c_gaincurve(http_request m);
 private:
-  std::map<uint32_t, pmr::FtdiDeviceInfo *> theFtdiDeviceInfoMap_;
-  std::map<uint32_t, PmrInterface *> _PmrInterfaceMap;
+  std::map<uint32_t, Pmr::FtdiDeviceInfo *> theFtdiDeviceInfoMap_;
+  std::map<uint32_t, Pmr::PmrInterface *> _PmrInterfaceMap;
   std::vector<PmrInterface *> _vDif;
   HR2ConfigAccess _hca;
 

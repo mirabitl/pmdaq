@@ -58,7 +58,7 @@
 
 static LoggerPtr _logPmr(Logger::getLogger("PMDAQ_PMR"));
 
-namespace pmr
+namespace Pmr
 {
 class PmrDriver {
 public:

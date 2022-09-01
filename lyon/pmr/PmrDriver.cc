@@ -8,7 +8,7 @@
 
 using namespace pmr;
 
-pmr::PmrDriver::PmrDriver(char * deviceIdentifier, uint32_t productid ) 
+Pmr::PmrDriver::PmrDriver(char * deviceIdentifier, uint32_t productid ) 
 {
   _productId=productid;
   memset(_deviceId,0,12);
@@ -17,7 +17,7 @@ pmr::PmrDriver::PmrDriver(char * deviceIdentifier, uint32_t productid )
   this->setup();
 }
 
-pmr::PmrDriver::~PmrDriver()     
+Pmr::PmrDriver::~PmrDriver()     
 {
   int ret=0;
   
@@ -36,7 +36,7 @@ pmr::PmrDriver::~PmrDriver()
 }	
 
 
-int32_t pmr::PmrDriver::open(char * deviceIdentifier, uint32_t productid ) 
+int32_t Pmr::PmrDriver::open(char * deviceIdentifier, uint32_t productid ) 
 {
   int32_t ret;
 
@@ -69,7 +69,7 @@ int32_t pmr::PmrDriver::open(char * deviceIdentifier, uint32_t productid )
   return 0;
 }
 
-int32_t pmr::PmrDriver::writeNBytes( unsigned char  *cdata, uint32_t nb)
+int32_t Pmr::PmrDriver::writeNBytes( unsigned char  *cdata, uint32_t nb)
 {
   int32_t tbytestowrite=nb;
   int32_t ret=ftdi_write_data(&theFtdi,cdata,tbytestowrite);
@@ -89,7 +89,7 @@ int32_t pmr::PmrDriver::writeNBytes( unsigned char  *cdata, uint32_t nb)
   return ret;
 }
 
-int32_t   pmr::PmrDriver::readNBytes( unsigned char  *resultPtr,uint32_t nbbytes )
+int32_t   Pmr::PmrDriver::readNBytes( unsigned char  *resultPtr,uint32_t nbbytes )
 {
   uint32_t tbytesread=0;	
 
@@ -134,7 +134,7 @@ int32_t   pmr::PmrDriver::readNBytes( unsigned char  *resultPtr,uint32_t nbbytes
   return ret;
 }
 
-int32_t pmr::PmrDriver::registerWrite(uint32_t address, uint32_t data)
+int32_t Pmr::PmrDriver::registerWrite(uint32_t address, uint32_t data)
 {
   uint32_t taddress;
   unsigned char  ttampon[7];
@@ -150,7 +150,7 @@ int32_t pmr::PmrDriver::registerWrite(uint32_t address, uint32_t data)
   return 0;
 }	
 
-int32_t pmr::PmrDriver::registerRead(uint32_t address, uint32_t *data)
+int32_t Pmr::PmrDriver::registerRead(uint32_t address, uint32_t *data)
 {
   uint32_t taddress;
   unsigned char  ttampon[5];
@@ -183,7 +183,7 @@ int32_t pmr::PmrDriver::registerRead(uint32_t address, uint32_t *data)
   return 0;
 }	
 
-int32_t pmr::PmrDriver::setup()
+int32_t Pmr::PmrDriver::setup()
 {
   int32_t ret;
   uint32_t tdata;
@@ -216,7 +216,7 @@ int32_t pmr::PmrDriver::setup()
   return 0;
 }
 
-int32_t pmr::PmrDriver::loadSLC(unsigned char* SLC,uint32_t slc_size)
+int32_t Pmr::PmrDriver::loadSLC(unsigned char* SLC,uint32_t slc_size)
 {
   int32_t ret;
   uint32_t taddr;
@@ -303,7 +303,7 @@ int32_t pmr::PmrDriver::loadSLC(unsigned char* SLC,uint32_t slc_size)
 }
 
 
-int32_t pmr::PmrDriver::setPowerPulsing(bool enable,uint32_t an2d,uint32_t d2ac,uint32_t ac2d,uint32_t d2an)
+int32_t Pmr::PmrDriver::setPowerPulsing(bool enable,uint32_t an2d,uint32_t d2ac,uint32_t ac2d,uint32_t d2an)
 {
   int32_t ret;
   ret=registerWrite(PMR_PP_AN_2_DIG_REG, an2d);
@@ -322,7 +322,7 @@ int32_t pmr::PmrDriver::setPowerPulsing(bool enable,uint32_t an2d,uint32_t d2ac,
 
 
 
-int32_t pmr::PmrDriver::setAcquisitionMode(bool active,bool autoreset,bool external)
+int32_t Pmr::PmrDriver::setAcquisitionMode(bool active,bool autoreset,bool external)
 {
   int32_t ret;
   uint32_t tdata;
@@ -340,7 +340,7 @@ int32_t pmr::PmrDriver::setAcquisitionMode(bool active,bool autoreset,bool exter
   return 0;
 }
 
-int32_t pmr::PmrDriver::resetFSM()
+int32_t Pmr::PmrDriver::resetFSM()
 {
   int32_t ret;
   ret=registerWrite(PMR_RO_RESET_REG, 0x1);
@@ -351,13 +351,13 @@ int32_t pmr::PmrDriver::resetFSM()
 
   return 0;
 }
-int32_t pmr::PmrDriver::readData(unsigned char* tro,uint32_t size)
+int32_t Pmr::PmrDriver::readData(unsigned char* tro,uint32_t size)
 {
   uint32_t ret=ftdi_read_data(&theFtdi,tro,size);
   return ret;
 }
 
-uint32_t pmr::PmrDriver::readOneEvent(unsigned char* cbuf)
+uint32_t Pmr::PmrDriver::readOneEvent(unsigned char* cbuf)
 {
   int32_t tret=0;
   int32_t header_size=0,idx=0,frame_size=0,trailer=0;

@@ -16,7 +16,7 @@ using namespace std;
 #include "PmrDriver.hh"
 
 ///< Local definition of struct
-namespace pmr {
+namespace Pmr {
   
 typedef struct 
 {
@@ -41,11 +41,11 @@ typedef struct
 
 };
 
-namespace pmr {
+namespace Pmr {
 class PmrInterface
 {
 public:
-  PmrInterface(pmr::FtdiDeviceInfo *ftd);
+  PmrInterface(Pmr::FtdiDeviceInfo *ftd);
   ~PmrInterface();
   void setTransport(pm::pmSender* p);
   // initialise
@@ -60,8 +60,8 @@ public:
   // destroy
   void destroy();
   // Getter and setters
-  inline pmr::DIFStatus* status() const {return _status;}
-  inline pmr::PmrDriver* rd() const {return _rd;}
+  inline Pmr::DIFStatus* status() const {return _status;}
+  inline Pmr::PmrDriver* rd() const {return _rd;}
   void setState(std::string s){_state.assign(s);}
   inline std::string state() const {return _state;}
   inline uint32_t* data()  {return (uint32_t*) _dsData->buffer()->ptr();}
@@ -76,11 +76,11 @@ public:
   // Exteranl trigger used
   void setExternalTrigger(bool t);
 private:
-  pmr::FtdiDeviceInfo _ftd;
-  pmr::DIFStatus* _status;
+  Pmr::FtdiDeviceInfo _ftd;
+  Pmr::DIFStatus* _status;
   std::string _state;
   uint8_t _cbuf[262144];
-  pmr::PmrDriver* _rd;
+  Pmr::PmrDriver* _rd;
   pm::pmSender* _dsData;
   uint32_t _detid;
   bool _running,_readoutStarted,_readoutCompleted;
