@@ -11,9 +11,9 @@
 namespace pm {
   
   /**
-     \class zdaq::binarywritter
+     \class pm::binarywritter
 
-     \brief A basic implementation of the zmprocessor interface
+     \brief A basic implementation of the evbprocessor interface
      \details Data are written in a simple binary format with zlib compression
      \author    Laurent Mirabito
      \version   1.0

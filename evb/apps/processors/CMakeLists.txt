@@ -14,6 +14,13 @@ target_include_directories(proc_binarywriter PRIVATE  ../../include ../../../inc
 
 install(TARGETS proc_binarywriter  LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 
+ 
+add_library(proc_shmwriter SHARED shmwriter.cc shmwriter.hh)
+target_link_libraries(proc_shmwriter PRIVATE  zmq evb ${PMDAQ_LIBS} )
+target_include_directories(proc_shmwriter PRIVATE  ../../include ../../../include )
+
+install(TARGETS proc_shmwriter  LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+
 
 add_library(proc_dummywriter SHARED dummywriter.cc dummywriter.hh)
 target_link_libraries(proc_dummywriter PRIVATE  zmq evb ${PMDAQ_LIBS} )
