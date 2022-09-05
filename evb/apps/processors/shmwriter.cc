@@ -156,6 +156,30 @@ void shmwriter::store(uint32_t detid, uint32_t sourceid, uint32_t eventid, uint6
   ::close(fd);
 }
 
+
+void shmwriter::pull(std::string name,pm::buffer* buf,std::string sourcedir)
+{
+  std::stringstream sc,sd;
+  sc.str(std::string());
+  sd.str(std::string());
+  sc<<sourcedir<<"/closed/"<<name;
+  sd<<sourcedir<<"/"<<name;
+  int fd=::open(sd.str().c_str(),O_RDONLY);
+  if (fd<0) 
+    {
+      printf("%s  Cannot open file %s : return code %d \n",__PRETTY_FUNCTION__,sd.str().c_str(),fd);
+      //LOG4CXX_FATAL(_logShm," Cannot open shm file "<<fname);
+      return ;
+    }
+  int size_buf=::read(fd,buf->ptr(),0x20000);
+  buf->setPayloadSize(size_buf-(3*sizeof(uint32_t)+sizeof(uint64_t)));
+  //printf("%d bytes read %x %d \n",size_buf,cbuf[0],cbuf[1]);
+  ::close(fd);
+  ::unlink(sc.str().c_str());
+  ::unlink(sd.str().c_str());
+}
+
+
 extern "C"
 {
   // loadDHCALAnalyzer function creates new LowPassDHCALAnalyzer object and returns it.
