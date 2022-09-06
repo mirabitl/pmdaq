@@ -44,7 +44,7 @@ public:
   void setHardReset(uint32_t nc);
   void setSpillRegister(uint32_t nc);
   uint32_t spillRegister();
-  void useSPSSpill(bool t);
+  void useSPSSpill(uint32_t nc);
   void useTrigExt(bool t);
   void setTriggerDelay(uint32_t nc);
   uint32_t triggerDelay();
@@ -80,6 +80,7 @@ public:
   void c_setcalibregister(http_request m);
   void c_settrigext(http_request m);
   void c_status(http_request m);
+  void c_setspsspill(http_request m);
 
 
 

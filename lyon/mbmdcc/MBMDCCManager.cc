@@ -64,6 +64,7 @@ void MbmdccManager::initialise()
   this->addCommand("SETREG",std::bind(&MbmdccManager::c_setregister,this,std::placeholders::_1));
   this->addCommand("GETREG",std::bind(&MbmdccManager::c_getregister,this,std::placeholders::_1));
   this->addCommand("SETEXTERNAL",std::bind(&MbmdccManager::c_setexternaltrigger,this,std::placeholders::_1));
+  this->addCommand("SETSPSSPILL",std::bind(&MbmdccManager::c_setspsspill,this,std::placeholders::_1));
 
 
  
@@ -255,13 +256,20 @@ void MbmdccManager::setHardReset(uint32_t nc){this->writeRegister(mbmdcc::Messag
 
 void MbmdccManager::setSpillRegister(uint32_t nc){this->writeRegister(mbmdcc::Message::Register::WIN_CTRL,nc);}
 uint32_t MbmdccManager::spillRegister(){return this->readRegister(mbmdcc::Message::Register::WIN_CTRL);}
-void MbmdccManager::useSPSSpill(bool t)
+void MbmdccManager::useSPSSpill(uint32_t len)
 {
-  uint32_t reg=this->spillRegister();
-  if (t)
-    this->setSpillRegister(reg|1);
+
+  if (len==0)
+    {
+      this->writeRegister(mbmdcc::Message::Register::SPS_SPILL_CTRL,0);
+      this->writeRegister(mbmdcc::Message::Register::SPS_SPILL_DURATION,0);
+    }
   else
-    this->setSpillRegister(reg&~1);
+    {
+      this->writeRegister(mbmdcc::Message::Register::SPS_SPILL_CTRL,1);
+      this->writeRegister(mbmdcc::Message::Register::SPS_SPILL_DURATION,len);
+    }
+
 }
 void MbmdccManager::useTrigExt(bool t)
 {
@@ -523,6 +531,18 @@ void MbmdccManager::c_setexternaltrigger(http_request m)
 
   uint32_t nc=utils::queryIntValue(m,"value",0);
   this->setExternalTrigger(nc);
+
+  par["STATUS"]=json::value::string(U("DONE"));
+  par["VALUE"]=json::value::number(nc);
+  Reply(status_codes::OK,par);
+}
+void MbmdccManager::c_setspsspill(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logMbmdcc,"SPS Spill register called ");
+
+  uint32_t nc=utils::queryIntValue(m,"value",0);
+  this->useSPSSpill(nc);
 
   par["STATUS"]=json::value::string(U("DONE"));
   par["VALUE"]=json::value::number(nc);
