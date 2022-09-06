@@ -31,6 +31,9 @@ class utils
   static uint32_t queryIntValue(http_request m,std::string n,uint32_t def_val);
   static std::string queryStringValue(http_request m,std::string n,std::string def_val);
   static bool isMember(web::json::value p,std::string key);
+  static void store(uint32_t detid, uint32_t sourceid, uint32_t eventid, uint64_t bxid, void *ptr, uint32_t size, std::string destdir);
+  static void ls(std::string sourcedir, std::vector<std::string> &res);
+  static uint32_t pull(std::string name,void* buf,std::string sourcedir);
 
 };
 

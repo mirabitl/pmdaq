@@ -50,9 +50,6 @@ namespace pm
        \params a Json::Value object conating parameters values
      */
     virtual void loadParameters(json::value params);
-    void store(uint32_t detid, uint32_t sourceid, uint32_t eventid, uint64_t bxid, void *ptr, uint32_t size, std::string destdir);
-    static void ls(std::string sourcedir, std::vector<std::string> &res);
-    static void pull(std::string name,pm::buffer* buf,std::string sourcedir);
   private:
     std::string _filepath;
     uint32_t _run, _event;

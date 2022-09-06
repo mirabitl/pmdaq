@@ -14,21 +14,11 @@
 #include <string.h>
 #include <stdint.h>
 #include <fcntl.h>
-
+#include "utils.hh"
 //#include "DIFReadoutConstant.h"
 #include <iostream>
 #include <sstream>
 using namespace pm;
-extern int alphasort(); // Inbuilt sorting function
-#define FALSE 0
-#define TRUE !FALSE
-int file_select_4(const struct direct *entry)
-{
-  if ((strcmp(entry->d_name, ".") == 0) || (strcmp(entry->d_name, "..") == 0))
-    return (FALSE);
-  else
-    return (TRUE);
-}
 
 shmwriter::shmwriter(std::string dire) : _filepath(dire), _started(false)
 {
@@ -58,7 +48,7 @@ void shmwriter::processRunHeader(std::vector<uint32_t> header)
   unsigned char *cdata = (unsigned char *)b.ptr();
   int32_t *idata = (int32_t *)cdata;
   int difsize = b.size();
-  this->store(b.detectorId(), b.dataSourceId(),
+  utils::store(b.detectorId(), b.dataSourceId(),
                 b.eventId(),b.bxId(), b.ptr(), b.size(), _filepath);
 }
 
@@ -76,7 +66,7 @@ void shmwriter::processEvent(uint32_t gtc, std::vector<pm::buffer *> vbuf) // wr
   std::vector<std::string> vnames;
 
   // list files in shm directory
-  shmwriter::ls(_filepath, vnames);
+  utils::ls(_filepath, vnames);
   // if (vnames.size()>20*theNumberOfDIF) return;
 
   if (gtc % 100 == 0)
@@ -84,8 +74,8 @@ void shmwriter::processEvent(uint32_t gtc, std::vector<pm::buffer *> vbuf) // wr
   for (std::vector<pm::buffer *>::iterator iv = vbuf.begin(); iv != vbuf.end(); iv++)
   {
     (*iv)->uncompress();
-    this->store((*iv)->detectorId(), (*iv)->dataSourceId(),
-                (*iv)->eventId(), (*iv)->bxId(), (*iv)->ptr(), (*iv)->size(), _filepath);
+    utils::store((*iv)->detectorId(), (*iv)->dataSourceId(),
+		     (*iv)->eventId(), (*iv)->bxId(), (*iv)->ptr(), (*iv)->size(), _filepath);
   }
 }
 
@@ -93,91 +83,6 @@ void shmwriter::stop()
 {
 }
 
-void shmwriter::ls(std::string sourcedir, std::vector<std::string> &res)
-{
-
-  res.clear();
-  int count, i;
-  struct direct **files;
-  std::stringstream sc;
-  sc.str(std::string());
-  sc << sourcedir << "/closed/";
-
-  count = scandir(sc.str().c_str(), &files, file_select_4, alphasort);
-  /* If no files found, make a non-selectable menu item */
-  if (count <= 0)
-  {
-    return;
-  }
-
-  std::stringstream sd;
-  // printf("Number of files = %d\n",count);
-  for (i = 1; i < count + 1; ++i)
-  {
-    // file name
-    std::string fName;
-    fName.assign(files[i - 1]->d_name);
-    res.push_back(fName);
-    free(files[i - 1]);
-  }
-  free(files);
-  return;
-}
-
-void shmwriter::store(uint32_t detid, uint32_t sourceid, uint32_t eventid, uint64_t bxid, void *ptr, uint32_t size, std::string destdir)
-{
-  std::stringstream sc, sd;
-  sc.str(std::string());
-  sc << destdir << "/closed/";
-  char name[512];
-  memset(name, 0, 512);
-  sprintf(name, "%s/Event_%u_%u_%u_%lu", destdir.c_str(), detid, sourceid, eventid, bxid);
-  int fd = ::open(name, O_CREAT | O_RDWR | O_NONBLOCK, S_IRWXU);
-  if (fd < 0)
-  {
-
-    // LOG4CXX_FATAL(_logShm," Cannot open shm file "<<s.str());
-    perror("No way to store to file :");
-    // std::cout<<" No way to store to file"<<std::endl;
-    return;
-  }
-  int ier = write(fd, ptr, size);
-  if (ier != size)
-  {
-    std::cout << "pb in write " << ier << std::endl;
-    return;
-  }
-  ::close(fd);
-  memset(name, 0, 512);
-  sprintf(name, "%s/closed/Event_%u_%u_%u_%lu", destdir.c_str(), detid, sourceid, eventid, bxid);
-  fd = ::open(name, O_CREAT | O_RDWR | O_NONBLOCK, S_IRWXU);
-  // std::cout<<st.str().c_str()<<" "<<fd<<std::endl;
-  // write(fd,b,1);
-  ::close(fd);
-}
-
-
-void shmwriter::pull(std::string name,pm::buffer* buf,std::string sourcedir)
-{
-  std::stringstream sc,sd;
-  sc.str(std::string());
-  sd.str(std::string());
-  sc<<sourcedir<<"/closed/"<<name;
-  sd<<sourcedir<<"/"<<name;
-  int fd=::open(sd.str().c_str(),O_RDONLY);
-  if (fd<0) 
-    {
-      printf("%s  Cannot open file %s : return code %d \n",__PRETTY_FUNCTION__,sd.str().c_str(),fd);
-      //LOG4CXX_FATAL(_logShm," Cannot open shm file "<<fname);
-      return ;
-    }
-  int size_buf=::read(fd,buf->ptr(),0x20000);
-  buf->setPayloadSize(size_buf-(3*sizeof(uint32_t)+sizeof(uint64_t)));
-  //printf("%d bytes read %x %d \n",size_buf,cbuf[0],cbuf[1]);
-  ::close(fd);
-  ::unlink(sc.str().c_str());
-  ::unlink(sd.str().c_str());
-}
 
 
 extern "C"

@@ -19,6 +19,19 @@
 #include <arpa/inet.h>
 #include "utils.hh"
 #include <err.h>
+
+extern int alphasort(); // Inbuilt sorting function
+int file_select_4(const struct direct *entry)
+{
+  if ((strcmp(entry->d_name, ".") == 0) || (strcmp(entry->d_name, "..") == 0))
+    return (0);
+  else
+    return (!0);
+}
+
+
+
+
 char rfc3986[256] = {0};
 char html5[256] = {0};
 
@@ -468,4 +481,91 @@ std::string utils::queryStringValue(http_request m,std::string n,std::string def
 bool utils::isMember(web::json::value p,std::string key)
 {
   return (p.as_object().find(key)!=p.as_object().end());
+}
+
+void utils::ls(std::string sourcedir, std::vector<std::string> &res)
+{
+
+  res.clear();
+  int count, i;
+  struct direct **files;
+  std::stringstream sc;
+  sc.str(std::string());
+  sc << sourcedir << "/closed/";
+
+  count = scandir(sc.str().c_str(), &files, file_select_4, alphasort);
+  /* If no files found, make a non-selectable menu item */
+  if (count <= 0)
+  {
+    return;
+  }
+
+  std::stringstream sd;
+  // printf("Number of files = %d\n",count);
+  for (i = 1; i < count + 1; ++i)
+  {
+    // file name
+    std::string fName;
+    fName.assign(files[i - 1]->d_name);
+    res.push_back(fName);
+    free(files[i - 1]);
+  }
+  free(files);
+  return;
+}
+
+void utils::store(uint32_t detid, uint32_t sourceid, uint32_t eventid, uint64_t bxid, void *ptr, uint32_t size, std::string destdir)
+{
+  std::stringstream sc, sd;
+  sc.str(std::string());
+  sc << destdir << "/closed/";
+  char name[512];
+  memset(name, 0, 512);
+  sprintf(name, "%s/Event_%u_%u_%u_%lu", destdir.c_str(), detid, sourceid, eventid, bxid);
+  int fd = ::open(name, O_CREAT | O_RDWR | O_NONBLOCK, S_IRWXU);
+  if (fd < 0)
+  {
+
+    // LOG4CXX_FATAL(_logShm," Cannot open shm file "<<s.str());
+    perror("No way to store to file :");
+    // std::cout<<" No way to store to file"<<std::endl;
+    return;
+  }
+  int ier = write(fd, ptr, size);
+  if (ier != size)
+  {
+    std::cout << "pb in write " << ier << std::endl;
+    return;
+  }
+  ::close(fd);
+  memset(name, 0, 512);
+  sprintf(name, "%s/closed/Event_%u_%u_%u_%lu", destdir.c_str(), detid, sourceid, eventid, bxid);
+  fd = ::open(name, O_CREAT | O_RDWR | O_NONBLOCK, S_IRWXU);
+  // std::cout<<st.str().c_str()<<" "<<fd<<std::endl;
+  // write(fd,b,1);
+  ::close(fd);
+}
+
+
+uint32_t utils::pull(std::string name,void* buf,std::string sourcedir)
+{
+  std::stringstream sc,sd;
+  sc.str(std::string());
+  sd.str(std::string());
+  sc<<sourcedir<<"/closed/"<<name;
+  sd<<sourcedir<<"/"<<name;
+  int fd=::open(sd.str().c_str(),O_RDONLY);
+  if (fd<0) 
+    {
+      printf("%s  Cannot open file %s : return code %d \n",__PRETTY_FUNCTION__,sd.str().c_str(),fd);
+      //LOG4CXX_FATAL(_logShm," Cannot open shm file "<<fname);
+      return 0;
+    }
+  int size_buf=::read(fd,buf,0x20000);
+  //  buf->setPayloadSize);
+  //printf("%d bytes read %x %d \n",size_buf,cbuf[0],cbuf[1]);
+  ::close(fd);
+  ::unlink(sc.str().c_str());
+  ::unlink(sd.str().c_str());
+return (size_buf-(3*sizeof(uint32_t)+sizeof(uint64_t)));
 }
