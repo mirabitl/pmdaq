@@ -291,7 +291,10 @@ class MongoRoc:
                 if (resa["dif"] != difnum and difnum!=0):
                     continue
                 if (resa["num"] != asicnum and asicnum!=0):
-                    continue    
+                    continue
+                if (param=="dif-only"):
+                    print("DIF  %d(%x)  ASIC %d %d " % (resa["dif"],resa["dif"],resa["num"],resa["slc"]["ENABLED"]))
+                    continue
                 if (param=="all"):
                     print(colored("DIF  %d(%x)  ASIC %d \n" % (resa["dif"],resa["dif"],resa["num"]),'cyan','on_white'),resa["slc"])
                 else:
