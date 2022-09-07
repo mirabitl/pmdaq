@@ -37,6 +37,8 @@ class rootmon:
 
         print("received topic =",str(message.topic))
         #print("received message =",str(message.payload.decode("utf-8")))
+        if str(message.topic) in self.hmap:
+            del  self.hmap[str(message.topic)]
         self.hmap[str(message.topic)]=ROOT.TBufferJSON.ConvertFromJSON(str(message.payload.decode("utf-8")))
        
     def Connect(self):
