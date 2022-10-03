@@ -20,6 +20,8 @@ extern "C"
   //#include <linux/i2c.h>
 #include <linux/i2c-dev.h>
 }
+#include <sys/ioctl.h>
+
 
 //#include <i2c/smbus.h>
 #include <gpiod.h>
@@ -42,8 +44,6 @@ extern "C"
 
 using namespace std;
 
-#include "stdafx.hh"
-static LoggerPtr _logHih(Logger::getLogger("PMDAQ_HIH"));
 
 class hihdriver
 {
@@ -78,7 +78,7 @@ public:
     std::string fi2c = "/dev/i2c-1";
     if ((_fd = open(fi2c.c_str(), O_RDWR)) < 0)
     {
-      LOG4CXX_INFO(_logHih, " unable to open I2C device " << fi2c << " _fd=" << _fd);
+      std::cerr<< " unable to open I2C device " << fi2c << " _fd=" << _fd<<std::endl;
       return -1;
     }
 
@@ -91,7 +91,7 @@ public:
     int addr = HUM_ADDR; //<<<<<The I2C address of the slave
     if (ioctl(_fd, I2C_SLAVE, addr) < 0)
     {
-      LOG4CXX_INFO(_logHih, " unable to open I2C at " << HUM_ADDR << " _fd=" << _fd); // DEV_ADDR);
+      std::cerr<<" unable to open I2C at " << HUM_ADDR << " _fd=" << _fd<<std::endl; 
       return -1;
     }
     else
