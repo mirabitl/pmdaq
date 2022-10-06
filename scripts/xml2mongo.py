@@ -1,8 +1,35 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*- 
+
+
 from lxml import etree
 import MongoHR2 as mg
+import sys
+
+	
+
+import sys
+
+#print(len(sys.argv),sys.argv[1:])
+
+      
+if len( sys.argv ) != 4:
+    print( "xml2mongo " )
+    print( "\tusage: xml2mongo.py file StateName Comment" )
+    exit()
+
+file_name=sys.argv[1]
+StateName=sys.argv[2]
+Comment=sys.argv[3]
+
+#print(file_name,StateName,Comment)
+#exit()
+
+
+
 s=mg.HR2Instance()
-s.createNewState("Dome_42chambres_debug")
-tree=etree.parse("./Dome_42chambres_Reference_v4_163.xml")
+s.createNewState(StateName)
+tree=etree.parse(file_name)
 
 vtag=[]
 for x in tree.xpath("ASIC"):
@@ -41,7 +68,7 @@ for d,v in adif.items():
             s.changeParam(t,vt,d,x)
             print("Changing %s %d for DIF %d ASIC %d \n" % (t,vt,d,x))
 s.setPowerPulsing()
-s.uploadNewState("Dome 42 chambre from state 163")
+s.uploadNewState(Comment)
 for x in tree.xpath("ASIC"):
     header=0
     dif=0

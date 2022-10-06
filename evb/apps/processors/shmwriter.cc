@@ -54,8 +54,8 @@ void shmwriter::processRunHeader(std::vector<uint32_t> header)
 
 void shmwriter::loadParameters(json::value params)
 {
-  if (params.as_object().find("filepath") != params.as_object().end())
-    _filepath = params["filepath"].as_string();
+  if (params.as_object().find("shmpath") != params.as_object().end())
+    _filepath = params["shmpath"].as_string();
 }
 void shmwriter::processEvent(uint32_t gtc, std::vector<pm::buffer *> vbuf) // writeEvent(uint32_t gtc,std::vector<unsigned char*> vbuf)
 {
@@ -65,9 +65,9 @@ void shmwriter::processEvent(uint32_t gtc, std::vector<pm::buffer *> vbuf) // wr
 
   std::vector<std::string> vnames;
 
-  // list files in shm directory
+  // list files in shm directory and store only 50 events in SHM
   utils::ls(_filepath, vnames);
-  // if (vnames.size()>20*theNumberOfDIF) return;
+  if (vnames.size()>50*vbuf.size()) return;
 
   if (gtc % 100 == 0)
     std::cout << "Standard completion GTC " << gtc << std::endl;

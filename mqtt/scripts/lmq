@@ -147,6 +147,8 @@ parser.add_argument('--nmax', action='store', type=int,
 
 parser.add_argument('--channels', action='store', type=str,
                     default=None, dest='channels', help='channels list as an array')
+parser.add_argument('--ranges', action='store', type=str,
+                    default=None, dest='ranges', help='channels list as a range [0,34]')
 parser.add_argument('--vset', action='store', type=float,
                     default=None, dest='vset', help='HV voltage (V) to be set')
 
@@ -192,6 +194,13 @@ results = parser.parse_args()
 lcgi = {}
 r_cmd = None
 
+if (results.ranges!=None):
+    pars=[]
+    jr=json.loads(results.ranges)
+    for x in range(jr[0],jr[1]+1):
+        pars.append(x)
+    results.channels=json.dumps(pars)
+
 if(results.start):
     rep=json.loads(executeCMD(results.host,results.port,"/START_LOOP",{}))
     print(rep["START_LOOPResponse"]["START_LOOPResult"])
@@ -223,8 +232,8 @@ elif(results.lv_off):
     print(rep["LV_OFFResponse"]["LV_OFFResult"])
     exit(0)
 elif(results.hv_on):
-    if (results.channels==None):
-        print("please speciy --channels [x,y,z,w...]")
+    if (results.channels==None and results.ranges==None):
+        print("please speciy --channels [x,y,z,w...] or --ranges [x,y]")
         exit(0)
     parms={"hardware":results.hv_hardware,"channels":results.channels}
     rep=json.loads(executeCMD(results.host,results.port,"/HV_ON",parms))

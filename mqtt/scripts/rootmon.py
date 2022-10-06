@@ -21,6 +21,7 @@ class rootmon:
         self.rcv_msg={}
         self.msi=None
         self.hmap={}
+        self.lastupdate=time.time()
         logging.basicConfig(level=logging.INFO)
 
    
@@ -34,8 +35,10 @@ class rootmon:
     def on_message(self,client, userdata, message):
         #time.sleep(1)
         #print(message.timestamp)
-
-        print("received topic =",str(message.topic))
+        tr=time.time()
+        if ((tr-self.lastupdate)>30):
+            self.lastupdate=tr
+            print("New update received 1st topic =",str(message.topic))
         #print("received message =",str(message.payload.decode("utf-8")))
         if str(message.topic) in self.hmap:
             del  self.hmap[str(message.topic)]
@@ -75,7 +78,13 @@ class rootmon:
         for x in self.l_json["TH2"]:
             print("subscribing %s \n" % (self.session+"/sdhcalmon"+x))
             self.client.subscribe(self.session+"/sdhcalmon"+x)
-        
+    def listHistos(self):
+        for x in self.hmap.keys():
+            print(x)
+    def clearMap(self):
+        for x in self.hmap.keys():
+            del self.hmap[x]
+        self.hmap={}
     def loop(self):
         self.client.on_message=self.on_message
         self.client.loop_start() #start loop to process received messages
