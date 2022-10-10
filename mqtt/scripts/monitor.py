@@ -20,6 +20,8 @@ class monitor:
         self.hws=[]
         self.rcv_msg={}
         self.msi=None
+        self.lv_hw="ZupPaho"
+        self.hv_hw="WienerPaho"
         logging.basicConfig(level=logging.INFO)
 
     def connectMongo(self):
@@ -200,26 +202,42 @@ class monitor:
             #if (device=="BMP" and x["status"]["name"]==device):
             print("%s Vset %.2f  Vout %.2f  Iout %.2f  " % (sti,x["content"]["vset"],x["content"]["vout"],x["content"]["iout"]))
 
-    def LV_ON(self,hw="ZupPaho"):
-        self.sendCommand(hw,"ON",{})
-    def LV_OFF(self,hw="ZupPaho"):
-        self.sendCommand(hw,"OFF",{})
-    def HV_ON(self,channels,hw="WienerPaho"):
-        for ch in channels:
-            self.sendCommand(hw,"ON",{"first":ch,"last":ch})
-    def HV_OFF(self,channels,hw="WienerPaho"):
-        for ch in channels:
-            self.sendCommand(hw,"OFF",{"first":ch,"last":ch})
-    def HV_VSET(self,channels,vset,hw="WienerPaho"):
-        for ch in channels:
-            self.sendCommand(hw,"VSET",{"first":ch,"last":ch,"vset":vset})
-    def HV_ISET(self,channels,vset,hw="WienerPaho"):
-        for ch in channels:
-            self.sendCommand(hw,"ISET",{"first":ch,"last":ch,"iset":vset})
+    def LV_ON(self,hw=None):
+        if (hw!=None):
+            self.lv_hw=hw
+        print("Hardware ",self.lv_hw)
+        self.sendCommand(self.lv_hw,"ON",{})
+    def LV_OFF(self,hw=None):
+        if (hw!=None):
+            self.lv_hw=hw
+        self.sendCommand(self.lv_hw,"OFF",{})
+    def HV_ON(self,channels,hw=None):
+        if (hw!=None):
+            self.hv_hw=hw
 
-    def HV_CLEAR(self,channels,hw="WienerPaho"):
         for ch in channels:
-            self.sendCommand(hw,"CLEARALARM",{"first":ch,"last":ch})
+            self.sendCommand(self.hv_hw,"ON",{"first":ch,"last":ch})
+    def HV_OFF(self,channels,hw=None):
+        if (hw!=None):
+            self.hv_hw=hw
+        for ch in channels:
+            self.sendCommand(self.hv_hw,"OFF",{"first":ch,"last":ch})
+    def HV_VSET(self,channels,vset,hw=None):
+        if (hw!=None):
+            self.hv_hw=hw
+        for ch in channels:
+            self.sendCommand(self.hv_hw,"VSET",{"first":ch,"last":ch,"vset":vset})
+    def HV_ISET(self,channels,vset,hw=None):
+        if (hw!=None):
+            self.hv_hw=hw
+        for ch in channels:
+            self.sendCommand(self.hv_hw,"ISET",{"first":ch,"last":ch,"iset":vset})
+
+    def HV_CLEAR(self,channels,hw=None):
+        if (hw!=None):
+            self.hv_hw=hw
+        for ch in channels:
+            self.sendCommand(self.hv_hw,"CLEARALARM",{"first":ch,"last":ch})
 
 
 
