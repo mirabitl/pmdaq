@@ -3,7 +3,7 @@ sudo systemctl disable HihPaho
 sudo service HihPaho stop
 
 mkdir -p ../bin
-g++ -o ../bin/HihPaho.exe -I../include ../src/PahoInterface.cc HihPaho.cc -lcpprest -lpaho-mqtt3a -l paho-mqttpp3 -lpthread  -lgpiod
+g++ -o ../bin/HihPaho.exe -I../include ../src/PahoInterface.cc HihPaho.cc -lcpprest -lpaho-mqtt3a -l paho-mqttpp3 -lpthread  -lgpiod -li2c
 
 sudo mkdir -p /usr/local/paho/bin
 sudo cp ../bin/HihPaho.exe /usr/local/paho/bin/
