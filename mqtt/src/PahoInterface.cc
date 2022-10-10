@@ -64,6 +64,7 @@ void PahoInterface::stopLoop()
 }
 void PahoInterface::Connect(std::string host, uint32_t port)
 {
+  /* OLD
   _serverHost = host;
   _serverPort = port;
   std::stringstream ss;
@@ -89,6 +90,61 @@ void PahoInterface::Connect(std::string host, uint32_t port)
   std::cout << "  ...OK" << std::endl;
   // Getting the connect response will block waiting for the
   // connection to complete.
+  */
+    _serverHost = host;
+  _serverPort = port;
+  std::stringstream ss;
+  ss << "tcp://" << host << ":" << port;
+  std::cout<<"Connecting to "<<ss.str()<<"\n with id "<<_id<<std::endl;
+   auto createOpts = mqtt::create_options_builder()
+						  .send_while_disconnected(true, true)
+					      .max_buffered_messages(MAX_BUFFERED_MESSAGES)
+						  .delete_oldest_messages()
+						  .finalize();
+
+
+
+  _cli = std::make_shared<mqtt::async_client>(ss.str(),"",createOpts);
+  mqtt::async_client* pc=_cli.get();
+_cli->set_connected_handler([pc](const std::string&) {
+		std::cout << "*** Connected ("
+			<< time(0) << ") ***" << std::endl;
+	});
+
+	_cli->set_connection_lost_handler([pc](const std::string&) {
+		std::cout << "*** Connection Lost ("
+			<< time(0) << ") ***" << std::endl;
+	});
+
+  int keepalive = 0;
+
+  // auto connOpts = mqtt::connect_options_builder()
+  //   .keep_alive_interval(std::chrono::seconds(0))
+  //   .automatic_reconnect(std::chrono::seconds(2), std::chrono::seconds(30))
+  //   .clean_session(true)
+  //   .finalize();
+
+  auto willMsg = mqtt::message("test/events", "Time publisher disconnected", 1, true);
+	auto connOpts = mqtt::connect_options_builder()
+		.clean_session()
+		.will(willMsg)
+		.automatic_reconnect(std::chrono::seconds(1), std::chrono::seconds(10))
+		.finalize();
+
+  _cli->start_consuming();
+
+  // Connect to the server
+
+  std::cout << "Connecting to the MQTT server..." << std::flush;
+  auto tok =_cli->connect(connOpts);
+
+  std::cout << "Waiting for the connection..." << std::endl;
+  tok->wait();
+  std::cout << "  ...OK" << std::endl;
+  // Getting the connect response will block waiting for the
+  // connection to complete.
+  
+
   auto rsp = tok->get_connect_response();
 
   // If there is no session present, then we need to subscribe, but if
