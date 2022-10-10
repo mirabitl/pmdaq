@@ -7,6 +7,12 @@
 #include <unistd.h>
 
 const auto TIMEOUT = std::chrono::seconds(10);
+const int QOS = 1;
+
+
+// How many to buffer while off-line
+const int MAX_BUFFERED_MESSAGES = 1200;
+
 PahoInterface::PahoInterface(std::string name, std::string process, uint32_t instance) : _cli(NULL), _listening(false),_looping(false),_period(20)
 {
 
