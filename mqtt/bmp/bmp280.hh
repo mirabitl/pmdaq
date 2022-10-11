@@ -175,7 +175,7 @@ public:
     uint32_t temp_msb, temp_lsb, temp_xlsb,status;
     uint32_t pres_msb, pres_lsb, pres_xlsb;
     float var1, var2, p;
-    uint32_nc=0;
+    uint32_t nc=0;
     do {
       ::usleep(500000);
       status=spi_bmp_Read(0xF3);
