@@ -58,7 +58,7 @@ public:
     //	spi_bmp_Write(0xE0, 0xB6);
     //	spi_bmp_Write(0xE0, 0x00);
     // config  	
-    spi_bmp_Write(0xF5,(0<<5)+(16<<2)+0);	// t_sb=0 filter =16 spi4
+    spi_bmp_Write(0xF5,(4<<5)+(16<<2)+0);	// t_sb=4 filter =16 spi4
     // ctrl_meas 	
     spi_bmp_Write(0xF4,(1<<5)+(4<<2)+3);	// Tx1 Px4, normal 
 
@@ -170,12 +170,19 @@ public:
   {
     // corrections basees sur 
     //http://www.pibits.net/code/raspberry-pi-and-bmp280-sensor-example.php 
-    GetCalibration();
+    //GetCalibration();
     uint32_t adc_T, adc_P;
-    uint32_t temp_msb, temp_lsb, temp_xlsb;
+    uint32_t temp_msb, temp_lsb, temp_xlsb,status;
     uint32_t pres_msb, pres_lsb, pres_xlsb;
     float var1, var2, p;
-
+    uint32_nc=0;
+    do {
+      ::usleep(500000);
+      status=spi_bmp_Read(0xF3);
+      nc++;
+      if (nc>50) break;
+    } while ((status &1) || (status &8));
+    printf("Status %x  after %d read \n",status,nc);
     temp_msb= spi_bmp_Read( 0xFA );
     temp_lsb= spi_bmp_Read( 0xFB );
     temp_xlsb= spi_bmp_Read( 0xFC );
