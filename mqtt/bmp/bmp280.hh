@@ -149,7 +149,7 @@ public:
     _dig_P8 = ( spi_bmp_Read(0x9D)<<8) + spi_bmp_Read(0x9C);
     _dig_P9 = ( spi_bmp_Read(0x9F)<<8) + spi_bmp_Read(0x9E);
 
-
+#ifdef DUMPCALIB
     printf ("_dig_T1 = %x\n",_dig_T1);
     printf ("_dig_T2 = %x\n",_dig_T2);
     printf ("_dig_T3 = %x\n",_dig_T3);
@@ -162,6 +162,7 @@ public:
     printf ("_dig_P7 = %x\n",_dig_P7);
     printf ("_dig_P8 = %x\n",_dig_P8);
     printf ("_dig_P9 = %x\n",_dig_P9);
+#endif
     return 0;
   }
   
@@ -169,7 +170,7 @@ public:
   {
     // corrections basees sur 
     //http://www.pibits.net/code/raspberry-pi-and-bmp280-sensor-example.php 
-
+    GetCalibration();
     uint32_t adc_T, adc_P;
     uint32_t temp_msb, temp_lsb, temp_xlsb;
     uint32_t pres_msb, pres_lsb, pres_xlsb;
