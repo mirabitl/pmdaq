@@ -1,0 +1,26 @@
+{
+    "mongo":"acqilc/RPC_2008@lyocms09:27017@LYONROC",
+    "broker":{
+	"host":"lyocmsmu04.in2p3.fr","port":1883,
+
+	"sessions":
+	[
+	    {
+		"name":"dome_sdhcal",
+		"services":
+		[{"name":"BmpPaho","period":30},{"name":"GenesysPaho","period":30}]
+
+		
+	    },
+	    
+	    {
+		"name":"dome_cms",
+		"services":
+		[{"name":"BmpPaho","period":20},{"name":"HihPaho","period":20}]
+
+		
+}
+	]
+    }
+}
+	    
