@@ -68,6 +68,15 @@ class MongoSlow:
         #print("storing",mondoc)
         res=self.db.MONITORED_ITEMS.insert_one(mondoc)
         #print(res)
+    def store_mqtt(self,topic,tims,cti,message):
+        mondoc={}
+        mondoc["topic"]=topic
+        mondoc["timestamp"]=tims
+        mondoc["ctime"]=cti
+        mondoc["message"]=message
+        #print("storing",mondoc)
+        res=self.db.MQTT_ITEMS.insert_one(mondoc)
+        #print(res)
     def items(self,path,depth=50000,from_time=0):
         """
         List all the run informations stored
