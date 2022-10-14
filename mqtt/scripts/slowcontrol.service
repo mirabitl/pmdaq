@@ -1,0 +1,11 @@
+[Unit]
+Description = Starting monitor web service
+After = network.target
+
+[Service]
+ExecStart = /opt/pmdaq/mqtt/scripts/slowcontrol_service_daemon
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy = multi-user.target
