@@ -1,5 +1,76 @@
 #include "MdccHandler.hh"
+/*
+  Firmware le 27 Octiobre 2022
+	
+	ID_reg			: out std_logic_vector (31 downto 0); 	-- ID du board
+	software_veto_reg	: out std_logic_vector (31 downto 0);	-- bit 0 : veto logiciel
+	software_ECALveto_reg	: out std_logic_vector (31 downto 0);	-- bit 0 veto soft du ECAL (historique)
+	SpillOn_reg		: out std_logic_vector (31 downto 0);	-- duree du spillon en clk 40M
+	SpillOff_reg		: out std_logic_vector (31 downto 0);	-- duree du spill off en clk 40M
+	Beam_reg		: out std_logic_vector (31 downto 0);	-- duree du spill faisceau en clk 40M
+	Calib_reg		: out std_logic_vector (31 downto 0); 	--
+						-- bit 0 : not used
+				-- bit 1 : calibration mode where number of windows are counted 
+				-- jamais en meme temps que bit 2
+				-- bit 2 : reload du compteur de calib spill a partir du nb_window_reg
+				-- jamais en meme temps que bit 1
+	WindowConfig_reg	: out std_logic_vector (31 downto 0); 	-- mode de genration de la fenetre
+				-- bit 0 : start of spill et end of spill (1)
+				-- bit 1 : start of spill et duree programmable (2)
+				-- bit 2 : compteur interne (4)
+				-- bit 3 : calibration avec spillon/spilloff interne declenché par calib_reg(1),  (8)
+				-- 		ne devrait pas fournir de fenetres courtes (comme spioll interne asynchrone avec calib_reg
+				-- bit 4 :  compteur interne mais seulement sur start_of_spill et duree programmable (16)
+				--     	=0 , reset trig_ext generator
+				--	=1,  trig_ext generator actif
+				-- bit 5 : compteur interne avec debut comptage sur finbusy (32)
+				-- bit 6 :  compteur interne avec debut comptage sur finbusy et cptoff apres (64)
+	TrigExtDelay_reg 	: out std_logic_Vector (31 downto 0);	-- delai du pulse trig ext en clk 40M
+	TrigExtLength_reg	: out std_logic_Vector (31 downto 0);	-- duree du pulse trigext en clk 40M
+	debounceBusy_reg	: out std_logic_Vector (31 downto 0);  -- programmable value for debounce busy
 
+	Calib_Counter_reg	: out std_logic_vector (31 downto 0);	-- nombre de fenetres pour le mode de calibrqtion
+	
+	Rstdet_reg		: out std_logic_vector (31 downto 0); 		-- detector reset register
+				-- bit 0 : reset sur HDMI
+	nb_windows_reg		: out std_logic_vector (31 downto 0)		-- number of start acq windows taken into account
+
+
+
+
+
+
+	when x"0001" => USB_data_out 	<= ID_register;
+		when x"0002" => USB_data_out 	<= software_veto_register;
+		when x"0003" => USB_data_out 	<= spillNb_register;
+		when x"0004" => USB_data_out 	<= Control_register;
+		when x"0005" => USB_data_out 	<= spillon_register;
+		when x"0006" => USB_data_out 	<= spilloff_register;
+		when x"0007" => USB_data_out 	<= beam_register;
+		when x"0008" => USB_data_out 	<= Calib_register;
+		when x"0009" => USB_data_out 	<= Calib_Counter_register;
+		when x"000A" => USB_data_out 	<= nb_windows_register;
+		when x"000B" => USB_data_out 	<= software_ECALveto_register;		
+		when x"000C" => USB_data_out 	<= Rstdet_register;		
+		when x"000D" => USB_data_out 	<= WindowConfig_register;
+		when x"000E" => USB_data_out 	<= TrigExtDelay_register;
+		when x"000F" => USB_data_out 	<= TrigExtLength_register;
+		
+		when x"0011" => USB_data_out 	<= busy1Nb_register;
+		when x"0012" => USB_data_out 	<= busy2Nb_register;
+		when x"0013" => USB_data_out 	<= busy3Nb_register;
+		when x"0014" => USB_data_out 	<= busy4Nb_register;
+		when x"0015" => USB_data_out 	<= busy5Nb_register;
+		when x"0016" => USB_data_out 	<= busy6Nb_register;
+		when x"0017" => USB_data_out 	<= busy7Nb_register;
+		when x"0018" => USB_data_out 	<= busy8Nb_register;
+		when x"0019" => USB_data_out 	<= busy9Nb_register;
+		when x"0020" => USB_data_out 	<= debounceBusy_register;
+		
+		
+		when x"0100" => USB_data_out 	<= version;
+		when others  => USB_data_out 	<= x"EEEEEEEE";	
+*/
 using namespace mdcc;
 mdcc::MdccHandler::MdccHandler(std::string name,uint32_t productid) : _name(name),_productid(productid),_driver(NULL)
 {
@@ -38,48 +109,7 @@ void mdcc::MdccHandler::close()
     }
 }
 
-/*
-  when x"0001" => USB_data_out <= ID_register;
-  when x"0002" => USB_data_out <= software_veto_register;
-  when x"0003" => USB_data_out <= spillNb_register;
-  when x"0004" => USB_data_out <= Control_register;
-  when x"0005" => USB_data_out <= spillon_register;
-  when x"0006" => USB_data_out <= spilloff_register;
-  when x"0007" => USB_data_out <= beam_register;
-  when x"0008" => USB_data_out <= Calib_register;
-  when x"0009" => USB_data_out <= Calib_Counter_register;
-  when x"000A" => USB_data_out <= nb_windows_register;
-  when x"000B" => USB_data_out <= software_ECALveto_register;
-  when x"000C" => USB_data_out <= Rstdet_register;
-  0xD   bit 0 => start/end of spill used
-  bit 1 => trigext used
-  default 0
 
-  0XE delay trigext
-  OXF length busy trigext 
-
-  when x"0010" => USB_data_out <= busy0Nb_register;
-  when x"0011" => USB_data_out <= busy1Nb_register;
-  when x"0012" => USB_data_out <= busy2Nb_register;
-  when x"0013" => USB_data_out <= busy3Nb_register;
-  when x"0014" => USB_data_out <= busy4Nb_register;
-  when x"0015" => USB_data_out <= busy5Nb_register;
-  when x"0016" => USB_data_out <= busy6Nb_register;
-  when x"0017" => USB_data_out <= busy7Nb_register;
-  when x"0018" => USB_data_out <= busy8Nb_register;
-  when x"0019" => USB_data_out <= busy9Nb_register;
-  when x"001A" => USB_data_out <= busy10Nb_register;
-  when x"001B" => USB_data_out <= busy11Nb_register;
-  when x"001C" => USB_data_out <= busy12Nb_register;
-  when x"001D" => USB_data_out <= busy13Nb_register;
-  when x"001E" => USB_data_out <= busy14Nb_register;
-  when x"001F" => USB_data_out <= busy15Nb_register;
-
-  when x"0020" => USB_data_out <= spare0Nb_register;
-  when x"0021" => USB_data_out <= spare1Nb_register;
- 
-  when x"0100" => USB_data_out <= version;
-*/
 uint32_t mdcc::MdccHandler::version(){return this->readRegister(0x100);}
 uint32_t mdcc::MdccHandler::id(){return this->readRegister(0x1);}
 uint32_t mdcc::MdccHandler::mask(){return this->readRegister(0x2);}
