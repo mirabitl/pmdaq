@@ -211,7 +211,23 @@ void PmrManager::fsm_initialise(http_request m)
       x->initialise(push);
     }
 
+
+  if (utils::isMember(jPmr, "geom"))
+    {
+      for (uint32_t idif=0;idif<jPmr["geom"].as_array().size();idif++)
+	{
+	  auto jsd=jPmr["geom"][idif].as_array();
+	  uint32_t jid=jsd[0].as_integer();
+	  uint32_t bp=jsd[1].as_integer();
+	  
+	  for (auto x : _vDif)
+	      if (x->id()==jid)
+		{x->leftRight(bp);break;}
+	    
+	}
+    }
   par["status"] = json::value::string(U("initialised"));
+
   Reply(status_codes::OK, par);
 }
 

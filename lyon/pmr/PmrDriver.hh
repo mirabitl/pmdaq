@@ -32,11 +32,12 @@
 #define PMR_PP_DIG_2_AN_REG 0x24
 #define PMR_PP_CONTROL_REG 0x25
 
+
 #define PMR_HEADER_SIZE 20
 #define PMR_FRAME_SIZE  20
 #define PMR_EVENT_START 0xB0
 #define PMR_EVENT_STOP 0xA0
-
+#define PMR_LEFT_RIGHT_REG 0xA1
 
 
 #define PMR_ID_SHIFT 1
@@ -74,6 +75,8 @@ public:
   int32_t setPowerPulsing(bool enable=false,uint32_t an2d=0x3e6,uint32_t d2ac=0x4e,uint32_t ac2d=0x4e,uint32_t d2an=0x4e);
   int32_t setAcquisitionMode(bool active=true,bool autoreset=true,bool external=false);
   int32_t resetFSM();
+  int32_t leftRight(uint32_t bitpat);
+
   int32_t readData(unsigned char* tro,uint32_t size);
   uint32_t readOneEvent(unsigned char* cbuf);
   inline uint32_t difId(){return _difId;}

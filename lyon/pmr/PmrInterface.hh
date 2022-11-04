@@ -51,6 +51,7 @@ public:
   // initialise
   void initialise(pm::pmSender* p=NULL);
   // configure
+  void leftRight(uint32_t bp);
   void setRunning(bool t);
   void configure(unsigned char* b, uint32_t nb);
   // Start Stop
@@ -60,6 +61,7 @@ public:
   // destroy
   void destroy();
   // Getter and setters
+  inline uint32_t id() const {return _ftd.id;}
   inline Pmr::DIFStatus* status() const {return _status;}
   inline Pmr::PmrDriver* rd() const {return _rd;}
   void setState(std::string s){_state.assign(s);}

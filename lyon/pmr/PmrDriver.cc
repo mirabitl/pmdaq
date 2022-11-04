@@ -79,7 +79,7 @@ int32_t Pmr::PmrDriver::writeNBytes( unsigned char  *cdata, uint32_t nb)
     }
   if( ret<0)
     {
-      PM_ERROR(_logPmr,"usb_bulk_write error = "<<ret);
+      PM_ERROR(_logPmr,"PMR "<<_difId<<" usb_bulk_write error = "<<ret);
     }
 
   if (ret != nb) 
@@ -117,7 +117,7 @@ int32_t   Pmr::PmrDriver::readNBytes( unsigned char  *resultPtr,uint32_t nbbytes
     }
   if( ret<0)
     {
-      PM_ERROR(_logPmr,"usb_bulk_read error = "<<ret);
+      PM_ERROR(_logPmr,"PMR "<<_difId<<"usb_bulk_read error = "<<ret);
     }
   if (ret==0)
     {
@@ -340,6 +340,15 @@ int32_t Pmr::PmrDriver::setAcquisitionMode(bool active,bool autoreset,bool exter
   return 0;
 }
 
+int32_t Pmr::PmrDriver::leftRight(uint32_t bitpat)
+{
+  int32_t ret;
+  ret=registerWrite(PMR_LEFT_RIGHT_REG,bitpat&3);
+  
+  //	printf ("reset_FSM write (0x%08x at 0x%x), ret=%d\n",tdata, taddr, ret);
+
+  return ret;
+}
 int32_t Pmr::PmrDriver::resetFSM()
 {
   int32_t ret;

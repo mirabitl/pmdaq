@@ -101,6 +101,17 @@ void Pmr::PmrInterface::stop()
   this->publishState("STOPPED");
   
 }
+void Pmr::PmrInterface::leftRight(uint32_t bp)
+{
+  if (_rd==NULL)
+    {
+      PM_ERROR(_logPmr, "Pmr   id ("<<_status->id << ") is not initialised");
+      return;
+    }
+  _sem.lock();
+  _rd->leftRight(bp);
+  _sem.unlock();
+}
 void Pmr::PmrInterface::setRunning(bool t){_running=t;}
 void Pmr::PmrInterface::readout()
 {
