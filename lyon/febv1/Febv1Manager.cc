@@ -14,7 +14,7 @@ using namespace mpi;
 #include <arpa/inet.h>
 #include "stdafx.hh"
 
-Febv1Manager::Febv1Manager() : _context(NULL), _tca(NULL), _mpi(NULL), _sc_running(false), _running(false), g_scurve(NULL), _sc_spillon(20), _sc_spilloff(100), _sc_ntrg(50),_sc_mask(0xFFFFFFFF)
+Febv1Manager::Febv1Manager() : _context(NULL), _tca(NULL), _mpi(NULL), _sc_running(false), _running(false), g_scurve(NULL), _sc_spillon(200), _sc_spilloff(100), _sc_ntrg(50),_sc_mask(0xFFFFFFFF)
 {
   ;
 }
@@ -343,7 +343,7 @@ void Febv1Manager::c_setMode(http_request m)
     if (it2->first.compare("value") == 0)
       mode = std::stoi(it2->second);
 
-  if (mode != 2)
+ // if (mode != 2)
     _type = mode;
   PM_INFO(_logFebv1, "SetMode called with Mode " << mode << "  Type " << _type);
   par["MODE"] = json::value::number(_type);
@@ -401,6 +401,10 @@ void Febv1Manager::c_scurve(http_request m)
       mode = std::stoi(it2->second);
     if (it2->first.compare("mask") == 0)
       mask = std::stoi(it2->second);
+    if (it2->first.compare("spillon") == 0)
+      _sc_spillon = std::stoi(it2->second);
+    if (it2->first.compare("spilloff") == 0)
+      _sc_spilloff = std::stoi(it2->second);
   }
 
   //  PM_INFO(_logFebv1, " SetOneVthTime called with vth " << vth << " feb " << feb << " asic " << asic);
