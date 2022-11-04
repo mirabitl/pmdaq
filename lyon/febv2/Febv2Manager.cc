@@ -1,5 +1,4 @@
 #include "Febv2Manager.hh"
-using namespace mpi;
 #include <unistd.h>
 #include <sys/dir.h>
 #include <sys/param.h>
@@ -104,24 +103,15 @@ void Febv2Manager::c_status(http_request m)
 {
   PM_INFO(_logFebv2, "Status CMD called ");
   auto par = json::value::object();
-
+  http_response rep=utils::request(_feb_host,_feb_port,"STATUS",web::json::value::null());
+  auto jrep = rep.extract_json();
+  _detId=jrep.get().as_object()["DETID"].as_integer();
+  _sourceId=jrep.get().as_object()["SOURCEID"].as_integer();
   par["STATUS"] = json::value::string(U("DONE"));
+  par["DETID"]=jrep.get().as_object()["DETID"];
+  par["SOURCEID"]=jrep.get().as_object()["SOURCEID"];
 
-  json::value jl;
-  uint32_t mb = 0;
-  for (auto x : _mpi->boards())
-  {
 
-    json::value jt;
-    jt["detid"] = json::value::number(x.second->data()->detectorId());
-    jt["sourceid"] = json::value::number(x.second->data()->difId());
-    jt["gtc"] = json::value::number(x.second->data()->gtc());
-    jt["abcid"] = json::value::number(x.second->data()->abcid());
-    jt["event"] = json::value::number(x.second->data()->event());
-    jt["triggers"] = json::value::number(x.second->data()->triggers());
-    jl[mb++] = jt;
-  }
-  par["TDCSTATUS"] = jl;
   Reply(status_codes::OK, par);
 }
 
@@ -188,7 +178,7 @@ void Febv2Manager::fsm_initialise(http_request m)
   http_response rep=utils::request(_feb_host,_feb_port,"INITIALISE",jFebDaq["params"]);
   auto jrep = rep.extract_json();
   // A FAIRE Recupperer info sur l'initialisation
-
+  
   
 if (_dsData!=NULL)
     {
@@ -209,6 +199,10 @@ void Febv2Manager::configure(http_request m)
   http_response rep=utils::request(_feb_host,_feb_port,"CONFIGURE",web::json::value::null());
   auto jrep = rep.extract_json();
   // A FAIRE RECUPPERER DETID ET SOURCEID
+  http_response rep1=utils::request(_feb_host,_feb_port,"STATUS",web::json::value::null());
+  auto jrep1 = rep1.extract_json();
+  _detId=jrep1.get().as_object()["DETID"].as_integer();
+  _sourceId=jrep1.get().as_object()["SOURCEID"].as_integer();
   if (_context == NULL)
     _context = new zmq::context_t(1);
   if (_dsData==NULL)
@@ -227,7 +221,7 @@ void Febv2Manager::start(http_request m)
   this->clearShm();
   _running = true;
 
-	g_mon = std::thread(std::bind(&Febv2Manager::spy_shm, this));
+	g_mon = new std::thread(std::bind(&Febv2Manager::spy_shm, this));
   auto par = json::value::object();
   PMF_INFO(_logFebv2, " CMD: STARTING");
  // Now Send the START COMMAND
