@@ -14,7 +14,7 @@ using namespace mpi;
 #include <arpa/inet.h>
 #include "stdafx.hh"
 
-Febv2Manager::Febv2Manager() : _context(NULL), _tca(NULL), _mpi(NULL), _sc_running(false), _running(false), g_scurve(NULL), _sc_spillon(20), _sc_spilloff(100), _sc_ntrg(50),_sc_mask(0xFFFFFFFF)
+Febv2Manager::Febv2Manager() : _context(NULL), _running(false), g_mon(NULL),_dsData(NULL)
 {
   ;
 }
@@ -39,7 +39,7 @@ void Febv2Manager::initialise()
 
   this->addCommand("STATUS", std::bind(&Febv2Manager::c_status, this, std::placeholders::_1));
   
-  this->addCommand("DOWNLOADDB", std::bind(&Febv2Manager::c_scurve, this, std::placeholders::_1));
+  this->addCommand("DOWNLOADDB", std::bind(&Febv2Manager::c_downloadDB, this, std::placeholders::_1));
 
   //std::cout<<"Service "<<name<<" started on port "<<port<<std::endl;
 }
@@ -59,14 +59,14 @@ void Febv2Manager::end()
 void Febv2Manager::clearShm()
 {
 	std::vector<std::string> vnames;
-	utils::ls(_shmpath, vnames);
+	utils::ls(_shmPath, vnames);
 	std::stringstream sc, sd;
 	sc.str(std::string());
 	sd.str(std::string());
 	for (auto name : vnames)
 	{
-		sc << _shmpath << "/closed/" << name;
-		sd << _shmpath << name;
+		sc << _shmPath << "/closed/" << name;
+		sd << _shmPath << name;
 		::unlink(sc.str().c_str());
 		::unlink(sd.str().c_str());
 	}
@@ -76,88 +76,28 @@ void Febv2Manager::spy_shm()
 	PM_INFO(_logFebv2, "Starting spy_shm");
 	uint32_t nprocessed = 0, last_processed = 0;
 	time_t tlast = time(0);
-	while (_started)
+	while (_running)
 	{
 		std::vector<std::string> vnames;
-		utils::ls(_shmpath, vnames);
-		LM_INFO(_logRd,"Loop PATH for files "<<_shmpath<<" "<<vnames.size());	
+		utils::ls(_shmPath, vnames);
+		PM_INFO(_logFebv2,"Loop PATH for files "<<_shmPath<<" "<<vnames.size());	
 		for (auto x : vnames)
 		{
 			std::cout << x << std::endl;
 			// EUDAQ_WARN("Find file "+x);
 			// continue;
 			auto b = std::make_shared<pm::buffer>(0x80000);
-			uint32_t pls = utils::pull(x, b->ptr(), _shmpath);
+			uint32_t pls = utils::pull(x, b->ptr(), _shmPath);
 			b->setPayloadSize(pls);
-			if (b->detectorId() == 255)
-			{
-				uint32_t *buf = (uint32_t *)b->payload();
-				printf("NEW RUN %d \n", b->dataSourceId());
-				_run = b->dataSourceId();
-
-				for (int i = 0; i < b->payloadSize() / 4; i++)
-				{
-					printf("%d ", buf[i]);
-				}
-
-				_runType = buf[0];
-				if (_runType == 1)
-					_dacSet = buf[1];
-				if (_runType == 2)
-					_vthSet = buf[1];
-				printf("\n Run type %d DAC set %d VTH set %d \n", _runType, _dacSet, _vthSet);
-				// getchar();
-				//	      _analyzer->jEvent()["runtype"]=_runType;
-				continue;
-			}
+			
 			uint64_t idx_storage = b->eventId(); // usually abcid
-			auto it_gtc = _eventMap.find(idx_storage);
-			if (it_gtc != _eventMap.end())
-				it_gtc->second.push_back(b);
-			else
-			{
-				std::vector<std::shared_ptr<pm::buffer> > v;
-				v.clear();
-				v.push_back(b);
-
-				std::pair<uint64_t, std::vector<std::shared_ptr<pm::buffer> >> p(idx_storage, v);
-				_eventMap.insert(p);
-				it_gtc = _eventMap.find(idx_storage);
-			}
-			if (it_gtc->second.size() == this->numberOfDataSource())
-			{
-				// if (it_gtc->first % 100 == 0)
-				printf("\t %d GTC %lu %lu  %d\n", _run, it_gtc->first, it_gtc->second.size(), this->numberOfDataSource());
-				this->processRawEvent(idx_storage);
-				nprocessed++;
-				time_t tp = time(0);
-				if (tp - tlast > 60 && nprocessed != last_processed)
-				{
-					tlast = tp;
-					last_processed = nprocessed;
-					// Loop on histos and publish
-					for (auto p : _rh->getMapH1())
-					{
-						std::stringstream ss;
-						ss << _mqtt->id() << p.first;
-						LM_INFO(_logRd, nprocessed << " Publishing " << ss.str());
-						_mqtt->publish(ss.str(), _rh->getJSONHisto(p.first));
-					}
-					for (auto p : _rh->getMapH2())
-					{
-						std::stringstream ss;
-						ss << _mqtt->id() << p.first;
-						LM_INFO(_logRd, nprocessed << " Publishing " << ss.str());
-						_mqtt->publish(ss.str(), _rh->getJSONHisto(p.first));
-					}
-				}
-				_eventMap.erase(it_gtc);
-			}
+			
+			
 		}
 
 		usleep(50000);
 	}
-	LM_INFO(_logRd, "Stoping run_monitor");
+	PM_INFO(_logFebv2, "Stoping run_monitor");
 }
 
 void Febv2Manager::c_status(http_request m)
@@ -185,23 +125,6 @@ void Febv2Manager::c_status(http_request m)
   Reply(status_codes::OK, par);
 }
 
-void Febv2Manager::c_setMode(http_request m)
-{
-  auto par = json::value::object();
-  par["STATUS"] = json::value::string(U("DONE"));
-
-  uint32_t mode = 2;
-  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
-  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
-    if (it2->first.compare("value") == 0)
-      mode = std::stoi(it2->second);
-
-  if (mode != 2)
-    _type = mode;
-  PM_INFO(_logFebv2, "SetMode called with Mode " << mode << "  Type " << _type);
-  par["MODE"] = json::value::number(_type);
-  Reply(status_codes::OK, par);
-}
 void Febv2Manager::c_downloadDB(http_request m)
 {
   PM_INFO(_logFebv2, "downloadDB called ");
@@ -218,19 +141,12 @@ void Febv2Manager::c_downloadDB(http_request m)
     if (it2->first.compare("version") == 0)
       version = std::stoi(it2->second);
   }
-
-  web::json::value jTDC = params()["Febv2"];
-
-  if (jTDC.as_object().find("db") != jTDC.as_object().end())
-  {
-    web::json::value jFebv2db = jTDC["db"];
-    PMF_ERROR(_logFebv2, "Parsing:" << jFebv2db["state"].as_string() << jFebv2db["mode"].as_string());
-    _tca->clear();
-
-    if (jFebv2db["mode"].as_string().compare("mongo") == 0)
-      _tca->parseMongoDb(dbstate, version);
-  }
-
+  auto parcmd = json::value::object();
+  parcmd["statename"]= json::value::string(U(dbstate));
+  parcmd["version"]=json::value::number(version);
+ http_response rep=utils::request(_feb_host,_feb_port,"DOWNLOADDB",parcmd);
+  auto jrep = rep.extract_json();
+ 
   par["DBSTATE"] = json::value::string(U(dbstate));
   Reply(status_codes::OK, par);
 }
@@ -297,7 +213,7 @@ void Febv2Manager::configure(http_request m)
     _context = new zmq::context_t(1);
   if (_dsData==NULL)
   {
-  _dsData = new pm::pmSender(_context,_detId,_sourceid);
+  _dsData = new pm::pmSender(_context,_detId,_sourceId);
   _dsData->autoDiscover(session(),"evb_builder", "collectingPort");
   _dsData->collectorRegister(); 
   }
