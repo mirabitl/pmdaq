@@ -1,4 +1,4 @@
-#include "Febv2Manager.hh"
+#include "PTDCManager.hh"
 #include <unistd.h>
 #include <sys/dir.h>
 #include <sys/param.h>
@@ -13,12 +13,12 @@
 #include <arpa/inet.h>
 #include "stdafx.hh"
 
-Febv2Manager::Febv2Manager() : _context(NULL), _running(false), g_mon(NULL),_dsData(NULL)
+PTDCManager::PTDCManager() : _context(NULL), _running(false), g_mon(NULL),_dsData(NULL)
 {
   ;
 }
 
-void Febv2Manager::initialise()
+void PTDCManager::initialise()
 {
 
   // Register state
@@ -27,22 +27,22 @@ void Febv2Manager::initialise()
   this->addState("CONFIGURED");
   this->addState("RUNNING");
 
-  this->addTransition("INITIALISE", "CREATED", "INITIALISED", std::bind(&Febv2Manager::fsm_initialise, this, std::placeholders::_1));
-  this->addTransition("CONFIGURE", "INITIALISED", "CONFIGURED", std::bind(&Febv2Manager::configure, this, std::placeholders::_1));
-  this->addTransition("CONFIGURE", "CONFIGURED", "CONFIGURED", std::bind(&Febv2Manager::configure, this, std::placeholders::_1));
+  this->addTransition("INITIALISE", "CREATED", "INITIALISED", std::bind(&PTDCManager::fsm_initialise, this, std::placeholders::_1));
+  this->addTransition("CONFIGURE", "INITIALISED", "CONFIGURED", std::bind(&PTDCManager::configure, this, std::placeholders::_1));
+  this->addTransition("CONFIGURE", "CONFIGURED", "CONFIGURED", std::bind(&PTDCManager::configure, this, std::placeholders::_1));
 
-  this->addTransition("START", "CONFIGURED", "RUNNING", std::bind(&Febv2Manager::start, this, std::placeholders::_1));
-  this->addTransition("STOP", "RUNNING", "CONFIGURED", std::bind(&Febv2Manager::stop, this, std::placeholders::_1));
-  this->addTransition("DESTROY", "CONFIGURED", "CREATED", std::bind(&Febv2Manager::destroy, this, std::placeholders::_1));
-  this->addTransition("DESTROY", "INITIALISED", "CREATED", std::bind(&Febv2Manager::destroy, this, std::placeholders::_1));
+  this->addTransition("START", "CONFIGURED", "RUNNING", std::bind(&PTDCManager::start, this, std::placeholders::_1));
+  this->addTransition("STOP", "RUNNING", "CONFIGURED", std::bind(&PTDCManager::stop, this, std::placeholders::_1));
+  this->addTransition("DESTROY", "CONFIGURED", "CREATED", std::bind(&PTDCManager::destroy, this, std::placeholders::_1));
+  this->addTransition("DESTROY", "INITIALISED", "CREATED", std::bind(&PTDCManager::destroy, this, std::placeholders::_1));
 
-  this->addCommand("STATUS", std::bind(&Febv2Manager::c_status, this, std::placeholders::_1));
+  this->addCommand("STATUS", std::bind(&PTDCManager::c_status, this, std::placeholders::_1));
   
-  this->addCommand("DOWNLOADDB", std::bind(&Febv2Manager::c_downloadDB, this, std::placeholders::_1));
+  this->addCommand("DOWNLOADDB", std::bind(&PTDCManager::c_downloadDB, this, std::placeholders::_1));
 
   //std::cout<<"Service "<<name<<" started on port "<<port<<std::endl;
 }
-void Febv2Manager::end()
+void PTDCManager::end()
 {
   // Stop any running process
  
@@ -55,7 +55,7 @@ void Febv2Manager::end()
     }
   
 }
-void Febv2Manager::clearShm()
+void PTDCManager::clearShm()
 {
   std::vector<std::string> vnames;
   utils::ls(_shmPath, vnames);
@@ -70,9 +70,9 @@ void Febv2Manager::clearShm()
       ::unlink(sd.str().c_str());
     }
 }
-void Febv2Manager::spy_shm()
+void PTDCManager::spy_shm()
 {
-  PM_INFO(_logFebv2, "Starting spy_shm");
+  PM_INFO(_logPTDC, "Starting spy_shm");
   uint32_t nprocessed = 0, last_processed = 0;
   time_t tlast = time(0);
   uint32_t detid,sourceid,eventid;
@@ -81,7 +81,7 @@ void Febv2Manager::spy_shm()
     {
       std::vector<std::string> vnames;
       utils::ls(_shmPath, vnames);
-      PM_INFO(_logFebv2,"Loop PATH for files "<<_shmPath<<" "<<vnames.size());	
+      PM_INFO(_logPTDC,"Loop PATH for files "<<_shmPath<<" "<<vnames.size());	
       for (auto x : vnames)
 	{
 	  std::cout << x << std::endl;
@@ -99,19 +99,18 @@ void Febv2Manager::spy_shm()
 	  b->setPayloadSize(pls);
 	  uint64_t idx_storage = b->eventId(); // usually abcid
 	  _dsData->publish(bxid,eventid,b->size());
-			
 	}
 
       usleep(50000);
     }
-  PM_INFO(_logFebv2, "Stoping spy_shm");
+  PM_INFO(_logPTDC, "Stoping spy_shm");
 }
 
-void Febv2Manager::c_status(http_request m)
+void PTDCManager::c_status(http_request m)
 {
-  PM_INFO(_logFebv2, "Status CMD called ");
+  PM_INFO(_logPTDC, "Status CMD called ");
   auto par = json::value::object();
-  http_response rep=utils::request(_feb_host,_feb_port,"STATUS",web::json::value::null());
+  http_response rep=utils::request(_ptdc_host,_ptdc_port,"STATUS",web::json::value::null());
   auto jrep = rep.extract_json();
   _detId=jrep.get().as_object()["DETID"].as_integer();
   _sourceId=jrep.get().as_object()["SOURCEID"].as_integer();
@@ -123,9 +122,9 @@ void Febv2Manager::c_status(http_request m)
   Reply(status_codes::OK, par);
 }
 
-void Febv2Manager::c_downloadDB(http_request m)
+void PTDCManager::c_downloadDB(http_request m)
 {
-  PM_INFO(_logFebv2, "downloadDB called ");
+  PM_INFO(_logPTDC, "downloadDB called ");
   auto par = json::value::object();
   par["STATUS"] = json::value::string(U("DONE"));
 
@@ -142,7 +141,7 @@ void Febv2Manager::c_downloadDB(http_request m)
   auto parcmd = json::value::object();
   parcmd["statename"]= json::value::string(U(dbstate));
   parcmd["version"]=json::value::number(version);
-  http_response rep=utils::request(_feb_host,_feb_port,"DOWNLOADDB",parcmd);
+  http_response rep=utils::request(_ptdc_host,_ptdc_port,"DOWNLOADDB",parcmd);
   auto jrep = rep.extract_json();
  
   par["DBSTATE"] = json::value::string(U(dbstate));
@@ -150,40 +149,40 @@ void Febv2Manager::c_downloadDB(http_request m)
 }
 
 
-void Febv2Manager::fsm_initialise(http_request m)
+void PTDCManager::fsm_initialise(http_request m)
 {
   auto par = json::value::object();
-  PM_INFO(_logFebv2, "****** CMD: INITIALISING");
+  PM_INFO(_logPTDC, "****** CMD: INITIALISING");
   //  std::cout<<"m= "<<m->command()<<std::endl<<m->content()<<std::endl;
 
   //  web::json::value jtype=params()["type"];
   // _type=jtype.as_integer();
   // printf ("_type =%d\n",_type);
 
-  // Need a Febv2 tag
-  if (!utils::isMember(params(),"Febv2"))
+  // Need a PTDC tag
+  if (!utils::isMember(params(),"PTDC"))
     {
-      PMF_ERROR(_logFebv2, "No Febv2 tag");
-      par["status"] = json::value::string(U("Missing Febv2 tag "));
+      PMF_ERROR(_logPTDC, "No PTDC tag");
+      par["status"] = json::value::string(U("Missing PTDC tag "));
       Reply(status_codes::OK, par);
       return;
     }
-  PM_INFO(_logFebv2, "Access Febv2");
-  web::json::value jFebv2 = params()["Febv2"];
+  PM_INFO(_logPTDC, "Access PTDC");
+  web::json::value jPTDC = params()["PTDC"];
   //_msh =new MpiMessageHandler("/dev/shm");
-  if (!utils::isMember(jFebv2,"febdaq"))
+  if (!utils::isMember(jPTDC,"ptdcdaq"))
     {
-      PMF_ERROR(_logFebv2, "No Febv2:febdaq tag");
-      par["status"] = json::value::string(U("Missing Febv2:febdaq tag "));
+      PMF_ERROR(_logPTDC, "No PTDC:ptdcdaq tag");
+      par["status"] = json::value::string(U("Missing PTDC:ptdcdaq tag "));
       Reply(status_codes::OK, par);
       return;
     }
-  auto jFebDaq=jFebv2["febdaq"];
-  _feb_host=jFebDaq["host"].as_string();
-  _feb_port=jFebDaq["port"].as_integer();
+  auto jPtdcDaq=jPTDC["ptdcdaq"];
+  _ptdc_host=jPtdcDaq["host"].as_string();
+  _ptdc_port=jPtdcDaq["port"].as_integer();
 
   // Send Initialise command
-  http_response rep=utils::request(_feb_host,_feb_port,"INITIALISE",jFebDaq["params"]);
+  http_response rep=utils::request(_ptdc_host,_ptdc_port,"INITIALISE",jPtdcDaq["params"]);
   auto jrep = rep.extract_json();
   // A FAIRE Recupperer info sur l'initialisation
   
@@ -192,22 +191,22 @@ void Febv2Manager::fsm_initialise(http_request m)
     {
       delete _dsData;_dsData=NULL;
     }
-  PMF_INFO(_logFebv2, " Init done  ");
+  PMF_INFO(_logPTDC, " Init done  ");
   par["status"] = json::value::string(U("done"));
   Reply(status_codes::OK, par);
 }
 
 
-void Febv2Manager::configure(http_request m)
+void PTDCManager::configure(http_request m)
 {
   auto par = json::value::object();
-  PMF_INFO(_logFebv2, " CMD: Configuring");
+  PMF_INFO(_logPTDC, " CMD: Configuring");
 
   // Now Send the CONFIGURE COMMAND
-  http_response rep=utils::request(_feb_host,_feb_port,"CONFIGURE",web::json::value::null());
+  http_response rep=utils::request(_ptdc_host,_ptdc_port,"CONFIGURE",web::json::value::null());
   auto jrep = rep.extract_json();
   // A FAIRE RECUPPERER DETID ET SOURCEID
-  http_response rep1=utils::request(_feb_host,_feb_port,"STATUS",web::json::value::null());
+  http_response rep1=utils::request(_ptdc_host,_ptdc_port,"STATUS",web::json::value::null());
   auto jrep1 = rep1.extract_json();
   _detId=jrep1.get().as_object()["DETID"].as_integer();
   _sourceId=jrep1.get().as_object()["SOURCEID"].as_integer();
@@ -224,28 +223,28 @@ void Febv2Manager::configure(http_request m)
 }
 
 /////////////////////////////////////////////////////////
-void Febv2Manager::start(http_request m)
+void PTDCManager::start(http_request m)
 {
   this->clearShm();
   _running = true;
 
-  g_mon = new std::thread(std::bind(&Febv2Manager::spy_shm, this));
+  g_mon = new std::thread(std::bind(&PTDCManager::spy_shm, this));
   auto par = json::value::object();
-  PMF_INFO(_logFebv2, " CMD: STARTING");
+  PMF_INFO(_logPTDC, " CMD: STARTING");
   // Now Send the START COMMAND
-  http_response rep=utils::request(_feb_host,_feb_port,"START",web::json::value::null());
+  http_response rep=utils::request(_ptdc_host,_ptdc_port,"START",web::json::value::null());
   auto jrep = rep.extract_json();
  
   par["status"] = json::value::string(U("done"));
   Reply(status_codes::OK, par);
 }
-void Febv2Manager::stop(http_request m)
+void PTDCManager::stop(http_request m)
 {
   auto par = json::value::object();
-  PMF_INFO(_logFebv2, " CMD: STOPPING ");
+  PMF_INFO(_logPTDC, " CMD: STOPPING ");
 
   // Now Send the STOP COMMAND
-  http_response rep=utils::request(_feb_host,_feb_port,"STOP",web::json::value::null());
+  http_response rep=utils::request(_ptdc_host,_ptdc_port,"STOP",web::json::value::null());
   auto jrep = rep.extract_json();
 
   if (g_mon != NULL && _running)
@@ -260,12 +259,12 @@ void Febv2Manager::stop(http_request m)
   par["status"] = json::value::string(U("done"));
   Reply(status_codes::OK, par);
 }
-void Febv2Manager::destroy(http_request m)
+void PTDCManager::destroy(http_request m)
 {
   auto par = json::value::object();
-  PMF_INFO(_logFebv2, " CMD: DESTROYING");
+  PMF_INFO(_logPTDC, " CMD: DESTROYING");
   // Now Send the DESTROY COMMAND
-  http_response rep=utils::request(_feb_host,_feb_port,"DESTROY",web::json::value::null());
+  http_response rep=utils::request(_ptdc_host,_ptdc_port,"DESTROY",web::json::value::null());
   auto jrep = rep.extract_json();
   if (g_mon != NULL)
     {
@@ -277,7 +276,7 @@ void Febv2Manager::destroy(http_request m)
   par["status"] = json::value::string(U("done"));
   Reply(status_codes::OK, par);
 
-  // To be done: _Febv2->clear();
+  // To be done: _PTDC->clear();
 }
 
 extern "C"
@@ -285,7 +284,7 @@ extern "C"
   // loadDHCALAnalyzer function creates new LowPassDHCALAnalyzer object and returns it.
   handlerPlugin *loadProcessor(void)
   {
-    return (new Febv2Manager);
+    return (new PTDCManager);
   }
   // The deleteDHCALAnalyzer function deletes the LowPassDHCALAnalyzer that is passed
   // to it.  This isn't a very safe function, since there's no

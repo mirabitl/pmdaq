@@ -74,6 +74,7 @@ add_subdirectory(lyon/mbdaq0)
 add_subdirectory(lyon/liboard)
 add_subdirectory(lyon/dbtool)
 add_subdirectory(lyon/febv2)
+add_subdirectory(lyon/picotdc)
 
 include(CPack)
 
