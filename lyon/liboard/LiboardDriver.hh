@@ -37,7 +37,12 @@
 #define LIBOARD_RO_RESET_REG 0x203
 #define LIBOARD_LATCH_DELAY_REG 0x204
 #define LIBOARD_LATCH_DURATION_REG 0x205
-
+#define LIBOARD_VALEVT_CTRL_REG 0x440
+/*
+Bit 0  0=valevent normal 
+       1=valevent = valeur dans le bit 1
+Bit 1  valur du valevent
+ */
 
 #define LIBOARD_MDCC_SHIFT 0x400
 
@@ -90,6 +95,9 @@ namespace liboard
     int32_t readData(unsigned char* tro,uint32_t size);
     uint32_t readOneEvent(unsigned char* cbuf);
     inline uint32_t difId(){return _difId;}
+    void setValEvtOn();
+    void setValEvtOff();
+    void setValEvtAuto();
     void maskTrigger();
     void unmaskTrigger();
     void maskEcal();

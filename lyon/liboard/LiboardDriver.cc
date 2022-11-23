@@ -338,6 +338,14 @@ void liboard::LiboardDriver::maskTdcChannels(uint64_t mask)
   
 }
 
+void liboard::LiboardDriver::setValEvtOn()
+{int ret=registerWrite(LIBOARD_VALEVT_CTRL_REG,3);}
+void liboard::LiboardDriver::setValEvtOff()
+{int ret=registerWrite(LIBOARD_VALEVT_CTRL_REG,1);}
+
+void liboard::LiboardDriver::setValEvtAuto()
+{int ret=registerWrite(LIBOARD_VALEVT_CTRL_REG,0);}
+
 void liboard::LiboardDriver::setLatchDelay(uint32_t delay)
 {int ret=registerWrite(LIBOARD_LATCH_DELAY_REG, delay);}
 void liboard::LiboardDriver::setLatchDuration(uint32_t delay)

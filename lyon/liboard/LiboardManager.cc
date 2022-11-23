@@ -686,6 +686,7 @@ void LiboardManager::initialise()
   this->addCommand("SETLATCHDELAY", std::bind(&LiboardManager::c_setlatchdelay, this, std::placeholders::_1));
   this->addCommand("SETLATCHDURATION", std::bind(&LiboardManager::c_setlatchduration, this, std::placeholders::_1));
 
+  this->addCommand("SETVALEVT", std::bind(&LiboardManager::c_setvalevt, this, std::placeholders::_1));
   // MDCC stuff
 
   this->addCommand("PAUSE", std::bind(&LiboardManager::c_pause, this, std::placeholders::_1));

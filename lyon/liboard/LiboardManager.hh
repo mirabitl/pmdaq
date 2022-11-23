@@ -164,6 +164,8 @@ class LiboardManager  : public fsmw
     void c_settrigext(http_request m);
     void c_setexternaltrigger(http_request m);
 
+    void c_setvalevt(http_request m);
+
 
     void ScurveStandalone(uint32_t mode, int thmin, int thmax, int step, bool usectest);
     void c_scurve1(http_request m);
