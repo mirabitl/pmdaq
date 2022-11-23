@@ -1220,6 +1220,30 @@ void LiboardManager::c_writereg(http_request m)
   par["VALUE"] = web::json::value::number(value);
   Reply(status_codes::OK, par);
 }
+void LiboardManager::c_setvalevt(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard, " SetValEvt called ");
+  if (_mdcc == NULL)
+  {
+    par["STATUS"] = web::json::value::string(U("NO Mdcc created"));
+    Reply(status_codes::OK, par);
+    return;
+  }
+  uint32_t nc = utils::queryIntValue(m, "value", 0);
+  if (nc==0)
+    _mdcc->setValEvtOff();
+  if (nc==1)
+    _mdcc->setValEvtOn();
+  if (nc==2)
+    _mdcc->setValEvtAuto();
+  
+
+  par["STATUS"] = web::json::value::string(U("DONE"));
+  par["NCLOCK"] = web::json::value::number(nc);
+  Reply(status_codes::OK, par);
+}
+
 void LiboardManager::c_spillon(http_request m)
 {
   auto par = json::value::object();
