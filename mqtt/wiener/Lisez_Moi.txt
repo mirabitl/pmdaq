@@ -1,0 +1,18 @@
+Installer les paquets :
+- SNMP
+- SNMPD
+- SNMP_MIBS_DOWNLOADER
+
+Créer /usr/share/snmp/mibs/
+Copier le fichier WIENER-CRATE-MIB.txt dans /usr/share/snmp/mibs/
+Modifier /etc/snmp/snmp.conf  :
+
+Commenter la ligne "mibs:/usr/share/mibs/WIENER-CRATE-MIB.txt"
+Decommenter la ligne mibsdir
+
+Modifier /etc/snmp/snmpd.conf : "rocommunity public localhost" décommenté
+
+En l'état, la config de la raspberry est :
+IP = 192.168.0.24
+Login : pi
+Mdp   : raspberry

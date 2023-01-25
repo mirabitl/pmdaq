@@ -106,6 +106,13 @@ class wddService(ServiceBase):
         else:
             yield " No slow control access"
     @srpc( UnsignedInteger,_returns=Iterable(String))
+    def GenesysInfo(npmax):
+        global _wdd
+        if (_wdd!=None):
+            yield _wdd.genesysInfo(npmax)
+        else:
+            yield " No slow control access"
+    @srpc( UnsignedInteger,_returns=Iterable(String))
     def BMPInfo(npmax):
         global _wdd
         if (_wdd!=None):

@@ -132,12 +132,12 @@ grp_action = parser.add_mutually_exclusive_group()
 
 # Arguments
 parser.add_argument('--host', action='store', type=str,
-                    default="lyocms09", dest='host', help='set the wmon host')
+                    default="lyocmsmu03", dest='host', help='set the wmon host')
 parser.add_argument('--port', action='store', type=int,
                     default=18018, dest='port', help='set the wmon port')
 
 parser.add_argument('--lv-hardware', action='store', type=str,
-                    default="ZupPaho", dest='lv_hardware', help='set the wmon LV hardware')
+                    default="GenesysPaho", dest='lv_hardware', help='set the wmon LV hardware')
 
 parser.add_argument('--hv-hardware', action='store', type=str,
                     default="WienerPaho", dest='hv_hardware', help='set the wmon HV hardware')
@@ -165,6 +165,8 @@ grp_action.add_argument('--stop', action='store_true',
                         help='Stop monitoring loop ')
 grp_action.add_argument('--zup-info', action='store_true',
                         help='print ZUP last published ')
+grp_action.add_argument('--genesys-info', action='store_true',
+                        help='print GENESYS last published ')
 grp_action.add_argument('--wiener-info', action='store_true',
                         help='print Wiener last published ')
 grp_action.add_argument('--bmp-info', action='store_true',
@@ -213,6 +215,15 @@ elif(results.update):
     rep=json.loads(executeCMD(results.host,results.port,"/UPDATE",{}))
     print(rep)
     #print(rep["LV_STATUSResponse"]["LV_STATUSResult"])
+    exit(0)
+elif(results.genesys_info):
+    rep=json.loads(executeCMD(results.host,results.port,"/GenesysInfo",{"hw":results.lv_hardware,"npmax":results.nmax}))
+    #print(rep["GenesysInfoResponse"]["GenesysInfoResult"])
+    for  mes in rep["GenesysInfoResponse"]["GenesysInfoResult"]:
+        for x in mes:
+            sti=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x["ctime"]))
+            #if (device=="BMP" and x["status"]["name"]==device):
+            print("%s Vset %.2f  Vout %.2f  Iout %.2f Status %d " % (sti,x["content"]["vset"],x["content"]["vout"],x["content"]["iout"],x["content"]["status"]))
     exit(0)
 elif(results.zup_info):
     rep=json.loads(executeCMD(results.host,results.port,"/ZupInfo",{"hw":results.lv_hardware,"npmax":results.nmax}))
@@ -293,7 +304,7 @@ elif(results.wiener_info):
                     print(y)
                     continue
                 sstat=y["status"].split("=")[1]
-                print("ch%.3d %8.2f %8.2f %8.2f %8.2f %8.2f %s" %(y["id"],y["vset"],y["iset"]*1E6,y["rampup"],y["vout"],y["iout"]*1E6,sstat[:len(sstat)-1]))                    
+                print("ch%.3d %8.2f %8.2f %8.2f %11.5f %11.5f %s" %(y["id"],y["vset"],y["iset"]*1E6,y["rampup"],y["vout"],y["iout"]*1E6,sstat[:len(sstat)-1]))                    
 
 
     exit(0)

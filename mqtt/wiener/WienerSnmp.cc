@@ -14,10 +14,10 @@ std::vector<std::string> split(const std::string &s, char delim)
   std::string item;
   std::vector<std::string> elems;
   while (std::getline(ss, item, delim))
-  {
-    elems.push_back(item);
-    // elems.push_back(std::move(item)); // if C++11 (based on comment from @mchiasson)
-  }
+    {
+      elems.push_back(item);
+      // elems.push_back(std::move(item)); // if C++11 (based on comment from @mchiasson)
+    }
   return elems;
 }
 
@@ -35,13 +35,13 @@ std::string wiener::WienerDevice::exec(const char* cmd) {
     if (getline(&line, &nc, pipe) !=-1)
       {
 	fprintf(stderr,"%ld chae read %s",nc,line);
-      result += line;
+	result += line;
       }
-      else
-	break;
+    else
+      break;
   }
   pclose(pipe);
-  //PM_INFO(_logWiener,"Command done "<<result);
+  //std::cout<<"Command done "<<result<<std::endl;
   return result;
     
 }
@@ -72,7 +72,14 @@ float wiener::WienerDevice::getOutputVoltage(uint32_t module,uint32_t voie)
   //  std::vector<std::string> strs;
   //boost::split(strs,res, boost::is_any_of(" "));
   auto strs=split(res,' ');
-  return std::stof(strs[4]);
+  float f=0;
+  try{
+     f = std::stof(strs[4]);
+  } catch( ... )
+    {
+      f=-1;
+    }
+  return f;
 }
 std::string wiener::WienerDevice::setOutputVoltageRiseRate(uint32_t module,uint32_t voie,float val)
 {
@@ -93,7 +100,17 @@ float wiener::WienerDevice::getOutputVoltageRiseRate(uint32_t module,uint32_t vo
   //boost::split(strs,res, boost::is_any_of(" "));
   //return atof(strs[4].c_str());
   auto strs=split(res,' ');
-  return std::stof(strs[4]);
+
+  float f=0;
+  try{
+     f = std::stof(strs[4]);
+  } catch( ... )
+    {
+      f=-1;
+    }
+  return f;
+
+
 
 }
 std::string wiener::WienerDevice::setOutputCurrentLimit(uint32_t module,uint32_t voie,float cur )
@@ -115,7 +132,15 @@ float wiener::WienerDevice::getOutputCurrentLimit(uint32_t module,uint32_t voie)
   //boost::split(strs,res, boost::is_any_of(" "));
   //return atof(strs[4].c_str());
   auto strs=split(res,' ');
-  return std::stof(strs[4]);
+  float f=0;
+  try{
+     f = std::stof(strs[4]);
+  } catch( ... )
+    {
+      f=-1;
+    }
+  return f;
+  //return std::stof(strs[4]);
 
 }
 float wiener::WienerDevice::getOutputMeasurementSenseVoltage(uint32_t module,uint32_t voie)
@@ -129,7 +154,17 @@ float wiener::WienerDevice::getOutputMeasurementSenseVoltage(uint32_t module,uin
   //boost::split(strs,res, boost::is_any_of(" "));
   //return atof(strs[4].c_str());
   auto strs=split(res,' ');
-  return std::stof(strs[4]);
+  //std::cout<<" Sense voltage "<<strs[4]<<std::endl;
+  float f=0;
+  try{
+    f = std::stof(strs[4]);
+  } catch( ... )
+    {
+      f=-1;
+    }
+  //std::cout<<" Sense voltage stof "<<f<<std::endl;
+  return f;
+  //return std::stof(strs[4]);
   
 }
 float wiener::WienerDevice::getOutputMeasurementCurrent(uint32_t module,uint32_t voie)
@@ -147,15 +182,15 @@ float wiener::WienerDevice::getOutputMeasurementCurrent(uint32_t module,uint32_t
   // std::vector<std::string> strs;
   //boost::split(strs,res, boost::is_any_of(" "));
   //return atof(strs[4].c_str());
-   auto strs=split(res,' ');
-   //PM_INFO(_logWiener,"Len of strs "<<strs.size());
-   //PM_INFO(_logWiener,"strs[4] "<<strs[4]);
-   if (strs.size()==6)
-     return std::stof(strs[4]);
-   if (strs.size()==7)
-     return std::stof(strs[5]);
-   else
-     return 0;
+  auto strs=split(res,' ');
+  //PM_INFO(_logWiener,"Len of strs "<<strs.size());
+  //PM_INFO(_logWiener,"strs[4] "<<strs[4]);
+  if (strs.size()==6)
+    return std::stof(strs[4]);
+  if (strs.size()==7)
+    return std::stof(strs[5]);
+  else
+    return 0;
    
 
 }
