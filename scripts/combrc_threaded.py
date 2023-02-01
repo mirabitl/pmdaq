@@ -523,6 +523,7 @@ class combRC(pmdaqrc.pmdaqControl):
         n = (1 << channel)
         param = {}
         param["value"] = "%x" % n
+        param["value"] = channel
         r = {}
         r["cal_mask"] = json.loads(tdc.sendCommand("CALIBMASK", param))
         r["cal_status"] = json.loads(tdc.sendCommand("CALIBSTATUS", param))

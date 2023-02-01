@@ -116,7 +116,7 @@ bool febv1::dataHandler::processPacket()
   uint16_t *tmp = (uint16_t *)&_buf[7];
   uint32_t gtc = (_buf[9] | (_buf[8] << 8) | (_buf[7] << 16) | (_buf[6] << 24));
   uint16_t nlines = ntohs(_sBuf[5]);
-  PM_DEBUG(_logFebv1,  id() << " Packets=" << _nProcessed << " channel=" << channel << " GTC=" << gtc << " lines=" << nlines << " index=" << _idx);
+  PM_INFO(_logFebv1,  id() << " Packets=" << _nProcessed << " channel=" << channel << " GTC=" << gtc << " lines=" << nlines << " index=" << _idx);
   
   uint8_t *cl = (uint8_t *)&_buf[12];
   uint8_t *cdestl = (uint8_t *)&_linesbuf[_chlines * CHBYTES];

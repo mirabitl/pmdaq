@@ -456,9 +456,11 @@ class combRC(pmdaqrc.pmdaqControl):
             return '{"answer":"InvalidInstance","status":"FAILED"}'
 
         tdc = self.session.apps["lyon_febv1"][instance]
-        n = (1 << channel)
+        #n = (1 << channel)
         param = {}
-        param["value"] = "%x" % n
+        
+        param["value"]=channel
+        print(param)
         r = {}
         r["cal_mask"] = json.loads(tdc.sendCommand("CALIBMASK", param))
         r["cal_status"] = json.loads(tdc.sendCommand("CALIBSTATUS", param))

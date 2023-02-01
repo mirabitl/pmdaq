@@ -658,6 +658,13 @@ class MongoRoc:
                 print(a["slc"]["6bDac"])
                 for ich in range(32):
                     print(" Dac changed", idif, iasic, ich, cor[ich])
+                    # Mask channel with 255 mask (not in pin mapping)
+                    if (cor[ich]==255):
+                        a["slc"]["6bdac"][ich]=0
+                        a["slc"]["MaskDiscriTime"][ich]=1
+                        a["slc"]["InputDacCommand"]=0
+                        continue
+                    
                     ng= a["slc"]["6bDac"][ich]+cor[ich]
                     if (ng<0):
                         ng=1

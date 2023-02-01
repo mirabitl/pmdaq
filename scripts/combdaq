@@ -366,8 +366,10 @@ elif(results.feb_lutcalib):
     if (results.channel == None):
         print('Please specify the channel --channel=#')
         exit(0)
-    for i in range(0, results.channel):
+    for i in range(results.channel):
+        print("Calibrating channel %d \n" % i )
         fdc.tdcLUTCalib(results.tdc, i)
+        #v=input("next channel ")
     exit(0)
 elif(results.feb_lutmask):
 
