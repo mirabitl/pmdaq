@@ -23,6 +23,13 @@ grp_action.add_argument('--configurations', action='store_true',help='List all t
 grp_action.add_argument('--download', action='store_true',
                         help='download the configuration specified in --name=config name --version=version')
 
+grp_action.add_argument('--calib-upload',action='store_true',help=' Upload new calibration with --setup=NAME --number=run --type=type  and optional --comment=xxx')
+grp_action.add_argument('--calib-list', action='store_true',help='List all the available calibrationtions')
+
+grp_action.add_argument('--calib-download', action='store_true',
+                        help='download the calibration specified in --name=config name --version=version')
+
+
 
 grp_action.add_argument('--runs', action='store_true',help='List all the taken runs')
 grp_action.add_argument('--fsms', action='store_true',help='List all the acquisition status')
@@ -37,6 +44,10 @@ grp_action.add_argument('--info-run', action='store_true',help='Update run info 
 parser.add_argument('--version', action='store',type=int,default=1,dest='version',help='DB configuration version' )
 parser.add_argument('--name', action='store', type=str,
                     default=None, dest='name', help='Configuration name')
+parser.add_argument('--setup', action='store', type=str,
+                    default=None, dest='setup', help='Setup name')
+parser.add_argument('--type', action='store', type=str,
+                    default=None, dest='type', help='Calibration type')
 parser.add_argument('--comment', action='store', type=str,
                     default=None, dest='comment', help='Comment')
 parser.add_argument('--location', action='store', type=str,
@@ -153,4 +164,52 @@ if (results.new_run):
        comment=results.comment
        #print(comment)
     _wdd.getRun(results.location,comment)
+    exit(0)
+
+if (results.calib_upload):
+
+
+    comment="No comment given"
+    if (results.setup == None):
+        print('Please specify the setup --setup=name')
+        exit(0)
+    if (results.number == None):
+        print('Please specify the run --number= id')
+        exit(0)
+    if (results.type == None):
+        print('Please specify the type --type= type')
+        exit(0)
+    if (results.file == None):
+        print('Please specify the file --file= file_name')
+        exit(0)
+
+    if (results.comment != None):
+       comment=results.comment
+       #print(comment)
+    print(results.file)
+    fcal=open(results.file)
+    calib=json.load(fcal)
+    print(calib)
+    _wdd.uploadCalibration(results.setup,results.number,results.type,calib,comment=comment)
+    exit(0)
+
+
+
+
+if (results.calib_download):
+    r_cmd = 'download'
+    
+    if (results.name != None):
+        if (results.version == None):
+            print('Please specify the version --version=ver')
+            exit(0)
+        _wdd.downloadCalibration(results.name,results.version,True)
+        exit(0)
+    else:
+        print(" Specify  --name for configuration ")
+        exit(0)
+
+if (results.calib_list):
+    r_cmd = 'configurations'
+    _wdd.calibrations()
     exit(0)
