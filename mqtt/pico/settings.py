@@ -1,0 +1,12 @@
+ID="Bureau"
+useWiznet=True
+useBME=True
+useHIH=True
+useGenesys=False
+useTemp=False
+useCpwplus=False
+#ssid = 'Livebox-BC40'
+#password = 'MonPasswd'
+#mqtt_server = '134.158.137.53'
+mqtt_server = 'lyocmsmu04.in2p3.fr'
+#mqtt_server = '192.168.1.20'
