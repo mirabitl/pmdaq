@@ -3,6 +3,7 @@ useWiznet=True
 useBME=True
 useHIH=True
 useGenesys=False
+useZup=False
 useTemp=False
 useCpwplus=False
 #ssid = 'Livebox-BC40'

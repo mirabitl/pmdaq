@@ -12,16 +12,13 @@ import freesans12  # Font to use
 import ubinascii
 import settings
 import genesys
+import zup
 import cpwplus
 #mqtt config
 
 client_id = 'wiz'
-topic_pub = b'hello'
-topic_msg = b'Hello Pico'
 
-last_message = 0
-message_interval = 5
-counter = 0
+
 
 class PmPico:
  
@@ -34,6 +31,9 @@ class PmPico:
         #Genesys
         if settings.useGenesys:
             self.genesys_init()
+        #Zup
+        if settings.useZup:
+            self.zup_init()
         #BME
         if settings.useBME:
             self.bme_init()
@@ -48,6 +48,7 @@ class PmPico:
         # Time initialisation
         self.last_cpwplus=0
         self.last_genesys=0
+        self.last_zup=0
         self.last_hih=0
         self.last_bme=0
         self.last_temp=0
@@ -134,6 +135,16 @@ class PmPico:
                         (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
         print(st)
         time.sleep(1)
+    # zup init port 2
+    def zup_init(self):
+        
+        self.zup = zup.Zup(0,0,1,2)
+        st=self.genesys.process_message("STATUS")
+        #print(st)
+        self.draw_string("Zup\n%.1f %.1f %.1f %.1f\nStatus %s" %
+                        (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
+        print(st)
+        time.sleep(1)
     # BME280 init
     def bme_init(self):
         self.i2c0=I2C(0,sda=Pin(4), scl=Pin(5), freq=100000)    #initializing the I2C method
@@ -160,6 +171,8 @@ class PmPico:
       # Process any command
       if (p_msg["device"]=="genesys" and settings.useGenesys):
           st=self.genesys.process_message(p_msg["command"])
+      if (p_msg["device"]=="zup" and settings.useZup):
+          st=self.zup.process_message(p_msg["command"])
   
     # MQTT Connection
     def mqtt_connect(self):
@@ -240,6 +253,20 @@ class PmPico:
                          (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
         time.sleep(1)
         #time.sleep(t_sleep)
+    def zup_status(self,t_sleep):
+        tc=time.time()
+        if ((tc-self.last_zup)<t_sleep):
+            return
+        self.last_zup=tc
+        st=self.zup.process_message("STATUS")
+        
+        topic_pub = 'pico_w5500/%s/zup' % settings.ID
+        tmsg=json.dumps(st)
+        self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
+        self.draw_string("zup\n%.1f %.1f %.1f %.1f\nStatus %s" %
+                         (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
+        time.sleep(1)
+        #time.sleep(t_sleep)
     def cpwplus_measurement(self,t_sleep):
         tc=time.time()
         if ((tc-self.last_cpwplus)<t_sleep):
@@ -268,7 +295,10 @@ def main():
             pm.hih_measurement(10)
         if settings.useGenesys:
             pm.client.check_msg()
-            pm.genesys_status(2)
+            pm.genesys_status(10)
+        if settings.useZup:
+            pm.client.check_msg()
+            pm.zup_status(10)
         if settings.useCpwplus:
             pm.client.check_msg()
             pm.cpwplus_measurement(10)
