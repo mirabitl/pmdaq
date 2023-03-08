@@ -59,7 +59,9 @@ class Genesys:
         self.iread=float(self.value_read[imc:imc+6])
         self.readCommand("OUT?\r")
         self.status=self.value_read[:len(self.value_read)-1]
-    def process_message(self,cmd):
+
+    def process_message(self,msg):
+        cmd=msg["command"]
         if (cmd=="ON"):
             self.ON()
         if (cmd=="OFF"):

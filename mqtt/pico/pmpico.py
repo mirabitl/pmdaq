@@ -167,12 +167,16 @@ class PmPico:
       print((topic, msg.decode("utf-8")))
       p_msg=json.loads(msg.decode("utf-8"))
       print(p_msg)
+      if not "command" in p_msg.keys():
+          return
+      if not "device" in p_msg.keys():
+          return
       self.draw_string("Command\ndev=%s\ncmd=%s" % (p_msg["device"],p_msg["command"]))
       # Process any command
       if (p_msg["device"]=="genesys" and settings.useGenesys):
-          st=self.genesys.process_message(p_msg["command"])
+          st=self.genesys.process_message(p_msg)
       if (p_msg["device"]=="zup" and settings.useZup):
-          st=self.zup.process_message(p_msg["command"])
+          st=self.zup.process_message(p_msg)
   
     # MQTT Connection
     def mqtt_connect(self):

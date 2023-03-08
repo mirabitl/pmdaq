@@ -56,7 +56,8 @@ class Zup:
         self.iread=float(self.value_read[imc:imc+5])
         ist=self.value_read.find("OS")+2
         self.status=int(self.value_read[ist:ist+8],2)
-    def process_message(self,cmd):
+    def process_message(self,msg):
+        cmd=msg["command"]
         if (cmd=="ON"):
             self.ON()
         if (cmd=="OFF"):
