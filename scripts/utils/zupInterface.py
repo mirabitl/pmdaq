@@ -44,7 +44,11 @@ class abstractZup:
         return rep
     
     def setVoltage(self,v):
-        self.write(":VOL%.3f;" % v )
+        if not "vset" in p:
+            print("no vset value in ",p)
+            return
+
+        self.write(":VOL%.3f;" % p["vset"] )
         rep=self.readline()
         print(rep)
         
@@ -60,8 +64,11 @@ class abstractZup:
         print(rep)
         return float(rep[3:len(rep)-1])
     
-    def setCurrent(self,i):
-        self.write(":CUR%.3f;" %v )
+    def setCurrent(self,p):
+        if not "iset" in p:
+            print("no iset value in ",p)
+            return
+        self.write(":CUR%.3f;" % p["iset"] )
         rep=self.readline()
         print(rep)
         
