@@ -2,8 +2,10 @@
 import time
 import serial
 import os,sys
-import zup
-class zupSerial(zup.zup):
+
+from zupInterface import abstractZup as zI
+
+class zupSerial(zI):
     def __init__(self,device,number):
         self.writer=serial.Serial(device)
         print("Serial readout on ",self.writer.portstr)       # check which port was really used
@@ -20,7 +22,7 @@ class zupSerial(zup.zup):
         self.writer.timeout = 1            #non-block read, None to block
         
 
-        zup.zup.__init__(self,self.number)
+        zI.__init__(self,self.number)
     def write(self,s):
         self.writer.write(s)
     def readline(self):

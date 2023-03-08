@@ -2,47 +2,66 @@
 import time
 import os,sys
 
-class zup:
+class abstractGenesys:
     def __init__(self,number):
         self.board=number
     
-        # configure the serial connections (the parameters differs on the device you are connecting to)
-
-
-        self.write(":ADR%.2d" % self.board)
+        self.write("ADR%d" % self.board)
 
         #self.write("RMT %d\r" % 1)  
 
         #print self.readline()
     def setAddress(self,adr):
-        self.write(":ADR%d;" % adr)
+        self.write("ADR%d;" % adr)
         print(self.readline())
         
     def setRemote(self,flag):
         if (flag):
-            self.write(":RMT1;")
+            self.write("RMT1")
         else:
-            self.write(":RMT0;")
+            self.write("RMT0")
         print(self.readline())
         
     def remoteMode(self):
-        self.write(":RMT?;")
+        self.write("RMT?")
         rep=self.readline()
         print(rep)
         return int(rep[4:4])==1
     
     def model(self):
-        self.write(":MDL?;")
+        self.write("IDN?")
         rep=self.readline()
         print(rep)
         return rep
     
     def version(self):
-        self.write(":REV?;")
+        self.write("REV?")
         rep=self.readline()
         print(rep)
         return rep
     
+    def serialNumber(self):
+        self.write("SN?")
+        rep=self.readline()
+        print(rep)
+        return rep
+    
+    def calibrationDate(self):
+        self.write("DATE?")
+        rep=self.readline()
+        print(rep)
+        return rep
+    def clear(self):
+        self.write("CLS")
+        rep=self.readline()
+        print(rep)
+        return rep
+    def reset(self):
+        self.write("RST")
+        rep=self.readline()
+        print(rep)
+        return rep
+        
     def setVoltage(self,v):
         self.write(":VOL%.3f;" % v )
         rep=self.readline()
