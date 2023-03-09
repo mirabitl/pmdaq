@@ -16,7 +16,9 @@ class abstractZup:
         #print self.readline()
     def setAddress(self,adr):
         self.write(":ADR%d;" % adr)
-        print(self.readline())
+        rep=self.readline()
+        print(rep)
+        return rep
         
     def setRemote(self,flag):
         if (flag):
@@ -43,7 +45,7 @@ class abstractZup:
         print(rep)
         return rep
     
-    def setVoltage(self,v):
+    def setVoltage(self,p):
         if not "vset" in p:
             print("no vset value in ",p)
             return
@@ -51,7 +53,7 @@ class abstractZup:
         self.write(":VOL%.3f;" % p["vset"] )
         rep=self.readline()
         print(rep)
-        
+        return rep
     def vSet(self):
         self.write(":VOL!;")
         rep=self.readline()
@@ -71,7 +73,7 @@ class abstractZup:
         self.write(":CUR%.3f;" % p["iset"] )
         rep=self.readline()
         print(rep)
-        
+        return rep
     def iSet(self):
         self.write(":CUR!;")
         rep=self.readline()
@@ -86,11 +88,13 @@ class abstractZup:
     
     def setOff(self):
         self.write(":OUT0;")
-        print(self.readline())
+        rep=self.readline()
+        return rep
         
     def setOn(self):
         self.write(":OUT1;")
-        print(self.readline())
+        rep=self.readline()
+        return rep
 
     def isLvOn(self):
         self.write(":OUT?;")

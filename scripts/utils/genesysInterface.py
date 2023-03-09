@@ -13,14 +13,18 @@ class abstractGenesys:
         #print self.readline()
     def setAddress(self,adr):
         self.write("ADR%d;" % adr)
-        print(self.readline())
-        
+        rep=self.readline()
+        print(rep)
+        return rep
+
     def setRemote(self,flag):
         if (flag):
             self.write("RMT1")
         else:
             self.write("RMT0")
-        print(self.readline())
+        rep=self.readline()
+        print(rep)
+        return rep
         
     def remoteMode(self):
         self.write("RMT?")
@@ -51,22 +55,28 @@ class abstractGenesys:
         rep=self.readline()
         print(rep)
         return rep
+    
     def clear(self):
         self.write("CLS")
         rep=self.readline()
         print(rep)
         return rep
+    
     def reset(self):
         self.write("RST")
         rep=self.readline()
         print(rep)
         return rep
         
-    def setVoltage(self,v):
-        self.write(":VOL%.3f;" % v )
+    def setVoltage(self,p):
+        if not "vset" in p:
+            print("no vset value in ",p)
+            return
+        self.write(":VOL%.3f;" % p["vset"] )
         rep=self.readline()
         print(rep)
-        
+        return rep
+    
     def vSet(self):
         self.write(":VOL!;")
         rep=self.readline()
@@ -79,11 +89,15 @@ class abstractGenesys:
         print(rep)
         return float(rep[3:len(rep)-1])
     
-    def setCurrent(self,i):
-        self.write(":CUR%.3f;" %v )
+    def setCurrent(self,p):
+        if not "iset" in p:
+            print("no iset value in ",p)
+            return
+        self.write(":CUR%.3f;" % p["iset"] )
         rep=self.readline()
         print(rep)
-        
+        return rep
+    
     def iSet(self):
         self.write(":CUR!;")
         rep=self.readline()
@@ -98,11 +112,17 @@ class abstractGenesys:
     
     def setOff(self):
         self.write(":OUT0;")
-        print(self.readline())
+        rep=self.readline()
+        print(rep)
+        return rep
+
         
     def setOn(self):
         self.write(":OUT1;")
-        print(self.readline())
+        rep=self.readline()
+        print(rep)
+        return rep
+
 
     def isLvOn(self):
         self.write(":OUT?;")
