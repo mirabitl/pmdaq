@@ -1,14 +1,14 @@
 #!/usr/bin/python3
 import time
 import serial
-import os,sys
+import os,sys,io
 from genesysInterface import abstractGenesys as gI
 class genesysSerial(gI):
     def __init__(self,device,number):
-        self.ser=serial.Serial(device)
+        #self.ser=serial.Serial(device)
         self.writer=serial.Serial(device)
         print("Serial readout on ",self.writer.portstr)       # check which port was really used
-        self.writer.baudrate = 9600
+        self.writer.baudrate = 19200
 
         self.writer.bytesize = serial.EIGHTBITS #number of bits per bytes
         
@@ -19,23 +19,25 @@ class genesysSerial(gI):
         #self.dsrdtr=True
 
         #block read
-
-        self.writer.timeout = 1            #non-block read, None to block
+        #self.ser_io = io.TextIOWrapper(io.BufferedRWPair(self.writer, self.writer, 1),newline = '\r',line_buffering = True)
+        self.writer.timeout = 0            #non-block read, None to block
         # configure the serial connections (the parameters differs on the device you are connecting to)
 
         gI.__init__(self,number)
     def write(self,s):
         ss=s+"\r"
         print(ss)
-        self.writer.flushInput()
+        #self.writer.flushInput()
         time.sleep(0.1)
         self.writer.write(ss.encode())
+        #
         time.sleep(0.3)
     def readline(self):
         nb=self.writer.in_waiting
         print("Bytes to read ",nb)
         # meme probleme avec self.writer.readline()
-        r= self.writer.read(nb)
+        #r= self.writer.read(nb)
+        r=self.writer.readline()
         #print(r)
         if (nb<1):
             return "no data"
@@ -44,7 +46,7 @@ class genesysSerial(gI):
         print(len(r),r)
         s=""
         try:
-            s=r.decode()
+            s=r.decode("ascii")
         except:
             s="Decode error"
         return s
