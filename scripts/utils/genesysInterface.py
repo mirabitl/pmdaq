@@ -14,7 +14,7 @@ class abstractGenesys:
     def setAddress(self,adr):
         self.write("ADR %d" % adr)
         rep=self.readline()
-        print(rep)
+        #print(rep)
         return rep
 
     def setRemote(self,flag):
@@ -23,49 +23,49 @@ class abstractGenesys:
         else:
             self.write("RMT0")
         rep=self.readline()
-        print(rep)
+        #print(rep)
         return rep
         
     def remoteMode(self):
         self.write("RMT?")
         rep=self.readline()
-        print(rep)
+        #print(rep)
         return int(rep[4:4])==1
     
     def model(self):
         self.write("IDN?")
         rep=self.readline()
-        print(rep)
+        #print(rep)
         return rep
     
     def version(self):
         self.write("REV?")
         rep=self.readline()
-        print(rep)
+        #print(rep)
         return rep
     
     def serialNumber(self):
         self.write("SN?")
         rep=self.readline()
-        print(rep)
+        #print(rep)
         return rep
     
     def calibrationDate(self):
         self.write("DATE?")
         rep=self.readline()
-        print(rep)
+        #print(rep)
         return rep
     
     def clear(self):
         self.write("CLS")
         rep=self.readline()
-        print(rep)
+        #print(rep)
         return rep
     
     def reset(self):
         self.write("RST")
         rep=self.readline()
-        print(rep)
+        #print(rep)
         return rep
         
     def setVoltage(self,p):
@@ -74,20 +74,20 @@ class abstractGenesys:
             return
         self.write("PV %.3f" % p["vset"] )
         rep=self.readline()
-        print(rep)
+        #print(rep)
         return rep
     
     def vSet(self):
         self.write("PV?")
         rep=self.readline()
-        print(rep)
+        #print(rep)
         return float(rep)
     
     def vOut(self):
         self.write("MV?")
         rep=self.readline()
-        print(rep)
-        return float(rep[3:len(rep)-1])
+        #print(rep)
+        return float(rep)
     
     def setCurrent(self,p):
         if not "iset" in p:
@@ -95,46 +95,66 @@ class abstractGenesys:
             return
         self.write("PC %.3f" % p["iset"] )
         rep=self.readline()
-        print(rep)
+        #print(rep)
         return rep
     
     def iSet(self):
         self.write("PC?")
         rep=self.readline()
-        print(rep)
+        #print(rep)
         return float(rep)
     
     def iOut(self):
         self.write("MC?")
         rep=self.readline()
-        print(rep)
+        #print(rep)
         return float(rep)
     
     def setOff(self):
         self.write("OUT 0")
         rep=self.readline()
-        print(rep)
+        #print(rep)
         return rep
 
         
     def setOn(self):
         self.write("OUT 1")
         rep=self.readline()
-        print(rep)
+        #print(rep)
         return rep
 
 
     def isLvOn(self):
         self.write("OUT?")
         rep=self.readline()
-        print(rep)
-        if rep[0:1]=="ON":
+        #print(rep,rep[0:2])
+        if rep[0:2]=="ON":
             return 1
         else:
             return 0
 
-    
     def status(self):
+        rep={}
+        self.write("STT?")
+        self.value_read=self.readline()
+        tlen=len(self.value_read)
+        ipv=self.value_read.find("PV(")+3
+        lpv=self.value_read[ipv:ipv+8].find(")")
+
+        rep["vset"]=float(self.value_read[ipv:ipv+lpv])
+        imv=self.value_read.find("MV(")+3
+        lmv=self.value_read[imv:imv+8].find(")")
+        rep["vout"]=float(self.value_read[imv:imv+lmv])
+        ipc=self.value_read.find("PC(")+3
+        lpc=self.value_read[ipc:ipc+8].find(")")
+        rep["iset"]=float(self.value_read[ipc:ipc+lpc])
+        imc=self.value_read.find("MC(")+3
+        lmc=self.value_read[imc:imc+8].find(")")
+        rep["iout"]=float(self.value_read[imc:imc+lmc])
+        rep["status"]=self.isLvOn()
+        return rep
+    
+    def info(self):
         rep={}
         self.write("IDN?")
         rep["model"]=self.readline()
