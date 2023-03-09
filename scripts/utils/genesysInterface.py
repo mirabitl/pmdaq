@@ -6,20 +6,20 @@ class abstractGenesys:
     def __init__(self,number):
         self.board=number
     
-        self.write("ADR%d" % self.board)
+        self.setAddress(self.board)
 
         #self.write("RMT %d\r" % 1)  
 
         #print self.readline()
     def setAddress(self,adr):
-        self.write("ADR%d;" % adr)
+        self.write("ADR %d" % adr)
         rep=self.readline()
         print(rep)
         return rep
 
     def setRemote(self,flag):
         if (flag):
-            self.write("RMT1")
+            self.write("RMT 1")
         else:
             self.write("RMT0")
         rep=self.readline()
@@ -93,7 +93,7 @@ class abstractGenesys:
         if not "iset" in p:
             print("no iset value in ",p)
             return
-        self.write("PC %.3f;" % p["iset"] )
+        self.write("PC %.3f" % p["iset"] )
         rep=self.readline()
         print(rep)
         return rep
@@ -128,7 +128,11 @@ class abstractGenesys:
         self.write("OUT?")
         rep=self.readline()
         print(rep)
-        return int(rep)==1
+        if rep[0:1]=="ON":
+            return 1
+        else:
+            return 0
+
     
     def status(self):
         rep={}
@@ -152,6 +156,5 @@ class abstractGenesys:
         self.write("MC?")
         rl=self.readline()
         rep["iout"]=float(rl)
-        self.write("OUT?")
-        rep["status"]=int(rep)
+        rep["status"]=self.isLvOn()
         return rep
