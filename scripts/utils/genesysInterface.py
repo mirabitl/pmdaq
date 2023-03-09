@@ -72,19 +72,19 @@ class abstractGenesys:
         if not "vset" in p:
             print("no vset value in ",p)
             return
-        self.write(":VOL%.3f;" % p["vset"] )
+        self.write("PV %.3f" % p["vset"] )
         rep=self.readline()
         print(rep)
         return rep
     
     def vSet(self):
-        self.write(":VOL!;")
+        self.write("PV?")
         rep=self.readline()
         print(rep)
-        return float(rep[3:len(rep)-1])
+        return float(rep)
     
     def vOut(self):
-        self.write(":VOL?;")
+        self.write("MV?")
         rep=self.readline()
         print(rep)
         return float(rep[3:len(rep)-1])
@@ -93,61 +93,65 @@ class abstractGenesys:
         if not "iset" in p:
             print("no iset value in ",p)
             return
-        self.write(":CUR%.3f;" % p["iset"] )
+        self.write("PC %.3f;" % p["iset"] )
         rep=self.readline()
         print(rep)
         return rep
     
     def iSet(self):
-        self.write(":CUR!;")
+        self.write("PC?")
         rep=self.readline()
         print(rep)
-        return float(rep[3:len(rep)-1])
+        return float(rep)
     
     def iOut(self):
-        self.write(":CUR?;")
+        self.write("MC?")
         rep=self.readline()
         print(rep)
-        return float(rep[3:len(rep)-1])
+        return float(rep)
     
     def setOff(self):
-        self.write(":OUT0;")
+        self.write("OUT 0")
         rep=self.readline()
         print(rep)
         return rep
 
         
     def setOn(self):
-        self.write(":OUT1;")
+        self.write("OUT 1")
         rep=self.readline()
         print(rep)
         return rep
 
 
     def isLvOn(self):
-        self.write(":OUT?;")
+        self.write("OUT?")
         rep=self.readline()
         print(rep)
-        return int(rep[3:3])==1
+        return int(rep)==1
     
     def status(self):
         rep={}
-        self.write(":MDL?;")
+        self.write("IDN?")
         rep["model"]=self.readline()
-        self.write(":REV?;")
+        self.write("REV?")
         rep["version"]=self.readline()
-        self.write(":VOL!;")
+        self.write("DATE?")
+        rep["date"]=self.readline()
+        self.write("SN?")
+        rep["serial"]=self.readline()
+        self.write("PV?")
         rl=self.readline()
-        rep["vset"]=float(rl[3:len(rl)-1])
-        self.write(":VOL?;")
+        rep["vset"]=float(rl)
+        self.write("MV?")
         rl=self.readline()
-        rep["vout"]=float(rl[3:len(rl)-1])
-        self.write(":CUR!;")
+        rep["vout"]=float(rl)
+        self.write("PC?")
         rl=self.readline()
-        rep["iset"]=float(rl[3:len(rl)-1])
-        self.write(":CUR?;")
+        rep["iset"]=float(rl)
+        self.write("MC?")
         rl=self.readline()
-        rep["iout"]=float(rl[3:len(rl)-1])
-        self.write(":OUT?;")
-        rep["status"]=int(rep[3:3])
+        rep["iout"]=float(rl)
+        self.write("OUT?")
+        rep["status"]=int(rep)
         return rep
