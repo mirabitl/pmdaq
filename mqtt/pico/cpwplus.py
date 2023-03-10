@@ -7,9 +7,9 @@ import time
  
 class Cpwplus:
  
-    def __init__(self,uart_nb,tx_pin,rx_pin,
+    def __init__(self,uart_nb,tx_pin,rx_pin,baud,
                  **kwargs):
-        self.uart = UART(uart_nb, baudrate=9600, tx=Pin(tx_pin), rx=Pin(rx_pin))
+        self.uart = UART(uart_nb, baudrate=baud, tx=Pin(tx_pin), rx=Pin(rx_pin))
         self.uart.init(bits=8, parity=None, stop=1) 
         # Access the board
         self.value_read="NONE"
@@ -44,7 +44,18 @@ class Cpwplus:
         
     def TARE(self):
         self.readCommand("T\r")
-        
+
+    def status(self):
+        rep={}
+        self.NET()
+        if (self.value_read == None):
+            rep["net"]=-1
+        else:
+            #print(self.value_read)
+            ideb=self.value_read.find("+")+1
+            ifin=self.value_read.find("kg")-1
+            rep["net"]=float(self.value_read[ideb:ifin])
+        return rep
     def process_message(self,cmd):
         rep={}
         if (cmd=="ZERO"):

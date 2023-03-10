@@ -2,11 +2,11 @@
     "id":"Bureau",
     "wiznet":{ "use":1,"dhcp":0,"ip":"192.168.11.2","gw":"192.168.11.1"},
     "mqtt":{"server":"lyocmsmu04.in2p3.fr"},
-    "rp2040":{"read_temp":0},
-    "bme":{"use":1,"i2c":0,"sda":4,"scl":5},
-    "hih":{"use":1,"i2c":1,"sda":26,"scl":27},
-    "genesys":{"use":1,"uart":0,"tx":0,"rx":1,"baud":9600,"address":1},
-    "zup":{"use":0,"uart":0,"tx":0,"rx":1,"baud":9600,"address":6},
-    "cpwplus":{"use":0,"uart":0,"tx":0,"rx":1,"baud":9600}
+    "rp2040":{"use":0,"period":20},
+    "bme":{"use":1,"i2c":0,"sda":4,"scl":5,"period":20},
+    "hih":{"use":1,"i2c":1,"sda":26,"scl":27,"period":20},
+    "genesys":{"use":1,"uart":0,"tx":0,"rx":1,"baud":9600,"address":1,"period":60},
+    "zup":{"use":0,"uart":0,"tx":0,"rx":1,"baud":9600,"address":6,"period":60},
+    "cpwplus":{"use":0,"uart":0,"tx":0,"rx":1,"baud":9600,"period":60}
     
 }

@@ -11,8 +11,8 @@ from writer import Writer
 import freesans12  # Font to use
 import ubinascii
 #import settings
-import genesys
-import zup
+import genesysPico
+import zupPico
 import cpwplus
 #mqtt config
 
@@ -28,53 +28,62 @@ class PmPico:
         self.oled_init()
         # parse JSON file
         self.settings=json.load(open("settings.json"))
-        self.devices=[]
+        self.devices={}
         # cpwplus
         if "cpwplus" in self.settings.keys():
             s_dv=self.settings["cpwplus"]
             if  s_dv["use"]==1:
-                self.devices.append("cpwplus")
+                self.devices["cpwplus"]={"period":s_dv["period"],"last":0,"measure"=self.cpwplus_status}
                 self.cpwplus_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["baud"])
         #Genesys
         if "genesys" in self.settings.keys():
             s_dv=self.settings["genesys"]
             if  s_dv["use"]==1:
-                self.devices.append("genesys")
                 self.genesys_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["address"],s_dv["baud"])
+                self.devices["genesys"]={"period":s_dv["period"],"last":0,"measure"=self.genesys_status,
+                                         "callback"=self.genesys.process_message}
 
         #Zup
         if "zup" in self.settings.keys():
             s_dv=self.settings["zup"]
             if  s_dv["use"]==1:
-                self.devices.append("zup")
                 self.zup_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["address"],s_dv["baud"])
+                self.devices["zup"]={"period":s_dv["period"],"last":0,"measure"=self.zup_status,
+                                         "callback"=self.zup.process_message}
+
         #BME
         if "bme" in self.settings.keys():
             s_dv=self.settings["bme"]
             if  s_dv["use"]==1:
-                self.devices.append("bme")
+                self.devices["bme"]={"period":s_dv["period"],"last":0,"measure"=self.bme_status}
                 self.bme_init(s_dv["i2c"],s_dv["sda"],s_dv["scl"])
         #HIH
         if "hih" in self.settings.keys():
             s_dv=self.settings["hih"]
             if  s_dv["use"]==1:
-                self.devices.append("hih")
+                self.devices["hih"]={"period":s_dv["period"],"last":0,"measure"=self.hih_status}                                
                 self.bme_init(s_dv["i2c"],s_dv["sda"],s_dv["scl"])
-        #HIH
-        if settings.useHIH:
-            self.hih_init()
+
+        #RP2040
+        if "rp2040" in self.settings.keys():
+            s_dv=self.settings["rp2040"]
+            if  s_dv["use"]==1:
+                self.devices["rp2040"]={"period":s_dv["period"],"last":0,"measure"=self.rp2040_status}
+
+
         # network
-        if settings.useWiznet:
-            self.w5x00_init()
-        else:
+        useWiznet=False
+        if "wiznet" in self.settings.keys():
+            s_dv=self.settings["wiznet"]
+            if  s_dv["use"]==1:
+                useWiznet=True
+                self.w5x00_init()
+                
+        if not useWiznet:
             self.wifi_init()
-        # Time initialisation
-        self.last_cpwplus=0
-        self.last_genesys=0
-        self.last_zup=0
-        self.last_hih=0
-        self.last_bme=0
-        self.last_temp=0
+        # MQTT
+        if "mqtt" in self.settings.keys():
+            self.mqtt_connect(self.settings["mqtt"]["server"])
     #display initialisation
     def oled_init(self):
         self.oledd = oled.OLED_1inch3()
@@ -86,6 +95,17 @@ class PmPico:
         Writer.set_textpos(self.oledd, 0, 0)  # In case a previous test has altered this
         self.draw_string('PM Slow\nC.Combaret\nL.Mirabito\nInitialising')
         time.sleep(2)
+        
+    def draw_string(self,s_text):
+        self.oledd.clear()
+        time.sleep_ms(100)
+
+        self.oledd.fill(0)
+        Writer.set_textpos(self.oledd, 0, 0)  # In case a previous test has altered this
+        self.writer.printstring(s_text)
+        self.oledd.show()
+        time.sleep_ms(100)
+
     # cpwplus init
     def cpwplus_init(self,uartid,txp,rxp,baud):
         # Uart nb / tx /rx
@@ -131,15 +151,6 @@ class PmPico:
         self.draw_string("HIH81310\ninitialised\nI2C1\nSDA26 SCL27")
         time.sleep(2)
     
-    def draw_string(self,s_text):
-        self.oledd.clear()
-        time.sleep_ms(100)
-
-        self.oledd.fill(0)
-        Writer.set_textpos(self.oledd, 0, 0)  # In case a previous test has altered this
-        self.writer.printstring(s_text)
-        self.oledd.show()
-        time.sleep_ms(100)
         
     def wifi_init(self):
  
@@ -157,7 +168,7 @@ class PmPico:
             time.sleep(1)
         time.sleep(2)
         self.draw_string('joined to\n%s\n%s' % (settings.ssid,str(wlan.ifconfig()[0])))
-        time.sleep(5)
+        time.sleep(2)
 
     #W5x00 chip init
     def w5x00_init(self):
@@ -166,7 +177,9 @@ class PmPico:
         nic.active(True)
         #nic.connect()
         #None DHCP
-        #nic.ifconfig(('192.168.11.2','255.255.255.0','192.168.11.1','8.8.8.8'))
+        if self.settings["wiznet"]["dhcp"]==0:
+            nic.ifconfig((self.settings["wiznet"]["ip"],'255.255.255.0',self.settings["wiznet"]["gw"],
+                          '8.8.8.8'))
     
         #DHCP
         lan_mac = nic.config('mac')
@@ -195,16 +208,15 @@ class PmPico:
           return
       self.draw_string("Command\ndev=%s\ncmd=%s" % (p_msg["device"],p_msg["command"]))
       # Process any command
-      if (p_msg["device"]=="genesys" and settings.useGenesys):
-          st=self.genesys.process_message(p_msg)
-      if (p_msg["device"]=="zup" and settings.useZup):
-          st=self.zup.process_message(p_msg)
+      if p_msg["device"] in self.devices.keys():
+          if "callback" in self.devices[p_msg["device"]].keys():
+              self.devices[p_msg["device"]]["callback"](p_msg)
   
     # MQTT Connection
-    def mqtt_connect(self):
-        self.draw_string('Connecting to\n%s \nMQTT Broker'%(settings.mqtt_server))
+    def mqtt_connect(self,mqtt_server):
+        self.draw_string('Connecting to\n%s \nMQTT Broker' % (mqtt_server))
         time.sleep(1)
-        self.client = MQTTClient(client_id, settings.mqtt_server, keepalive=60)
+        self.client = MQTTClient(client_id, mqtt_server, keepalive=60)
         self.client.set_callback(self.mqtt_cb)
 
         while True:
@@ -216,90 +228,66 @@ class PmPico:
             except OSError as e:
                 self.draw_string("MQtt.\nFailed\nRetrying")
             time.sleep(5)
-        topic="pico_w5500/%s/CMD" % settings.ID
+        topic="pico_w5500/%s/CMD" % self.settings["id"]
         print(topic)
         self.client.subscribe(str.encode(topic))
 
-    def internal_temperature(self,t_sleep):
-        tc=time.time()
-        if ((tc-self.last_temp)<t_sleep):
-            return
-        self.last_temp=tc
+    def rp2040_status(self):
         conversion_factor = 3.3 / (65535)
         sensor_temp = ADC(4)
         reading = sensor_temp.read_u16() * conversion_factor 
         temperature = 27 - (reading - 0.706)/0.001721
         res={}
         res["T"]=temperature
-        topic_pub = 'pico_w5500/%s/rp2040' % settings.ID 
+        topic_pub = 'pico_w5500/%s/rp2040' % self.settings["id"] 
         tmsg=json.dumps(res)
         self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"))
         self.draw_string("RP2040\nProcessor\n%.1f C" % temperature)
         time.sleep(1)
-    def bme_measurement(self,t_sleep):
-        tc=time.time()
-        if ((tc-self.last_bme)<t_sleep):
-            return
-        self.last_bme=tc
+    def bme_status(self):
         t, p, h = self.bme.read_hrvalues()
         res={}
         res["T"]=t
         res["P"]=p
         res["H"]=h
-        topic_pub ='pico_w5500/%s/bme280' % settings.ID
+        topic_pub ='pico_w5500/%s/bme280' % self.settings["id"]
         tmsg=json.dumps(res)
         self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"))
         self.draw_string("BME280\nP=%.1f hPa\nT=%.1f C\nHum=%.1f %%" % (p,t,h))
         time.sleep(1)
-    def hih_measurement(self,t_sleep):
-        tc=time.time()
-        if ((tc-self.last_hih)<t_sleep):
-            return
-        self.last_hih=tc
+    def hih_status(self):
         h,t=self.hih.read_sensor()
         res={}
         res["T"]=t
         res["H"]=h
-        topic_pub = 'pico_w5500/%s/hih' % settings.ID
+        topic_pub = 'pico_w5500/%s/hih' % self.settings["id"]
         tmsg=json.dumps(res)
         self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"))
         self.draw_string("HIH81310\nT=%.1f C\nHum=%.1f %%" % (t,h))
         time.sleep(1)
-    def genesys_status(self,t_sleep):
-        tc=time.time()
-        if ((tc-self.last_genesys)<t_sleep):
-            return
-        self.last_genesys=tc
-        st=self.genesys.process_message("STATUS")
+    def genesys_status(self):
+        st=self.genesys.status()
         
-        topic_pub = 'pico_w5500/%s/genesys' % settings.ID
+        topic_pub = 'pico_w5500/%s/genesys' % self.settings["id"]
         tmsg=json.dumps(st)
         self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
         self.draw_string("genesys\n%.1f %.1f %.1f %.1f\nStatus %s" %
                          (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
         time.sleep(1)
         #time.sleep(t_sleep)
-    def zup_status(self,t_sleep):
-        tc=time.time()
-        if ((tc-self.last_zup)<t_sleep):
-            return
-        self.last_zup=tc
-        st=self.zup.process_message("STATUS")
+    def zup_status(self):
+        st=self.zup.status()
         
-        topic_pub = 'pico_w5500/%s/zup' % settings.ID
+        topic_pub = 'pico_w5500/%s/zup' % self.settings["id"]
         tmsg=json.dumps(st)
         self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
         self.draw_string("zup\n%.1f %.1f %.1f %.1f\nStatus %s" %
                          (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
         time.sleep(1)
         #time.sleep(t_sleep)
-    def cpwplus_measurement(self,t_sleep):
-        tc=time.time()
-        if ((tc-self.last_cpwplus)<t_sleep):
-            return
-        self.last_cpwplus=tc
-        st=self.cpwplus.process_message("STATUS")
-        topic_pub = 'pico_w5500/%s/cpwplus' % settings.ID
+    def cpwplus_status(self):
+        st=self.cpwplus.status()
+        topic_pub = 'pico_w5500/%s/cpwplus' % self.settings["id"]
         
         tmsg=json.dumps(st)
         self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"))
@@ -307,27 +295,18 @@ class PmPico:
         time.sleep(1)
 def main():
     pm=PmPico()
-    pm.mqtt_connect()
+   
     it=0
     while True:
-        if settings.useTemp:
+        for d in self.devices.keys():
             pm.client.check_msg()
-            pm.internal_temperature(2)
-        if settings.useBME:
-            pm.client.check_msg()
-            pm.bme_measurement(10)
-        if settings.useHIH:
-            pm.client.check_msg()
-            pm.hih_measurement(10)
-        if settings.useGenesys:
-            pm.client.check_msg()
-            pm.genesys_status(10)
-        if settings.useZup:
-            pm.client.check_msg()
-            pm.zup_status(10)
-        if settings.useCpwplus:
-            pm.client.check_msg()
-            pm.cpwplus_measurement(10)
+            tc=time.time()
+            di=self.devices[d]
+            if ((tc-di["last"])>di["period"]):
+                di["last"]=tc
+                if "measure" in di.keys():
+                    di["measure"]()
+            
         #pm.draw_string("Next iteration \n %d" % it)
         it=it+1
         #pm.client.check_msg()
