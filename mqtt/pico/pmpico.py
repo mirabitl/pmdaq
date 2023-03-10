@@ -10,7 +10,7 @@ import json
 from writer import Writer
 import freesans12  # Font to use
 import ubinascii
-import settings
+#import settings
 import genesys
 import zup
 import cpwplus
@@ -23,20 +23,43 @@ client_id = 'wiz'
 class PmPico:
  
     def __init__(self,**kwargs):
+        
         #Oled
         self.oled_init()
+        # parse JSON file
+        self.settings=json.load(open("settings.json"))
+        self.devices=[]
         # cpwplus
-        if settings.useCpwplus:
-            self.cpwplus_init()
+        if "cpwplus" in self.settings.keys():
+            s_dv=self.settings["cpwplus"]
+            if  s_dv["use"]==1:
+                self.devices.append("cpwplus")
+                self.cpwplus_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["baud"])
         #Genesys
-        if settings.useGenesys:
-            self.genesys_init()
+        if "genesys" in self.settings.keys():
+            s_dv=self.settings["genesys"]
+            if  s_dv["use"]==1:
+                self.devices.append("genesys")
+                self.genesys_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["address"],s_dv["baud"])
+
         #Zup
-        if settings.useZup:
-            self.zup_init()
+        if "zup" in self.settings.keys():
+            s_dv=self.settings["zup"]
+            if  s_dv["use"]==1:
+                self.devices.append("zup")
+                self.zup_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["address"],s_dv["baud"])
         #BME
-        if settings.useBME:
-            self.bme_init()
+        if "bme" in self.settings.keys():
+            s_dv=self.settings["bme"]
+            if  s_dv["use"]==1:
+                self.devices.append("bme")
+                self.bme_init(s_dv["i2c"],s_dv["sda"],s_dv["scl"])
+        #HIH
+        if "hih" in self.settings.keys():
+            s_dv=self.settings["hih"]
+            if  s_dv["use"]==1:
+                self.devices.append("hih")
+                self.bme_init(s_dv["i2c"],s_dv["sda"],s_dv["scl"])
         #HIH
         if settings.useHIH:
             self.hih_init()
@@ -64,14 +87,49 @@ class PmPico:
         self.draw_string('PM Slow\nC.Combaret\nL.Mirabito\nInitialising')
         time.sleep(2)
     # cpwplus init
-    def cpwplus_init(self):
+    def cpwplus_init(self,uartid,txp,rxp,baud):
         # Uart nb / tx /rx
-        self.cpwplus = cpwplus.Cpwplus(0,0,1)
+        self.cpwplus = cpwplus.Cpwplus(uartid,txp,rxp,baud)
         st=self.cpwplus.process_message("STATUS")
         self.draw_string("CPWPLUS\nNet Weight %.2f kg" % (st["net"]))
         print(st)      
         time.sleep(1)
+    # genesys init
+    def genesys_init(self,uartid,txp,rxp,address,baud):
         
+        self.genesys = genesysPico.genesysPico(uartid,txp,rxp,address,baud)
+        st=self.genesys.process_message("STATUS")
+        #print(st)
+        self.draw_string("genesys\n%.1f %.1f %.1f %.1f\nStatus %s" %
+                        (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
+        print(st)
+        time.sleep(1)
+    # zup init port 2
+    def zup_init(self,uartid,txp,rxp,address,baud):
+        self.zup = zupPico.zupPico(uartid,txp,rxp,address,baud)
+        st=self.zup.process_message("STATUS")
+        #print(st)
+        self.draw_string("Zup\n%.1f %.1f %.1f %.1f\nStatus %s" %
+                        (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
+        print(st)
+        time.sleep(1)
+        
+    # BME280 init
+    def bme_init(self,i2cid,psda,pscl):
+        self.i2c0=I2C(i2cid,sda=Pin(psda), scl=Pin(pscl), freq=100000)    #initializing the I2C method
+        self.bme = bme280.BME280(i2c=self.i2c0)
+        self.draw_string("BME280\ninitialised\nI2C0\nSDA4 SCL5" )
+        time.sleep(2)
+    # HIH81310 init
+    def hih_init(self,i2cid,psda,pscl):
+        pin_27 = Pin(pscl,pull=Pin.PULL_UP)
+        pin_26 =Pin(psda,pull=Pin.PULL_UP)
+        self.i2c1=I2C(1,sda=pin_26, scl=pin_27, freq=200000)    #initializing the I2C method
+        pin_27 = Pin(pscl,pull=Pin.PULL_UP)
+        pin_26 =Pin(psda,pull=Pin.PULL_UP)
+        self.hih=hih81310.HIH81310(i2c=self.i2c1)
+        self.draw_string("HIH81310\ninitialised\nI2C1\nSDA26 SCL27")
+        time.sleep(2)
     
     def draw_string(self,s_text):
         self.oledd.clear()
@@ -125,42 +183,6 @@ class PmPico:
             #print(nic.regs())
         self.draw_string("Connected\n%s" % str(nic.ifconfig()))
         time.sleep(5)
-    # genesys init
-    def genesys_init(self):
-        
-        self.genesys = genesys.Genesys(0,0,1,1)
-        st=self.genesys.process_message("STATUS")
-        #print(st)
-        self.draw_string("genesys\n%.1f %.1f %.1f %.1f\nStatus %s" %
-                        (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
-        print(st)
-        time.sleep(1)
-    # zup init port 2
-    def zup_init(self):
-        
-        self.zup = zup.Zup(0,0,1,2)
-        st=self.genesys.process_message("STATUS")
-        #print(st)
-        self.draw_string("Zup\n%.1f %.1f %.1f %.1f\nStatus %s" %
-                        (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
-        print(st)
-        time.sleep(1)
-    # BME280 init
-    def bme_init(self):
-        self.i2c0=I2C(0,sda=Pin(4), scl=Pin(5), freq=100000)    #initializing the I2C method
-        self.bme = bme280.BME280(i2c=self.i2c0)
-        self.draw_string("BME280\ninitialised\nI2C0\nSDA4 SCL5" )
-        time.sleep(2)
-    # HIH81310 init
-    def hih_init(self):
-        pin_27 = Pin(27,pull=Pin.PULL_UP)
-        pin_26 =Pin(26,pull=Pin.PULL_UP)
-        self.i2c1=I2C(1,sda=pin_26, scl=pin_27, freq=200000)    #initializing the I2C method
-        pin_27 = Pin(27,pull=Pin.PULL_UP)
-        pin_26 =Pin(26,pull=Pin.PULL_UP)
-        self.hih=hih81310.HIH81310(i2c=self.i2c1)
-        self.draw_string("HIH81310\ninitialised\nI2C1\nSDA26 SCL27")
-        time.sleep(2)
 
     # MQTT Call_back
     def mqtt_cb(self,topic, msg):

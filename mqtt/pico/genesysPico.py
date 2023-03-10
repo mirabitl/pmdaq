@@ -7,10 +7,10 @@ from genesysInterface import abstractGenesys as gI
  
 class genesysPico(gI):
  
-    def __init__(self,uart_nb,tx_pin,rx_pin,address,
+    def __init__(self,uart_nb,tx_pin,rx_pin,address,baud=9600,
                  **kwargs):
         self.address = address
-        self.uart = UART(uart_nb, baudrate=9600, tx=Pin(tx_pin), rx=Pin(rx_pin))
+        self.uart = UART(uart_nb, baudrate=baud, tx=Pin(tx_pin), rx=Pin(rx_pin))
         self.uart.init(bits=8, parity=None, stop=1) 
         # Access the board
         self.value_read="NONE"
@@ -35,6 +35,13 @@ class genesysPico(gI):
         print("Debug genesys",self.value_read)
         if (self.value_read != None):
             self.value_read=self.value_read.decode("utf8")
+        sgood=self.value_read.split('\r')
+        print(sgood)
+        if (len(sgood)>1):
+            return(sgood[1])
+        else:
+            return self.value_read
+
         return self.value_read
     def process_message(self,msg):
         rep={}
