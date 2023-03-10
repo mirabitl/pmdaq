@@ -11,6 +11,7 @@ class genesysPico(gI):
                  **kwargs):
         self.address = address
         self.uart = UART(uart_nb, baudrate=baud, tx=Pin(tx_pin), rx=Pin(rx_pin))
+        print(uart_nb,baud,tx_pin,rx_pin,address)
         self.uart.init(bits=8, parity=None, stop=1) 
         # Access the board
         self.value_read="NONE"
@@ -26,13 +27,18 @@ class genesysPico(gI):
         self.cb["STATUS"]=self.status
         
         
-        gI.__init__(address)
+        gI.__init__(self,address)
+        self.setRemote(True)
     def write(self,s):
-        self.uart.write(s)
+        self.uart.write(s+"\r")
         time.sleep_ms(500)
+        #print("debug ",self.uart.readline())
+        
     def readline(self):
+        #buf=bytes(1024)
         self.value_read=self.uart.readline()
-        print("Debug genesys",self.value_read)
+        #self.value_read=buf
+        #print("Debug genesys",buf)
         if (self.value_read != None):
             self.value_read=self.value_read.decode("utf8")
         sgood=self.value_read.split('\r')

@@ -23,52 +23,55 @@ client_id = 'wiz'
 class PmPico:
  
     def __init__(self,**kwargs):
-        
-        #Oled
-        self.oled_init()
         # parse JSON file
         self.settings=json.load(open("settings.json"))
+        self.debug=False
+        if "debug" in  self.settings.keys():
+            self.debug=self.settings["debug"]==1
+        #Oled
+        self.oled_init()
+        
         self.devices={}
         # cpwplus
         if "cpwplus" in self.settings.keys():
             s_dv=self.settings["cpwplus"]
             if  s_dv["use"]==1:
-                self.devices["cpwplus"]={"period":s_dv["period"],"last":0,"measure"=self.cpwplus_status}
+                self.devices["cpwplus"]={"period":s_dv["period"],"last":0,"measure":self.cpwplus_status}
                 self.cpwplus_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["baud"])
         #Genesys
         if "genesys" in self.settings.keys():
             s_dv=self.settings["genesys"]
             if  s_dv["use"]==1:
                 self.genesys_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["address"],s_dv["baud"])
-                self.devices["genesys"]={"period":s_dv["period"],"last":0,"measure"=self.genesys_status,
-                                         "callback"=self.genesys.process_message}
+                self.devices["genesys"]={"period":s_dv["period"],"last":0,"measure":self.genesys_status,
+                                         "callback":self.genesys.process_message}
 
         #Zup
         if "zup" in self.settings.keys():
             s_dv=self.settings["zup"]
             if  s_dv["use"]==1:
                 self.zup_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["address"],s_dv["baud"])
-                self.devices["zup"]={"period":s_dv["period"],"last":0,"measure"=self.zup_status,
-                                         "callback"=self.zup.process_message}
+                self.devices["zup"]={"period":s_dv["period"],"last":0,"measure":self.zup_status,
+                                         "callback":self.zup.process_message}
 
         #BME
         if "bme" in self.settings.keys():
             s_dv=self.settings["bme"]
             if  s_dv["use"]==1:
-                self.devices["bme"]={"period":s_dv["period"],"last":0,"measure"=self.bme_status}
+                self.devices["bme"]={"period":s_dv["period"],"last":0,"measure":self.bme_status}
                 self.bme_init(s_dv["i2c"],s_dv["sda"],s_dv["scl"])
         #HIH
         if "hih" in self.settings.keys():
             s_dv=self.settings["hih"]
             if  s_dv["use"]==1:
-                self.devices["hih"]={"period":s_dv["period"],"last":0,"measure"=self.hih_status}                                
-                self.bme_init(s_dv["i2c"],s_dv["sda"],s_dv["scl"])
+                self.devices["hih"]={"period":s_dv["period"],"last":0,"measure":self.hih_status}                                
+                self.hih_init(s_dv["i2c"],s_dv["sda"],s_dv["scl"])
 
         #RP2040
         if "rp2040" in self.settings.keys():
             s_dv=self.settings["rp2040"]
             if  s_dv["use"]==1:
-                self.devices["rp2040"]={"period":s_dv["period"],"last":0,"measure"=self.rp2040_status}
+                self.devices["rp2040"]={"period":s_dv["period"],"last":0,"measure":self.rp2040_status}
 
 
         # network
@@ -97,6 +100,8 @@ class PmPico:
         time.sleep(2)
         
     def draw_string(self,s_text):
+        if (self.debug):
+            print(s_text)
         self.oledd.clear()
         time.sleep_ms(100)
 
@@ -112,26 +117,26 @@ class PmPico:
         self.cpwplus = cpwplus.Cpwplus(uartid,txp,rxp,baud)
         st=self.cpwplus.process_message("STATUS")
         self.draw_string("CPWPLUS\nNet Weight %.2f kg" % (st["net"]))
-        print(st)      
+        #print(st)      
         time.sleep(1)
     # genesys init
     def genesys_init(self,uartid,txp,rxp,address,baud):
         
         self.genesys = genesysPico.genesysPico(uartid,txp,rxp,address,baud)
-        st=self.genesys.process_message("STATUS")
+        st=self.genesys.status()
         #print(st)
         self.draw_string("genesys\n%.1f %.1f %.1f %.1f\nStatus %s" %
                         (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
-        print(st)
+        #print(st)
         time.sleep(1)
     # zup init port 2
     def zup_init(self,uartid,txp,rxp,address,baud):
         self.zup = zupPico.zupPico(uartid,txp,rxp,address,baud)
-        st=self.zup.process_message("STATUS")
+        st=self.zup.status()
         #print(st)
         self.draw_string("Zup\n%.1f %.1f %.1f %.1f\nStatus %s" %
                         (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
-        print(st)
+        #print(st)
         time.sleep(1)
         
     # BME280 init
@@ -160,7 +165,7 @@ class PmPico:
         #DHCP
         lan_mac = wlan.config('mac')
         macaddress=ubinascii.hexlify(lan_mac).decode()
-        print(macaddress)
+        #print(macaddress)
         
         self.draw_string("Macaddress WLAN\n%s" % str(macaddress))
         wlan.connect(settings.ssid,settings.password)
@@ -184,14 +189,15 @@ class PmPico:
         #DHCP
         lan_mac = nic.config('mac')
         macaddress=ubinascii.hexlify(lan_mac).decode()
-        print(macaddress)
+        if (self.debug):
+            print(macaddress)
         
         self.draw_string("Wiznet IP\n%s" % str(nic.ifconfig()))
-        print('IP address :', nic.ifconfig())
+        #print('IP address :', nic.ifconfig())
         time.sleep(2)
         while not nic.isconnected():
             self.draw_string("Waiting\n%s" % str(nic.ifconfig()))
-            print("waiting for connection ...",macaddress)
+            #print("waiting for connection ...",macaddress)
             time.sleep(2)
             #print(nic.regs())
         self.draw_string("Connected\n%s" % str(nic.ifconfig()))
@@ -222,14 +228,14 @@ class PmPico:
         while True:
             try:
                 self.client.connect()
-                self.draw_string('Connected to\n%s \nMQTT Broker'%(settings.mqtt_server))
+                self.draw_string('Connected to\n%s \nMQTT Broker'%(mqtt_server))
                 time.sleep(2)
                 break
             except OSError as e:
                 self.draw_string("MQtt.\nFailed\nRetrying")
             time.sleep(5)
         topic="pico_w5500/%s/CMD" % self.settings["id"]
-        print(topic)
+        self.draw_string("Subscribing to \n %s "  % topic)
         self.client.subscribe(str.encode(topic))
 
     def rp2040_status(self):
@@ -243,6 +249,7 @@ class PmPico:
         tmsg=json.dumps(res)
         self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"))
         self.draw_string("RP2040\nProcessor\n%.1f C" % temperature)
+        #print("RP2040\nProcessor\n%.1f C" % temperature)
         time.sleep(1)
     def bme_status(self):
         t, p, h = self.bme.read_hrvalues()
@@ -298,10 +305,10 @@ def main():
    
     it=0
     while True:
-        for d in self.devices.keys():
+        for d in pm.devices.keys():
             pm.client.check_msg()
             tc=time.time()
-            di=self.devices[d]
+            di=pm.devices[d]
             if ((tc-di["last"])>di["period"]):
                 di["last"]=tc
                 if "measure" in di.keys():

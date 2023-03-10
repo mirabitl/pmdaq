@@ -5,12 +5,12 @@ from machine import Pin,UART
 import time
 from zupInterface import abstractZup as zI
  
-class ZupPico(zI):
+class zupPico(zI):
  
-    def __init__(self,uart_nb,tx_pin,rx_pin,address,
+    def __init__(self,uart_nb,tx_pin,rx_pin,address,baud=9600,
                  **kwargs):
         self.address = address
-        self.uart = UART(uart_nb, baudrate=9600, tx=Pin(tx_pin), rx=Pin(rx_pin))
+        self.uart = UART(uart_nb, baudrate=baud, tx=Pin(tx_pin), rx=Pin(rx_pin))
         self.uart.init(bits=8, parity=None, stop=1) 
         # Access the board
         self.value_read="NONE"
@@ -24,13 +24,21 @@ class ZupPico(zI):
         self.cb["STATUS"]=self.status
         
         
-        zI.__init__(address)
+        zI.__init__(self,address)
+        
+        #while True:
+        #    print("testing")
+        #    self.write(":STT?;")
+        #    st=self.readline()
+        #    print(st)
+        
     def write(self,s):
+        #print("writing ",s)
         self.uart.write(s)
-        time.sleep_ms(500)
+        time.sleep_ms(100)
     def readline(self):
         self.value_read=self.uart.readline()
-        print("Debug zup",self.value_read)
+        #print("Debug zup",self.value_read)
         if (self.value_read != None):
             self.value_read=self.value_read.decode("utf8")
         return self.value_read
