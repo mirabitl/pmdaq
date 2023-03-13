@@ -9,20 +9,29 @@ class abstractZup:
         # configure the serial connections (the parameters differs on the device you are connecting to)
 
 
-        self.setAddress(self.board)
+        self.setAddress({"address":self.board})
 
-        self.setRemote(True);
+        self.setRemote({"remote":1})
         
         #self.write("RMT %d\r" % 1)  
 
         #print self.readline()
-    def setAddress(self,adr):
-        self.write(":ADR%.2d;" % adr)
+    def setAddress(self,p):
+        if not "address" in p:
+            print("no address value in ",p)
+            return
+        self.write(":ADR%.2d;" % p"[address"])
         rep=self.readline()
         #print(rep)
         return rep
         
-    def setRemote(self,flag):
+
+    def setRemote(self,p):
+        if not "remote" in p:
+            print("no remote value in ",p)
+            return
+        flag=p["remote"]==1
+
         if (flag):
             self.write(":RMT1;")
         else:

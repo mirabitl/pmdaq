@@ -4,7 +4,9 @@ from array import array
 from machine import Pin,UART
 import time
 from zupInterface import abstractZup as zI
- 
+"""
+Doc a faire
+""" 
 class zupPico(zI):
  
     def __init__(self,uart_nb,tx_pin,rx_pin,address,baud=9600,
