@@ -204,7 +204,7 @@ class PmPico:
         time.sleep(5)
 
     # MQTT Call_back
-    def mqtt_cb(self,topic, msg):
+    def mqtt_cb(self,topic, msg,retain,dup):
       print((topic, msg.decode("utf-8")))
       p_msg=json.loads(msg.decode("utf-8"))
       print(p_msg)
@@ -222,7 +222,7 @@ class PmPico:
     def mqtt_connect(self,mqtt_server):
         self.draw_string('Connecting to\n%s \nMQTT Broker' % (mqtt_server))
         time.sleep(1)
-        self.client = MQTTClient(client_id, mqtt_server, keepalive=60)
+        self.client = MQTTClient(client_id, mqtt_server, keepalive=6000)
         self.client.set_callback(self.mqtt_cb)
 
         while True:
@@ -237,26 +237,33 @@ class PmPico:
         topic="pico_w5500/%s/CMD" % self.settings["id"]
         self.draw_string("Subscribing to \n %s "  % topic)
         self.client.subscribe(str.encode(topic))
-
+        
+        
+    def check_connection(self,method):
+        if self.client.is_conn_issue():
+            print(method," MQTT issue... Reconnecting")
+            while self.client.is_conn_issue():
+                # If the connection is successful, the is_conn_issue
+                # method will not return a connection error.
+                self.client.reconnect()
+            else:
+                self.client.resubscribe()
+  
     def publish(self,topic_pub,tmsg):
-        
+        self.check_connection("Publish ")
         rc=self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"))
+
         
-        print("publish rc ",rc)
-        if (self.client.is_conn_issue()):
-            print("MQTT issue... Reconnecting")
-            self.client.reconnect()
-            self.client.resubscribe()
     def check_msg(self):
+        self.check_connection("Check_Msg ")
+        self.client.DEBUG=True
         try:
             self.client.check_msg()
         except:
+            self.client.log()
             print("check msg error...reconnecting")
-        if (self.client.is_conn_issue()):
-            print("MQTT issue... Reconnecting")
-            self.client.reconnect()
-            self.client.resubscribe()
             
+        
     def rp2040_status(self):
         conversion_factor = 3.3 / (65535)
         sensor_temp = ADC(4)
