@@ -1,4 +1,4 @@
-from umqtt.simple import MQTTClient
+from umqtt.robust2 import MQTTClient
 from usocket import socket
 from machine import Pin,SPI,ADC,I2C
 import network
@@ -238,6 +238,25 @@ class PmPico:
         self.draw_string("Subscribing to \n %s "  % topic)
         self.client.subscribe(str.encode(topic))
 
+    def publish(self,topic_pub,tmsg):
+        
+        rc=self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"))
+        
+        print("publish rc ",rc)
+        if (self.client.is_conn_issue()):
+            print("MQTT issue... Reconnecting")
+            self.client.reconnect()
+            self.client.resubscribe()
+    def check_msg(self):
+        try:
+            self.client.check_msg()
+        except:
+            print("check msg error...reconnecting")
+        if (self.client.is_conn_issue()):
+            print("MQTT issue... Reconnecting")
+            self.client.reconnect()
+            self.client.resubscribe()
+            
     def rp2040_status(self):
         conversion_factor = 3.3 / (65535)
         sensor_temp = ADC(4)
@@ -247,7 +266,7 @@ class PmPico:
         res["T"]=temperature
         topic_pub = 'pico_w5500/%s/rp2040' % self.settings["id"] 
         tmsg=json.dumps(res)
-        self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"))
+        self.publish(topic_pub, tmsg)
         self.draw_string("RP2040\nProcessor\n%.1f C" % temperature)
         #print("RP2040\nProcessor\n%.1f C" % temperature)
         time.sleep(1)
@@ -259,7 +278,7 @@ class PmPico:
         res["H"]=h
         topic_pub ='pico_w5500/%s/bme280' % self.settings["id"]
         tmsg=json.dumps(res)
-        self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"))
+        self.publish(topic_pub, tmsg)
         self.draw_string("BME280\nP=%.1f hPa\nT=%.1f C\nHum=%.1f %%" % (p,t,h))
         time.sleep(1)
     def hih_status(self):
@@ -269,7 +288,7 @@ class PmPico:
         res["H"]=h
         topic_pub = 'pico_w5500/%s/hih' % self.settings["id"]
         tmsg=json.dumps(res)
-        self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"))
+        self.publish(topic_pub, tmsg)
         self.draw_string("HIH81310\nT=%.1f C\nHum=%.1f %%" % (t,h))
         time.sleep(1)
     def genesys_status(self):
@@ -297,7 +316,7 @@ class PmPico:
         topic_pub = 'pico_w5500/%s/cpwplus' % self.settings["id"]
         
         tmsg=json.dumps(st)
-        self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"))
+        self.publish(topic_pub, tmsg)
         self.draw_string("CPWPLUS\nNet Weight %.2f kg" % (st["net"]))
         time.sleep(1)
 def main():
@@ -306,18 +325,17 @@ def main():
     it=0
     while True:
         for d in pm.devices.keys():
-            pm.client.check_msg()
-            tc=time.time()
+            pm.check_msg()
+            tc=it*0.2
             di=pm.devices[d]
             if ((tc-di["last"])>di["period"]):
                 di["last"]=tc
                 if "measure" in di.keys():
                     di["measure"]()
-            
-        #pm.draw_string("Next iteration \n %d" % it)
+                    print("Next iteration \n %d" % it)
         it=it+1
         #pm.client.check_msg()
-        time.sleep_ms(100)
+        time.sleep_ms(200)
     pm.client.disconnect()
 
 if __name__ == "__main__":
