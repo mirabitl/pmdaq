@@ -207,6 +207,31 @@ def bparse(response: bytes) -> MutableMapping[str, Union[int, bytes, str, float]
         out["setpoint_percent"] = setpoint_percent
         out["selected_unit"] = selected_unit
         out["setpoint_selected"] = setpoint_selected
-
+    elif command in [150]:
+        out["command_name"] = "read_gas_type"
+        out["code"] = int(data[0])
+        out["name"] = data[1:12]
+    elif command in [151]:
+        out["command_name"] = "read_gas_parameters"
+        (
+           code,
+           density_unit,
+           density,
+           temp_unit,
+           temperature,
+           press_unit,
+           pressure,
+           flow_unit,
+           flow_range
+        ) = struct.unpack_from(">BBfBfBfBf", data)
+        out["code"]= code
+        out["density_unit"]=density_unit
+        out["density"]=density
+        out["temp_unit"]=temp_unit
+        out["temperature"]=temperature
+        out["press_unit"]=press_unit
+        out["pressure"]=pressure
+        out["flow_unit"]=flow_unit
+        out["flow_range"]=flow_range
     return out
 
