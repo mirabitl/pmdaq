@@ -35,8 +35,8 @@ class brooks:
         cmd=hp.tools.pack_command(self.l_address, command_id=235)
         self.writeCommand(cmd)
         ra=self.readAnswer()
-        self.get_setpoint=bparsing.bparse(ra.full_response)
-        print(self.get_setpoint)
+        self.read_setpoint=bparsing.bparse(ra.full_response)
+        print(self.rea_setpoint)
         
     def write_set_point(self,percent):
         code = 57
@@ -47,7 +47,27 @@ class brooks:
         self.writeCommand(cmd)
         rc=self.readAnswer()
         self.setpoint=bparsing.bparse(rc.full_response)
-        print(self.setpoint)
+        print(self.set_point)
+        
+    def read_gas_type(self,g_code):
+        code = g_code
+        pdata = struct.pack(">B")
+        #print(pdata)
+        cmd = hp.tools.pack_command(self.l_address, command_id=150, data=pdata)
+        self.writeCommand(cmd)
+        rc=self.readAnswer()
+        self.gas_type=bparsing.bparse(rc.full_response)
+        print(self.gas_type)
+        
+    def read_gas_params(self,g_code):
+        code = g_code
+        pdata = struct.pack(">B")
+        #print(pdata)
+        cmd = hp.tools.pack_command(self.l_address, command_id=151, data=pdata)
+        self.writeCommand(cmd)
+        rc=self.readAnswer()
+        self.gas_params=bparsing.bparse(rc.full_response)
+        print(self.gas_params)
         
     def writeCommand(self,cmd,tempo=0.01):
         #print("calling ",cmd)
