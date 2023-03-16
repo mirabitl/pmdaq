@@ -210,7 +210,7 @@ def bparse(response: bytes) -> MutableMapping[str, Union[int, bytes, str, float]
     elif command in [150]:
         out["command_name"] = "read_gas_type"
         out["code"] = int(data[0])
-        out["name"] = data[1:12]
+        out["name"] = data[1:13]
     elif command in [151]:
         out["command_name"] = "read_gas_parameters"
         (
