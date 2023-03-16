@@ -25,6 +25,9 @@ class abstractBrooks:
             self.l_address= hp.calculate_long_address(manufacturer_id,manufacturer_device_type,device_id.to_bytes(3, 'big'))
             #print(self.l_address)
             print("Device found %d %d %d %x\n" % (manufacturer_id,manufacturer_device_type,device_id,int.from_bytes(self.l_address,"big")))
+        self.res={}
+        
+    def status(self):
         self.read_gas_type(1)
         self.read_gas_params(1)
         self.read_primary()
@@ -32,18 +35,19 @@ class abstractBrooks:
     def read_primary(self):
         cmd=hp.read_primary_variable(self.l_address)
         self.writeCommand(cmd)
-        self.primary=self.readAnswer()
+        rc=self.readAnswer()
         if (self.DEBUG):
-            print(self.primary)
-        
+            print(rc)
+        self.res["read_primary"]=rc
+
     def read_set_point(self):
         cmd=hp.pack_command(self.l_address, command_id=235)
         self.writeCommand(cmd)
-        self.read_setpoint=self.readAnswer()
+        rc=self.readAnswer()
         #self.read_setpoint=self.bparse(ra.full_response)
         if (self.DEBUG):
-            print(self.read_setpoint)
-        
+            print(rc)
+        self.res["read_set_point"]=rc
     def write_set_point(self,percent):
         code = 57
         value = percent
@@ -51,22 +55,21 @@ class abstractBrooks:
         #print(pdata)
         cmd = hp.pack_command(self.l_address, command_id=236, data=pdata)
         self.writeCommand(cmd)
-        self.set_point=self.readAnswer()
-        #self.set_point=self.bparse(rc.full_response)
+        rc=self.readAnswer()
         if (self.DEBUG):
-            print(self.set_point)
-        
+            print(rc)
+        self.res["write_set_point"]=rc
+
     def read_gas_type(self,g_code):
         code = g_code
         pdata = struct.pack(">B",code)
         #print(pdata)
         cmd = hp.pack_command(self.l_address, command_id=150, data=pdata)
         self.writeCommand(cmd)
-        self.gas_type=self.readAnswer()
-        #print(rc)
-        #self.gas_type=self.bparse(rc.full_response)
+        rc=self.readAnswer()
         if (self.DEBUG):
-            print(self.gas_type)
+            print(rc)
+        self.res["read_gas_type"]=rc
         
     def read_gas_params(self,g_code):
         code = g_code
@@ -74,10 +77,11 @@ class abstractBrooks:
         #print(pdata)
         cmd = hp.pack_command(self.l_address, command_id=151, data=pdata)
         self.writeCommand(cmd)
-        self.gas_params=self.readAnswer()
-        #self.gas_params=self.bparse(rc.full_response)
+        rc=self.readAnswer()
         if (self.DEBUG):
-            print(self.gas_params)
+            print(rc)
+        self.res["read_gas_params"]=rc
+
         
     def readAnswer(self):
         time.sleep(0.2)
@@ -316,7 +320,15 @@ class abstractBrooks:
         elif command in [150]:
             out["command_name"] = "read_gas_type"
             out["code"] = int(data[0])
-            out["name"] = data[1:13]
+            lm=12
+            for i in range(1,13):
+                if (data[i]==0):
+                    lm=i
+                    break
+            if (lm!=12):
+                out["name"] = data[1:lm].decode("utf8")
+            else:
+                out["name"] =data[1:13] 
         elif command in [151]:
             out["command_name"] = "read_gas_parameters"
             (
