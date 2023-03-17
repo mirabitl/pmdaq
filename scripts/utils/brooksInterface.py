@@ -9,7 +9,7 @@ class abstractBrooks:
     def __init__(self,device_id=0,**kwargs):
         self.DEBUG=False
         self.buf=b""
-
+        self.device_id=device_id
         # Get the address
         if (device_id==0):
             cmd=hp.read_unique_identifier(0)
@@ -19,6 +19,7 @@ class abstractBrooks:
             self.l_address= hp.calculate_long_address(mn.manufacturer_id,mn.manufacturer_device_type,mn.device_id.to_bytes(3, 'big'))
             #print(self.l_address)
             print("Device found %d %d %d %x\n" % (mn.manufacturer_id,mn.manufacturer_device_type,mn.device_id,int.from_bytes(self.l_address,"big")))
+            self.device_id=mn.device_id
         else:
             manufacturer_id=10
             manufacturer_device_type=50
@@ -27,11 +28,47 @@ class abstractBrooks:
             print("Device found %d %d %d %x\n" % (manufacturer_id,manufacturer_device_type,device_id,int.from_bytes(self.l_address,"big")))
         self.res={}
         
-    def status(self):
+    def info(self):
         self.read_gas_type(1)
         self.read_gas_params(1)
         self.read_primary()
         self.read_set_point()
+    def identity(self):
+        self.info()
+        r={}
+        r["device_id"]=self.device_id
+        r["gas_type"]=self.res["read_gas_type"].name
+        r["gas_density_unit"]=self.res["read_gas_params"].density_unit
+        r["gas_density"]=self.res["read_gas_params"].density
+        r["gas_temperature_unit"]=self.res["read_gas_params"].temperature_unit
+        r["gas_temperature"]=self.res["read_gas_params"].temperature
+        r["gas_pressure_unit"]=self.res["read_gas_params"].pressure_unit
+        r["gas_pressure"]=self.res["read_gas_params"].pressure
+        r["gas_flow_unit"]=self.res["read_gas_params"].flow_unit
+        r["gas_flow_range"]=self.res["read_gas_params"].flow
+        return r
+    def status(self):
+        self.info()
+        r={}
+        r["setpoint_percent_unit"]= self.res["read_set_point"].setpoint_percent_unit
+        r["setpoint_percent"]= self.res["read_set_point"].setpoint_percent
+        r["setpoint_selected_unit"]= self.res["read_set_point"].selected_unit
+        r["setpoint_selected"]= self.res["read_set_point"].setpoint_selected
+        r["primary_unit"]=self.res["read_primary"].primary_unit
+        r["primary_variable"]=self.res["read_primary"].primary_variable
+        return r
+
+    def set_flow(self,p):
+        if not "flow" in p:
+            print("no flow value in ",p)
+            return
+        self.write_set_point(p["flow"])
+        r={}
+        r["setpoint_percent_unit"]= self.res["write_set_point"].setpoint_percent_unit
+        r["setpoint_percent"]= self.res["write_set_point"].setpoint_percent
+        r["setpoint_selected_unit"]= self.res["write_set_point"].selected_unit
+        r["setpoint_selected"]= self.res["write_set_point"].setpoint_selected
+        return r
     def read_primary(self):
         cmd=hp.read_primary_variable(self.l_address)
         self.writeCommand(cmd)
@@ -345,9 +382,9 @@ class abstractBrooks:
             out["code"]= code
             out["density_unit"]=density_unit
             out["density"]=density
-            out["temp_unit"]=temp_unit
+            out["temperature_unit"]=temp_unit
             out["temperature"]=temperature
-            out["press_unit"]=press_unit
+            out["pressure_unit"]=press_unit
             out["pressure"]=pressure
             out["flow_unit"]=flow_unit
             out["flow_range"]=flow_range

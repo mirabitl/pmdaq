@@ -7,7 +7,7 @@ Doc a faire
 """ 
 class  brooksPico(bI):
  
-    def __init__(self,uart_nb,tx_pin,rx_pin,device_id=0,baud=19200,rts_pin=1,
+    def __init__(self,uart_nb,tx_pin,rx_pin,device_id=0,baud=19200,rst_pin=1,
                  **kwargs):
         self.device_id = device_id
         self.uart = UART(uart_nb, baudrate=baud, tx=Pin(tx_pin), rx=Pin(rx_pin))
@@ -16,8 +16,8 @@ class  brooksPico(bI):
         self.value_read="NONE"
         self.cb={}
         self.cb["SETFLOW"]=self.set_flow
-        self.cb["STATUS"]=self.json_status
-        self.rst = Pin(rts_pin,mode=Pin.OUT)
+        self.cb["STATUS"]=self.status
+        self.rst = Pin(rst_pin,mode=Pin.OUT)
         self.rst.off()
         
         bI.__init__(self,device_id)
