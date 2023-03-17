@@ -48,7 +48,7 @@ class abstractBrooks:
         r["gas_pressure_unit"]=self.res["read_gas_params"].pressure_unit
         r["gas_pressure"]=self.res["read_gas_params"].pressure
         r["gas_flow_unit"]=self.res["read_gas_params"].flow_unit
-        r["gas_flow_range"]=self.res["read_gas_params"].flow
+        r["gas_flow_range"]=self.res["read_gas_params"].flow_range
         return r
     def status(self):
         self.info()
@@ -57,7 +57,7 @@ class abstractBrooks:
         r["setpoint_percent"]= self.res["read_set_point"].setpoint_percent
         r["setpoint_selected_unit"]= self.res["read_set_point"].selected_unit
         r["setpoint_selected"]= self.res["read_set_point"].setpoint_selected
-        r["primary_unit"]=self.res["read_primary"].primary_unit
+        r["primary_unit"]=self.res["read_primary"].primary_variable_units
         r["primary_variable"]=self.res["read_primary"].primary_variable
         return r
 
