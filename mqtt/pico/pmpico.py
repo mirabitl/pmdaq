@@ -129,6 +129,8 @@ class PmPico:
         # Uart nb / tx /rx
         self.brooks = brooksPico.brooksPico(uartid,txp,rxp,device_id=d_id,baud=baud,rst_pin=rst)
         st=self.brooks.status()
+        sti=self.brooks.read_gas_type(1)
+        print(sti)
         self.draw_string("Brooks\nFlow %.2f l/h" % (st["primary_variable"]))
         #print(st)      
         time.sleep(1)
@@ -235,6 +237,7 @@ class PmPico:
       if not "device" in p_msg.keys():
           return
       self.draw_string("Command\ndev=%s\ncmd=%s" % (p_msg["device"],p_msg["command"]))
+      #return
       # Process any command
       if p_msg["device"] in self.devices.keys():
           if "callback" in self.devices[p_msg["device"]].keys():

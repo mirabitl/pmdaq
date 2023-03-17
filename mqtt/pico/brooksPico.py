@@ -34,12 +34,12 @@ class  brooksPico(bI):
         
         self.rst.on();
         n=self.uart.write(cmd);
-        time.sleep(tmax*1.1);
+        time.sleep(tmax*1.2);
         self.rst.off()
         
 
     def read_one_byte(self):
-        return self.uat.read(1)
+        return self.uart.read(1)
 
     def process_message(self,msg):
         rep={}

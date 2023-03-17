@@ -110,6 +110,7 @@ class abstractBrooks:
         rc=self.readAnswer()
         if (self.DEBUG):
             print(rc)
+        #print("READ GAS TYPE",rc)
         self.res["read_gas_type"]=rc
         
     def read_gas_params(self,g_code):
