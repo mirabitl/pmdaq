@@ -65,6 +65,8 @@ class abstractBrooks:
         if not "flow" in p:
             print("no flow value in ",p)
             return
+        if "device_id" in p:
+            self.use_device(p["device_id"])
         self.write_set_point(p["flow"])
         r={}
         r["setpoint_percent_unit"]= self.res["write_set_point"].setpoint_percent_unit

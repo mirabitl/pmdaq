@@ -42,7 +42,7 @@ class PmPico:
         if "brooks" in self.settings.keys():
             s_dv=self.settings["brooks"]
             if  s_dv["use"]==1:
-                self.brooks_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["baud"],s_dv["rst"],s_dv["device_id"])
+                self.brooks_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["baud"],s_dv["rst"],s_dv["devices"][0])
                 self.devices["brooks"]={"period":s_dv["period"],"last":0,"measure":self.brooks_status,
                                          "callback":self.brooks.process_message}
 
@@ -353,15 +353,29 @@ class PmPico:
         self.draw_string("CPWPLUS\nNet Weight %.2f kg" % (st["net"]))
         time.sleep(1)
     def brooks_status(self):
-        st=self.brooks.status()
+        bks_did=self.settings["brooks"]["devices"]
+        if (len(bks_did)==1 and bks_did[0]==0):
+            st=self.brooks.identity()
+            tmsg=json.dumps(st)
+            self.publish("brooksid", tmsg)
+            
+            self.draw_string("brooks disc\n Gas  %s \nID %d\n range %.2f" %
+                         (st["gas_type"],st["device_id"],st["gas_flow_range"]))
+            time.sleep(3)
+            return
+        # Normal readout
+        for id in bks_did:
+            self.brooks.use_device(id)
+            sti=self.brooks.identity()
+            st=self.brooks.status()
         
-        #topic_pub = 'pico_w5500/%s/zup' % self.settings["id"]
-        tmsg=json.dumps(st)
-        self.publish("brooks", tmsg)
-        #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
-        self.draw_string("brooks\n Set %.2f \nRead %.2f" %
-                         (st["setpoint_selected"],st["primary_variable"]))
-        time.sleep(1)
+            #topic_pub = 'pico_w5500/%s/zup' % self.settings["id"]
+            tmsg=json.dumps(st)
+            self.publish("brooks_%s" % sti["gas_type"], tmsg)
+            #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
+            self.draw_string("brooks %s\n Set %.2f \nRead %.2f" %
+                             (sti["gas_type"],st["setpoint_selected"],st["primary_variable"]))
+            time.sleep(1)
         #time.sleep(t_sleep)
 def main():
     pm=PmPico()
