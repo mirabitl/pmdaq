@@ -1,6 +1,7 @@
 {
     "debug":1,
-    "id":"Bureau",
+    "id":"pico_test",
+    "subid":"Bureau",
     "wiznet":{ "use":1,"dhcp":1,"ip":"192.168.11.2","gw":"192.168.11.1"},
     "mqtt":{"server":"lyoilc07.in2p3.fr"},
     "rp2040":{"use":1,"period":10},
@@ -8,6 +9,7 @@
     "hih":{"use":1,"i2c":1,"sda":26,"scl":27,"period":10},
     "genesys":{"use":0,"uart":0,"tx":0,"rx":1,"baud":9600,"address":1,"period":30},
     "zup":{"use":0,"uart":0,"tx":0,"rx":1,"baud":9600,"address":1,"period":30},
-    "cpwplus":{"use":0,"uart":0,"tx":0,"rx":1,"baud":9600,"period":30}
+    "cpwplus":{"use":0,"uart":0,"tx":0,"rx":1,"baud":9600,"period":30},
+    "brooks":{"use":0,"uart":0,"tx":0,"rx":1,"baud":19200,"rst":4,"device_id":0,"period":30}
     
 }

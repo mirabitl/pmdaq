@@ -27,6 +27,9 @@ class abstractBrooks:
             #print(self.l_address)
             print("Device found %d %d %d %x\n" % (manufacturer_id,manufacturer_device_type,device_id,int.from_bytes(self.l_address,"big")))
         self.res={}
+
+    def use_device(self,d_id,m_id=10,m_dt=50):
+        self.l_address= hp.calculate_long_address(m_id,m_dt,d_id.to_bytes(3, 'big'))
         
     def info(self):
         self.read_gas_type(1)

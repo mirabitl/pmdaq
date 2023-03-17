@@ -13,6 +13,7 @@ import ubinascii
 #import settings
 import genesysPico
 import zupPico
+import brooksPico
 import cpwplus
 #mqtt config
 
@@ -23,15 +24,28 @@ client_id = 'wiz'
 class PmPico:
  
     def __init__(self,**kwargs):
+        #
+        self.topic_prefix= "pico_w5500/Test/"
         # parse JSON file
         self.settings=json.load(open("settings.json"))
         self.debug=False
         if "debug" in  self.settings.keys():
             self.debug=self.settings["debug"]==1
+        if "id" in self.settings.keys():
+            if "subid" in self.settings.keys():
+                self.topic_prefix=self.settings["id"]+"/"+self.settings["subid"]+"/"
         #Oled
         self.oled_init()
         
         self.devices={}
+        # brooks
+        if "brooks" in self.settings.keys():
+            s_dv=self.settings["brooks"]
+            if  s_dv["use"]==1:
+                self.brooks_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["baud"],s_dv["rst"],s_dv["device_id"])
+                self.devices["brooks"]={"period":s_dv["period"],"last":0,"measure":self.brooks_status,
+                                         "callback":self.brooks.process_message}
+
         # cpwplus
         if "cpwplus" in self.settings.keys():
             s_dv=self.settings["cpwplus"]
@@ -110,6 +124,14 @@ class PmPico:
         self.writer.printstring(s_text)
         self.oledd.show()
         time.sleep_ms(100)
+    # brooks init
+    def brooks_init(self,uartid,txp,rxp,baud,rst,d_id):
+        # Uart nb / tx /rx
+        self.brooks = brooksPico.brooksPico(uartid,txp,rxp,device_id=d_id,baud=baud,rst_pin=rst)
+        st=self.brooks.status()
+        self.draw_string("Brooks\nFlow %.2f l/h" % (st["primary_variable"]))
+        #print(st)      
+        time.sleep(1)
 
     # cpwplus init
     def cpwplus_init(self,uartid,txp,rxp,baud):
@@ -234,7 +256,7 @@ class PmPico:
             except OSError as e:
                 self.draw_string("MQtt.\nFailed\nRetrying")
             time.sleep(5)
-        topic="pico_w5500/%s/CMD" % self.settings["id"]
+        topic=self.topic_prefix+"CMD"
         self.draw_string("Subscribing to \n %s "  % topic)
         self.client.subscribe(str.encode(topic))
         
@@ -249,7 +271,8 @@ class PmPico:
             else:
                 self.client.resubscribe()
   
-    def publish(self,topic_pub,tmsg):
+    def publish(self,device_pub,tmsg):
+        topic_pub=self.topic_prefix+device_pub
         self.check_connection("Publish ")
         rc=self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"))
 
@@ -271,9 +294,9 @@ class PmPico:
         temperature = 27 - (reading - 0.706)/0.001721
         res={}
         res["T"]=temperature
-        topic_pub = 'pico_w5500/%s/rp2040' % self.settings["id"] 
+        #topic_pub = 'pico_w5500/%s/rp2040' % self.settings["id"] 
         tmsg=json.dumps(res)
-        self.publish(topic_pub, tmsg)
+        self.publish("rp2040", tmsg)
         self.draw_string("RP2040\nProcessor\n%.1f C" % temperature)
         #print("RP2040\nProcessor\n%.1f C" % temperature)
         time.sleep(1)
@@ -283,9 +306,9 @@ class PmPico:
         res["T"]=t
         res["P"]=p
         res["H"]=h
-        topic_pub ='pico_w5500/%s/bme280' % self.settings["id"]
+        #topic_pub ='pico_w5500/%s/bme280' % self.settings["id"]
         tmsg=json.dumps(res)
-        self.publish(topic_pub, tmsg)
+        self.publish("bme280", tmsg)
         self.draw_string("BME280\nP=%.1f hPa\nT=%.1f C\nHum=%.1f %%" % (p,t,h))
         time.sleep(1)
     def hih_status(self):
@@ -293,17 +316,18 @@ class PmPico:
         res={}
         res["T"]=t
         res["H"]=h
-        topic_pub = 'pico_w5500/%s/hih' % self.settings["id"]
+        #topic_pub = 'pico_w5500/%s/hih' % self.settings["id"]
         tmsg=json.dumps(res)
-        self.publish(topic_pub, tmsg)
+        self.publish("hih", tmsg)
         self.draw_string("HIH81310\nT=%.1f C\nHum=%.1f %%" % (t,h))
         time.sleep(1)
     def genesys_status(self):
         st=self.genesys.status()
         
-        topic_pub = 'pico_w5500/%s/genesys' % self.settings["id"]
+        #topic_pub = 'pico_w5500/%s/genesys' % self.settings["id"]
         tmsg=json.dumps(st)
-        self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
+        self.publish("genesys", tmsg)
+        #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
         self.draw_string("genesys\n%.1f %.1f %.1f %.1f\nStatus %s" %
                          (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
         time.sleep(1)
@@ -311,21 +335,34 @@ class PmPico:
     def zup_status(self):
         st=self.zup.status()
         
-        topic_pub = 'pico_w5500/%s/zup' % self.settings["id"]
+        #topic_pub = 'pico_w5500/%s/zup' % self.settings["id"]
         tmsg=json.dumps(st)
-        self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
+        self.publish("zup", tmsg)
+        #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
         self.draw_string("zup\n%.1f %.1f %.1f %.1f\nStatus %s" %
                          (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
         time.sleep(1)
         #time.sleep(t_sleep)
     def cpwplus_status(self):
         st=self.cpwplus.status()
-        topic_pub = 'pico_w5500/%s/cpwplus' % self.settings["id"]
+        #topic_pub = 'pico_w5500/%s/cpwplus' % self.settings["id"]
         
         tmsg=json.dumps(st)
-        self.publish(topic_pub, tmsg)
+        self.publish("cpwplus", tmsg)
+        #self.publish(topic_pub, tmsg)
         self.draw_string("CPWPLUS\nNet Weight %.2f kg" % (st["net"]))
         time.sleep(1)
+    def brooks_status(self):
+        st=self.brooks.status()
+        
+        #topic_pub = 'pico_w5500/%s/zup' % self.settings["id"]
+        tmsg=json.dumps(st)
+        self.publish("brooks", tmsg)
+        #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
+        self.draw_string("brooks\n Set %.2f \nRead %.2f" %
+                         (st["setpoint_selected"],st["primary_variable"]))
+        time.sleep(1)
+        #time.sleep(t_sleep)
 def main():
     pm=PmPico()
    

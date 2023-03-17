@@ -7,7 +7,7 @@ Doc a faire
 """ 
 class  brooksPico(bI):
  
-    def __init__(self,uart_nb,tx_pin,rx_pin,device_id=0,baud=19200,rst_pin=1,
+    def __init__(self,uart_nb,tx_pin,rx_pin,device_id=0,baud=19200,rst_pin=4,
                  **kwargs):
         self.device_id = device_id
         self.uart = UART(uart_nb, baudrate=baud, tx=Pin(tx_pin), rx=Pin(rx_pin))
