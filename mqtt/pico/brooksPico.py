@@ -1,7 +1,7 @@
 import time
 from array import array
 from machine import Pin,UART
-from brooksInterface import abstractbrooks as bI
+from brooksInterface2 import abstractBrooks as bI
 """
 Doc a faire
 """ 

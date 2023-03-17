@@ -20,7 +20,8 @@ class abstractZup:
         if not "address" in p:
             print("no address value in ",p)
             return
-        self.write(":ADR%.2d;" % p"[address"])
+        sadr= ":ADR%.2d;"  % (p["address"])
+        self.write(sadr)
         rep=self.readline()
         #print(rep)
         return rep
