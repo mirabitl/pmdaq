@@ -2,7 +2,7 @@ import time
 import RPi.GPIO as GPIO
 import serial
 
-from brooksInterface import abstractBrooks as bI
+from brooksInterface2 import abstractBrooks as bI
 #import bparsing
 
 class brooksSerial(bI):
