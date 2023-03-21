@@ -30,7 +30,7 @@ class HIH81310:
         h,t=self.read_sensor()
         return {"T":t,"H":h}
     def view(self):
-        return {"id":"hih81310","cmds":self.cb.keys()}
+        return {"id":"hih81310","cmds":list(self.cb.keys())}
     def process_message(self,msg):
         rep={}
         cmd=msg["command"]

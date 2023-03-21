@@ -389,7 +389,7 @@ class PmPico:
         
             #topic_pub = 'pico_w5500/%s/zup' % self.settings["id"]
             #tmsg=json.dumps(st)
-            self.publish("brooks_%s" % sti["gas_type"], st)
+            self.publish("brooks/%s" % sti["gas_type"], st)
             #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
             self.draw_string("brooks %s\n Set %.2f \nRead %.2f" %
                              (sti["gas_type"],st["setpoint_selected"],st["primary_variable"]))

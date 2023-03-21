@@ -104,7 +104,7 @@ class BME280:
         t, p, h = self.read_hrvalues()
         return {"T":t,"P":p,"H":h}
     def view(self):
-        return {"id":"bme280","cmds":self.cb.keys()}
+        return {"id":"bme280","cmds":list(self.cb.keys())}
     def process_message(self,msg):
         rep={}
         cmd=msg["command"]

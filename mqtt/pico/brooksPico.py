@@ -24,7 +24,7 @@ class  brooksPico(bI):
         bI.__init__(self,device_id)
         
     def view(self):
-        return {"id":"brooks","cmds":self.cb.keys()}            
+        return {"id":"brooks","cmds":list(self.cb.keys())}            
     def writeCommand(self,cmd,tempo=0.01):
         #print("calling ",cmd)
         tmax=len(cmd)*10/19200.

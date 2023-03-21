@@ -34,7 +34,7 @@ class zupPico(zI):
         #    st=self.readline()
         #    print(st)
     def view(self):
-        return {"id":"zup","cmds":self.cb.keys()}        
+        return {"id":"zup","cmds":list(self.cb.keys())}        
     def write(self,s):
         #print("writing ",s)
         self.uart.write(s)
