@@ -24,7 +24,7 @@ class zupPico(zI):
         self.cb["SETON"]=self.setOn
         self.cb["SETOFF"]=self.setOff
         self.cb["STATUS"]=self.status
-        
+        self.cb["VIEW"]=self.view
         
         zI.__init__(self,address)
         
@@ -33,7 +33,8 @@ class zupPico(zI):
         #    self.write(":STT?;")
         #    st=self.readline()
         #    print(st)
-        
+    def view(self):
+        return {"id":"zup","cmds":self.cb.keys()}        
     def write(self,s):
         #print("writing ",s)
         self.uart.write(s)

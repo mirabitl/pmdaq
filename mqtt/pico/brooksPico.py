@@ -16,12 +16,15 @@ class  brooksPico(bI):
         self.value_read="NONE"
         self.cb={}
         self.cb["SETFLOW"]=self.set_flow
-        self.cb["STATUS"]=self.status
+        self.cb["STATUS"]=self.statu
+        self.cb["VIEW"]=self.view
         self.rst = Pin(rst_pin,mode=Pin.OUT)
         self.rst.off()
         
         bI.__init__(self,device_id)
         
+    def view(self):
+        return {"id":"brooks","cmds":self.cb.keys()}            
     def writeCommand(self,cmd,tempo=0.01):
         #print("calling ",cmd)
         tmax=len(cmd)*10/19200.

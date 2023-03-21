@@ -95,7 +95,30 @@ class BME280:
         self._l1_barray = bytearray(1)
         self._l8_barray = bytearray(8)
         self._l3_resultarray = array("i", [0, 0, 0])
- 
+        # callback
+        self.cb={}
+        self.cb["STATUS"]=self.status
+        self.cb["VIEW"]=self.view
+        
+    def status(self):
+        t, p, h = self.read_hrvalues()
+        return {"T":t,"P":p,"H":h}
+    def view(self):
+        return {"id":"bme280","cmds":self.cb.keys()}
+    def process_message(self,msg):
+        rep={}
+        cmd=msg["command"]
+        params=None
+        if "params" in msg:
+            params=msg["params"]
+        if not cmd in self.cb.keys():
+            print("unknown command",cmd)
+            return rep
+        if params == None:
+            return self.cb[cmd]()
+        else:
+            return self.cb[cmd](params)
+        return rep
     def read_raw_data(self, result):
         """ Reads the raw (uncompensated) data from the sensor.
  

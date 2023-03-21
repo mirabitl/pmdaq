@@ -37,57 +37,6 @@ class PmPico:
         #Oled
         self.oled_init()
         
-        self.devices={}
-        # brooks
-        if "brooks" in self.settings.keys():
-            s_dv=self.settings["brooks"]
-            if  s_dv["use"]==1:
-                self.brooks_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["baud"],s_dv["rst"],s_dv["devices"][0])
-                self.devices["brooks"]={"period":s_dv["period"],"last":0,"measure":self.brooks_status,
-                                         "callback":self.brooks.process_message}
-
-        # cpwplus
-        if "cpwplus" in self.settings.keys():
-            s_dv=self.settings["cpwplus"]
-            if  s_dv["use"]==1:
-                self.devices["cpwplus"]={"period":s_dv["period"],"last":0,"measure":self.cpwplus_status}
-                self.cpwplus_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["baud"])
-        #Genesys
-        if "genesys" in self.settings.keys():
-            s_dv=self.settings["genesys"]
-            if  s_dv["use"]==1:
-                self.genesys_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["address"],s_dv["baud"])
-                self.devices["genesys"]={"period":s_dv["period"],"last":0,"measure":self.genesys_status,
-                                         "callback":self.genesys.process_message}
-
-        #Zup
-        if "zup" in self.settings.keys():
-            s_dv=self.settings["zup"]
-            if  s_dv["use"]==1:
-                self.zup_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["address"],s_dv["baud"])
-                self.devices["zup"]={"period":s_dv["period"],"last":0,"measure":self.zup_status,
-                                         "callback":self.zup.process_message}
-
-        #BME
-        if "bme" in self.settings.keys():
-            s_dv=self.settings["bme"]
-            if  s_dv["use"]==1:
-                self.devices["bme"]={"period":s_dv["period"],"last":0,"measure":self.bme_status}
-                self.bme_init(s_dv["i2c"],s_dv["sda"],s_dv["scl"])
-        #HIH
-        if "hih" in self.settings.keys():
-            s_dv=self.settings["hih"]
-            if  s_dv["use"]==1:
-                self.devices["hih"]={"period":s_dv["period"],"last":0,"measure":self.hih_status}                                
-                self.hih_init(s_dv["i2c"],s_dv["sda"],s_dv["scl"])
-
-        #RP2040
-        if "rp2040" in self.settings.keys():
-            s_dv=self.settings["rp2040"]
-            if  s_dv["use"]==1:
-                self.devices["rp2040"]={"period":s_dv["period"],"last":0,"measure":self.rp2040_status}
-
-
         # network
         useWiznet=False
         if "wiznet" in self.settings.keys():
@@ -101,7 +50,72 @@ class PmPico:
         # MQTT
         if "mqtt" in self.settings.keys():
             self.mqtt_connect(self.settings["mqtt"]["server"])
-    #display initialisation
+        #display initialisation
+        self.devices={}
+        # brooks
+        if "brooks" in self.settings.keys():
+            s_dv=self.settings["brooks"]
+            if  s_dv["use"]==1:
+                self.brooks_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["baud"],s_dv["rst"],s_dv["devices"][0])
+                self.devices["brooks"]={"period":s_dv["period"],"last":0,"measure":self.brooks_status,
+                                         "callback":self.brooks.process_message}
+                stv=self.brooks.view()
+                self.publish("brooks/INFOS",stv,True)
+
+        # cpwplus
+        if "cpwplus" in self.settings.keys():
+            s_dv=self.settings["cpwplus"]
+            if  s_dv["use"]==1:
+                self.devices["cpwplus"]={"period":s_dv["period"],"last":0,"measure":self.cpwplus_status}
+                self.cpwplus_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["baud"])
+                self.publish("cpwplus/INFOS",{"id":"adam_cpw+"},True)
+        #Genesys
+        if "genesys" in self.settings.keys():
+            s_dv=self.settings["genesys"]
+            if  s_dv["use"]==1:
+                self.genesys_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["address"],s_dv["baud"])
+                self.devices["genesys"]={"period":s_dv["period"],"last":0,"measure":self.genesys_status,
+                                         "callback":self.genesys.process_message}
+                stv=self.genesys.view()
+                self.publish("genesys/INFOS",stv,True)
+
+        #Zup
+        if "zup" in self.settings.keys():
+            s_dv=self.settings["zup"]
+            if  s_dv["use"]==1:
+                self.zup_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["address"],s_dv["baud"])
+                self.devices["zup"]={"period":s_dv["period"],"last":0,"measure":self.zup_status,
+                                         "callback":self.zup.process_message}
+                stv=self.zup.view()
+                self.publish("zup/INFOS",stv,True)
+        #BME
+        if "bme" in self.settings.keys():
+            s_dv=self.settings["bme"]
+            if  s_dv["use"]==1:               
+                self.bme_init(s_dv["i2c"],s_dv["sda"],s_dv["scl"])
+                self.devices["bme"]={"period":s_dv["period"],"last":0,"measure":self.bme_status,
+                                     "callback":self.bme.process_message}
+                stv=self.bme.view()
+                self.publish("bme/INFOS",stv,True)
+        #HIH
+        if "hih" in self.settings.keys():
+            s_dv=self.settings["hih"]
+            if  s_dv["use"]==1:
+                self.hih_init(s_dv["i2c"],s_dv["sda"],s_dv["scl"])
+                self.devices["hih"]={"period":s_dv["period"],"last":0,"measure":self.hih_status,
+                                     "callback":self.hih.process_message}                                
+
+                stv=self.hih.view()
+                self.publish("hih/INFOS",stv,True)
+
+        #RP2040
+        if "rp2040" in self.settings.keys():
+            s_dv=self.settings["rp2040"]
+            if  s_dv["use"]==1:
+                self.devices["rp2040"]={"period":s_dv["period"],"last":0,"measure":self.rp2040_status}
+                self.publish("rp2040/INFOS",{"id":"rp2040"},True)
+
+        
     def oled_init(self):
         self.oledd = oled.OLED_1inch3()
         self.oledd.clear()
@@ -274,10 +288,11 @@ class PmPico:
             else:
                 self.client.resubscribe()
   
-    def publish(self,device_pub,tmsg):
+    def publish(self,device_pub,msg,keep=False):
         topic_pub=self.topic_prefix+device_pub
+        tmsg=json.dumps(msg)
         self.check_connection("Publish ")
-        rc=self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"))
+        rc=self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"),retain=keep)
 
         
     def check_msg(self):
@@ -295,41 +310,41 @@ class PmPico:
         sensor_temp = ADC(4)
         reading = sensor_temp.read_u16() * conversion_factor 
         temperature = 27 - (reading - 0.706)/0.001721
-        res={}
-        res["T"]=temperature
+        #res={}
+        #res["T"]=temperature
         #topic_pub = 'pico_w5500/%s/rp2040' % self.settings["id"] 
-        tmsg=json.dumps(res)
-        self.publish("rp2040", tmsg)
+        #tmsg=json.dumps(res)
+        self.publish("rp2040",{"T":temperature})
         self.draw_string("RP2040\nProcessor\n%.1f C" % temperature)
         #print("RP2040\nProcessor\n%.1f C" % temperature)
         time.sleep(1)
     def bme_status(self):
         t, p, h = self.bme.read_hrvalues()
-        res={}
-        res["T"]=t
-        res["P"]=p
-        res["H"]=h
+        #res={}
+        #res["T"]=t
+        #res["P"]=p
+        #res["H"]=h
         #topic_pub ='pico_w5500/%s/bme280' % self.settings["id"]
-        tmsg=json.dumps(res)
-        self.publish("bme280", tmsg)
+        #tmsg=json.dumps(res)
+        self.publish("bme", {"T":t,"P":p,"H":h})
         self.draw_string("BME280\nP=%.1f hPa\nT=%.1f C\nHum=%.1f %%" % (p,t,h))
         time.sleep(1)
     def hih_status(self):
         h,t=self.hih.read_sensor()
-        res={}
-        res["T"]=t
-        res["H"]=h
+        #res={}
+        #res["T"]=t
+        #res["H"]=h
         #topic_pub = 'pico_w5500/%s/hih' % self.settings["id"]
-        tmsg=json.dumps(res)
-        self.publish("hih", tmsg)
+        #tmsg=json.dumps(res)
+        self.publish("hih", {"T":t,"H":h})
         self.draw_string("HIH81310\nT=%.1f C\nHum=%.1f %%" % (t,h))
         time.sleep(1)
     def genesys_status(self):
         st=self.genesys.status()
         
         #topic_pub = 'pico_w5500/%s/genesys' % self.settings["id"]
-        tmsg=json.dumps(st)
-        self.publish("genesys", tmsg)
+        #tmsg=json.dumps(st)
+        self.publish("genesys", st)
         #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
         self.draw_string("genesys\n%.1f %.1f %.1f %.1f\nStatus %s" %
                          (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
@@ -339,8 +354,8 @@ class PmPico:
         st=self.zup.status()
         
         #topic_pub = 'pico_w5500/%s/zup' % self.settings["id"]
-        tmsg=json.dumps(st)
-        self.publish("zup", tmsg)
+        #tmsg=json.dumps(st)
+        self.publish("zup", st)
         #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
         self.draw_string("zup\n%.1f %.1f %.1f %.1f\nStatus %s" %
                          (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
@@ -350,8 +365,8 @@ class PmPico:
         st=self.cpwplus.status()
         #topic_pub = 'pico_w5500/%s/cpwplus' % self.settings["id"]
         
-        tmsg=json.dumps(st)
-        self.publish("cpwplus", tmsg)
+        #tmsg=json.dumps(st)
+        self.publish("cpwplus", st)
         #self.publish(topic_pub, tmsg)
         self.draw_string("CPWPLUS\nNet Weight %.2f kg" % (st["net"]))
         time.sleep(1)
@@ -359,8 +374,8 @@ class PmPico:
         bks_did=self.settings["brooks"]["devices"]
         if (len(bks_did)==1 and bks_did[0]==0):
             st=self.brooks.identity()
-            tmsg=json.dumps(st)
-            self.publish("brooksid", tmsg)
+            #tmsg=json.dumps(st)
+            self.publish("brooksid", st)
             
             self.draw_string("brooks disc\n Gas  %s \nID %d\n range %.2f" %
                          (st["gas_type"],st["device_id"],st["gas_flow_range"]))
@@ -373,8 +388,8 @@ class PmPico:
             st=self.brooks.status()
         
             #topic_pub = 'pico_w5500/%s/zup' % self.settings["id"]
-            tmsg=json.dumps(st)
-            self.publish("brooks_%s" % sti["gas_type"], tmsg)
+            #tmsg=json.dumps(st)
+            self.publish("brooks_%s" % sti["gas_type"], st)
             #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
             self.draw_string("brooks %s\n Set %.2f \nRead %.2f" %
                              (sti["gas_type"],st["setpoint_selected"],st["primary_variable"]))

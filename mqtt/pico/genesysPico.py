@@ -25,10 +25,12 @@ class genesysPico(gI):
         self.cb["SETON"]=self.setOn
         self.cb["SETOFF"]=self.setOff
         self.cb["STATUS"]=self.status
-        
+        self.cb["VIEW"]=self.view
         
         gI.__init__(self,address)
         self.setRemote(True)
+    def view(self):
+        return {"id":"zup","cmds":self.cb.keys()}        
     def write(self,s):
         self.uart.write(s+"\r")
         time.sleep_ms(500)

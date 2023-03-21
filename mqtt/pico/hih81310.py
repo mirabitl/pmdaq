@@ -21,6 +21,30 @@ class HIH81310:
         # temporary data holders which stay allocated
         self._l1_barray = bytearray(1)
         self._l4_barray = bytearray(4)
+        # callback
+        self.cb={}
+        self.cb["STATUS"]=self.status
+        self.cb["VIEW"]=self.view
+        
+    def status(self):
+        h,t=self.read_sensor()
+        return {"T":t,"H":h}
+    def view(self):
+        return {"id":"hih81310","cmds":self.cb.keys()}
+    def process_message(self,msg):
+        rep={}
+        cmd=msg["command"]
+        params=None
+        if "params" in msg:
+            params=msg["params"]
+        if not cmd in self.cb.keys():
+            print("unknown command",cmd)
+            return rep
+        if params == None:
+            return self.cb[cmd]()
+        else:
+            return self.cb[cmd](params)
+        return rep
  
     def read_sensor(self):
         """ Reads the data from the sensor.
