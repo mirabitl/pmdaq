@@ -41,26 +41,33 @@ class pico_monitor:
         #print("received topic =",str(message.topic))
         #print("received message =",str(message.payload.decode("utf-8")))
         lt=str(message.topic).split("/")
+        # At least session/system/device_name/INFOS
         if (len(lt)<4):
             return
         if (lt[0]!=self.session):
             return
         #l_device=lt[2].split("_")
-        if (lt[3]!="INFOS"):
+        if (lt[3]!="INFOS" and lt[3]!="GAS"):
             return
-        topic=lt[0]+"/"+lt[1]+"/"+lt[2]
-        if (not topic in self.topics):
-            self.topics.append(topic)
-            self.topicm[str(message.topic)]=str(message.payload.decode("utf-8"))
+        # Add topics to listen
+        # for INFOS registered devices
+        if (lt[3]=="INFOS"):
+            topic=lt[0]+"/"+lt[1]+"/"+lt[2]
+            if (not topic in self.topics):
+                self.topics.append(topic)
+                self.topicm[str(message.topic)]=str(message.payload.decode("utf-8"))
+        # Store in MQTT_INFOS, registered devices and gas informations
         r_m={}
         r_m["ctime"]=time.time()
         r_m["timestamp"]=message.timestamp
         r_m["content"]=json.loads(str(message.payload.decode("utf-8")));
+        r_m["type"]=lt[3]
         # Store in Mongo DB if connected
         if (self.msi!=None):
             #self.msi.store(p[0],p[1], r_m["ctime"], r_m["content"])
-        
-            self.msi.store(message.topic,r_m["timestamp"],r_m["ctime"],r_m["content"])
+            
+            self.msi.store_info(message.topic,r_m)
+            #r_m["timestamp"],r_m["ctime"],r_m["content"])
 
             
     def on_connect(self,client, userdata, flags, rc):
