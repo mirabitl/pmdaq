@@ -59,8 +59,17 @@ class PmPico:
                 self.brooks_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["baud"],s_dv["rst"],s_dv["devices"][0])
                 self.devices["brooks"]={"period":s_dv["period"],"last":0,"measure":self.brooks_status,
                                          "callback":self.brooks.process_message}
-                stv=self.brooks.view()
-                self.publish("brooks/INFOS",stv,True)
+
+                
+                if ((len(s_dv["devices"])==1) and s_dv["devices"][0]==0):
+                    # Detection mode
+                    st=self.brooks.identity()
+                    #tmsg=json.dumps(st)
+                    self.publish("brooks/GAS/%s" % st["gas_type"], st,True)
+                    self.settings["brooks"]["devices"][0]=st["device_id"]
+                else:
+                    stv=self.brooks.view()
+                    self.publish("brooks/INFOS",stv,True)
 
         # cpwplus
         if "cpwplus" in self.settings.keys():

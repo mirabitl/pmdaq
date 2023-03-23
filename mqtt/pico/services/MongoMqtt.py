@@ -54,6 +54,49 @@ class MongoMqtt:
         res = self.db.MQTT_ITEMS.insert_one(mondoc)
         #print(res)
 
+    def store_info(self, topic, r):
+        mondoc = {}
+        mondoc["topic"] = topic
+        mondoc["timestamp"] = r["timestamp"]
+        mondoc["ctime"] = r["ctime"]
+        mondoc["message"] =r["content"]
+        mondoc["type"]=r["type"]
+        #print("storing",mondoc)
+        res = self.db.MQTT_INFOS.insert_one(mondoc)
+        #print(res)
+
+    def check_infos(self,session,i_type="INFOS",subsystem=None,device=None,from_time=0):
+        topic=session
+        if (subsystem!=None):
+            topic=topic+"/"+susbsystem
+        if (device!=None):
+            topic=topic+"/"+device
+        topic=topic+"/#"
+        depth=10000
+        mintime = 0
+        if (from_time > 0):
+            mintime = time.time()-from_time
+        res = self.db.MQTT_INFOS.find({"topic": {'$regex': topic}, "ctime": {'$gt': mintime},"type":{'$regex': i_type}}, {
+            "_id": 0}).limit(depth).sort("ctime", pymongo.DESCENDING)
+        return res
+
+        #return None
+    def infos(self, topic, depth=50000, from_time=0):
+        """
+        List all the run informations stored
+        """
+       
+        mintime = 0
+        if (from_time > 0):
+            mintime = time.time()-from_time
+
+        res = self.db.MQTT_INFOS.find({"topic": {'$regex': topic}, "ctime": {'$gt': mintime}}, {
+                                      "_id": 0}).limit(depth).sort("ctime", pymongo.DESCENDING)
+        for x in res:
+            print(x)
+            sti = time.strftime('%Y-%m-%d %H:%M:%S',
+                                time.localtime(x["ctime"]))
+            #m = x["message"]
     def items(self, topic, depth=50000, from_time=0):
         """
         List all the run informations stored
@@ -74,18 +117,41 @@ class MongoMqtt:
             sti = time.strftime('%Y-%m-%d %H:%M:%S',
                                 time.localtime(x["ctime"]))
             m = x["message"]
+            ltop=x["topic"].split("/")
+            if (len(ltop)==4 and ltop[3]=="INFOS"):
+                continue
             #print(sti, m)
             if (device == "bme"):
-                print("%s P=%.2f mbar T=%.2f K %.2f C Humidity %.2f %% " %
-                      (sti, m["P"], m["T"]+273.15, m["T"], m["H"]))
+                if  ( "P" in m.keys() and "T" in m.keys() and "H" in m.keys()): 
+                    print("%s P=%.2f mbar T=%.2f K %.2f C Humidity %.2f %% " %
+                          (sti, m["P"], m["T"]+273.15, m["T"], m["H"]))
+                else:
+                    print(sti,x["topic"],m)
             if (device == "hih"):
-                print("%s H0=%.2f %% T0=%.2f C " % (sti, m["H"], m["T"]))
+                if  ( "T" in m.keys() and "H" in m.keys()): 
+                    print("%s H0=%.2f %% T0=%.2f C " % (sti, m["H"], m["T"]))
+                else:
+                    print(sti,x["topic"],m)
             if (device == "genesys"):
-                print("%s VSET=%.2f V VOut=%.2f V IOut=%.2f V Status %s " %
-                      (sti, m["vset"], m["vout"], m["iout"], m["status"]))
+                tags=["vset","vout","iout","iset","status"]
+                ok=True
+                for t in tags:
+                    ok =ok and t in m.keys()
+                if (ok):
+                    print("%s VSET=%.2f V VOut=%.2f V IOut=%.2f V Status %d " %
+                          (sti, m["vset"], m["vout"], m["iout"], m["status"]))
+                else:
+                    print(sti,x["topic"],m)
             if (device == "zup"):
-                print(" VSET=%.2f V VOut=%.2f V IOut=%.2f A Imax=%.2f A  Status %s   " % (
-                    m["vset"], m["vout"], m["iout"], m["iset"], m["status"]))
+                tags=["vset","vout","iout","iset","status"]
+                ok=True
+                for t in tags:
+                    ok =ok and t in m.keys()
+                if (ok):
+                    print(" VSET=%.2f V VOut=%.2f V IOut=%.2f A Imax=%.2f A  Status %d   " % (
+                        m["vset"], m["vout"], m["iout"], m["iset"], m["status"]))
+                else:
+                    print(sti,x["topic"],m)
 
     def last(self, topics, lim=20):
         """

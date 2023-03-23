@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+import os
+import socks
+import socket
+import json
+from copy import deepcopy
+import base64
+import time
+import argparse
+#import requests //tres long
+import MongoMqtt as mg
+import sys
+
+
+#print("COUCOU")
+parser = argparse.ArgumentParser()
+
+# configure all the actions
+grp_action = parser.add_mutually_exclusive_group()
+
+grp_action.add_argument('--items', action='store_true',help='List all the available items')
+grp_action.add_argument('--csv', action='store_true',help='List all the available items in csv file specified by --out fname (default /tmp/mgslow.csv)')
+
+
+
+
+# Arguments
+parser.add_argument('--path', action='store',type=str,default=",",dest='path',help='item path' )
+parser.add_argument('--out', action='store',type=str,default="/tmp/mgslow.csv",dest='fout',help='output file name for csv' )
+parser.add_argument('--depth', action='store', type=int,
+                    default=None,dest='depth', help='number of last items')
+parser.add_argument('--since', action='store', type=str,
+                    default=None,dest='since', help='get items from now-since to now (in seconds or min:sec or hh:min::sec')
+
+if len(sys.argv)==1:
+    parser.print_help(sys.stderr)
+    sys.exit(1)
+
+results = parser.parse_args()
+# create the default access
+#print("COUCOU")
+
+_wdd=mg.instance()
+
+
+# Analyse results
+# analyse the command
+lcgi = {}
+r_cmd = None
+lsince=1000000000
+if (results.since!=None):
+    s_si=results.since.split(":")
+    if (len(s_si)==1):
+        lsince=int(s_si[0])
+    if (len(s_si)==2):
+        lsince=int(s_si[0])*60+int(s_si[1])
+    if (len(s_si)==3):
+        lsince=int(s_si[0])*3600+int(s_si[1])*60+int(s_si[2])
+if (results.items):
+    r_cmd = 'items'
+
+    ldepth=1000000000
+    comment="No comment given"
+    if (results.path == None):
+        print('Please specify the path --path=name')
+        exit(0)
+    if (results.depth != None):
+       ldepth=results.depth
+       #print(comment)
+
+    _wdd.items(results.path,depth=ldepth,from_time=lsince)
+    exit(0)
+if (results.csv):
+    r_cmd = 'csv'
+    lsince=1000000000
+    ldepth=1000000000
+    comment="No comment given"
+    if (results.path == None):
+        print('Please specify the path --path=name')
+        exit(0)
+    if (results.since != None):
+       lsince=results.since
+       #print(version)
+    if (results.depth != None):
+       ldepth=results.depth
+       #print(comment)
+
+    _wdd.csv(results.path,depth=ldepth,from_time=lsince,file_name=results.fout)
+    exit(0)
+
+exit(0)
