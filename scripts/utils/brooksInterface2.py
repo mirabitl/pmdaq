@@ -18,6 +18,7 @@ class abstractBrooks:
             #print(self.l_address)
             print("Device found %d %d %d %x\n" % (mn["manufacturer_id"],mn["manufacturer_device_type"],mn["device_id"],int.from_bytes(self.l_address,"big")))
             self.device_id=mn["device_id"]
+            self.use_device(self.device_id)
         else:
             manufacturer_id=10
             manufacturer_device_type=50

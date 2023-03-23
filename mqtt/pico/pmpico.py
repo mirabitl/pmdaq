@@ -29,11 +29,13 @@ class PmPico:
         # parse JSON file
         self.settings=json.load(open("settings.json"))
         self.debug=False
+        self.client_id="wiz"
         if "debug" in  self.settings.keys():
             self.debug=self.settings["debug"]==1
         if "id" in self.settings.keys():
             if "subid" in self.settings.keys():
                 self.topic_prefix=self.settings["id"]+"/"+self.settings["subid"]+"/"
+                self.client_id=self.settings["id"]+"_"+self.settings["subid"]
         #Oled
         self.oled_init()
         
@@ -65,11 +67,20 @@ class PmPico:
                     # Detection mode
                     st=self.brooks.identity()
                     #tmsg=json.dumps(st)
+                    print(st)
+                    #time.sleep(10)
                     self.publish("brooks/GAS/%s" % st["gas_type"], st,True)
                     self.settings["brooks"]["devices"][0]=st["device_id"]
                 else:
                     stv=self.brooks.view()
                     self.publish("brooks/INFOS",stv,True)
+                    for d in s_dv["devices"]:
+                        self.brooks.use_device(d)
+                        st=self.brooks.identity()
+                        #tmsg=json.dumps(st)
+                        print(st)
+                        #time.sleep(10)
+                        self.publish("brooks/GAS/%s" % st["gas_type"], st,True)
 
         # cpwplus
         if "cpwplus" in self.settings.keys():
@@ -270,7 +281,9 @@ class PmPico:
     def mqtt_connect(self,mqtt_server):
         self.draw_string('Connecting to\n%s \nMQTT Broker' % (mqtt_server))
         time.sleep(1)
-        self.client = MQTTClient(client_id, mqtt_server, keepalive=6000)
+        d="%d" %(int(time.time())%20)
+        print("client ID ",d)
+        self.client = MQTTClient(self.client_id+d, mqtt_server, keepalive=60000)
         self.client.set_callback(self.mqtt_cb)
 
         while True:
@@ -293,6 +306,7 @@ class PmPico:
             while self.client.is_conn_issue():
                 # If the connection is successful, the is_conn_issue
                 # method will not return a connection error.
+                #time.sleep(1)
                 self.client.reconnect()
             else:
                 self.client.resubscribe()
@@ -300,6 +314,7 @@ class PmPico:
     def publish(self,device_pub,msg,keep=False):
         topic_pub=self.topic_prefix+device_pub
         tmsg=json.dumps(msg)
+        #print("PUBLISH ",topic_pub,tmsg)
         self.check_connection("Publish ")
         rc=self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"),retain=keep)
 

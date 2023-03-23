@@ -16,7 +16,7 @@ class  brooksPico(bI):
         self.value_read="NONE"
         self.cb={}
         self.cb["SETFLOW"]=self.set_flow
-        self.cb["STATUS"]=self.statu
+        self.cb["STATUS"]=self.status
         self.cb["VIEW"]=self.view
         self.rst = Pin(rst_pin,mode=Pin.OUT)
         self.rst.off()
