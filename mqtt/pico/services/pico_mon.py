@@ -119,11 +119,13 @@ class pico_monitor:
                 print(len(p),x)
                 if (len(p)>=4 and p[3]=="INFOS"):
                     continue
+                if (len(p)>=4 and p[3]=="GAS"):
+                    continue
                 metric=""
                 for i in range(len(p)):
                     metric=metric+p[i]+"."
                 metric=metric+x
-                #print(metric,x)
+                print(metric,x)
                 self.gsender.send(metric,r_m["content"][x])
     def Connect(self):
         self.cname="monitor-%d" % os.getpid()

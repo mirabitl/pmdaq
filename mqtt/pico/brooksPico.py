@@ -37,7 +37,7 @@ class  brooksPico(bI):
         
         self.rst.on();
         n=self.uart.write(cmd);
-        time.sleep(tmax*1.2);
+        time.sleep(tmax*1.25);
         self.rst.off()
         
 

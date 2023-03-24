@@ -15,6 +15,7 @@ import genesysPico
 import zupPico
 import brooksPico
 import cpwplus
+import random
 #mqtt config
 
 client_id = 'wiz'
@@ -35,7 +36,8 @@ class PmPico:
         if "id" in self.settings.keys():
             if "subid" in self.settings.keys():
                 self.topic_prefix=self.settings["id"]+"/"+self.settings["subid"]+"/"
-                self.client_id=self.settings["id"]+"_"+self.settings["subid"]
+                nb=random.randint(1,100)
+                self.client_id=self.settings["id"]+"_"+self.settings["subid"]+"_%d" % nb
         #Oled
         self.oled_init()
         
@@ -280,10 +282,10 @@ class PmPico:
     # MQTT Connection
     def mqtt_connect(self,mqtt_server):
         self.draw_string('Connecting to\n%s \nMQTT Broker' % (mqtt_server))
-        time.sleep(1)
-        d="%d" %(int(time.time())%20)
-        print("client ID ",d)
-        self.client = MQTTClient(self.client_id+d, mqtt_server, keepalive=60000)
+        #time.sleep(1)
+        #d="%d" %(int(time.time())%20)
+        print("client ID ",self.client_id)
+        self.client = MQTTClient(self.client_id, mqtt_server, keepalive=60)
         self.client.set_callback(self.mqtt_cb)
 
         while True:
