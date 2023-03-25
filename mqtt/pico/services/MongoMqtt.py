@@ -68,16 +68,26 @@ class MongoMqtt:
     def check_infos(self,session,i_type="INFOS",subsystem=None,device=None,from_time=0):
         topic=session
         if (subsystem!=None):
-            topic=topic+"/"+susbsystem
+            topic=topic+"/"+subsystem
         if (device!=None):
             topic=topic+"/"+device
-        topic=topic+"/#"
-        depth=10000
+        topic=topic
+        #print(topic)
+        depth=1000000
+        
         mintime = 0
         if (from_time > 0):
             mintime = time.time()-from_time
-        res = self.db.MQTT_INFOS.find({"topic": {'$regex': topic}, "ctime": {'$gt': mintime},"type":{'$regex': i_type}}, {
-            "_id": 0}).limit(depth).sort("ctime", pymongo.DESCENDING)
+        res = self.db.MQTT_INFOS.find(
+          {"$and": [
+              {"topic": {'$regex': topic}},
+              {"ctime": {'$gt': mintime}},
+              {"type": {'$regex':i_type}}
+          ]
+           },
+            {"_id": 0}).limit(depth).sort("ctime", pymongo.DESCENDING)
+        #for x in res:
+        #    print(x)
         return res
 
         #return None

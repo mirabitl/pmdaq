@@ -26,6 +26,7 @@ class pico_monitor:
         login = os.getenv("MGDBMON", "NONE")
         if (login != "NONE"):
             self.connectMongo()
+            self.check_topics()
         ghost = os.getenv("GRAPHITEHOST", "NONE")
         self.gsender=None
         if (ghost != "NONE"):
@@ -34,7 +35,15 @@ class pico_monitor:
 
     def connectMongo(self):
         self.msi=ms.instance()
-        
+
+    def check_topics(self):
+        r=self.msi.check_infos(self.session,i_type="INFO")
+        for x in r:
+            lt=x["topic"].split("/")
+            topic=lt[0]+"/"+lt[1]+"/"+lt[2]
+            if (not topic in self.topics):
+                self.topics.append(topic)
+                self.topicm[topic]=x["message"]  
     def on_topics(self,client, userdata, message):
         #time.sleep(1)
 
@@ -92,6 +101,10 @@ class pico_monitor:
 
         p=message.topic.split("/")
         if (p[0]!=self.session):
+            return
+        if (p[len(p)-1]=="INFOS"):
+            return
+        if (len(p)>3 and p[3]=="GAS"):
             return
         if ( not message.topic in self.rcv_msg):
             self.rcv_msg[message.topic]=[]
@@ -171,7 +184,7 @@ class pico_monitor:
 if __name__ == "__main__":
     s=pico_monitor("lyoilc07",1883,"pico_test")
     s.Connect()
-    s.ListTopics()
+    #s.ListTopics()
     s.loop()
     while 1:
         time.sleep(1)

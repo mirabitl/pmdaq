@@ -30,7 +30,7 @@ class genesysPico(gI):
         gI.__init__(self,address)
         self.setRemote(True)
     def view(self):
-        return {"id":"zup","cmds":list(self.cb.keys())}        
+        return {"id":"genesys","cmds":list(self.cb.keys())}        
     def write(self,s):
         self.uart.write(s+"\r")
         time.sleep_ms(500)
