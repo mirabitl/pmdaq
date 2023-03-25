@@ -45,7 +45,8 @@ class  brooksPico(bI):
         
 
     def read_one_byte(self):
-        return self.uart.read(1)
+        b=self.uart.read(1)
+        return b
 
     def process_message(self,msg):
         rep={}
