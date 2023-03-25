@@ -128,17 +128,33 @@ class abstractBrooks:
         
     def readAnswer(self):
         time.sleep(0.2)
-        return self.read_response()
+        rep={}
+        try:
+            rep=self.read_response()
+        except RuntimeError:
+            print("Cannot read byte")
+        return rep
+            
         #for msg in self.unpacker:
         #    return (msg)	
 
     def read_response(self):
         # must work with at least two bytes to start with
         while len(self.buf) < 3:
-            self.buf += self.read_one_byte()
+            b=self.read_one_byte()
+            if (b!=None):
+                self.buf += b
+            else:
+                raise RuntimeError("Cannot read byte")
         # keep reading until we find a minimum preamble
         while self.buf[:3] not in [b"\xFF\xFF\x06", b"\xFF\xFF\x86"]:
-            self.buf += self.read_one_byte()
+            b=self.read_one_byte()
+            if (b!=None):
+                self.buf += b
+            else:
+                raise RuntimeError("Cannot read byte")
+
+            #self.buf += self.read_one_byte()
             self.buf = self.buf[1:]
             #self._decoding_error("Head of buffer not recognized as valid preamble")
         # now the head of our buffer is the start charachter plus two preamble
@@ -148,12 +164,24 @@ class abstractBrooks:
         else:
             l = 8
         while len(self.buf) < l:
-            self.buf += self.read_one_byte()
+            b=self.read_one_byte()
+            if (b!=None):
+                self.buf += b
+            else:
+                raise RuntimeError("Cannot read byte")
+
+            #self.buf += self.read_one_byte()
         # now we can use the bytecount to read through the data and checksum
         bytecount = self.buf[l - 3]
         response_length = l + bytecount - 1
         while len(self.buf) < response_length:
-            self.buf += self.read_one_byte()
+            b=self.read_one_byte()
+            if (b!=None):
+                self.buf += b
+            else:
+                raise RuntimeError("Cannot read byte")
+
+            #self.buf += self.read_one_byte()
         # checksum
         checksum = int.from_bytes(
             hp.calculate_checksum(self.buf[2 : response_length - 1]), "big"

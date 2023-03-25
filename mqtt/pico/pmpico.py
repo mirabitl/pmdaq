@@ -15,6 +15,8 @@ import genesysPico
 import zupPico
 import brooksPico
 import cpwplus
+import random
+from machine import WDT
 #mqtt config
 
 client_id = 'wiz'
@@ -35,7 +37,8 @@ class PmPico:
         if "id" in self.settings.keys():
             if "subid" in self.settings.keys():
                 self.topic_prefix=self.settings["id"]+"/"+self.settings["subid"]+"/"
-                self.client_id=self.settings["id"]+"_"+self.settings["subid"]
+                nb=random.randint(1,100)
+                self.client_id=self.settings["id"]+"_"+self.settings["subid"]+"_%d" % nb
         #Oled
         self.oled_init()
         
@@ -145,7 +148,7 @@ class PmPico:
         self.writer = Writer(self.oledd, freesans12)  # verbose = False to suppress console output
         Writer.set_textpos(self.oledd, 0, 0)  # In case a previous test has altered this
         self.draw_string('PM Slow\nC.Combaret\nL.Mirabito\nInitialising')
-        time.sleep(2)
+        time.sleep(1)
         
     def draw_string(self,s_text):
         if (self.debug):
@@ -202,7 +205,7 @@ class PmPico:
         self.i2c0=I2C(i2cid,sda=Pin(psda), scl=Pin(pscl), freq=100000)    #initializing the I2C method
         self.bme = bme280.BME280(i2c=self.i2c0)
         self.draw_string("BME280\ninitialised\nI2C0\nSDA4 SCL5" )
-        time.sleep(2)
+        time.sleep(1)
     # HIH81310 init
     def hih_init(self,i2cid,psda,pscl):
         pin_27 = Pin(pscl,pull=Pin.PULL_UP)
@@ -212,7 +215,7 @@ class PmPico:
         pin_26 =Pin(psda,pull=Pin.PULL_UP)
         self.hih=hih81310.HIH81310(i2c=self.i2c1)
         self.draw_string("HIH81310\ninitialised\nI2C1\nSDA26 SCL27")
-        time.sleep(2)
+        time.sleep(1)
     
         
     def wifi_init(self):
@@ -229,9 +232,9 @@ class PmPico:
         wlan.connect(settings.ssid,settings.password)
         while not wlan.isconnected():
             time.sleep(1)
-        time.sleep(2)
+        time.sleep(1)
         self.draw_string('joined to\n%s\n%s' % (settings.ssid,str(wlan.ifconfig()[0])))
-        time.sleep(2)
+        time.sleep(1)
 
     #W5x00 chip init
     def w5x00_init(self):
@@ -252,14 +255,14 @@ class PmPico:
         
         self.draw_string("Wiznet IP\n%s" % str(nic.ifconfig()))
         #print('IP address :', nic.ifconfig())
-        time.sleep(2)
+        time.sleep(1)
         while not nic.isconnected():
             self.draw_string("Waiting\n%s" % str(nic.ifconfig()))
             #print("waiting for connection ...",macaddress)
-            time.sleep(2)
+            time.sleep(1)
             #print(nic.regs())
         self.draw_string("Connected\n%s" % str(nic.ifconfig()))
-        time.sleep(5)
+        time.sleep(1)
 
     # MQTT Call_back
     def mqtt_cb(self,topic, msg,retain,dup):
@@ -280,21 +283,21 @@ class PmPico:
     # MQTT Connection
     def mqtt_connect(self,mqtt_server):
         self.draw_string('Connecting to\n%s \nMQTT Broker' % (mqtt_server))
-        time.sleep(1)
-        d="%d" %(int(time.time())%20)
-        print("client ID ",d)
-        self.client = MQTTClient(self.client_id+d, mqtt_server, keepalive=60000)
+        #time.sleep(1)
+        #d="%d" %(int(time.time())%20)
+        print("client ID ",self.client_id)
+        self.client = MQTTClient(self.client_id, mqtt_server, keepalive=60)
         self.client.set_callback(self.mqtt_cb)
 
         while True:
             try:
                 self.client.connect()
                 self.draw_string('Connected to\n%s \nMQTT Broker'%(mqtt_server))
-                time.sleep(2)
+                time.sleep(1)
                 break
             except OSError as e:
                 self.draw_string("MQtt.\nFailed\nRetrying")
-            time.sleep(5)
+            time.sleep(1)
         topic=self.topic_prefix+"CMD"
         self.draw_string("Subscribing to \n %s "  % topic)
         self.client.subscribe(str.encode(topic))
@@ -403,7 +406,7 @@ class PmPico:
             
             self.draw_string("brooks disc\n Gas  %s \nID %d\n range %.2f" %
                          (st["gas_type"],st["device_id"],st["gas_flow_range"]))
-            time.sleep(3)
+            time.sleep(1)
             return
         # Normal readout
         for id in bks_did:
@@ -420,9 +423,14 @@ class PmPico:
             time.sleep(1)
         #time.sleep(t_sleep)
 def main():
+
     pm=PmPico()
-   
+    actives={}
+    actives["ON"]=[]
+    for d in pm.devices.keys():
+        actives["ON"].append(d)
     it=0
+    wdt = WDT(timeout=5000)
     while True:
         for d in pm.devices.keys():
             pm.check_msg()
@@ -432,7 +440,11 @@ def main():
                 di["last"]=tc
                 if "measure" in di.keys():
                     di["measure"]()
+                    wdt.feed()
                     print("Next iteration \n %d" % it)
+        wdt.feed()
+        if (it%1500==0):
+            pm.publish("RUNNING",actives,True)
         it=it+1
         #pm.client.check_msg()
         time.sleep_ms(200)
