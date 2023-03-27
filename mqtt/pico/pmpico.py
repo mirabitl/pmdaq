@@ -139,7 +139,7 @@ class PmPico:
                 self.devices["rp2040"]={"period":s_dv["period"],"last":0,"measure":self.rp2040_status}
                 self.publish("rp2040/INFOS",{"id":"rp2040"},True)
         # Watch dog
-        self.wdt = WDT(timeout=5000)
+        self.wdt = WDT(timeout=8000)
         
     def oled_init(self):
         self.oledd = oled.OLED_1inch3()
@@ -266,19 +266,27 @@ class PmPico:
         self.draw_string("Connected\n%s" % str(nic.ifconfig()))
         time.sleep(1)
 
+    def publish_running(self):
+        actives={}
+        actives["location"]=self.settings["id"]
+        actives["subsystem"]=self.settings["subid"]
+        actives["devices"]=list(self.devices.keys())
+        topic_pub=self.settings["id"]+"/RUNNING"
+        tmsg=json.dumps(actives)
+        #print("PUBLISH ",topic_pub,tmsg)
+        self.check_connection("Publish ")
+        rc=self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"),retain=False)
+
     # MQTT Call_back
     def mqtt_cb(self,topic, msg,retain,dup):
       print((topic, msg.decode("utf-8")))
       p_msg=json.loads(msg.decode("utf-8"))
       print(p_msg)
-      if topic==self.query_list:
-         actives={}
-         actives["location"]=self.settings["id"]
-         actives["subsystem"]=self.settings["subid"]
-         actives["devices"]=list(pm.devices.keys())
-         self.publish("RUNNING",actives)
-         if (self.wdt!=None):
-            self.wdt.feed()
+      print(topic,self.query_list)
+      if topic.decode("utf-8")==self.query_list:
+         self.publish_running()
+         
+         self.wdt_feed()
          return
 
       if not "command" in p_msg.keys():
@@ -288,14 +296,13 @@ class PmPico:
           return
       self.draw_string("Command\ndev=%s\ncmd=%s" % (p_msg["device"],p_msg["command"]))
       #return
-      if (self.wdt!=None):
-          self.wdt.feed()
+      self.wdt_feed()
       # Process any command
       if p_msg["device"] in self.devices.keys():
           if "callback" in self.devices[p_msg["device"]].keys():
               self.devices[p_msg["device"]]["callback"](p_msg)
-      if (self.wdt!=None):
-          self.wdt.feed()        
+      
+      self.wdt_feed()        
     # MQTT Connection
     def mqtt_connect(self,mqtt_server):
         self.draw_string('Connecting to\n%s \nMQTT Broker' % (mqtt_server))
@@ -329,8 +336,7 @@ class PmPico:
                 # method will not return a connection error.
                 #time.sleep(1)
                 self.client.reconnect()
-                if (self.wdt!=None):
-                    self.wdt.feed()
+                self.wdt_feed()
             else:
                 self.client.resubscribe()
   
@@ -365,8 +371,8 @@ class PmPico:
         self.draw_string("RP2040\nProcessor\n%.1f C" % temperature)
         #print("RP2040\nProcessor\n%.1f C" % temperature)
         time.sleep(1)
-        if (self.wdt!=None):
-            self.wdt.feed()
+        
+        self.wdt_feed()
     def bme_status(self):
         t, p, h = self.bme.read_hrvalues()
         #res={}
@@ -378,8 +384,7 @@ class PmPico:
         self.publish("bme", {"T":t,"P":p,"H":h})
         self.draw_string("BME280\nP=%.1f hPa\nT=%.1f C\nHum=%.1f %%" % (p,t,h))
         time.sleep(1)
-        if (self.wdt!=None):
-          self.wdt.feed()
+        self.wdt_feed()
     def hih_status(self):
         h,t=self.hih.read_sensor()
         #res={}
@@ -390,8 +395,7 @@ class PmPico:
         self.publish("hih", {"T":t,"H":h})
         self.draw_string("HIH81310\nT=%.1f C\nHum=%.1f %%" % (t,h))
         time.sleep(1)
-        if (self.wdt!=None):
-            self.wdt.feed()
+        self.wdt_feed()
     def genesys_status(self):
         st=self.genesys.status()
         
@@ -403,8 +407,7 @@ class PmPico:
                          (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
         time.sleep(1)
         #time.sleep(t_sleep)
-        if (self.wdt!=None):
-            self.wdt.feed()
+        self.wdt_feed()
     def zup_status(self):
         st=self.zup.status()
         
@@ -415,8 +418,7 @@ class PmPico:
         self.draw_string("zup\n%.1f %.1f %.1f %.1f\nStatus %s" %
                          (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
         time.sleep(1)
-        if (self.wdt!=None):
-            self.wdt.feed()        
+        self.wdt_feed()        
         #time.sleep(t_sleep)
     def cpwplus_status(self):
         st=self.cpwplus.status()
@@ -427,8 +429,7 @@ class PmPico:
         #self.publish(topic_pub, tmsg)
         self.draw_string("CPWPLUS\nNet Weight %.2f kg" % (st["net"]))
         time.sleep(1)
-        if (self.wdt!=None):
-            self.wdt.feed()
+        self.wdt_feed()
     def brooks_status(self):
         bks_did=self.settings["brooks"]["devices"]
         if (len(bks_did)==1 and bks_did[0]==0):
@@ -439,8 +440,7 @@ class PmPico:
             self.draw_string("brooks disc\n Gas  %s \nID %d\n range %.2f" %
                          (st["gas_type"],st["device_id"],st["gas_flow_range"]))
             time.sleep(1)
-            if (self.wdt!=None):
-                self.wdt.feed()
+            self.wdt_feed()
             return
         # Normal readout
         for id in bks_did:
@@ -455,12 +455,16 @@ class PmPico:
             self.draw_string("brooks %s\n Set %.2f \nRead %.2f" %
                              (sti["gas_type"],st["setpoint_selected"],st["primary_variable"]))
             time.sleep(1)
-            if (self.wdt!=None):
-                self.wdt.feed()
+            self.wdt_feed()
         #time.sleep(t_sleep)
+    def wdt_feed(self):
+        if (self.wdt!=None):
+           self.wdt.feed()
 def main():
 
     pm=PmPico()
+    print("Init done  \n")
+
     #List of active devices
     actives={}
     actives["ON"]=list(pm.devices.keys())
@@ -475,11 +479,15 @@ def main():
             if ((tc-di["last"])>di["period"]):
                 di["last"]=tc
                 if "measure" in di.keys():
+                    
+                    pm.wdt_feed()
                     di["measure"]()
-                    wdt.feed()
+                    pm.wdt_feed()
                     print("Next iteration \n %d" % it)
-        if (pm.wdt!=None):
-            pm.wdt.feed()
+        #print("feeding \n")
+        pm.wdt_feed()
+        #if (it%5==0):
+        #    pm.publish_running()
 
 
         it=it+1
