@@ -282,7 +282,13 @@ class PmPico:
       print((topic, msg.decode("utf-8")))
       p_msg=json.loads(msg.decode("utf-8"))
       print(p_msg)
-      print(topic,self.query_list)
+      #print(topic,self.query_list)
+      if topic.decode("utf-8")==self.query_reset:
+         time.sleep(15)
+         
+         #self.wdt_feed()
+         return
+
       if topic.decode("utf-8")==self.query_list:
          self.publish_running()
          
@@ -326,7 +332,8 @@ class PmPico:
         self.client.subscribe(str.encode(topic))
         self.query_list=self.topic_prefix.split("/")[0]+"/LIST"
         self.client.subscribe(str.encode(self.query_list))
-    
+        self.query_reset=self.topic_prefix+"RESET"
+        self.client.subscribe(str.encode(self.query_reset))   
         
     def check_connection(self,method):
         if self.client.is_conn_issue():
