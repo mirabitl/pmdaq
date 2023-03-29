@@ -27,6 +27,7 @@ class PmPico:
  
     def __init__(self,**kwargs):
         #
+        self.client=None
         self.wdt=None
         self.topic_prefix= "pico_w5500/Test/"
         # parse JSON file
@@ -65,7 +66,7 @@ class PmPico:
                 self.brooks_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["baud"],s_dv["rst"],s_dv["devices"][0])
                 self.devices["brooks"]={"period":s_dv["period"],"last":0,"measure":self.brooks_status,
                                          "callback":self.brooks.process_message}
-
+                self.ping();
                 
                 if ((len(s_dv["devices"])==1) and s_dv["devices"][0]==0):
                     # Detection mode
@@ -75,6 +76,7 @@ class PmPico:
                     #time.sleep(10)
                     self.publish("brooks/GAS/%s" % st["gas_type"], st,True)
                     self.settings["brooks"]["devices"][0]=st["device_id"]
+                    self.ping()
                 else:
                     stv=self.brooks.view()
                     self.publish("brooks/INFOS",stv,True)
@@ -85,18 +87,21 @@ class PmPico:
                         print(st)
                         #time.sleep(10)
                         self.publish("brooks/GAS/%s" % st["gas_type"], st,True)
-
+                    self.ping()
         # cpwplus
         if "cpwplus" in self.settings.keys():
             s_dv=self.settings["cpwplus"]
             if  s_dv["use"]==1:
+                self.ping()
                 self.devices["cpwplus"]={"period":s_dv["period"],"last":0,"measure":self.cpwplus_status}
                 self.cpwplus_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["baud"])
                 self.publish("cpwplus/INFOS",{"id":"adam_cpw+"},True)
+
         #Genesys
         if "genesys" in self.settings.keys():
             s_dv=self.settings["genesys"]
             if  s_dv["use"]==1:
+                self.ping()
                 self.genesys_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["address"],s_dv["baud"])
                 self.devices["genesys"]={"period":s_dv["period"],"last":0,"measure":self.genesys_status,
                                          "callback":self.genesys.process_message}
@@ -107,6 +112,7 @@ class PmPico:
         if "zup" in self.settings.keys():
             s_dv=self.settings["zup"]
             if  s_dv["use"]==1:
+                self.ping()
                 self.zup_init(s_dv["uart"],s_dv["tx"],s_dv["rx"],s_dv["address"],s_dv["baud"])
                 self.devices["zup"]={"period":s_dv["period"],"last":0,"measure":self.zup_status,
                                          "callback":self.zup.process_message}
@@ -115,7 +121,8 @@ class PmPico:
         #BME
         if "bme" in self.settings.keys():
             s_dv=self.settings["bme"]
-            if  s_dv["use"]==1:               
+            if  s_dv["use"]==1:
+                self.ping()
                 self.bme_init(s_dv["i2c"],s_dv["sda"],s_dv["scl"])
                 self.devices["bme"]={"period":s_dv["period"],"last":0,"measure":self.bme_status,
                                      "callback":self.bme.process_message}
@@ -125,6 +132,7 @@ class PmPico:
         if "hih" in self.settings.keys():
             s_dv=self.settings["hih"]
             if  s_dv["use"]==1:
+                self.ping()
                 self.hih_init(s_dv["i2c"],s_dv["sda"],s_dv["scl"])
                 self.devices["hih"]={"period":s_dv["period"],"last":0,"measure":self.hih_status,
                                      "callback":self.hih.process_message}                                
@@ -136,11 +144,15 @@ class PmPico:
         if "rp2040" in self.settings.keys():
             s_dv=self.settings["rp2040"]
             if  s_dv["use"]==1:
+                self.ping()
                 self.devices["rp2040"]={"period":s_dv["period"],"last":0,"measure":self.rp2040_status}
                 self.publish("rp2040/INFOS",{"id":"rp2040"},True)
         # Watch dog
         self.wdt = WDT(timeout=8000)
-        
+
+    def ping(self):
+        if (self.client!=None):
+            self.client.ping()
     def oled_init(self):
         self.oledd = oled.OLED_1inch3()
         self.oledd.clear()
@@ -377,7 +389,7 @@ class PmPico:
         self.publish("rp2040",{"T":temperature})
         self.draw_string("RP2040\nProcessor\n%.1f C" % temperature)
         #print("RP2040\nProcessor\n%.1f C" % temperature)
-        time.sleep(1);self.client.ping()
+        time.sleep(1);self.ping()
         
         self.wdt_feed()
     def bme_status(self):
@@ -390,7 +402,7 @@ class PmPico:
         #tmsg=json.dumps(res)
         self.publish("bme", {"T":t,"P":p,"H":h})
         self.draw_string("BME280\nP=%.1f hPa\nT=%.1f C\nHum=%.1f %%" % (p,t,h))
-        time.sleep(1);self.client.ping()
+        time.sleep(1);self.ping()
         self.wdt_feed()
     def hih_status(self):
         h,t=self.hih.read_sensor()
@@ -401,7 +413,7 @@ class PmPico:
         #tmsg=json.dumps(res)
         self.publish("hih", {"T":t,"H":h})
         self.draw_string("HIH81310\nT=%.1f C\nHum=%.1f %%" % (t,h))
-        time.sleep(1);self.client.ping()
+        time.sleep(1);self.ping()
         self.wdt_feed()
     def genesys_status(self):
         st=self.genesys.status()
@@ -412,7 +424,7 @@ class PmPico:
         #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
         self.draw_string("genesys\n%.1f %.1f %.1f %.1f\nStatus %s" %
                          (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
-        time.sleep(1);self.client.ping()
+        time.sleep(1);self.ping()
         #time.sleep(t_sleep)
         self.wdt_feed()
     def zup_status(self):
@@ -424,7 +436,7 @@ class PmPico:
         #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
         self.draw_string("zup\n%.1f %.1f %.1f %.1f\nStatus %s" %
                          (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
-        time.sleep(1);self.client.ping()
+        time.sleep(1);self.ping()
         self.wdt_feed()        
         #time.sleep(t_sleep)
     def cpwplus_status(self):
@@ -435,7 +447,7 @@ class PmPico:
         self.publish("cpwplus", st)
         #self.publish(topic_pub, tmsg)
         self.draw_string("CPWPLUS\nNet Weight %.2f kg" % (st["net"]))
-        time.sleep(1);self.client.ping()
+        time.sleep(1);self.ping()
         self.wdt_feed()
     def brooks_status(self):
         bks_did=self.settings["brooks"]["devices"]
@@ -446,7 +458,7 @@ class PmPico:
             
             self.draw_string("brooks disc\n Gas  %s \nID %d\n range %.2f" %
                          (st["gas_type"],st["device_id"],st["gas_flow_range"]))
-            time.sleep(1);self.client.ping()
+            time.sleep(1);self.ping()
             self.wdt_feed()
             return
         # Normal readout
@@ -461,7 +473,7 @@ class PmPico:
             #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
             self.draw_string("brooks %s\n Set %.2f \nRead %.2f" %
                              (sti["gas_type"],st["setpoint_selected"],st["primary_variable"]))
-            time.sleep(1);self.client.ping()
+            time.sleep(1);self.ping()
             self.wdt_feed()
         #time.sleep(t_sleep)
     def wdt_feed(self):
@@ -494,7 +506,7 @@ def main():
         #print("feeding \n")
         pm.wdt_feed()
         if (it%5==0):
-            pm.client.ping()
+            pm.ping()
         #    pm.publish_running()
 
 
