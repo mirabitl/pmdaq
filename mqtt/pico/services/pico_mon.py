@@ -128,6 +128,7 @@ class pico_monitor:
             #print(r_m)
         ## BMP data
         if (self.gsender!=None):
+            
             for x in r_m["content"].keys():
                 print(len(p),x)
                 if (len(p)>=4 and p[3]=="INFOS"):
@@ -139,7 +140,11 @@ class pico_monitor:
                     metric=metric+p[i]+"."
                 metric=metric+x
                 print(metric,x)
-                self.gsender.send(metric,r_m["content"][x])
+                try:
+                    self.gsender.send(metric,r_m["content"][x])
+                except Exception as error:
+                    print("Error sending ",x,r_m["content"])
+                    break
     def Connect(self):
         self.cname="monitor-%d" % os.getpid()
         self.client= paho.Client(self.cname)
