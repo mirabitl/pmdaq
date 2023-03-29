@@ -377,7 +377,7 @@ class PmPico:
         self.publish("rp2040",{"T":temperature})
         self.draw_string("RP2040\nProcessor\n%.1f C" % temperature)
         #print("RP2040\nProcessor\n%.1f C" % temperature)
-        time.sleep(1)
+        time.sleep(1);self.client.ping()
         
         self.wdt_feed()
     def bme_status(self):
@@ -390,7 +390,7 @@ class PmPico:
         #tmsg=json.dumps(res)
         self.publish("bme", {"T":t,"P":p,"H":h})
         self.draw_string("BME280\nP=%.1f hPa\nT=%.1f C\nHum=%.1f %%" % (p,t,h))
-        time.sleep(1)
+        time.sleep(1);self.client.ping()
         self.wdt_feed()
     def hih_status(self):
         h,t=self.hih.read_sensor()
@@ -401,7 +401,7 @@ class PmPico:
         #tmsg=json.dumps(res)
         self.publish("hih", {"T":t,"H":h})
         self.draw_string("HIH81310\nT=%.1f C\nHum=%.1f %%" % (t,h))
-        time.sleep(1)
+        time.sleep(1);self.client.ping()
         self.wdt_feed()
     def genesys_status(self):
         st=self.genesys.status()
@@ -412,7 +412,7 @@ class PmPico:
         #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
         self.draw_string("genesys\n%.1f %.1f %.1f %.1f\nStatus %s" %
                          (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
-        time.sleep(1)
+        time.sleep(1);self.client.ping()
         #time.sleep(t_sleep)
         self.wdt_feed()
     def zup_status(self):
@@ -424,7 +424,7 @@ class PmPico:
         #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
         self.draw_string("zup\n%.1f %.1f %.1f %.1f\nStatus %s" %
                          (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
-        time.sleep(1)
+        time.sleep(1);self.client.ping()
         self.wdt_feed()        
         #time.sleep(t_sleep)
     def cpwplus_status(self):
@@ -435,7 +435,7 @@ class PmPico:
         self.publish("cpwplus", st)
         #self.publish(topic_pub, tmsg)
         self.draw_string("CPWPLUS\nNet Weight %.2f kg" % (st["net"]))
-        time.sleep(1)
+        time.sleep(1);self.client.ping()
         self.wdt_feed()
     def brooks_status(self):
         bks_did=self.settings["brooks"]["devices"]
@@ -446,7 +446,7 @@ class PmPico:
             
             self.draw_string("brooks disc\n Gas  %s \nID %d\n range %.2f" %
                          (st["gas_type"],st["device_id"],st["gas_flow_range"]))
-            time.sleep(1)
+            time.sleep(1);self.client.ping()
             self.wdt_feed()
             return
         # Normal readout
@@ -461,7 +461,7 @@ class PmPico:
             #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
             self.draw_string("brooks %s\n Set %.2f \nRead %.2f" %
                              (sti["gas_type"],st["setpoint_selected"],st["primary_variable"]))
-            time.sleep(1)
+            time.sleep(1);self.client.ping()
             self.wdt_feed()
         #time.sleep(t_sleep)
     def wdt_feed(self):
@@ -493,7 +493,8 @@ def main():
                     print("Next iteration \n %d" % it)
         #print("feeding \n")
         pm.wdt_feed()
-        #if (it%5==0):
+        if (it%5==0):
+            pm.client.ping()
         #    pm.publish_running()
 
 
