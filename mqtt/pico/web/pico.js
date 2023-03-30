@@ -428,10 +428,10 @@ function addGenesysRow(div_name, g_obj) {
 	c_vset.innerHTML = g_obj["vset"].toFixed(3);
 	var c_iset=document.getElementById(row_name+"-iset");
 	c_iset.innerHTML = g_obj["iset"].toFixed(3);
-	var c_vread=document.getElementById(row_name+"-vread");
-	c_vread.innerHTML = g_obj["vread"].toFixed(3);
-	var c_iread=document.getElementById(row_name+"-iread");
-	c_iread.innerHTML = g_obj["iread"].toFixed(3);
+	var c_vout=document.getElementById(row_name+"-vout");
+	c_vout.innerHTML = g_obj["vout"].toFixed(3);
+	var c_iout=document.getElementById(row_name+"-iout");
+	c_iout.innerHTML = g_obj["iout"].toFixed(3);
 	var c_status=document.getElementById(row_name+"-status");
 	c_status.innerHTML = g_obj["status"];
 	return;
@@ -446,20 +446,20 @@ function addGenesysRow(div_name, g_obj) {
     var c_iset = row.insertCell(1);
     c_iset.id = row.id + "-iset";
     c_iset.innerHTML = g_obj["iset"].toFixed(3);
-    var c_vread = row.insertCell(2);
-    c_vread.id = row.id + "-vread";
-    c_vread.innerHTML = g_obj["vread"].toFixed(3);
-    var c_iread = row.insertCell(3);
-    c_iread.id = row.id + "-iread";
-    c_iread.innerHTML = g_obj["iread"].toFixed(3);
+    var c_vout = row.insertCell(2);
+    c_vout.id = row.id + "-vout";
+    c_vout.innerHTML = g_obj["vout"].toFixed(3);
+    var c_iout = row.insertCell(3);
+    c_iout.id = row.id + "-iout";
+    c_iout.innerHTML = g_obj["iout"].toFixed(3);
     var c_status = row.insertCell(4);
     c_status.id = row.id + "-status";
     c_status.innerHTML = g_obj["status"];
     var c_nvset = row.insertCell(5);
-    var x = document.createElement("INPUT");
-    x.id = row.id+"-nvset";
-    x.setAttribute("type", "number");
-    c_nvset.appendChild(x);
+    var x_vset = document.createElement("INPUT");
+    x_vset.id = row.id+"-nvset";
+    x_vset.setAttribute("type", "number");
+    c_nvset.appendChild(x_vset);
 
     var s_mod = div_name.split("-")[0];
     var s_sub = div_name.split("-")[1];
@@ -468,40 +468,42 @@ function addGenesysRow(div_name, g_obj) {
     let btn_vset = document.createElement("button");
     btn_vset.innerHTML = "Set Voltage";
     btn_vset.onclick = function () {
-        var v_vset = document.getElementById(x.id).value;
-        //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(x.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
+        var v_vset = document.getElementById(x_vset.id).value;
+
         topic_cmd = pico_location + "/" + s_sub + "/CMD";
-        jmsg = {};
-        jmsg["device"] = s_mod;
-        jmsg["command"] = "SETVOLTAGE";
-        jmsg["params"] = {};
-        jmsg["params"]["vset"] = v_vset;
-        console.log(topic_cmd + "|" + JSON.stringify(jmsg));
-        publish_one_message(topic_cmd, JSON.stringify(jmsg));
+        var j_msg = {};
+        j_msg["device"] = s_mod;
+        j_msg["command"] = "SETVOLTAGE";
+        j_msg["params"] = {};
+        j_msg["params"]["vset"] = parseFloat(v_vset);
+	alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+        publish_one_message(topic_cmd, JSON.stringify(j_msg));
     };
     c_btn_vset.appendChild(btn_vset);
     
     var c_niset = row.insertCell(7);
-    var y = document.createElement("INPUT");
-    y.id = row.id+"-niset";
-    y.setAttribute("type", "number");
-    c_niset.appendChild(x);
+    var x_iset = document.createElement("INPUT");
+    x_iset.id = row.id+"-niset";
+    x_iset.setAttribute("type", "number");
+    c_niset.appendChild(x_iset);
 
     var c_btn_iset = row.insertCell(8);
     let btn_iset = document.createElement("button");
     btn_iset.innerHTML = "Set Max Current";
     btn_iset.onclick = function () {
-        var v_iset = document.getElementById(y.id).value;
+        var v_iset = document.getElementById(x_iset.id).value;
         
         //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
         topic_cmd = pico_location + "/" + s_sub + "/CMD"
-        jmsg = {}
-        jmsg["device"] = s_mod
-        jmsg["command"] = "SETCURRENT"
-        jmsg["params"] = {}
-        jmsg["params"]["iset"] = v_iset
-        console.log(topic_cmd + "|" + JSON.stringify(jmsg));
-        publish_one_message(topic_cmd, JSON.stringify(jmsg));
+        var j_msg = {}
+        j_msg["device"] = s_mod
+        j_msg["command"] = "SETCURRENT"
+        j_msg["params"] = {}
+        j_msg["params"]["iset"] = parseFloat(v_iset)
+	alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+        publish_one_message(topic_cmd, JSON.stringify(j_msg));
     };
     c_btn_iset.appendChild(btn_iset);
     
@@ -512,15 +514,14 @@ function addGenesysRow(div_name, g_obj) {
         
         //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
         topic_cmd = pico_location + "/" + s_sub + "/CMD"
-        jmsg = {}
-        jmsg["device"] = s_mod
-        jmsg["command"] = "SETON"
-        jmsg["params"] = {}
-        jmsg["params"]["on"] = 1
-        console.log(topic_cmd + "|" + JSON.stringify(jmsg));
-        publish_one_message(topic_cmd, JSON.stringify(jmsg));
+        var j_msg = {}
+        j_msg["device"] = s_mod
+        j_msg["command"] = "SETON"
+        console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+	alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        publish_one_message(topic_cmd, JSON.stringify(j_msg));
     };
-    c_btn_on.appendChild(btn_iset);
+    c_btn_on.appendChild(btn_on);
 
     var c_btn_off = row.insertCell(10);
     let btn_off = document.createElement("button");
@@ -529,15 +530,15 @@ function addGenesysRow(div_name, g_obj) {
         
         //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
         topic_cmd = pico_location + "/" + s_sub + "/CMD"
-        jmsg = {}
-        jmsg["device"] = s_mod
-        jmsg["command"] = "SETOFF"
-        jmsg["params"] = {}
-        jmsg["params"]["off"] = 1
-        console.log(topic_cmd + "|" + JSON.stringify(jmsg));
-        publish_one_message(topic_cmd, JSON.stringify(jmsg));
+        var j_msg = {}
+        j_msg["device"] = s_mod
+        j_msg["command"] = "SETOFF"
+        
+        console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+	alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        publish_one_message(topic_cmd, JSON.stringify(j_msg));
     };
-    c_btn_off.appendChild(btn_iset);
+    c_btn_off.appendChild(btn_off);
 
 
 
