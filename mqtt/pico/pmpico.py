@@ -56,7 +56,8 @@ class PmPico:
             self.wifi_init()
         # MQTT
         if "mqtt" in self.settings.keys():
-            self.mqtt_connect(self.settings["mqtt"]["server"])
+            self.mqtt_server=self.settings["mqtt"]["server"]
+            self.mqtt_connect()
         #display initialisation
         self.devices={}
         # brooks
@@ -200,8 +201,11 @@ class PmPico:
         self.genesys = genesysPico.genesysPico(uartid,txp,rxp,address,baud)
         st=self.genesys.status()
         #print(st)
-        self.draw_string("genesys\n%.1f %.1f %.1f %.1f\nStatus %s" %
-                        (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
+        if ("vset" in list(st.keys())):
+            self.draw_string("genesys\n%.1f %.1f %.1f %.1f\nStatus %s" %
+                            (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
+        else:
+            self.draw_string("genesys not readable")
         #print(st)
         time.sleep(1)
     # zup init port 2
@@ -322,18 +326,18 @@ class PmPico:
       
       self.wdt_feed()        
     # MQTT Connection
-    def mqtt_connect(self,mqtt_server):
-        self.draw_string('Connecting to\n%s \nMQTT Broker' % (mqtt_server))
+    def mqtt_connect(self):
+        self.draw_string('Connecting to\n%s \nMQTT Broker' % (self.mqtt_server))
         #time.sleep(1)
         #d="%d" %(int(time.time())%20)
         print("client ID ",self.client_id)
-        self.client = MQTTClient(self.client_id, mqtt_server, keepalive=60)
+        self.client = MQTTClient(self.client_id, self.mqtt_server, keepalive=60)
         self.client.set_callback(self.mqtt_cb)
 
         while True:
             try:
                 self.client.connect()
-                self.draw_string('Connected to\n%s \nMQTT Broker'%(mqtt_server))
+                self.draw_string('Connected to\n%s \nMQTT Broker'%(self.mqtt_server))
                 time.sleep(1)
                 break
             except OSError as e:
@@ -353,10 +357,13 @@ class PmPico:
             while self.client.is_conn_issue():
                 # If the connection is successful, the is_conn_issue
                 # method will not return a connection error.
-                #time.sleep(1)
+                time.sleep_ms(100)
+                print("trying reconnect")
+                
                 self.client.reconnect()
                 self.wdt_feed()
             else:
+                time.sleep(1)
                 self.client.resubscribe()
   
     def publish(self,device_pub,msg,keep=False):
@@ -421,10 +428,13 @@ class PmPico:
         
         #topic_pub = 'pico_w5500/%s/genesys' % self.settings["id"]
         #tmsg=json.dumps(st)
-        self.publish("genesys", st)
-        #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
-        self.draw_string("genesys\n%.1f %.1f %.1f %.1f\nStatus %s" %
-                         (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
+        if ("vset" in list(st.keys())):
+            self.publish("genesys", st)
+            #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
+            self.draw_string("genesys\n%.1f %.1f %.1f %.1f\nStatus %s" %
+                             (st["vset"],st["vout"],st["iset"],st["iout"],st["status"]))
+        else:
+            self.draw_string("Genesys is OFF")
         time.sleep(1);self.ping()
         #time.sleep(t_sleep)
         self.wdt_feed()
