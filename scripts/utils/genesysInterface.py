@@ -8,7 +8,7 @@ class abstractGenesys:
     
         self.setAddress({"address":self.board})
 
-        self.setRemote({"remote":1})
+        #self.setRemote({"remote":1})
         #self.write("RMT %d\r" % 1)  
 
         #print self.readline()
@@ -30,7 +30,7 @@ class abstractGenesys:
         if (flag):
             self.write("RMT 1")
         else:
-            self.write("RMT0")
+            self.write("RMT 0")
         rep=self.readline()
         #print(rep)
         return rep
@@ -136,6 +136,9 @@ class abstractGenesys:
     def isLvOn(self):
         self.write("OUT?")
         rep=self.readline()
+        if (rep==None):
+            return 0
+        
         #print(rep,rep[0:2])
         if rep[0:2]=="ON":
             return 1
@@ -146,6 +149,8 @@ class abstractGenesys:
         rep={}
         self.write("STT?")
         self.value_read=self.readline()
+        if (self.value_read==None):
+            return rep
         tlen=len(self.value_read)
         ipv=self.value_read.find("PV(")+3
         lpv=self.value_read[ipv:ipv+8].find(")")

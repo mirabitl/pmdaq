@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8">
+  <title>LYON ILC MQTT</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.2/mqttws31.min.js" type="text/javascript"></script>
+  <script src="pico.js" type="text/javascript"></script>
+<style>
+body {font-family: Arial;}
+
+/* Style the tab */
+.tab {
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
+}
+
+/* Style the buttons inside the tab */
+.tab button {
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+  font-size: 17px;
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+  background-color: #ddd;
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+  background-color: #ccc;
+}
+
+/* Style the tab content */
+.tabcontent {
+  display: none;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-top: none;
+}
+</style>
+</head>
+<body>
+
+<h2>PICO boards MQTT interface</h2>
+<p>Data display is available in
+  <a href="http://lyocms09:3000/dashboards">GRAFANA</a> </p>
+
+<div class="tab">
+  <button class="tablinks" onclick="openTab(event, 'Broker')">Broker</button>
+  <button class="tablinks" onclick="openTab(event, 'Brooks')">Brooks</button>
+  <button class="tablinks" onclick="openTab(event, 'Genesys')">Genesys</button>
+</div>
+
+<div id="Broker" class="tabcontent">
+  <h3>Connection to broker</h3>
+  <form id="connection-information-form">
+    <b>Hostname or IP Address and Port Number:</b> 
+    <input id="host" type="text" name="host" placeholder="broker address">
+            
+    <input id="port" type="text" name="port" value="8080"><br>
+    <b>Location and system:</b>
+    <input id="pico_location" type="text" name="Pico_Location" placeholder="Pico_Location"><br>
+           
+    
+    <b>Connection:</b>
+    <input type="button" onclick="startConnect()"  value="Connect">
+    <input type="button"  onclick="startDisconnect()" value="Disconnect"> <br>
+  </form>
+   <div id="messages"></div>
+  <!--p>London is the capital city of England.</p-->
+</div>
+
+<div id="Brooks" class="tabcontent">
+  <h2>Brooks control</h2>
+       <!--
+  <h3> Browse Gas systems</h3>
+  <div id="brooks-subsystem-select"></div>
+   
+
+  <div>
+    <form>
+      <input type="button"  onclick="createListBrooks()" value="get subsystem list">
+        
+      <input type="button"  onclick="getGasList()" value="get GAS list"><br>
+      
+    </form>
+  </div>
+ 
+  <div id="brooks-gas-select"></div>
+
+  <h3> Gases Information</h3>
+  <div id="brooks-gas-info"></div>
+
+
+  <h3> Settings</h3>
+  <form id="Gas-setting-form">
+    <b>Flow in l/h </b> 
+    <input id="gas_flow" type="number" name="gasflow" placeholder="Gas flow in l/h">
+    <input type="button" onclick="setFlow()"  value="set Flow">
+  </form>
+  <h3> Status</h3>
+  <div id="brooks-gas-status"></div>
+  -->
+</div>
+
+<div id="Genesys" class="tabcontent">
+  <h3>Genesys Control</h3>
+  <p>Tokyo is the capital of Japan.</p>
+</div>
+
+<script>
+function openTab(evt, cityName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(cityName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+</script>
+   
+</body>
+</html> 

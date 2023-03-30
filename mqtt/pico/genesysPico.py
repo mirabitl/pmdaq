@@ -28,21 +28,29 @@ class genesysPico(gI):
         self.cb["VIEW"]=self.view
         
         gI.__init__(self,address)
-        self.setRemote(True)
+        self.setRemote({"remote":1})
     def view(self):
         return {"id":"genesys","cmds":list(self.cb.keys())}        
     def write(self,s):
         self.uart.write(s+"\r")
         time.sleep_ms(500)
+        while not self.uart.txdone():
+            time.sleep_ms(1)
+        time.sleep_ms(1)
         #print("debug ",self.uart.readline())
         
     def readline(self):
         #buf=bytes(1024)
         self.value_read=self.uart.readline()
+        if (self.value_read == None):
+            return None
         #self.value_read=buf
-        #print("Debug genesys",buf)
+        #print("Debug genesys",self.value_read)
         if (self.value_read != None):
-            self.value_read=self.value_read.decode("utf8")
+            try:
+                self.value_read=self.value_read.decode("utf8")
+            except:
+                return None
         sgood=self.value_read.split('\r')
         print(sgood)
         if (len(sgood)>1):
