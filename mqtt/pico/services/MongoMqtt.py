@@ -123,7 +123,7 @@ class MongoMqtt:
         res = self.db.MQTT_ITEMS.find({"topic": {'$regex': topic}, "ctime": {'$gt': mintime}}, {
                                       "_id": 0}).limit(depth).sort("ctime", pymongo.DESCENDING)
         for x in res:
-            #print(x)
+            #print(device,x)
             sti = time.strftime('%Y-%m-%d %H:%M:%S',
                                 time.localtime(x["ctime"]))
             m = x["message"]
@@ -131,6 +131,17 @@ class MongoMqtt:
             if (len(ltop)==4 and ltop[3]=="INFOS"):
                 continue
             #print(sti, m)
+            if (device == "rp2040"):
+                if  ( "T" in m.keys() ): 
+                    print("%s Pico Board T=%.2f C " % (sti,  m["T"]))
+                else:
+                    print(sti,x["topic"],m)
+            if (device == "brooks"):
+                gas=ltop[3]
+                if ("setpoint_selected" in m.keys() and "primary_variable" in m.keys()):
+                    print("%s %s Flow Set %.5f l/h Read %.5f l/h" % (sti,gas,m["setpoint_selected"],m["primary_variable"]))
+                else:
+                    print(sti,x["topic"],m)
             if (device == "bme"):
                 if  ( "P" in m.keys() and "T" in m.keys() and "H" in m.keys()): 
                     print("%s P=%.2f mbar T=%.2f K %.2f C Humidity %.2f %% " %
