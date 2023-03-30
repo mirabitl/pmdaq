@@ -60,6 +60,7 @@ function onMessageArrived(message) {
     if (message.destinationName == (pico_location + "/RUNNING")) {
         id_brooks = jmsg["devices"].findIndex((element) => element === "brooks");
 	id_genesys = jmsg["devices"].findIndex((element) => element === "genesys");
+	id_zup = jmsg["devices"].findIndex((element) => element === "zup");
         // Create brooks_head object
         if (id_brooks >= 0) {
             var s_sub = jmsg["subsystem"];
@@ -86,7 +87,6 @@ function onMessageArrived(message) {
         if (id_genesys >= 0) {
             var s_sub = jmsg["subsystem"];
             genesyssys.push(s_sub);
-            brooks_head[s_sub] = {}
             // Query existing gas
             topic_genesys = pico_location + "/" + s_sub + "/genesys/#"
             if (document.getElementById('genesys-' + s_sub) == null) {
@@ -99,6 +99,24 @@ function onMessageArrived(message) {
             }
             
             client.subscribe(topic_genesys);
+            //createListBrooks();
+        }
+	// Create genesys_head object
+        if (id_zup >= 0) {
+            var s_sub = jmsg["subsystem"];
+            zupsys.push(s_sub);
+            // Query existing gas
+            topic_zup = pico_location + "/" + s_sub + "/zup/#"
+            if (document.getElementById('genesys-' + s_sub) == null) {
+                var iDiv = document.createElement('div');
+                iDiv.id = 'zup-' + s_sub;
+                iDiv.className = 'zup-' + s_sub;
+                iDiv.innerHTML = "<H2> Zup system " + s_sub + "</H2>"
+                document.getElementById("Zup").appendChild(iDiv);
+                addGenesysTable(iDiv.className);
+            }
+            
+            client.subscribe(topic_zup);
             //createListBrooks();
         }
 
@@ -143,27 +161,17 @@ function onMessageArrived(message) {
             var fread = document.getElementById("brooks-" + v_t[1] + "-table-flowread-" + v_t[3]);
             if (fread != null)
                 fread.innerHTML = jmsg["primary_variable"].toFixed(5);
-            /*
-        create_widget = false;
-
-        var label = document.getElementById("brooks-gas-status-" + v_t[3]);
-        if (label == null) {
-            label = document.createElement("lable");
-            label.name = "brooks-gas-status-" + v_t[3];
-            label.id = "brooks-gas-status-" + v_t[3];
-            create_widget = true;
-        }
-
-        label.innerHTML = "<p> " + v_t[3] + " Set " + jmsg["setpoint_selected"] + "  read  " + jmsg["primary_variable"] + " l/h";
-        label.htmlFor = "gases status";
-        if (create_widget)
-            document.getElementById("brooks-gas-status").appendChild(label);
-            */
             return
         }
     }
     // Genesys
     //Detection and subscribe
+    if (v_t.length==3)
+	if (v_t[2] =="genesys" )
+   	    addGenesysRow("genesys-"+v_t[1],jmsg);
+    if (v_t.length==3)
+	if (v_t[2] =="zup" )
+   	    addGenesysRow("zup-"+v_t[1],jmsg);
     
 }
 
@@ -395,7 +403,7 @@ function addGenesysTable(div_name) {
         var tr = document.createElement('TR');
         tableBody.appendChild(tr);
 
-        var headers = ["V Set", "I Set ", "V read", "I read","Status","New V ", " ","New I", " "," "," "];
+        var headers = ["V Set", "I Set ", "V read", "I read","Status","V Req.  ", " ","I Req.", " "," "," "];
         for (var j = 0; j < headers.length; j++) {
             var td = document.createElement('TD');
             td.width = '75';
@@ -417,13 +425,13 @@ function addGenesysRow(div_name, g_obj) {
     if (req_row != null)
     {
 	var c_vset=document.getElementById(row_name+"-vset");
-	c_vset.innerHTML = g_obj["vset"];
+	c_vset.innerHTML = g_obj["vset"].toFixed(3);
 	var c_iset=document.getElementById(row_name+"-iset");
-	c_iset.innerHTML = g_obj["iset"];
+	c_iset.innerHTML = g_obj["iset"].toFixed(3);
 	var c_vread=document.getElementById(row_name+"-vread");
-	c_vread.innerHTML = g_obj["vread"];
+	c_vread.innerHTML = g_obj["vread"].toFixed(3);
 	var c_iread=document.getElementById(row_name+"-iread");
-	c_iread.innerHTML = g_obj["iread"];
+	c_iread.innerHTML = g_obj["iread"].toFixed(3);
 	var c_status=document.getElementById(row_name+"-status");
 	c_status.innerHTML = g_obj["status"];
 	return;
@@ -434,16 +442,16 @@ function addGenesysRow(div_name, g_obj) {
 
     var c_vset = row.insertCell(0);
     c_vset.id = row.id + "-vset";
-    c_vset.innerHTML = g_obj["vset"];
+    c_vset.innerHTML = g_obj["vset"].toFixed(3);
     var c_iset = row.insertCell(1);
     c_iset.id = row.id + "-iset";
-    c_iset.innerHTML = g_obj["iset"];
+    c_iset.innerHTML = g_obj["iset"].toFixed(3);
     var c_vread = row.insertCell(2);
     c_vread.id = row.id + "-vread";
-    c_vread.innerHTML = g_obj["vread"];
+    c_vread.innerHTML = g_obj["vread"].toFixed(3);
     var c_iread = row.insertCell(3);
     c_iread.id = row.id + "-iread";
-    c_iread.innerHTML = g_obj["iread"];
+    c_iread.innerHTML = g_obj["iread"].toFixed(3);
     var c_status = row.insertCell(4);
     c_status.id = row.id + "-status";
     c_status.innerHTML = g_obj["status"];
@@ -453,19 +461,21 @@ function addGenesysRow(div_name, g_obj) {
     x.setAttribute("type", "number");
     c_nvset.appendChild(x);
 
+    var s_mod = div_name.split("-")[0];
+    var s_sub = div_name.split("-")[1];
+
     var c_btn_vset = row.insertCell(6);
     let btn_vset = document.createElement("button");
     btn_vset.innerHTML = "Set Voltage";
     btn_vset.onclick = function () {
         var v_vset = document.getElementById(x.id).value;
-        var s_sub = div_name.split("-")[1];
         //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(x.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
-        topic_cmd = pico_location + "/" + s_sub + "/CMD"
-        jmsg = {}
-        jmsg["device"] = "genesys"
-        jmsg["command"] = "SETVOLTAGE"
-        jmsg["params"] = {}
-        jmsg["params"]["vset"] = v_vset
+        topic_cmd = pico_location + "/" + s_sub + "/CMD";
+        jmsg = {};
+        jmsg["device"] = s_mod;
+        jmsg["command"] = "SETVOLTAGE";
+        jmsg["params"] = {};
+        jmsg["params"]["vset"] = v_vset;
         console.log(topic_cmd + "|" + JSON.stringify(jmsg));
         publish_one_message(topic_cmd, JSON.stringify(jmsg));
     };
@@ -482,11 +492,11 @@ function addGenesysRow(div_name, g_obj) {
     btn_iset.innerHTML = "Set Max Current";
     btn_iset.onclick = function () {
         var v_iset = document.getElementById(y.id).value;
-        var s_sub = div_name.split("-")[1];
+        
         //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
         topic_cmd = pico_location + "/" + s_sub + "/CMD"
         jmsg = {}
-        jmsg["device"] = "genesys"
+        jmsg["device"] = s_mod
         jmsg["command"] = "SETCURRENT"
         jmsg["params"] = {}
         jmsg["params"]["iset"] = v_iset
@@ -499,11 +509,11 @@ function addGenesysRow(div_name, g_obj) {
     let btn_on = document.createElement("button");
     btn_on.innerHTML = "ON";
     btn_on.onclick = function () {
-        var s_sub = div_name.split("-")[1];
+        
         //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
         topic_cmd = pico_location + "/" + s_sub + "/CMD"
         jmsg = {}
-        jmsg["device"] = "genesys"
+        jmsg["device"] = s_mod
         jmsg["command"] = "SETON"
         jmsg["params"] = {}
         jmsg["params"]["on"] = 1
@@ -516,11 +526,11 @@ function addGenesysRow(div_name, g_obj) {
     let btn_off = document.createElement("button");
     btn_off.innerHTML = "OFF";
     btn_off.onclick = function () {
-        var s_sub = div_name.split("-")[1];
+        
         //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
         topic_cmd = pico_location + "/" + s_sub + "/CMD"
         jmsg = {}
-        jmsg["device"] = "genesys"
+        jmsg["device"] = s_mod
         jmsg["command"] = "SETOFF"
         jmsg["params"] = {}
         jmsg["params"]["off"] = 1
