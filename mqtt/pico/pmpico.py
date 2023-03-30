@@ -76,7 +76,7 @@ class PmPico:
                     #time.sleep(10)
                     self.publish("brooks/GAS/%s" % st["gas_type"], st,True)
                     self.settings["brooks"]["devices"][0]=st["device_id"]
-                    self.ping()
+                    #self.ping()
                 else:
                     stv=self.brooks.view()
                     self.publish("brooks/INFOS",stv,True)
@@ -87,7 +87,7 @@ class PmPico:
                         print(st)
                         #time.sleep(10)
                         self.publish("brooks/GAS/%s" % st["gas_type"], st,True)
-                    self.ping()
+                    #self.ping()
         # cpwplus
         if "cpwplus" in self.settings.keys():
             s_dv=self.settings["cpwplus"]
@@ -355,6 +355,7 @@ class PmPico:
                 # method will not return a connection error.
                 #time.sleep(1)
                 self.client.reconnect()
+                print("trying reconnect")
                 self.wdt_feed()
             else:
                 self.client.resubscribe()
