@@ -371,7 +371,7 @@ class PmPico:
         topic_pub=self.topic_prefix+device_pub
         tmsg=json.dumps(msg)
         #print("PUBLISH ",topic_pub,tmsg)
-        self.check_connection("Publish ")
+        #self.check_connection("Publish ")
         rc=self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"),retain=keep)
 
         
@@ -470,7 +470,8 @@ class PmPico:
             
             self.draw_string("brooks disc\n Gas  %s \nID %d\n range %.2f" %
                          (st["gas_type"],st["device_id"],st["gas_flow_range"]))
-            time.sleep(1);self.ping()
+            time.sleep_ms(100);
+            #self.ping()
             self.wdt_feed()
             return
         # Normal readout
@@ -485,9 +486,11 @@ class PmPico:
             #self.client.publish(topic_pub.encode("utf-8"), tmsg.encode("utf8"))
             self.draw_string("brooks %s\n Set %.2f \nRead %.2f" %
                              (sti["gas_type"],st["setpoint_selected"],st["primary_variable"]))
-            time.sleep(1);self.ping()
+            time.sleep_ms(100);
             self.wdt_feed()
         #time.sleep(t_sleep)
+        self.ping()
+
     def wdt_feed(self):
         if (self.wdt!=None):
            self.wdt.feed()
@@ -517,7 +520,7 @@ def main():
                     print("Next iteration \n %d" % it)
         #print("feeding \n")
         pm.wdt_feed()
-        if (it%5==0):
+        if (it%10==0):
             pm.ping()
         #    pm.publish_running()
 
