@@ -61,6 +61,9 @@ function onMessageArrived(message) {
         id_brooks = jmsg["devices"].findIndex((element) => element === "brooks");
 	id_genesys = jmsg["devices"].findIndex((element) => element === "genesys");
 	id_zup = jmsg["devices"].findIndex((element) => element === "zup");
+	id_bme = jmsg["devices"].findIndex((element) => element === "bme");
+	id_hih = jmsg["devices"].findIndex((element) => element === "hih");
+	id_pico = jmsg["devices"].findIndex((element) => element === "rp2040");
         // Create brooks_head object
         if (id_brooks >= 0) {
             var s_sub = jmsg["subsystem"];
@@ -120,6 +123,58 @@ function onMessageArrived(message) {
             client.subscribe(topic_zup);
             //createListBrooks();
         }
+        if (id_bme >= 0) {
+            var s_sub = jmsg["subsystem"];
+
+            // Query existing gas
+            topic_bme = pico_location + "/" + s_sub + "/bme/#"
+            if (document.getElementById('bme-' + s_sub) == null) {
+                var iDiv = document.createElement('div');
+                iDiv.id = 'bme-' + s_sub;
+                iDiv.className = 'bme-' + s_sub;
+                iDiv.innerHTML = "<H2> BME280 system " + s_sub + "</H2>"
+                document.getElementById("Status").appendChild(iDiv);
+                addBmeTable(iDiv.className);
+            }
+            
+            client.subscribe(topic_bme);
+            //createListBrooks();
+        }
+        if (id_hih >= 0) {
+            var s_sub = jmsg["subsystem"];
+
+            // Query existing gas
+            topic_hih = pico_location + "/" + s_sub + "/hih/#"
+            if (document.getElementById('hih-' + s_sub) == null) {
+                var iDiv = document.createElement('div');
+                iDiv.id = 'hih-' + s_sub;
+                iDiv.className = 'hih-' + s_sub;
+                iDiv.innerHTML = "<H2> Humidity HIH system " + s_sub + "</H2>"
+                document.getElementById("Status").appendChild(iDiv);
+                addHihTable(iDiv.className);
+            }
+            
+            client.subscribe(topic_hih);
+            //createListBrooks();
+        }
+	
+        if (id_pico >= 0) {
+            var s_sub = jmsg["subsystem"];
+
+            // Query existing gas
+            topic_pico = pico_location + "/" + s_sub + "/rp2040/#"
+            if (document.getElementById('pico-' + s_sub) == null) {
+                var iDiv = document.createElement('div');
+                iDiv.id = 'pico-' + s_sub;
+                iDiv.className = 'pico-' + s_sub;
+                iDiv.innerHTML = "<H2> Pico board " + s_sub + "</H2>"
+                document.getElementById("Status").appendChild(iDiv);
+                addPicoTable(iDiv.className);
+            }
+            
+            client.subscribe(topic_pico);
+            //createListBrooks();
+        }
 
         console.log(brooksys)
 
@@ -173,6 +228,18 @@ function onMessageArrived(message) {
     if (v_t.length==3)
 	if (v_t[2] =="zup" )
    	    addGenesysRow("zup-"+v_t[1],jmsg);
+    // BME
+    if (v_t.length==3)
+	if (v_t[2] =="bme" )
+   	    addBmeRow("bme-"+v_t[1],jmsg);
+    // HIH
+    if (v_t.length==3)
+	if (v_t[2] =="hih" )
+   	    addHihRow("hih-"+v_t[1],jmsg);
+    // PICO
+     if (v_t.length==3)
+	if (v_t[2] =="rp2040" )
+   	    addPicoRow("pico-"+v_t[1],jmsg);
     
 }
 
@@ -325,8 +392,8 @@ function addGasTable(div_name) {
         var tr = document.createElement('TR');
         tableBody.appendChild(tr);
 
-        var headers = ["Gas", "Id", "Max l/h", "Flow set (l/h)", "Flow read", "New value (l/h)", " "];
-        for (var j = 0; j < 7; j++) {
+        var headers = ["Gas", "Id", "Max l/h", "Flow set (l/h)", "Flow read", "New value (l/h)", " ","view"];
+        for (var j = 0; j < headers.length; j++) {
             var td = document.createElement('TD');
             td.width = '75';
             td.appendChild(document.createTextNode(headers[j]));
@@ -339,7 +406,8 @@ function addGasTable(div_name) {
 
 }
 function addGasRow(div_name, g_obj) {
-
+    var s_mod = div_name.split("-")[0];
+    var s_sub = div_name.split("-")[1];
     var table = document.getElementById(div_name + '-table-id');
     var req_row = document.getElementById(div_name + "-table-" + g_obj["gas_type"]);
     if (req_row != null) return;
@@ -383,6 +451,23 @@ function addGasRow(div_name, g_obj) {
         publish_one_message(topic_cmd, JSON.stringify(jmsg));
     };
     c_btn.appendChild(btn);
+
+    var c_btn_view = row.insertCell(7);
+    var btn_view = document.createElement("button");
+    btn_view.innerHTML = "VIEW";
+    btn_view.onclick = function () {
+        
+        //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
+        var topic_cmd = pico_location + "/" + s_sub + "/CMD"
+        var j_msg = {}
+        j_msg["device"] = "brooks"
+        j_msg["command"] = "VIEW"
+        
+        console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+	//alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        publish_one_message(topic_cmd, JSON.stringify(j_msg));
+    };
+    c_btn_view.appendChild(btn_view);
 
 
 
@@ -560,6 +645,304 @@ function addGenesysRow(div_name, g_obj) {
     };
     c_btn_view.appendChild(btn_view);
 
+
+
+}
+function addBmeTable(div_name) {
+
+    var myTableDiv = document.getElementById(div_name);
+    var req_tab = document.getElementById(div_name + "-table-id");
+    console.log("req_tab "+req_tab)
+    if (req_tab != null) return;
+    var table = document.createElement('TABLE');
+    table.id = div_name + '-table-id';
+    table.className = div_name + '-table';
+    table.border = '1';
+    var headers = ["P (mbar) ", "T (C)", "H (%)"," View "];
+
+    var tableBody = document.createElement('TBODY');
+    table.appendChild(tableBody);
+    for (var i = 0; i < 1; i++) {
+        var tr = document.createElement('TR');
+        tableBody.appendChild(tr);
+
+       
+        for (var j = 0; j < headers.length; j++) {
+            var td = document.createElement('TD');
+            td.width = '75';
+            td.appendChild(document.createTextNode(headers[j]));
+            tr.appendChild(td);
+        }
+
+    }
+
+    myTableDiv.appendChild(table);
+    //alert("Genesis table "+div_name+" "+headers.length);
+}
+
+function addBmeRow(div_name, g_obj) {
+    var s_mod = div_name.split("-")[0];
+    var s_sub = div_name.split("-")[1];
+
+    var table = document.getElementById(div_name + '-table-id');
+    var row_name= div_name + "-table-0";
+    var req_row = document.getElementById(row_name);
+    if (req_row != null)
+    {
+	var c_P=document.getElementById(row_name+"-P");
+	c_P.innerHTML = g_obj["P"].toFixed(3);
+	var c_T=document.getElementById(row_name+"-T");
+	c_T.innerHTML = g_obj["T"].toFixed(3);
+	var c_H=document.getElementById(row_name+"-H");
+	c_H.innerHTML = g_obj["H"].toFixed(3);
+	return;
+    }
+    var rowCount = table.rows.length;
+    var row = table.insertRow(rowCount);
+    row.id = div_name + "-table-0";
+
+    var c_P = row.insertCell(0);
+    c_P.id = row.id + "-P";
+    c_P.innerHTML = g_obj["P"].toFixed(3);
+    var c_T = row.insertCell(1);
+    c_T.id = row.id + "-T";
+    c_T.innerHTML = g_obj["T"].toFixed(3);
+    var c_H = row.insertCell(2);
+    c_H.id = row.id + "-H";
+    c_H.innerHTML = g_obj["H"].toFixed(3);
+    
+    var c_btn_view = row.insertCell(3);
+    let btn_view = document.createElement("button");
+    btn_view.innerHTML = "VIEW";
+    btn_view.onclick = function () {
+        
+        //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
+        topic_cmd = pico_location + "/" + s_sub + "/CMD"
+        var j_msg = {}
+        j_msg["device"] = s_mod
+        j_msg["command"] = "VIEW"
+        
+        console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+	//alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        publish_one_message(topic_cmd, JSON.stringify(j_msg));
+    };
+    c_btn_view.appendChild(btn_view);
+
+
+
+}
+
+function addHihTable(div_name) {
+
+    var myTableDiv = document.getElementById(div_name);
+    var req_tab = document.getElementById(div_name + "-table-id");
+    console.log("req_tab "+req_tab)
+    if (req_tab != null) return;
+    var table = document.createElement('TABLE');
+    table.id = div_name + '-table-id';
+    table.className = div_name + '-table';
+    table.border = '1';
+    var headers = ["T (C)", "H (%)"," View "];
+
+    var tableBody = document.createElement('TBODY');
+    table.appendChild(tableBody);
+    for (var i = 0; i < 1; i++) {
+        var tr = document.createElement('TR');
+        tableBody.appendChild(tr);
+
+       
+        for (var j = 0; j < headers.length; j++) {
+            var td = document.createElement('TD');
+            td.width = '75';
+            td.appendChild(document.createTextNode(headers[j]));
+            tr.appendChild(td);
+        }
+
+    }
+
+    myTableDiv.appendChild(table);
+    //alert("Genesis table "+div_name+" "+headers.length);
+}
+
+function addHihRow(div_name, g_obj) {
+    var s_mod = div_name.split("-")[0];
+    var s_sub = div_name.split("-")[1];
+
+    var table = document.getElementById(div_name + '-table-id');
+    var row_name= div_name + "-table-0";
+    var req_row = document.getElementById(row_name);
+    if (req_row != null)
+    {
+	var c_T=document.getElementById(row_name+"-T");
+	c_T.innerHTML = g_obj["T"].toFixed(3);
+	var c_H=document.getElementById(row_name+"-H");
+	c_H.innerHTML = g_obj["H"].toFixed(3);
+	return;
+    }
+    var rowCount = table.rows.length;
+    var row = table.insertRow(rowCount);
+    row.id = div_name + "-table-0";
+
+    var c_T = row.insertCell(0);
+    c_T.id = row.id + "-T";
+    c_T.innerHTML = g_obj["T"].toFixed(3);
+    var c_H = row.insertCell(1);
+    c_H.id = row.id + "-H";
+    c_H.innerHTML = g_obj["H"].toFixed(3);
+    
+    var c_btn_view = row.insertCell(2);
+    let btn_view = document.createElement("button");
+    btn_view.innerHTML = "VIEW";
+    btn_view.onclick = function () {
+        
+        //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
+        topic_cmd = pico_location + "/" + s_sub + "/CMD"
+        var j_msg = {}
+        j_msg["device"] = s_mod
+        j_msg["command"] = "VIEW"
+        
+        console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+	//alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        publish_one_message(topic_cmd, JSON.stringify(j_msg));
+    };
+    c_btn_view.appendChild(btn_view);
+
+
+
+}
+function addHihTable(div_name) {
+
+    var myTableDiv = document.getElementById(div_name);
+    var req_tab = document.getElementById(div_name + "-table-id");
+    console.log("req_tab "+req_tab)
+    if (req_tab != null) return;
+    var table = document.createElement('TABLE');
+    table.id = div_name + '-table-id';
+    table.className = div_name + '-table';
+    table.border = '1';
+    var headers = ["T (C)", "H (%)"," View "];
+
+    var tableBody = document.createElement('TBODY');
+    table.appendChild(tableBody);
+    for (var i = 0; i < 1; i++) {
+        var tr = document.createElement('TR');
+        tableBody.appendChild(tr);
+
+       
+        for (var j = 0; j < headers.length; j++) {
+            var td = document.createElement('TD');
+            td.width = '75';
+            td.appendChild(document.createTextNode(headers[j]));
+            tr.appendChild(td);
+        }
+
+    }
+
+    myTableDiv.appendChild(table);
+    //alert("Genesis table "+div_name+" "+headers.length);
+}
+
+function addHihRow(div_name, g_obj) {
+    var s_mod = div_name.split("-")[0];
+    var s_sub = div_name.split("-")[1];
+
+    var table = document.getElementById(div_name + '-table-id');
+    var row_name= div_name + "-table-0";
+    var req_row = document.getElementById(row_name);
+    if (req_row != null)
+    {
+	var c_T=document.getElementById(row_name+"-T");
+	c_T.innerHTML = g_obj["T"].toFixed(3);
+	var c_H=document.getElementById(row_name+"-H");
+	c_H.innerHTML = g_obj["H"].toFixed(3);
+	return;
+    }
+    var rowCount = table.rows.length;
+    var row = table.insertRow(rowCount);
+    row.id = div_name + "-table-0";
+
+    var c_T = row.insertCell(0);
+    c_T.id = row.id + "-T";
+    c_T.innerHTML = g_obj["T"].toFixed(3);
+    var c_H = row.insertCell(1);
+    c_H.id = row.id + "-H";
+    c_H.innerHTML = g_obj["H"].toFixed(3);
+    
+    var c_btn_view = row.insertCell(2);
+    let btn_view = document.createElement("button");
+    btn_view.innerHTML = "VIEW";
+    btn_view.onclick = function () {
+        
+        //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
+        topic_cmd = pico_location + "/" + s_sub + "/CMD"
+        var j_msg = {}
+        j_msg["device"] = s_mod
+        j_msg["command"] = "VIEW"
+        
+        console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+	//alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        publish_one_message(topic_cmd, JSON.stringify(j_msg));
+    };
+    c_btn_view.appendChild(btn_view);
+
+
+
+}
+
+function addPicoTable(div_name) {
+
+    var myTableDiv = document.getElementById(div_name);
+    var req_tab = document.getElementById(div_name + "-table-id");
+    console.log("req_tab "+req_tab)
+    if (req_tab != null) return;
+    var table = document.createElement('TABLE');
+    table.id = div_name + '-table-id';
+    table.className = div_name + '-table';
+    table.border = '1';
+    var headers = ["T (C)"];
+
+    var tableBody = document.createElement('TBODY');
+    table.appendChild(tableBody);
+    for (var i = 0; i < 1; i++) {
+        var tr = document.createElement('TR');
+        tableBody.appendChild(tr);
+
+       
+        for (var j = 0; j < headers.length; j++) {
+            var td = document.createElement('TD');
+            td.width = '75';
+            td.appendChild(document.createTextNode(headers[j]));
+            tr.appendChild(td);
+        }
+
+    }
+
+    myTableDiv.appendChild(table);
+    //alert("Genesis table "+div_name+" "+headers.length);
+}
+
+function addPicoRow(div_name, g_obj) {
+    var s_mod = div_name.split("-")[0];
+    var s_sub = div_name.split("-")[1];
+
+    var table = document.getElementById(div_name + '-table-id');
+    var row_name= div_name + "-table-0";
+    var req_row = document.getElementById(row_name);
+    if (req_row != null)
+    {
+	var c_T=document.getElementById(row_name+"-T");
+	c_T.innerHTML = g_obj["T"].toFixed(3);
+	return;
+    }
+    var rowCount = table.rows.length;
+    var row = table.insertRow(rowCount);
+    row.id = div_name + "-table-0";
+
+    var c_T = row.insertCell(0);
+    c_T.id = row.id + "-T";
+    c_T.innerHTML = g_obj["T"].toFixed(3);
+    
+    
 
 
 }

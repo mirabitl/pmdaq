@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import time
 import json
 import paho.mqtt.client as paho
@@ -5,6 +6,7 @@ import os
 import MongoMqtt as ms
 import logging
 import graphyte
+import random
 
 class pico_monitor:
     def __init__(self,host,port,session):
@@ -146,7 +148,8 @@ class pico_monitor:
                     print("Error sending ",x,r_m["content"])
                     break
     def Connect(self):
-        self.cname="monitor-%d" % os.getpid()
+        id=random.randrange(1, 1000)
+        self.cname="monitor-%d" % id
         self.client= paho.Client(self.cname)
         self.client.on_connect=self.on_connect
         self.client.on_disconnect=self.on_disconnect
@@ -154,7 +157,7 @@ class pico_monitor:
        
 
         print("connecting to broker ",self.host,":",self.port)
-        self.client.connect(self.host,self.port)#connect
+        self.client.connect(self.host,self.port,keepalive=600)#connect
         print("connected");
     def ListTopics(self):
         self.client.on_message=self.on_topics
@@ -191,7 +194,7 @@ class pico_monitor:
 if __name__ == "__main__":
     s=pico_monitor("lyoilc07",1883,"pico_test")
     s.Connect()
-    #s.ListTopics()
+    s.ListTopics()
     s.loop()
     while 1:
         time.sleep(1)
