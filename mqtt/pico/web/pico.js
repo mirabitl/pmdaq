@@ -95,6 +95,7 @@ function onMessageArrived(message) {
                 iDiv.className = 'genesys-' + s_sub;
                 iDiv.innerHTML = "<H2> Lambda system " + s_sub + "</H2>"
                 document.getElementById("Genesys").appendChild(iDiv);
+		console.log("Add Genesys Table");
                 addGenesysTable(iDiv.className);
             }
             
@@ -391,11 +392,13 @@ function addGenesysTable(div_name) {
 
     var myTableDiv = document.getElementById(div_name);
     var req_tab = document.getElementById(div_name + "-table-id");
+    console.log("req_tab "+req_tab)
     if (req_tab != null) return;
     var table = document.createElement('TABLE');
     table.id = div_name + '-table-id';
     table.className = div_name + '-table';
     table.border = '1';
+    var headers = ["V Set", "I Set ", "V read", "I read","Status","V Req.  ", " ","I Req.", " "," "," "," View "];
 
     var tableBody = document.createElement('TBODY');
     table.appendChild(tableBody);
@@ -403,7 +406,7 @@ function addGenesysTable(div_name) {
         var tr = document.createElement('TR');
         tableBody.appendChild(tr);
 
-        var headers = ["V Set", "I Set ", "V read", "I read","Status","V Req.  ", " ","I Req.", " "," "," "];
+       
         for (var j = 0; j < headers.length; j++) {
             var td = document.createElement('TD');
             td.width = '75';
@@ -414,7 +417,7 @@ function addGenesysTable(div_name) {
     }
 
     myTableDiv.appendChild(table);
-
+    alert("Genesis table "+div_name+" "+headers.length);
 }
 
 function addGenesysRow(div_name, g_obj) {
@@ -539,6 +542,23 @@ function addGenesysRow(div_name, g_obj) {
         publish_one_message(topic_cmd, JSON.stringify(j_msg));
     };
     c_btn_off.appendChild(btn_off);
+    
+    var c_btn_view = row.insertCell(11);
+    let btn_view = document.createElement("button");
+    btn_view.innerHTML = "VIEW";
+    btn_view.onclick = function () {
+        
+        //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
+        topic_cmd = pico_location + "/" + s_sub + "/CMD"
+        var j_msg = {}
+        j_msg["device"] = s_mod
+        j_msg["command"] = "VIEW"
+        
+        console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+	//alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        publish_one_message(topic_cmd, JSON.stringify(j_msg));
+    };
+    c_btn_view.appendChild(btn_view);
 
 
 
