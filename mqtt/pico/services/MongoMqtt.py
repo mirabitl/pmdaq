@@ -211,7 +211,7 @@ class MongoMqtt:
             writer = csv.writer(fout, delimiter="|")
             writer.writerow(fieldnames)
         if (device=="rp2040" ):
-            fieldnames = ['Date','T']
+            fieldnames = ['Date','rtc','T']
             writer = csv.writer(fout, delimiter="|")
             writer.writerow(fieldnames)
         if (device=="genesys" or device =="zup"):
@@ -245,7 +245,10 @@ class MongoMqtt:
             if ( device=="hih"):
                 writer.writerow([sti,x["T"],x["H"]])
             if ( device=="rp2040"):
-                writer.writerow([sti,x["T"]])
+                if ("rtc" in x):
+                    writer.writerow([sti,x["rtc"],x["T"]])
+                else:
+                    writer.writerow([sti,int(y["ctime"]),x["T"]])
             if (device =="genesys" or device=="zup") :
                 writer.writerow([sti,x["vout"],x["iout"],x["vset"],x["iset"],x["status"]])
         fout.close()
