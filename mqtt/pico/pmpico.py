@@ -379,6 +379,7 @@ class PmPico:
   
     def publish(self,device_pub,msg,keep=False):
         topic_pub=self.topic_prefix+device_pub
+        msg["rtc"]=time.time()
         tmsg=json.dumps(msg)
         #print("PUBLISH ",topic_pub,tmsg)
         self.check_connection("Publish ")
