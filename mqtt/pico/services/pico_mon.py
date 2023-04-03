@@ -86,15 +86,9 @@ class pico_monitor:
 
     def on_disconnect(self,client, userdata, rc):
         self.flag_connected = 0
-        while self.flag_connected==0:
-            self.client.reconnect()
-            print("reconnecting ",self.flag_connected)
-            time.sleep(1)
-            if (self.flag_connected==1):
-                 self.client.loop_stop()
-                 self.loop()
 
     def on_message(self,client, userdata, message):
+        tfirst=time.time()
         #time.sleep(1)
         #print(message.timestamp)
 
@@ -141,13 +135,16 @@ class pico_monitor:
                 for i in range(len(p)):
                     metric=metric+p[i]+"."
                 metric=metric+x
-                print(metric,x)
+                #print(metric,x)
                 try:
                     self.gsender.send(metric,r_m["content"][x])
                 except Exception as error:
                     print("Error sending ",x,r_m["content"])
                     break
+        print("%s Processing time : %.3f" % (message.topic,(time.time()-tfirst)))
     def Connect(self):
+        if (self.client!=None):
+            del self.client
         id=random.randrange(1, 1000)
         self.cname="monitor-%d" % id
         self.client= paho.Client(self.cname)
@@ -180,6 +177,14 @@ class pico_monitor:
             self.client.subscribe(t)#subscribe
             print("subscribing ",t)
         
+    def stop(self):
+        self.client.loop_stop() #start loop to process received messages
+
+        for x in self.topics:
+            t=x+"/#"
+            self.client.unsubscribe(t)#subscribe
+            print("subscribing ",t)
+        
 
 
             
@@ -197,4 +202,8 @@ if __name__ == "__main__":
     s.ListTopics()
     s.loop()
     while 1:
+        if (s.flag_connected==0):
+            s.stop()
+            s.Connect()
+            s.loop()
         time.sleep(1)

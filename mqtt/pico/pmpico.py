@@ -381,7 +381,7 @@ class PmPico:
         topic_pub=self.topic_prefix+device_pub
         tmsg=json.dumps(msg)
         #print("PUBLISH ",topic_pub,tmsg)
-        #self.check_connection("Publish ")
+        self.check_connection("Publish ")
         
         rc=self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"),retain=keep)
         if (self.debug):

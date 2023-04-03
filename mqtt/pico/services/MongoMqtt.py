@@ -6,7 +6,7 @@ import json
 import bson
 from bson.objectid import ObjectId
 import time
-
+import csv
 
 class MongoMqtt:
     """
@@ -184,7 +184,71 @@ class MongoMqtt:
         res = self.db.MQTT_ITEMS.find({"topic": {'$regex': topics}}, {"_id": 0}).limit(lim).sort("ctime", pymongo.DESCENDING)
         for x in res:
             print(x)
+            
+    def csv(self,topic,depth=50000,from_time=0,file_name="/tmp/mgslow.csv"):
+        """
+        List all the run informations stored
+        """
+   
+        writer=None
+        path_elem=topic.split("/")
+        last_ctime=0
+        last_err=0
+        if (len(path_elem)<3):
+            print("Too short topic ",topic)
+            return
+        fname="_".join(path_elem)+".csv"
+        fout=open(fname, 'w')
+        device = path_elem[2].split("_")[0]
+        print(path_elem,device)
 
+        if (device=="bme" ):
+            fieldnames = ['Date','P', 'T','H']
+            writer = csv.writer(fout, delimiter="|")
+            writer.writerow(fieldnames)
+        if (device=="hih" ):
+            fieldnames = ['Date','T','H']
+            writer = csv.writer(fout, delimiter="|")
+            writer.writerow(fieldnames)
+        if (device=="rp2040" ):
+            fieldnames = ['Date','T']
+            writer = csv.writer(fout, delimiter="|")
+            writer.writerow(fieldnames)
+        if (device=="genesys" or device =="zup"):
+            fieldnames = ['Date','vout', 'iout','vset','iset','status']
+            writer = csv.writer(fout, delimiter="|")
+            writer.writerow(fieldnames)
+
+        mintime = 0
+        if (from_time > 0):
+            mintime = time.time()-from_time
+
+        res = self.db.MQTT_ITEMS.find({"topic": {'$regex': topic}, "ctime": {'$gt': mintime}}, {
+                                      "_id": 0}).limit(depth).sort("ctime", pymongo.ASCENDING)
+        for y in res:
+
+            x=y["message"]
+
+
+            ltop=y["topic"].split("/")
+            if (len(ltop)==4 and ltop[3]=="INFOS"):
+                continue
+            sti = time.strftime('%Y-%m-%d %H:%M:%S',
+                                time.localtime(y["ctime"]))
+
+            if (y["ctime"]-last_ctime>120):
+                print(int(y["ctime"]-last_err),int(y["ctime"]-last_ctime),sti,y)
+                last_err=y["ctime"]
+            last_ctime=y["ctime"]
+            if ( device=="bme"):
+                writer.writerow([sti,x["P"],x["T"],x["H"]])
+            if ( device=="hih"):
+                writer.writerow([sti,x["T"],x["H"]])
+            if ( device=="rp2040"):
+                writer.writerow([sti,x["T"]])
+            if (device =="genesys" or device=="zup") :
+                writer.writerow([sti,x["vout"],x["iout"],x["vset"],x["iset"],x["status"]])
+        fout.close()
 
 def instance():
     """

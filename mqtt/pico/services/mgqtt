@@ -72,15 +72,11 @@ if (results.items):
     exit(0)
 if (results.csv):
     r_cmd = 'csv'
-    lsince=1000000000
     ldepth=1000000000
     comment="No comment given"
     if (results.path == None):
         print('Please specify the path --path=name')
         exit(0)
-    if (results.since != None):
-       lsince=results.since
-       #print(version)
     if (results.depth != None):
        ldepth=results.depth
        #print(comment)
