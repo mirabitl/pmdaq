@@ -391,7 +391,7 @@ class PmPico:
         
     def check_msg(self):
         
-        self.check_connection("Check_Msg ")
+        #self.check_connection("Check_Msg ")
         self.client.DEBUG=True
         try:
             self.client.check_msg()
