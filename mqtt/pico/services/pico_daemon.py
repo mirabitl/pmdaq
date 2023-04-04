@@ -13,6 +13,7 @@ class pico_monitor:
         """
         Handle all application definition and p  arameters , It controls the acquisition via the FDAQ application and the Slow control via the FSLOW application
         """
+        self.fout=open("/var/log/pico.log","a+")
         self.port=port
         self.host=host
         self.session=None
@@ -53,10 +54,11 @@ class pico_monitor:
                     self.topicm[topic]=x["message"]
 
     def on_topics(self,client, userdata, message):
+        self.fout.flush()
         #time.sleep(1)
 
-        #print("received topic =",str(message.topic))
-        #print("received message =",str(message.payload.decode("utf-8")))
+        #print("received topic =",str(message.topic),file=self.fout)
+        #print("received message =",str(message.payload.decode("utf-8")),file=self.fout)
         lt=str(message.topic).split("/")
         # At least session/system/device_name/INFOS
         if (len(lt)<4):
@@ -94,12 +96,13 @@ class pico_monitor:
         self.flag_connected = 0
 
     def on_message(self,client, userdata, message):
+        self.fout.flush()
         tfirst=time.time()
         #time.sleep(1)
-        #print(message.timestamp)
+        #print(message.timestamp,file=self.fout)
 
-        print("received topic =",str(message.topic))
-        #print("received message =",str(message.payload.decode("utf-8")))
+        print("received topic =",str(message.topic),file=self.fout)
+        #print("received message =",str(message.payload.decode("utf-8")),file=self.fout)
 
         p=message.topic.split("/")
         if (not p[0] in self.settings["sessions"]):
@@ -126,13 +129,13 @@ class pico_monitor:
             logging.debug(sm)
         else:
             if (False):
-                print("No db storage")
-            #print(r_m)
+                print("No db storage",file=self.fout)
+            #print(r_m,file=self.fout)
         ## BMP data
         if (self.gsender!=None):
             
             for x in r_m["content"].keys():
-                print(len(p),x)
+                print(len(p),x,file=self.fout)
                 if (len(p)>=4 and p[3]=="INFOS"):
                     continue
                 if (len(p)>=4 and p[3]=="GAS"):
@@ -141,13 +144,13 @@ class pico_monitor:
                 for i in range(len(p)):
                     metric=metric+p[i]+"."
                 metric=metric+x
-                #print(metric,x)
+                #print(metric,x,file=self.fout)
                 try:
                     self.gsender.send(metric,r_m["content"][x])
                 except Exception as error:
-                    print("Error sending ",x,r_m["content"])
+                    print("Error sending ",x,r_m["content"],file=self.fout)
                     break
-        print("%s Processing time : %.3f" % (message.topic,(time.time()-tfirst)))
+        print("%s Processing time : %.3f" % (message.topic,(time.time()-tfirst)),file=self.fout)
     def Connect(self):
         if (self.client!=None):
             del self.client
@@ -159,21 +162,21 @@ class pico_monitor:
         ######Bind function to callback
        
 
-        print("connecting to broker ",self.host,":",self.port)
+        print("connecting to broker ",self.host,":",self.port,file=self.fout)
         self.client.connect(self.host,self.port,keepalive=600)#connect
-        print("connected");
+        print("connected",file=self.fout);
     def ListTopics(self):
         self.client.on_message=self.on_topics
         self.client.loop_start() #start loop to process received messages
-        print("subscribing all ")
+        print("subscribing all ",file=self.fout)
         self.client.subscribe("#")#subscribe
         time.sleep(3)
         self.client.unsubscribe("#")
-        #print(self.topics)
+        #print(self.topics,file=self.fout)
         self.client.loop_stop()
         #idt=0
         for s in self.topics:
-            print("Registered topic %s \n",s)
+            print("Registered topic %s \n",s,file=self.fout)
     def loop(self):
         self.client.on_message=self.on_message
         self.client.loop_start() #start loop to process received messages
@@ -181,7 +184,7 @@ class pico_monitor:
         for x in self.topics:
             t=x+"/#"
             self.client.subscribe(t)#subscribe
-            print("subscribing ",t)
+            print("subscribing ",t,file=self.fout)
         
     def stop(self):
         self.client.loop_stop() #start loop to process received messages
@@ -189,7 +192,7 @@ class pico_monitor:
         for x in self.topics:
             t=x+"/#"
             self.client.unsubscribe(t)#subscribe
-            print("subscribing ",t)
+            print("subscribing ",t,file=self.fout)
         
 
 
@@ -203,7 +206,7 @@ class pico_monitor:
 #while (True):
 #    time.sleep(1)
 if __name__ == "__main__":
-    s=pico_monitor("lyoilc07",1883,"pico_test")
+    s=pico_monitor("lyoilc07",1883,"/etc/pico_mon.json")
     s.Connect()
     s.ListTopics()
     s.loop()

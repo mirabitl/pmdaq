@@ -6,8 +6,9 @@ class abstractGenesys:
     def __init__(self,number):
         self.board=number
     
+        
         self.setAddress({"address":self.board})
-
+        #    time.sleep(1)
         #self.setRemote({"remote":1})
         #self.write("RMT %d\r" % 1)  
 
