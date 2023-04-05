@@ -135,7 +135,7 @@ class pico_monitor:
         if (self.gsender!=None):
             
             for x in r_m["content"].keys():
-                print(len(p),x,file=self.fout)
+                #print(len(p),x,file=self.fout)
                 if (len(p)>=4 and p[3]=="INFOS"):
                     continue
                 if (len(p)>=4 and p[3]=="GAS"):
@@ -150,7 +150,7 @@ class pico_monitor:
                 except Exception as error:
                     print("Error sending ",x,r_m["content"],file=self.fout)
                     break
-        print("%s Processing time : %.3f" % (message.topic,(time.time()-tfirst)),file=self.fout)
+        #print("%s Processing time : %.3f" % (message.topic,(time.time()-tfirst)),file=self.fout)
     def Connect(self):
         if (self.client!=None):
             del self.client
