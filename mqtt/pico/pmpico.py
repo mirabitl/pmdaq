@@ -79,10 +79,11 @@ class PmPico:
                     # Detection mode
                     st=self.brooks.identity()
                     #tmsg=json.dumps(st)
-                    print(st)
+                    print("identity ",st)
                     #time.sleep(10)
-                    self.publish("brooks/GAS/%s" % st["gas_type"], st,True)
-                    self.settings["brooks"]["devices"][0]=st["device_id"]
+                    if ("gas_type" in st):
+                        self.publish("brooks/GAS/%s" % st["gas_type"], st,True)
+                        self.settings["brooks"]["devices"][0]=st["device_id"]
                     #self.ping()
                 else:
                     stv=self.brooks.view()
@@ -145,6 +146,7 @@ class PmPico:
                                      "callback":self.hih.process_message}                                
 
                 stv=self.hih.view()
+                time.sleep(2)
                 self.publish("hih/INFOS",stv,True)
 
         #RP2040
@@ -189,8 +191,11 @@ class PmPico:
         st=self.brooks.status()
         sti=self.brooks.read_gas_type(1)
         print(sti)
-        self.draw_string("Brooks\nFlow %.2f l/h" % (st["primary_variable"]))
-        #print(st)      
+        if ("primary_variable" in st):
+            self.draw_string("Brooks\nFlow %.2f l/h" % (st["primary_variable"]))
+        else:
+            self.draw_string("Brooks\n No device connected") 
+        #print(st)
         time.sleep(1)
 
     # cpwplus init

@@ -7,18 +7,20 @@ class abstractBrooks:
         self.DEBUG=False
         self.buf=b""
         self.device_id=device_id
+        self.l_address=None
         # Get the address
         if (device_id==0):
             cmd=hp.read_unique_identifier(0)
             self.writeCommand(cmd)
             mn=self.readAnswer()
             print(mn)
-            print(mn["full_response"])
-            self.l_address= hp.calculate_long_address(mn["manufacturer_id"],mn["manufacturer_device_type"],mn["device_id"].to_bytes(3, 'big'))
-            #print(self.l_address)
-            print("Device found %d %d %d %x\n" % (mn["manufacturer_id"],mn["manufacturer_device_type"],mn["device_id"],int.from_bytes(self.l_address,"big")))
-            self.device_id=mn["device_id"]
-            self.use_device(self.device_id)
+            if ("full_response" in mn):
+                print(mn["full_response"])
+                self.l_address= hp.calculate_long_address(mn["manufacturer_id"],mn["manufacturer_device_type"],mn["device_id"].to_bytes(3, 'big'))
+                #print(self.l_address)
+                print("Device found %d %d %d %x\n" % (mn["manufacturer_id"],mn["manufacturer_device_type"],mn["device_id"],int.from_bytes(self.l_address,"big")))
+                self.device_id=mn["device_id"]
+                self.use_device(self.device_id)
         else:
             manufacturer_id=10
             manufacturer_device_type=50
@@ -30,15 +32,22 @@ class abstractBrooks:
     def use_device(self,d_id,m_id=10,m_dt=50):
         self.device_id=d_id
         self.l_address= hp.calculate_long_address(m_id,m_dt,d_id.to_bytes(3, 'big'))
-        
+    
+    def noConnection(self):
+        return (self.l_address==None)
+    
     def info(self):
+        if self.noConnection():
+            return
         self.read_gas_type(1)
         self.read_gas_params(1)
         self.read_primary()
         self.read_set_point()
     def identity(self):
-        self.info()
         r={}
+        if (self.noConnection()):
+            return r
+        self.info()
         r["device_id"]=self.device_id
         r["gas_type"]=self.res["read_gas_type"]["name"]
         r["gas_density_unit"]=self.res["read_gas_params"]["density_unit"]
@@ -51,8 +60,11 @@ class abstractBrooks:
         r["gas_flow_range"]=self.res["read_gas_params"]["flow_range"]
         return r
     def status(self):
-        self.info()
         r={}
+        if (self.noConnection()):
+            return r
+        self.info()
+        
         r["setpoint_percent_unit"]= self.res["read_set_point"]["setpoint_percent_unit"]
         r["setpoint_percent"]= self.res["read_set_point"]["setpoint_percent"]
         r["setpoint_selected_unit"]= self.res["read_set_point"]["selected_unit"]
@@ -62,13 +74,16 @@ class abstractBrooks:
         return r
 
     def set_flow(self,p):
+        r={}
+        if (self.noConnection()):
+            return r
         if not "flow" in p:
             print("no flow value in ",p)
-            return
+            return r
         if "device_id" in p:
             self.use_device(p["device_id"])
         self.write_set_point(p["flow"])
-        r={}
+        
         r["setpoint_percent_unit"]= self.res["write_set_point"]["setpoint_percent_unit"]
         r["setpoint_percent"]= self.res["write_set_point"]["setpoint_percent"]
         r["setpoint_selected_unit"]= self.res["write_set_point"]["selected_unit"]
@@ -103,6 +118,8 @@ class abstractBrooks:
         self.res["write_set_point"]=rc
 
     def read_gas_type(self,g_code):
+        if (self.noConnection()):
+            return {}
         code = g_code
         pdata = struct.pack(">B",code)
         #print(pdata)
