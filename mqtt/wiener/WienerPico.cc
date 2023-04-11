@@ -98,7 +98,7 @@ void WienerPico::status(web::json::value v)
   if (v.as_object().find("last") != v.as_object().end())
     last = v["last"].as_integer();
   std::cout << "querying status " << first << " to " << last << std::endl;
-  publish("STATUS", this->rangeStatus(first, last).serialize());
+  publish("", this->rangeStatus(first, last).serialize());
 }
 
 void WienerPico::on(web::json::value v)

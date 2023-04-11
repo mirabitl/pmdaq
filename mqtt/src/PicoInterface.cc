@@ -12,7 +12,7 @@ const int QOS = 1;
 // How many to buffer while off-line
 const int MAX_BUFFERED_MESSAGES = 1200;
 
-PicoInterface::PicoInterface(std::string id, std::string subid, std::string hardware) : _id(id), _subid(id), _hw(hardware), _cli(NULL), _listening(false), _looping(false), _period(20)
+PicoInterface::PicoInterface(std::string id, std::string subid, std::string hardware) : _id(id), _subid(subid), _hw(hardware), _cli(NULL), _listening(false), _looping(false), _period(20)
 {
 
   std::stringstream ss;
@@ -27,7 +27,7 @@ PicoInterface::PicoInterface(std::string id, std::string subid, std::string hard
     slist<<_id<<"/LIST";
     _listpath=slist.str();
     std::stringstream sreset;
-    sreset<<_id<<"/RESET";
+    sreset<<_id<< "/" << subid <<"/RESET";
     _resetpath=sreset.str();
 
   // Client id
@@ -215,7 +215,14 @@ void PicoInterface::processMessage(mqtt::const_message_ptr msg)
       actives["devices"]=jdev;
       std::stringstream s_top;
       s_top<<_id<<"/RUNNING";
-      this->publish(s_top.str(),actives);
+
+      std::string sm = actives.serialize();
+      std::cout << "\nSending RUNNING message..." << std::endl;
+      mqtt::message_ptr pubmsg = mqtt::make_message(mqtt::string_ref(s_top.str().c_str()), mqtt::binary_ref(sm.c_str()));
+      pubmsg->set_qos(1);
+      pubmsg->set_retained(false);
+      _cli->publish(pubmsg)->wait_for(TIMEOUT);
+      std::cout << "  ...running sent OK" << std::endl;
 
       return;
     }
