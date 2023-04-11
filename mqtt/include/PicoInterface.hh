@@ -23,7 +23,7 @@ private:
   std::string _serverHost;
   uint32_t _serverPort;
   std::string _clientid;
-  std::string _id,_subid,_hw,_path,_cmdpath;
+  std::string _id,_subid,_hw,_path,_cmdpath,_listpath,_resetpath;
   std::thread g_listen;
   bool _listening;
 

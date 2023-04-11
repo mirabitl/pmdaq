@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <string.h>
 #include <unistd.h>
-
+//Topic:pico_test/RUNNING| Message : {"location": "pico_test", "subsystem": "Bureau", "devices": ["hih", "rp2040", "bme"]}
 const auto TIMEOUT = std::chrono::seconds(10);
 const int QOS = 1;
 
@@ -22,6 +22,14 @@ PicoInterface::PicoInterface(std::string id, std::string subid, std::string hard
   ss1 << id << "/" << subid << "/CMD";
   _cmdpath = ss1.str();
   std::cout << "Creating interface " << _path << "\n";
+
+   std::stringstream slist;
+    slist<<_id<<"/LIST";
+    _listpath=slist.str();
+    std::stringstream sreset;
+    sreset<<_id<<"/RESET";
+    _resetpath=sreset.str();
+
   // Client id
   std::stringstream ssc;
   ssc << "pico_client_" << rand() % 32768;
@@ -135,7 +143,9 @@ void PicoInterface::Connect(std::string host, uint32_t port)
   {
     // subscribe to any command
 
-    _cli->subscribe(_cmdpath, 2)->wait();
+    _cli->subscribe(_cmdpath, 2)->wait();   
+    _cli->subscribe(_listpath, 2)->wait();
+    _cli->subscribe(_resetpath, 2)->wait();
     // publish Infos
     std::stringstream si;
     si << _path << "/INFOS";
@@ -189,6 +199,28 @@ void PicoInterface::addCommand(std::string s, MqttCmdFunctor f)
 
 void PicoInterface::processMessage(mqtt::const_message_ptr msg)
 {
+  if (msg->get_topic().compare(_resetpath) == 0)
+    {
+      this->stopLoop();
+      this->Stop();
+      exit(0);
+    }
+  if (msg->get_topic().compare(_listpath) == 0)
+    {
+      web::json::value jdev;
+      auto actives = web::json::value::object();
+      actives["location"]= web::json::value::string(U(_id));
+      actives["subsystem"]= web::json::value::string(U(_subid));
+      jdev[0]= web::json::value::string(U(_hw));
+      actives["devices"]=jdev;
+      std::stringstream s_top;
+      s_top<<_id<<"/RUNNING";
+      this->publish(s_top.str(),actives);
+
+      return;
+    }
+
+  
   if (msg->get_topic().compare(_cmdpath) != 0)
     return;
   web::json::value ret = web::json::value::parse(msg->to_string());
