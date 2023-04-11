@@ -1,0 +1,15 @@
+{
+    "debug":1,
+    "id":"pico_dome",
+    "subid":"pulsalys_mixer",
+    "wiznet":{ "use":1,"dhcp":1,"ip":"192.168.12.2","gw":"192.168.12.1"},
+    "mqtt":{"server":"134.158.137.33","keepalive":120},
+    "rp2040":{"use":1,"period":30},
+    "bme":{"use":0,"i2c":0,"sda":4,"scl":5,"period":10},
+    "hih":{"use":0,"i2c":1,"sda":26,"scl":27,"period":30},
+    "genesys":{"use":0,"uart":0,"tx":0,"rx":1,"baud":9600,"address":1,"period":30},
+    "zup":{"use":0,"uart":0,"tx":0,"rx":1,"baud":9600,"address":1,"period":30},
+    "cpwplus":{"use":0,"uart":0,"tx":0,"rx":1,"baud":9600,"period":30},
+    "brooks":{"use":1,"uart":0,"tx":0,"rx":1,"baud":19200,"rst":2,"devices":[0],"period":30}
+    
+}

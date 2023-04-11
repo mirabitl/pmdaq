@@ -1,1 +1,4 @@
+echo "Compile Paho"
 g++ -o ../bin/WienerPaho.exe -I../include ../src/PahoInterface.cc WienerSnmp.cc WienerPaho.cc -lcpprest  -lpaho-mqtt3a -lpaho-mqttpp3 -lpthread 
+echo "Compile Pico"
+g++ -o ../bin/WienerPico.exe -I../include ../src/PicoInterface.cc WienerSnmp.cc WienerPico.cc -lcpprest  -lpaho-mqtt3a -lpaho-mqttpp3 -lpthread 
