@@ -982,7 +982,7 @@ function addWienerTable(div_name) {
     table.id = div_name + '-table-id';
     table.className = div_name + '-table';
     table.border = '1';
-    var headers = ["Channel","V Set (V)", "I Set (uA)", "V read (V)", "I read (uA)","Status","V Req. (V)  ", " ","I Req. (uA)", " "," "," "," View "];
+    var headers = ["Channel","V Set (V)", "I Set (uA)","Ramp Up", "V read (V)", "I read (uA)","Status","V Req. (V)  ", " ","I Req. (uA)", " ","Ramp req.  ", " "," "," "," View "];
 
     var tableBody = document.createElement('TBODY');
     table.appendChild(tableBody);
@@ -1025,6 +1025,10 @@ function addWienerRows(div_name, g_obj) {
 	    c_iout.innerHTML = (rch["iout"]*1.E6).toFixed(3);
 	    let c_status=document.getElementById(row_name+"-status");
 	    c_status.innerHTML = rch["status"].split("=")[1];
+
+	    let c_ramp=document.getElementById(row_name+"-ramp");
+	    c_ramp.innerHTML = rch["rampup"].toFixed(1);
+	    
 	    console.log("Process "+ch+" "+(rch["iout"]*1.E6))
 	    continue;
 	}
@@ -1042,16 +1046,19 @@ function addWienerRows(div_name, g_obj) {
 	var c_iset = row.insertCell(2);
 	c_iset.id = row.id + "-iset";
 	c_iset.innerHTML = (rch["iset"]*1E6).toFixed(3);
-	var c_vout = row.insertCell(3);
+	var c_ramp = row.insertCell(3);
+	c_ramp.id = row.id + "-ramp";
+	c_ramp.innerHTML = rch["rampup"].toFixed(3);
+	var c_vout = row.insertCell(4);
 	c_vout.id = row.id + "-vout";
 	c_vout.innerHTML = rch["vout"].toFixed(3);
-	var c_iout = row.insertCell(4);
+	var c_iout = row.insertCell(5);
 	c_iout.id = row.id + "-iout";
 	c_iout.innerHTML = (rch["iout"]*1.E6).toFixed(3);
-	var c_status = row.insertCell(5);
+	var c_status = row.insertCell(6);
 	c_status.id = row.id + "-status";
 	c_status.innerHTML = rch["status"].split("=")[1];
-	var c_nvset = row.insertCell(6);
+	var c_nvset = row.insertCell(7);
 	let x_vset = document.createElement("INPUT");
 	x_vset.id = row.id+"-nvset";
 	x_vset.setAttribute("type", "number");
@@ -1060,7 +1067,7 @@ function addWienerRows(div_name, g_obj) {
 	var s_mod = div_name.split("-")[0];
 	var s_sub = div_name.split("-")[1];
 
-	var c_btn_vset = row.insertCell(7);
+	var c_btn_vset = row.insertCell(8);
 	let btn_vset = document.createElement("button");
 	btn_vset.innerHTML = "Set Voltage";
 	btn_vset.onclick = function () {
@@ -1080,13 +1087,13 @@ function addWienerRows(div_name, g_obj) {
 	};
 	c_btn_vset.appendChild(btn_vset);
 	
-	var c_niset = row.insertCell(8);
+	var c_niset = row.insertCell(9);
 	let x_iset = document.createElement("INPUT");
 	x_iset.id = row.id+"-niset";
 	x_iset.setAttribute("type", "number");
 	c_niset.appendChild(x_iset);
 
-	var c_btn_iset = row.insertCell(9);
+	var c_btn_iset = row.insertCell(10);
 	let btn_iset = document.createElement("button");
 	btn_iset.innerHTML = "Set Max Current";
 	btn_iset.onclick = function () {
@@ -1107,7 +1114,34 @@ function addWienerRows(div_name, g_obj) {
 	};
 	c_btn_iset.appendChild(btn_iset);
 	
-	var c_btn_on = row.insertCell(10);
+	var c_nramp = row.insertCell(11);
+	let x_ramp = document.createElement("INPUT");
+	x_ramp.id = row.id+"-nramp";
+	x_ramp.setAttribute("type", "number");
+	c_nramp.appendChild(x_ramp);
+
+	var c_btn_ramp = row.insertCell(12);
+	let btn_ramp = document.createElement("button");
+	btn_ramp.innerHTML = "Set Ramp";
+	btn_ramp.onclick = function () {
+            var v_ramp = document.getElementById(x_ramp.id).value;
+            
+            //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
+            topic_cmd = pico_location + "/" + s_sub + "/CMD"
+            var j_msg = {}
+            j_msg["device"] = s_mod
+            j_msg["command"] = "RAMPUP"
+            j_msg["params"] = {}
+	    j_msg["params"]["first"] =ch;
+	    j_msg["params"]["last"] =ch;
+            j_msg["params"]["rampup"] = parseFloat(v_ramp)
+	    alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+            publish_one_message(topic_cmd, JSON.stringify(j_msg));
+	};
+	c_btn_ramp.appendChild(btn_ramp);
+	
+	var c_btn_on = row.insertCell(13);
 	let btn_on = document.createElement("button");
 	btn_on.innerHTML = "ON";
 	btn_on.onclick = function () {
@@ -1127,7 +1161,7 @@ function addWienerRows(div_name, g_obj) {
 	};
 	c_btn_on.appendChild(btn_on);
 
-	var c_btn_off = row.insertCell(11);
+	var c_btn_off = row.insertCell(14);
 	let btn_off = document.createElement("button");
 	btn_off.innerHTML = "OFF";
 	btn_off.onclick = function () {
@@ -1147,7 +1181,7 @@ function addWienerRows(div_name, g_obj) {
 	};
 	c_btn_off.appendChild(btn_off);
 	
-	var c_btn_view = row.insertCell(12);
+	var c_btn_view = row.insertCell(15);
 	let btn_view = document.createElement("button");
 	btn_view.innerHTML = "VIEW";
 	btn_view.onclick = function () {
