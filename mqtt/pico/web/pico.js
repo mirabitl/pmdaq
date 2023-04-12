@@ -528,7 +528,7 @@ function addGenesysTable(div_name) {
     }
 
     myTableDiv.appendChild(table);
-    alert("Genesis table "+div_name+" "+headers.length);
+    //alert("Genesis table "+div_name+" "+headers.length);
 }
 
 function addGenesysRow(div_name, g_obj) {
@@ -982,7 +982,7 @@ function addWienerTable(div_name) {
     table.id = div_name + '-table-id';
     table.className = div_name + '-table';
     table.border = '1';
-    var headers = ["Channel","V Set", "I Set ", "V read", "I read","Status","V Req.  ", " ","I Req.", " "," "," "," View "];
+    var headers = ["Channel","V Set (V)", "I Set (uA)", "V read (V)", "I read (uA)","Status","V Req. (V)  ", " ","I Req. (uA)", " "," "," "," View "];
 
     var tableBody = document.createElement('TBODY');
     table.appendChild(tableBody);
@@ -1001,7 +1001,7 @@ function addWienerTable(div_name) {
     }
 
     myTableDiv.appendChild(table);
-    alert("Wiener table "+div_name+" "+headers.length);
+    //alert("Wiener table "+div_name+" "+headers.length);
 }
 
 function addWienerRows(div_name, g_obj) {
@@ -1010,22 +1010,23 @@ function addWienerRows(div_name, g_obj) {
     for ( rch of g_obj["channels"])
     {
 	let ch=rch["id"];
-	var row_name= div_name + "-table-"+ch;
+	let row_name= div_name + "-table-"+ch;
 	console.log(ch+" gives "+row_name);
-	var req_row = document.getElementById(row_name);
+	let req_row = document.getElementById(row_name);
 	if (req_row != null)
 	{
-	    var c_vset=document.getElementById(row_name+"-vset");
+	    let c_vset=document.getElementById(row_name+"-vset");
 	    c_vset.innerHTML = rch["vset"].toFixed(1);
-	    var c_iset=document.getElementById(row_name+"-iset");
+	    let c_iset=document.getElementById(row_name+"-iset");
 	    c_iset.innerHTML = (rch["iset"]*1.E6).toFixed(3);
-	    var c_vout=document.getElementById(row_name+"-vout");
+	    let c_vout=document.getElementById(row_name+"-vout");
 	    c_vout.innerHTML = rch["vout"].toFixed(1);
-	    var c_iout=document.getElementById(row_name+"-iout");
+	    let c_iout=document.getElementById(row_name+"-iout");
 	    c_iout.innerHTML = (rch["iout"]*1.E6).toFixed(3);
-	    var c_status=document.getElementById(row_name+"-status");
-	    c_status.innerHTML = rch["status"];
-	    return;
+	    let c_status=document.getElementById(row_name+"-status");
+	    c_status.innerHTML = rch["status"].split("=")[1];
+	    console.log("Process "+ch+" "+(rch["iout"]*1.E6))
+	    continue;
 	}
 	var rowCount = table.rows.length;
 	var row = table.insertRow(rowCount);
@@ -1049,7 +1050,7 @@ function addWienerRows(div_name, g_obj) {
 	c_iout.innerHTML = (rch["iout"]*1.E6).toFixed(3);
 	var c_status = row.insertCell(5);
 	c_status.id = row.id + "-status";
-	c_status.innerHTML = rch["status"];
+	c_status.innerHTML = rch["status"].split("=")[1];
 	var c_nvset = row.insertCell(6);
 	let x_vset = document.createElement("INPUT");
 	x_vset.id = row.id+"-nvset";
@@ -1099,7 +1100,7 @@ function addWienerRows(div_name, g_obj) {
             j_msg["params"] = {}
 	    j_msg["params"]["first"] =ch;
 	    j_msg["params"]["last"] =ch;
-            j_msg["params"]["iset"] = parseFloat(v_iset)
+            j_msg["params"]["iset"] = parseFloat(v_iset)*1E-6
 	    alert(topic_cmd + "|" + JSON.stringify(j_msg));
             console.log(topic_cmd + "|" + JSON.stringify(j_msg));
             publish_one_message(topic_cmd, JSON.stringify(j_msg));
