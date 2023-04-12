@@ -34,6 +34,7 @@ function onConnect() {
     brooksys = []
     zupsys = []
     genesyssys = []
+    wienersys=[]
     gas_list = {}
     topic = pico_location + "/LIST"
     publish_one_message(topic, "{}")
@@ -64,6 +65,7 @@ function onMessageArrived(message) {
 	id_bme = jmsg["devices"].findIndex((element) => element === "bme");
 	id_hih = jmsg["devices"].findIndex((element) => element === "hih");
 	id_pico = jmsg["devices"].findIndex((element) => element === "rp2040");
+	id_wiener=jmsg["devices"].findIndex((element) => element === "wiener");
         // Create brooks_head object
         if (id_brooks >= 0) {
             var s_sub = jmsg["subsystem"];
@@ -176,6 +178,26 @@ function onMessageArrived(message) {
             //createListBrooks();
         }
 
+	if (id_wiener >= 0) {
+            var s_sub = jmsg["subsystem"];
+
+            // Query existing gas
+            topic_wiener = pico_location + "/" + s_sub + "/wiener/#"
+            if (document.getElementById('hih-' + s_sub) == null) {
+                var iDiv = document.createElement('div');
+                iDiv.id = 'wiener-' + s_sub;
+                iDiv.className = 'wiener-' + s_sub;
+                iDiv.innerHTML = "<H2> Wiener system " + s_sub + "</H2>"
+                document.getElementById("Wiener").appendChild(iDiv);
+                addWienerTable(iDiv.className);
+            }
+            
+            client.subscribe(topic_wiener);
+            //createListBrooks();
+        }
+	
+
+
         console.log(brooksys)
 
     }
@@ -240,6 +262,10 @@ function onMessageArrived(message) {
      if (v_t.length==3)
 	if (v_t[2] =="rp2040" )
    	    addPicoRow("pico-"+v_t[1],jmsg);
+    // WIENER
+     if (v_t.length==3)
+	if (v_t[2] =="wiener" )
+   	    addWienerRows("wiener-"+v_t[1],jmsg);
     
 }
 
@@ -944,5 +970,202 @@ function addPicoRow(div_name, g_obj) {
     
     
 
+
+}
+function addWienerTable(div_name) {
+
+    var myTableDiv = document.getElementById(div_name);
+    var req_tab = document.getElementById(div_name + "-table-id");
+    console.log("req_tab "+req_tab)
+    if (req_tab != null) return;
+    var table = document.createElement('TABLE');
+    table.id = div_name + '-table-id';
+    table.className = div_name + '-table';
+    table.border = '1';
+    var headers = ["Channel","V Set", "I Set ", "V read", "I read","Status","V Req.  ", " ","I Req.", " "," "," "," View "];
+
+    var tableBody = document.createElement('TBODY');
+    table.appendChild(tableBody);
+    for (var i = 0; i < 1; i++) {
+        var tr = document.createElement('TR');
+        tableBody.appendChild(tr);
+
+       
+        for (var j = 0; j < headers.length; j++) {
+            var td = document.createElement('TD');
+            td.width = '75';
+            td.appendChild(document.createTextNode(headers[j]));
+            tr.appendChild(td);
+        }
+
+    }
+
+    myTableDiv.appendChild(table);
+    alert("Wiener table "+div_name+" "+headers.length);
+}
+
+function addWienerRows(div_name, g_obj) {
+
+    var table = document.getElementById(div_name + '-table-id');
+    for ( rch of g_obj["channels"])
+    {
+	let ch=rch["id"];
+	var row_name= div_name + "-table-"+ch;
+	console.log(ch+" gives "+row_name);
+	var req_row = document.getElementById(row_name);
+	if (req_row != null)
+	{
+	    var c_vset=document.getElementById(row_name+"-vset");
+	    c_vset.innerHTML = rch["vset"].toFixed(1);
+	    var c_iset=document.getElementById(row_name+"-iset");
+	    c_iset.innerHTML = (rch["iset"]*1.E6).toFixed(3);
+	    var c_vout=document.getElementById(row_name+"-vout");
+	    c_vout.innerHTML = rch["vout"].toFixed(1);
+	    var c_iout=document.getElementById(row_name+"-iout");
+	    c_iout.innerHTML = (rch["iout"]*1.E6).toFixed(3);
+	    var c_status=document.getElementById(row_name+"-status");
+	    c_status.innerHTML = rch["status"];
+	    return;
+	}
+	var rowCount = table.rows.length;
+	var row = table.insertRow(rowCount);
+	row.id = div_name + "-table-"+ch;
+
+	var c_channel = row.insertCell(0);
+	c_channel.id = row.id + "-channel";
+	c_channel.innerHTML = rch["id"];
+
+	var c_vset = row.insertCell(1);
+	c_vset.id = row.id + "-vset";
+	c_vset.innerHTML = rch["vset"].toFixed(3);
+	var c_iset = row.insertCell(2);
+	c_iset.id = row.id + "-iset";
+	c_iset.innerHTML = (rch["iset"]*1E6).toFixed(3);
+	var c_vout = row.insertCell(3);
+	c_vout.id = row.id + "-vout";
+	c_vout.innerHTML = rch["vout"].toFixed(3);
+	var c_iout = row.insertCell(4);
+	c_iout.id = row.id + "-iout";
+	c_iout.innerHTML = (rch["iout"]*1.E6).toFixed(3);
+	var c_status = row.insertCell(5);
+	c_status.id = row.id + "-status";
+	c_status.innerHTML = rch["status"];
+	var c_nvset = row.insertCell(6);
+	let x_vset = document.createElement("INPUT");
+	x_vset.id = row.id+"-nvset";
+	x_vset.setAttribute("type", "number");
+	c_nvset.appendChild(x_vset);
+
+	var s_mod = div_name.split("-")[0];
+	var s_sub = div_name.split("-")[1];
+
+	var c_btn_vset = row.insertCell(7);
+	let btn_vset = document.createElement("button");
+	btn_vset.innerHTML = "Set Voltage";
+	btn_vset.onclick = function () {
+            var v_vset = document.getElementById(x_vset.id).value;
+
+            topic_cmd = pico_location + "/" + s_sub + "/CMD";
+            var j_msg = {};
+            j_msg["device"] = s_mod;
+            j_msg["command"] = "VSET";
+            j_msg["params"] = {};
+	    j_msg["params"]["first"] =ch;
+	    j_msg["params"]["last"] =ch;
+            j_msg["params"]["vset"] = parseFloat(v_vset);
+	    alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+            publish_one_message(topic_cmd, JSON.stringify(j_msg));
+	};
+	c_btn_vset.appendChild(btn_vset);
+	
+	var c_niset = row.insertCell(8);
+	let x_iset = document.createElement("INPUT");
+	x_iset.id = row.id+"-niset";
+	x_iset.setAttribute("type", "number");
+	c_niset.appendChild(x_iset);
+
+	var c_btn_iset = row.insertCell(9);
+	let btn_iset = document.createElement("button");
+	btn_iset.innerHTML = "Set Max Current";
+	btn_iset.onclick = function () {
+            var v_iset = document.getElementById(x_iset.id).value;
+            
+            //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
+            topic_cmd = pico_location + "/" + s_sub + "/CMD"
+            var j_msg = {}
+            j_msg["device"] = s_mod
+            j_msg["command"] = "ISET"
+            j_msg["params"] = {}
+	    j_msg["params"]["first"] =ch;
+	    j_msg["params"]["last"] =ch;
+            j_msg["params"]["iset"] = parseFloat(v_iset)
+	    alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+            publish_one_message(topic_cmd, JSON.stringify(j_msg));
+	};
+	c_btn_iset.appendChild(btn_iset);
+	
+	var c_btn_on = row.insertCell(10);
+	let btn_on = document.createElement("button");
+	btn_on.innerHTML = "ON";
+	btn_on.onclick = function () {
+            
+            //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
+            topic_cmd = pico_location + "/" + s_sub + "/CMD"
+            var j_msg = {}
+            j_msg["device"] = s_mod
+            j_msg["command"] = "ON";
+	    j_msg["params"] = {}
+	    j_msg["params"]["first"] =ch;
+	    j_msg["params"]["last"] =ch;
+
+            console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+	    alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            publish_one_message(topic_cmd, JSON.stringify(j_msg));
+	};
+	c_btn_on.appendChild(btn_on);
+
+	var c_btn_off = row.insertCell(11);
+	let btn_off = document.createElement("button");
+	btn_off.innerHTML = "OFF";
+	btn_off.onclick = function () {
+            
+            //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
+            topic_cmd = pico_location + "/" + s_sub + "/CMD"
+            var j_msg = {}
+            j_msg["device"] = s_mod
+            j_msg["command"] = "OFF"
+	    j_msg["params"] = {}
+	    j_msg["params"]["first"] =ch;
+	    j_msg["params"]["last"] =ch;
+            
+            console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+	    alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            publish_one_message(topic_cmd, JSON.stringify(j_msg));
+	};
+	c_btn_off.appendChild(btn_off);
+	
+	var c_btn_view = row.insertCell(12);
+	let btn_view = document.createElement("button");
+	btn_view.innerHTML = "VIEW";
+	btn_view.onclick = function () {
+            
+            //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
+            topic_cmd = pico_location + "/" + s_sub + "/CMD"
+            var j_msg = {}
+            j_msg["device"] = s_mod
+            j_msg["command"] = "STATUS"
+            j_msg["params"] = {}
+	    j_msg["params"]["first"] =ch;
+	    j_msg["params"]["last"] =ch;
+
+            console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+	    //alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            publish_one_message(topic_cmd, JSON.stringify(j_msg));
+	};
+	c_btn_view.appendChild(btn_view);
+
+    }
 
 }
