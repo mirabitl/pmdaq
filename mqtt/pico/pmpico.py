@@ -130,8 +130,10 @@ class PmPico:
         if "bme" in self.settings.keys():
             s_dv=self.settings["bme"]
             if  s_dv["use"]==1:
+                print("BME is used")
                 self.ping()
                 self.bme_init(s_dv["i2c"],s_dv["sda"],s_dv["scl"])
+                print("BME is initialised")
                 self.devices["bme"]={"period":s_dv["period"],"last":0,"measure":self.bme_status,
                                      "callback":self.bme.process_message}
                 stv=self.bme.view()
@@ -147,6 +149,7 @@ class PmPico:
 
                 stv=self.hih.view()
                 time.sleep(2)
+                print(stv)
                 self.publish("hih/INFOS",stv,True)
 
         #RP2040
@@ -387,7 +390,8 @@ class PmPico:
         msg["rtc"]=time.time()
         tmsg=json.dumps(msg)
         #print("PUBLISH ",topic_pub,tmsg)
-        self.check_connection("Publish ")
+        if (not keep):
+            self.check_connection("Publish ")
         
         rc=self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"),retain=keep)
         if (self.debug):

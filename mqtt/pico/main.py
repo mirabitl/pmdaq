@@ -79,10 +79,11 @@ class PmPico:
                     # Detection mode
                     st=self.brooks.identity()
                     #tmsg=json.dumps(st)
-                    print(st)
+                    print("identity ",st)
                     #time.sleep(10)
-                    self.publish("brooks/GAS/%s" % st["gas_type"], st,True)
-                    self.settings["brooks"]["devices"][0]=st["device_id"]
+                    if ("gas_type" in st):
+                        self.publish("brooks/GAS/%s" % st["gas_type"], st,True)
+                        self.settings["brooks"]["devices"][0]=st["device_id"]
                     #self.ping()
                 else:
                     stv=self.brooks.view()
@@ -129,8 +130,10 @@ class PmPico:
         if "bme" in self.settings.keys():
             s_dv=self.settings["bme"]
             if  s_dv["use"]==1:
+                print("BME is used")
                 self.ping()
                 self.bme_init(s_dv["i2c"],s_dv["sda"],s_dv["scl"])
+                print("BME is initialised")
                 self.devices["bme"]={"period":s_dv["period"],"last":0,"measure":self.bme_status,
                                      "callback":self.bme.process_message}
                 stv=self.bme.view()
@@ -145,6 +148,8 @@ class PmPico:
                                      "callback":self.hih.process_message}                                
 
                 stv=self.hih.view()
+                time.sleep(2)
+                print(stv)
                 self.publish("hih/INFOS",stv,True)
 
         #RP2040
@@ -189,8 +194,11 @@ class PmPico:
         st=self.brooks.status()
         sti=self.brooks.read_gas_type(1)
         print(sti)
-        self.draw_string("Brooks\nFlow %.2f l/h" % (st["primary_variable"]))
-        #print(st)      
+        if ("primary_variable" in st):
+            self.draw_string("Brooks\nFlow %.2f l/h" % (st["primary_variable"]))
+        else:
+            self.draw_string("Brooks\n No device connected") 
+        #print(st)
         time.sleep(1)
 
     # cpwplus init
@@ -382,7 +390,8 @@ class PmPico:
         msg["rtc"]=time.time()
         tmsg=json.dumps(msg)
         #print("PUBLISH ",topic_pub,tmsg)
-        self.check_connection("Publish ")
+        if (not keep):
+            self.check_connection("Publish ")
         
         rc=self.client.publish(topic_pub.encode("utf8"), tmsg.encode("utf8"),retain=keep)
         if (self.debug):
@@ -562,5 +571,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
