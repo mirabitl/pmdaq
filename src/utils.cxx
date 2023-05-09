@@ -116,28 +116,40 @@ http_response utils::request(std::string host, uint32_t port, std::string path,
 {
   std::stringstream address("");
   address << U("http://") << host << ":" << port;
-  http::uri uri = http::uri(address.str());
-  web::http::client::http_client_config cfg;
-  cfg.set_timeout(std::chrono::seconds(1));
-  http_client client(http::uri_builder(uri).append_path(U(path)).to_uri(), cfg);
+  //http::uri uri = http::uri(address.str());
 
+  //web::http::client::http_client_config cfg;
+  //cfg.set_timeout(std::chrono::seconds(1));
+  //http_client client(http::uri_builder(uri).append_path(U(path)).to_uri(), cfg);
+
+
+  http_client client(address.str());
+
+  // Build request URI and start the request.
+  uri_builder builder(U(path));
+  //builder.append_query(U("q"), U("cpprestsdk github"));
+        
   if (par.is_object())
   {
     utility::ostringstream_t buf;
     uint32_t np = 0;
     for (auto iter = par.as_object().begin(); iter != par.as_object().end(); ++iter)
     {
-      if (np == 0)
-        buf << "?" << U(iter->first) << "=" << iter->second;
-      else
-        buf << "&" << U(iter->first) << "=" << iter->second;
-      np++;
+      //if (np == 0)
+        //buf << "?" << U(iter->first) << "=" << iter->second;
+      //else
+      //  buf << "&" << U(iter->first) << "=" << iter->second;
+      // np++;
+      // std::cout<<iter->first<<" "<<iter->second<<" "<<iter->second.is_string()<<std::endl;
+      builder.append_query(U(iter->first),U(iter->second));
     }
-
-    return client.request(methods::GET, U(buf.str())).get();
+    // std::cerr<<"POST a "<<address.str()<<" "<<builder.to_string()<<std::endl;
+    auto rep= client.request(methods::GET,builder.to_string()).get();
+    // std::cerr<<" Got a answer" <<rep.extract_json().get()<<std::endl;
+    return rep;
   }
   else
-    return client.request(methods::GET).get();
+    return client.request(methods::GET,builder.to_string()).get();
 }
 std::vector<std::string> utils::split(const std::string &s, char delim)
 {

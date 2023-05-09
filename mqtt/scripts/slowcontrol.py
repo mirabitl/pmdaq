@@ -134,6 +134,16 @@ class slowcontrol:
             self.gsender.send(metric,r_m["content"]["h1"])
             metric=p[0]+"."+p[1]+".t1"
             self.gsender.send(metric,r_m["content"]["t1"]-273.15)
+        if (p[1]=='GenesysPaho'):
+            metric=p[0]+"."+p[1]+".vout"
+            self.gsender.send(metric,r_m["content"]["vout"])
+            metric=p[0]+"."+p[1]+".iout"
+            self.gsender.send(metric,r_m["content"]["iout"])
+        if (p[1]=='ZupPaho'):
+            metric=p[0]+"."+p[1]+".vout"
+            self.gsender.send(metric,r_m["content"]["vout"])
+            metric=p[0]+"."+p[1]+".iout"
+            self.gsender.send(metric,r_m["content"]["iout"])
     def UpdateInfos(self):
         for x in self.subtop.keys():
             if (self.subtop[x]["valid"]==0):
