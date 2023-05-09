@@ -109,9 +109,10 @@ class combRC(pmdaqrc.pmdaqControl):
             print("ON A VU DES FEBV2")
             for x in self.session.apps["lyon_febv2"]:
                 print("FEBV2 CREATEFEB")
-                #s1=x.sendTransition("CREATEFEB", m)
-                #print(s1)
-                s = json.loads(x.sendTransition("CREATEFEB", m))
+                s1=x.sendTransition("CREATEFEB", m)
+                print(s1)
+                
+                #s = json.loads(x.sendTransition("CREATEFEB", m))
                 r["lyon_febv2_%d" % x.instance] = s
                 print(s)
 
@@ -422,8 +423,10 @@ class combRC(pmdaqrc.pmdaqControl):
             if (k != "lyon_febv2"):
                 continue
             for s in v:
-                mr = json.loads(s.sendCommand("STATUS", {}))
-                print(mr)
+                c_mr=s.sendCommand("STATUS", {})
+                print(c_mr)
+                #mr = json.loads(s.sendCommand("STATUS", {}))
+                #print(mr)
                 # if (mr['STATUS'] != "FAILED"):
                 #     rep["%s_%d_FEB" % (s.host, s.instance)] = mr["TDCSTATUS"]
                 # else:

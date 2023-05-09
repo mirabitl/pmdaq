@@ -127,7 +127,7 @@ void Febv2Manager::c_status(http_request m)
   par["STATUS"] = json::value::string(U("DONE"));
   par["DETID"] = _detId;
   par["SOURCEID"] = _sourceId;
-  par["EVENT"]=w_rep.as_object()["EVENT"].as_integer();
+  par["EVENT"]=w_rep.as_object()["STATUS"];
 
   Reply(status_codes::OK, par);
 }
@@ -155,7 +155,7 @@ web::json::value Febv2Manager::post(std::string cmd, web::json::value v )
   http_response rep = utils::request(_feb_host, _feb_port, cmd, v);
   
   auto jrep = rep.extract_json();
-  std::cerr<<jrep.get()<<std::endl;
+  std::cerr<<" Returned response:"<<jrep.get()<<std::endl;
   return jrep.get();
 }
 void Febv2Manager::createfeb(http_request m)
@@ -265,7 +265,7 @@ void Febv2Manager::start(http_request m)
   // Now Send the START COMMAND
 
   auto jrep = this->post("/START");
-  auto w_rep=decode_spyne_answer(jrepl,"START");
+  auto w_rep=decode_spyne_answer(jrep,"START");
   par["status"] = json::value::string(U("done"));
   par["answer"] = w_rep;
   Reply(status_codes::OK, par);
@@ -277,7 +277,7 @@ void Febv2Manager::stop(http_request m)
 
   // Now Send the STOP COMMAND
   auto jrep = this->post("/STOP");
-  auto w_rep=decode_spyne_answer(jrepl,"STOP");
+  auto w_rep=decode_spyne_answer(jrep,"STOP");
   if (g_mon != NULL && _running)
     {
       _running = false;
@@ -297,7 +297,7 @@ void Febv2Manager::destroy(http_request m)
   PMF_INFO(_logFebv2, " CMD: DESTROYING");
   // Now Send the DESTROY COMMAND
   auto jrep = this->post("/DESTROY");
-  auto w_rep=decode_spyne_answer(jrepl,"DESTROY");
+  auto w_rep=decode_spyne_answer(jrep,"DESTROY");
 
   if (g_mon != NULL)
     {
