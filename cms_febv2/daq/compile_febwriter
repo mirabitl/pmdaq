@@ -1,0 +1,5 @@
+#To be run on lyocms03
+swig -c++  -python FebWriter.i
+g++ -fPIC  -c FebWriter_wrap.cxx -I /usr/include/python3.8 
+g++ -fPIC -c FebWriter.cxx -I /opt/pmdaq/include
+g++ -shared FebWriter_wrap.o FebWriter.o -lpython3.8 -L/usr/local/pmdaq/lib -lpmdaq -lcpprest -o _FebWriter.so

@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+import logging
+import sys
+import time
+
+from pprint import pprint
+import numpy as np 
+from matplotlib import pyplot as plt
+
+from minidaq.fc7 import fc7_board
+from minidaq.feb import feb_v2_cycloneV
+from minidaq.tools import *
+import csv_register_access as cra
+import os
+import json
+import ROOT
+
+def make_time_pedestal(state,version,feb_id,nevt_max=200,c_upload=None):
+    #state="TEST_INSERTION"
+    #version=8
+    #feb_id=2
+    sdb=cra.instance()
+    sdb.download_setup(state,version)
+    sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",800)
+    sdb.setup.febs[0].fpga.set_parameter("DATA_PATH_CTRL.MAX_QUEUE_SIZE.NB_FRAMES",0x25,"MIDDLE")
+    sdb.setup.version=996
+
+    sdb.to_csv_files()
+
+    #do_fc7_gbt_init = len(sys.argv) == 1
+    configFEBMinidaqLogger(logging.INFO)
+
+    try:
+        fc7 = fc7_board(False)
+        feb = feb_v2_cycloneV(fc7, fpga_fw_ver='3.13', petiroc_ver='2C', verbose=True)
+
+        fc7.init(init_gbt=True)
+        feb.boot(app_fw=False)
+        feb.enable_tdc(False)
+        feb.load_config_from_csv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (state,996,feb_id))
+
+        #feb.load_config_from_csv(folder='./FEB_config', base_name='QC_config')
+
+        fc7.configure_los_fsm(
+            s0_duration=int(89e-6/25e-9),
+            s1_duration=106,
+            s2_duration=10,
+            s3_duration=5,
+            s4_duration=5)
+        fc7.configure_resync_after_bc0(20) 
+        fc7.reset_bc0_id()
+
+
+        feb.tdc_left.set_tdc_injection_mode('trig_ext_resync')
+        feb.tdc_middle.set_tdc_injection_mode('trig_ext_resync')
+        feb.tdc_right.set_tdc_injection_mode('trig_ext_resync')
+        feb.enable_tdc(True)
+        #feb.enable_tdc(True,"right")
+
+        fc7.configure_nBC0_trigger(nevt_max)
+        fc7.configure_acquisition(buf_size=0xffff, triggerless=False, single=True, keep=True, external_window=False)
+        
+        data = fc7.acquire_to_mem(timeout=5)
+        #fc7.acquire_to_disk_txt('minidaq_acq')
+        feb.enable_tdc(False)
+        #exit(0)
+        #print(data)
+
+        fpga_chan_offset = {}
+        fpga_chan_mu = {}
+        min_resync = 5000000000
+
+        for fpga in FPGA_ID:
+            chan_ts = [[] for _ in range(34)]
+            for chan, ts, *_ in data[fpga]:
+                #ts = round(ts*1e3/(256*400.79), 2) # ts in ns
+                chan_ts[chan].append(ts)
+            res={}
+            res["fpga"]=fpga
+            res["channels"]=chan_ts
+            print("Uploading FPGA")
+            sdb1=cra.instance()
+            sdb1.upload_results(state,version,feb_id,"TIME_PEDESTAL",res,comment=c_upload)
+
+                
+    except TestError as e:
+        print(f"Test failed with message: {e}")
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    
+    # Arguments
+    parser.add_argument('--state', action='store', type=str,default=None, dest='state', help='DB State')
+    parser.add_argument('--version', action='store',type=int,default=None,dest='version',help='DB state version' )
+    parser.add_argument('--feb', action='store', type=int,default=None, dest='feb', help='FEB id')
+    parser.add_argument('--nevt', action='store', type=int,default=200, dest='nevt', help='Number of event')
+    parser.add_argument('--comment', action='store', type=str,default="TDC time pedestals", dest='comment', help='Comment for DB')
+    results = parser.parse_args()
+    print(results)
+
+    if (results.state==None):
+        print("--state should be specified")
+        exit(0)
+    if (results.version==None):
+        print("--version should be specified")
+        exit(0)
+    if (results.feb==None):
+        print("--feb should be specified")
+        exit(0)
+
+
+    state=results.state
+    version=results.version
+    feb_id=results.feb
+    make_time_pedestal(state,version,feb_id,results.nevt,results.comment)
