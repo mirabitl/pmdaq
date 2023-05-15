@@ -35,25 +35,24 @@ class wddService(ServiceBase):
     @srpc(String,UnsignedInteger,_returns=Iterable(String))
     def CREATE(name,version):
         global _wdd
-        _wdd=None
-        #j_conf=json.loads(s_conf)
-        #print(j_conf)
-        print(name)
         if (name[0]=='"'):
             name=name[1:len(name)-1]
-        os.environ["DAQSETUP"]="%s:%d" % (name,version) 
-        if (_wdd==None ):
+        
+        if (_wdd!=None ):
             del _wdd
-            _wdd=FSM.febv2_fsm()
-            status={}
-            print("On est la",_wdd.state)
-            status["STATUS"]=_wdd.state
-            yield json.dumps(status)
-        else:
-            status={}
-            status["STATUS"]="FAILED"
-            yield json.dumps(status)
 
+        if (version!=0):
+            os.environ["DAQSETUP"]="%s:%d" % (name,version) 
+            _wdd=FSM.febv2_fsm()
+        :else
+            _wdd=FSM.febv2_fsm(config_file=name)
+        status={}
+        print("On est la",_wdd.state)
+        status["STATUS"]=_wdd.state
+        yield json.dumps(status)
+        
+
+        
 
     @srpc(_returns=Iterable(String))
     def INITIALISE():
