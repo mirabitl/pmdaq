@@ -186,7 +186,7 @@ class feb_petiroc_registers:
         self.headers=["name","LEFT_TOP","LEFT_BOT","MIDDLE_TOP","MIDDLE_BOT","RIGHT_TOP","RIGHT_BOT"]
         #self.defaults()
         self._id=None
-    def load_defaults(self,fn="default_fpga.csv"):
+    def load_defaults(self,fn="default_petiroc.csv"):
         print("Loading defaults for PETIROC from %s" % fn)
         self.load_from_csv_file(fn)
         return

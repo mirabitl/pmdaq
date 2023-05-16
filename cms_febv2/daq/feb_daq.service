@@ -3,9 +3,9 @@ Description = Starting FEB acquisition service
 After = network.target
 
 [Service]
-ExecStart = /home/acqilc/feb-backend-emulator/Python_project/daq/feb_daq_service_daemon
+ExecStart = /usr/local/cms_febv2/bin/feb_daq_service_daemon
 Restart=always
-RestartSec=5
+RestartSec=2
 
 [Install]
 WantedBy = multi-user.target

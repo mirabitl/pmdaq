@@ -130,6 +130,7 @@ class wddService(ServiceBase):
         if (_wdd!=None ):
             _wdd.destroy()
             time.sleep(0.3)
+            exit(0)
             status={}
             status["STATUS"]=_wdd.state
             del _wdd

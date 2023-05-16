@@ -43,7 +43,7 @@ class genesysSerial(gI):
             return "no data"
         if (r[0]==0xFF):
             r=r[1:len(r)-1]
-        #print(len(r),r)
+        print(len(r),r)
         s=""
         try:
             s=r.decode("ascii")
@@ -53,6 +53,8 @@ class genesysSerial(gI):
         sgood=s.split('\r')
         #print(sgood)
         if (len(sgood)>1):
-            return(sgood[1])
+            print(sgood[0],sgood[1])
+            return(sgood[0])
         else:
+            print(s)
             return s
