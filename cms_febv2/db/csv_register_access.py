@@ -367,7 +367,7 @@ class feb_petiroc_registers:
                     v.append(l[asic.upper()])
         return v
 class febv2_registers:
-    def __init__(self,f_id=0,v_fpga="3.13",v_asic="2C"):
+    def __init__(self,f_id=0,v_fpga="4.0",v_asic="2C"):
         self.feb_id=f_id
         self.fpga=feb_fpga_registers()
         self.petiroc=feb_petiroc_registers()
@@ -380,6 +380,7 @@ class febv2_registers:
         return
     def store_in_db(self,dbclient):
         x={}
+        print(self.fpga_version)
         x["feb_id"]=self.feb_id
         x["fpga_version"]=self.fpga_version
         x["petiroc_version"]=self.petiroc_version
@@ -416,7 +417,7 @@ class febv2_registers:
         self.feb_id=f_id
         self._id=None
     def set_fpga_version(self,v):
-        self.fpga_version_id=v
+        self.fpga_version=v
         self._id=None
     def set_petiroc_version(self,v):
         self.petiroc_version=v

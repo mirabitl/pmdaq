@@ -32,8 +32,8 @@ def make_time_pedestal(state,version,feb_id,nevt_max=200,c_upload=None):
 
     try:
         fc7 = fc7_board(False)
-        feb = feb_v2_cycloneV(fc7, fpga_fw_ver='3.13', petiroc_ver='2C', verbose=True)
-
+        #feb = feb_v2_cycloneV(fc7, fpga_fw_ver='3.13', petiroc_ver='2C', verbose=True)
+        feb = feb_v2_cycloneV(fc7, fpga_fw_ver=sdb.setup.febs[0].fpga_version, petiroc_ver=sdb.setup.febs[0].petiroc_version, verbose=True)
         fc7.init(init_gbt=True)
         feb.boot(app_fw=False)
         feb.enable_tdc(False)

@@ -78,13 +78,16 @@ class febv2_setup:
 
     def configure(self):
         self.feb.load_config_from_csv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.params["db_state"],self.params["db_version"],self.params["feb_id"]))
+        enableforces2=True
+        if ("disable_force_s2" in self.params):
+            enableforces2=not (self.params["disable_force_s2"]==1)
         self.fc7.configure_los_fsm(   
             s0_duration=self.params["orbit_fsm"]["s0"],
             s1_duration=self.params["orbit_fsm"]["s1"],
             s2_duration=self.params["orbit_fsm"]["s2"],
             s3_duration=self.params["orbit_fsm"]["s3"],
             s4_duration=self.params["orbit_fsm"]["s4"],
-            enable_force_s2=True)
+            enable_force_s2=enableforces2)
        
         self.fc7.reset_bc0_id()
 

@@ -306,7 +306,7 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment="scurve analy
     sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",800)
     sdb.setup.version=998
     sdb.to_csv_files()
-
+    print(sdb.setup.febs[0].fpga_version,sdb.setup.febs[0].petiroc_version)
     do_fc7_gbt_init = gbt_init
     configFEBMinidaqLogger(logging.INFO)
 
