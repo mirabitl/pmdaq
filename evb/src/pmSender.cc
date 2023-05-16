@@ -17,7 +17,7 @@ pmSender::pmSender(zmq::context_t *c, uint32_t det, uint32_t dif) : _detId(det),
   std::stringstream sheader;
   sheader << "DS-" << det << "-" << dif;
   _header = sheader.str();
-  _buffer = new pm::buffer(512 * 1024);
+  _buffer = new pm::buffer(1024 * 1024);
 
   _buffer->setDetectorId(det);
   _buffer->setDataSourceId(dif);

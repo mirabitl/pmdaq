@@ -81,7 +81,7 @@ void Febv2Manager::spy_shm()
     {
       std::vector<std::string> vnames;
       utils::ls(_shmPath, vnames);
-      PM_INFO(_logFebv2, "Loop PATH for files " << _shmPath << " " << vnames.size());
+      PM_DEBUG(_logFebv2, "Loop PATH for files " << _shmPath << " " << vnames.size());
       for (auto x : vnames)
 	{
 	  std::cout << x << std::endl;

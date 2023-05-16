@@ -44,7 +44,7 @@ class wddService(ServiceBase):
         if (version!=0):
             os.environ["DAQSETUP"]="%s:%d" % (name,version) 
             _wdd=FSM.febv2_fsm()
-        :else
+        else:
             _wdd=FSM.febv2_fsm(config_file=name)
         status={}
         print("On est la",_wdd.state)

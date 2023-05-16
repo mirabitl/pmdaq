@@ -160,7 +160,7 @@ class febv2_setup:
         fout=open("debug.out","w")
         while (self.running):
             self.writer.newEvent()
-            self.fc7.reset_bc0_id()
+            #self.fc7.reset_bc0_id()
             self.fc7.configure_acquisition_and_start(buf_size=self.params["config"]["buf_size"],
                                            triggerless=(self.params["config"]["triggerless"]==1),
                                            single=(self.params["config"]["single"]==1),

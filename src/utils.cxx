@@ -558,7 +558,12 @@ void utils::store(uint32_t detid, uint32_t sourceid, uint32_t eventid, uint64_t 
   ::close(fd);
 }
 
-
+uint64_t utils::get_file_size(int fd)
+{
+    struct stat stat_buf;
+    int rc = fstat(fd, &stat_buf);
+    return rc == 0 ? stat_buf.st_size : -1;
+}
 uint32_t utils::pull(std::string name,void* buf,std::string sourcedir)
 {
   std::stringstream sc,sd;
@@ -573,9 +578,16 @@ uint32_t utils::pull(std::string name,void* buf,std::string sourcedir)
       //LOG4CXX_FATAL(_logShm," Cannot open shm file "<<fname);
       return 0;
     }
-  int size_buf=::read(fd,buf,0x20000);
+  uint64_t len=utils::get_file_size(fd);
+  if (len>0x100000)
+    {
+      printf("Too long %ld \n",len);
+      len=0x100000-20;
+    }
+  int size_buf=::read(fd,buf,len);//0x100000);
   //  buf->setPayloadSize);
-  //printf("%d bytes read %x %d \n",size_buf,cbuf[0],cbuf[1]);
+  uint8_t* cbuf=(uint8_t*) buf;
+  printf("utils::pull %d %d bytes read %x %x \n",len,size_buf,cbuf[0],cbuf[size_buf-1]);
   ::close(fd);
   ::unlink(sc.str().c_str());
   ::unlink(sd.str().c_str());

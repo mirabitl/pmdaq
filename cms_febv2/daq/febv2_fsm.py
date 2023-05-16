@@ -22,7 +22,7 @@ class febv2_fsm:
     def __init__(self, config_file=None):
         self.db = cra.instance()
         login=os.getenv("DAQSETUP","NONE")
-        if (login != "NONE"):
+        if (login != "NONE" and config_file==None):
             acq_name=login.split(":")[0]
             acq_vers=int(login.split(":")[1],0)
             self.db.download_configuration(acq_name,acq_vers,True)
