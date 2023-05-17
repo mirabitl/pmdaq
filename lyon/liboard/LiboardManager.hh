@@ -165,6 +165,7 @@ class LiboardManager  : public fsmw
     void c_setexternaltrigger(http_request m);
 
     void c_setvalevt(http_request m);
+    void c_setslave(http_request m);
 
 
     void ScurveStandalone(uint32_t mode, int thmin, int thmax, int step, bool usectest);
@@ -185,5 +186,6 @@ class LiboardManager  : public fsmw
     std::thread g_scurve;
     // MDCC
     liboard::LiboardDriver* _mdcc;
+    bool _slave;
   };
 

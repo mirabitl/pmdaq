@@ -317,7 +317,18 @@ void LiboardManager::setCtest(uint64_t mask)
 
   ::usleep(10);
 }
+void LiboardManager::c_setslave(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logLiboard, "Set Slave called ");
+  par["STATUS"] = web::json::value::string(U("DONE"));
 
+  uint32_t v = utils::queryIntValue(m, "value", 0);
+  _slave=(v!=0);
+  par["SLAVE"] = web::json::value::number(v);
+  par["status"] = json::value::string(U("done"));
+  Reply(status_codes::OK, par);
+}
 void LiboardManager::c_setthreshold(http_request m)
 {
   auto par = json::value::object();
@@ -571,7 +582,19 @@ void LiboardManager::start(http_request m)
 {
   auto par = json::value::object();
   PMF_INFO(_logLiboard, " Starting ");
-
+  if (_slave)
+    {
+      PMF_INFO(_logLiboard, " VALEVT ON ");
+      std::map<uint32_t, LiboardInterface *> dm = this->getLiboardMap();
+      for (std::map<uint32_t, LiboardInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
+	{
+	  it->second->start();
+	}
+      _mdcc->setValEvtOn();
+       par["status"] = json::value::string(U("done"));
+       Reply(status_codes::OK, par);
+       return;
+    }
   int32_t rc = 1;
   std::map<uint32_t, LiboardInterface *> dm = this->getLiboardMap();
   for (std::map<uint32_t, LiboardInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
@@ -589,6 +612,22 @@ void LiboardManager::stop(http_request m)
 {
   auto par = json::value::object();
   PMF_INFO(_logLiboard, " Stopping ");
+  if (_slave)
+    {
+       PMF_INFO(_logLiboard, " VALEVT OFF ")
+      _mdcc->setValEvtOff();
+       std::map<uint32_t, LiboardInterface *> dm = this->getLiboardMap();
+
+       for (std::map<uint32_t, LiboardInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
+  {
+    PMF_INFO(_logLiboard, " Stopping thread of Liboard" << it->first);
+    it->second->stop();
+  }
+
+       par["status"] = json::value::string(U("done"));
+       Reply(status_codes::OK, par);
+       return;
+    }
 
   int32_t rc = 1;
   _running = false;
@@ -647,7 +686,7 @@ void LiboardManager::destroy(http_request m)
   return;
 }
 
-LiboardManager::LiboardManager() : _running(false), _sc_running(false) { ; }
+LiboardManager::LiboardManager() : _running(false), _sc_running(false),_slave(false) { ; }
 
 void LiboardManager::initialise()
 {
@@ -687,6 +726,7 @@ void LiboardManager::initialise()
   this->addCommand("SETLATCHDURATION", std::bind(&LiboardManager::c_setlatchduration, this, std::placeholders::_1));
 
   this->addCommand("SETVALEVT", std::bind(&LiboardManager::c_setvalevt, this, std::placeholders::_1));
+  this->addCommand("SETSLAVE", std::bind(&LiboardManager::c_setslave, this, std::placeholders::_1));
   // MDCC stuff
 
   this->addCommand("PAUSE", std::bind(&LiboardManager::c_pause, this, std::placeholders::_1));

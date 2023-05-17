@@ -843,6 +843,27 @@ class MongoRoc:
 
         return _kasic
 
+    def LIROC_ChangeParam(self,pname,pval,idif=0, iasic=0):
+        """
+        Change all the ENable signals of PETIROC asic
+
+        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        :param iasic: asic number, if 0 all Asics are changed
+        :param pname: parameter name
+        :param pval: paramter value
+        """
+        for a in self.asiclist:
+            if (idif != 0 and a["dif"] != idif):
+                continue
+            if (iasic != 0 and a["num"] != iasic):
+                continue
+            try:
+                a["slc"][pname]=pval
+                a["_id"]=None
+
+            except Exception as e:
+                print(e.getMessage())
+
     def LIROC_setForced_ValEvt(self,forced,idif=0,iasic=0):
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
@@ -856,7 +877,7 @@ class MongoRoc:
             else:
                 a["slc"]["EN_differential"]=1;a["_id"]=None;
                 
-    def LIROC_setDAC_threshold(self,thr):
+    def LIROC_setDAC_threshold(self,thr,idif=0,iasic=0):
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
                 continue
@@ -864,8 +885,24 @@ class MongoRoc:
                 continue
 
             a["slc"]["DAC_threshold"]=thr;a["_id"]=None;
+    def LIROC_setEN_pre_emphasis(self,pe,idif=0,iasic=0):
+        for a in self.asiclist:
+            if (idif != 0 and a["dif"] != idif):
+                continue
+            if (iasic != 0 and a["num"] != iasic):
+                continue
+
+            a["slc"]["EN_pre_emphasis"]=pe&7;a["_id"]=None;
+    def LIROC_setHysteresys(self,pe,idif=0,iasic=0):
+        for a in self.asiclist:
+            if (idif != 0 and a["dif"] != idif):
+                continue
+            if (iasic != 0 and a["num"] != iasic):
+                continue
+
+            a["slc"]["Hysteresys"]=pe&1;a["_id"]=None;
             
-    def LIROC_setPA_gain(self,g):
+    def LIROC_setPA_gain(self,g,idif=0,iasic=0):
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
                 continue

@@ -347,7 +347,7 @@ class combRC(pmdaqrc.pmdaqControl):
                 continue
             for s in v:
                 mr = json.loads(s.sendCommand("STATUS", {}))
-                #print(mr)
+                print(mr)
                 if (mr['STATUS'] != "FAILED"):
                     rep["%s_%s_%d" % (s.host,k, s.instance)
                         ] = mr["answer"]["DIFLIST"]
