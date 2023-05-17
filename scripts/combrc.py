@@ -31,6 +31,7 @@ class combRC(pmdaqrc.pmdaqControl):
     def daq_initialising(self):
         m = {}
         r = {}
+        
         # old DIF Fw
         if ("lyon_gpio" in self.session.apps):
             s = json.loads(
@@ -102,6 +103,18 @@ class combRC(pmdaqrc.pmdaqControl):
                 s = json.loads(x.sendTransition("INITIALISE", m))
                 r["lyon_pmr_%d" % x.instance] = s
 
+        if ("lyon_febv2" in self.session.apps):
+            print("ON A VU DES FEBV2")
+            for x in self.session.apps["lyon_febv2"]:
+                print("FEBV2 CREATEFEB")
+                s = json.loads(x.sendTransition("CREATEFEB", m))
+                r["lyon_febv2_%d" % x.instance] = s
+
+            for x in self.session.apps["lyon_febv2"]:
+                print("FEBV2 INITIALISE")
+                s = json.loads(x.sendTransition("INITIALISE", m))
+                r["lyon_febv2_%d" % x.instance] = s
+
         if ("lyon_liboard" in self.session.apps):
             for x in self.session.apps["lyon_liboard"]:
                 s = json.loads(x.sendTransition("SCAN", m))
@@ -140,6 +153,10 @@ class combRC(pmdaqrc.pmdaqControl):
             for x in self.session.apps["lyon_febv1"]:
                 s = json.loads(x.sendTransition("CONFIGURE", m))
                 r["lyon_febv1_%d" % x.instance] = s
+        if ("lyon_febv2" in self.session.apps):
+            for x in self.session.apps["lyon_febv2"]:
+                s = json.loads(x.sendTransition("CONFIGURE", m))
+                r["lyon_febv2_%d" % x.instance] = s
         if ("lyon_pmr" in self.session.apps):
             for x in self.session.apps["lyon_pmr"]:
                 s = json.loads(x.sendTransition("CONFIGURE", m))
@@ -180,6 +197,10 @@ class combRC(pmdaqrc.pmdaqControl):
             for x in self.session.apps["lyon_febv1"]:
                 s = json.loads(x.sendTransition("STOP", m))
                 r["lyon_febv1_%d" % x.instance] = s
+        if ("lyon_febv2" in self.session.apps):
+            for x in self.session.apps["lyon_febv2"]:
+                s = json.loads(x.sendTransition("STOP", m))
+                r["lyon_febv2_%d" % x.instance] = s
 
         if ("lyon_pmr" in self.session.apps):
             for x in self.session.apps["lyon_pmr"]:
@@ -222,6 +243,10 @@ class combRC(pmdaqrc.pmdaqControl):
             for x in self.session.apps["lyon_febv1"]:
                 s = json.loads(x.sendTransition("DESTROY", m))
                 r["lyon_febv1_%d" % x.instance] = s
+        if ("lyon_febv2" in self.session.apps):
+            for x in self.session.apps["lyon_febv2"]:
+                s = json.loads(x.sendTransition("DESTROY", m))
+                r["lyon_febv2_%d" % x.instance] = s
         if ("lyon_pmr" in self.session.apps):
             for x in self.session.apps["lyon_pmr"]:
                 s = json.loads(x.sendTransition("DESTROY", m))
@@ -272,6 +297,10 @@ class combRC(pmdaqrc.pmdaqControl):
             for x in self.session.apps["lyon_febv1"]:
                 s = json.loads(x.sendTransition("START", m))
                 r["lyon_febv1_%d" % x.instance] = s
+        if ("lyon_febv2" in self.session.apps):
+            for x in self.session.apps["lyon_febv2"]:
+                s = json.loads(x.sendTransition("START", m))
+                r["lyon_febv2_%d" % x.instance] = s
         if ("lyon_pmr" in self.session.apps):
             for x in self.session.apps["lyon_pmr"]:
                 s = json.loads(x.sendTransition("START", m))
@@ -329,6 +358,16 @@ class combRC(pmdaqrc.pmdaqControl):
                     rep["%s_%d_FEB" % (s.host, s.instance)] = mr["TDCSTATUS"]
                 else:
                     rep["%s_%s_%d" % (s.host,k, s.instance)] = mr
+        for k, v in self.session.apps.items():
+            if (k != "lyon_febv2"):
+                continue
+            for s in v:
+                mr = json.loads(s.sendCommand("STATUS", {}))
+                print(mr)
+                # if (mr['STATUS'] != "FAILED"):
+                #     rep["%s_%d_FEB" % (s.host, s.instance)] = mr["TDCSTATUS"]
+                # else:
+                #     rep["%s_%s_%d" % (s.host,k, s.instance)] = mr
 
         for k, v in self.session.apps.items():
             if (k != "lyon_pmr"):
@@ -456,9 +495,11 @@ class combRC(pmdaqrc.pmdaqControl):
             return '{"answer":"InvalidInstance","status":"FAILED"}'
 
         tdc = self.session.apps["lyon_febv1"][instance]
-        n = (1 << channel)
+        #n = (1 << channel)
         param = {}
-        param["value"] = "%x" % n
+        
+        param["value"]=channel
+        print(param)
         r = {}
         r["cal_mask"] = json.loads(tdc.sendCommand("CALIBMASK", param))
         r["cal_status"] = json.loads(tdc.sendCommand("CALIBSTATUS", param))

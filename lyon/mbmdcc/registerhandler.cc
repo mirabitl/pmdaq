@@ -102,7 +102,7 @@ void mbmdcc::registerHandler::processReply(uint32_t tr,uint32_t* reply)
   int cnt=0;
   while (rep[mbmdcc::Message::Fmt::CMD]!=mbmdcc::Message::ACKNOWLEDGE )
     {
-      usleep(1000);
+      usleep(10);
       cnt++;
       if (cnt>REPLY_MAX_RETRY)
 	{

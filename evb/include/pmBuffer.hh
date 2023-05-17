@@ -95,19 +95,50 @@ namespace pm {
     uint64_t bxId(){return _i64ptr[0];}
     //! Pointer to the whole buffer
     char* ptr(){return _ptr;}
+    //! header buffer size
+    uint32_t headerSize(){return 3*sizeof(uint32_t)+sizeof(uint64_t);}
     //! full buffer size
-    uint32_t size(){return _psize+3*sizeof(uint32_t)+sizeof(uint64_t);}
+    uint32_t size(){return _psize+headerSize();}
     //! pointer to te payload
-    char* payload(){return &_ptr[3*sizeof(uint32_t)+sizeof(uint64_t)];}
+    char* payload(){return &_ptr[headerSize()];}
     //! payload size
     uint32_t payloadSize(){return _psize;}
     //! compress (gzip) the payload (size < 128k)
     void compress()
     {
       if ((_iptr[0]&(1<<16))==1) return;
-      unsigned char obuf[0x100000];
-      unsigned long ldest=0x100000;
+      /*
+      const char *istream = "some foo";
+  ulong srcLen = strlen(istream)+1;      // +1 for the trailing `\0`
+  ulong destLen = compressBound(srcLen); // this is how you should estimate size 
+                                         // needed for the buffer
+  char* ostream = malloc(destLen);
+  int res = compress(ostream, &destLen, istream, srcLen); 
+  // destLen is now the size of actuall buffer needed for compression
+  // you don't want to uncompress whole buffer later, just the used part
+  if(res == Z_BUF_ERROR){
+    printf("Buffer was too small!\n");
+    return 1;
+  }
+  if(res ==  Z_MEM_ERROR){
+    printf("Not enough memory for compression!\n");
+    return 2;
+  }
+      */
+      unsigned long lsrc=payloadSize();
+      unsigned long ldest=0x400000;
+      unsigned char obuf[ldest];
+      //unsigned long ldest=0x400000;
       int rc=::compress(obuf,&ldest, (unsigned char*) payload(),payloadSize());
+        if(rc == Z_BUF_ERROR){
+	  printf("Buffer was too small!\n");
+	  return ;
+	}
+	if(rc ==  Z_MEM_ERROR){
+	  printf("Not enough memory for compression!\n");
+	  return;
+	}
+
       //std::cout<<_psize<<" "<<ldest<<std::endl;
       memcpy(payload(),obuf,ldest);
       _iptr[0]|=(1<<16);
@@ -117,8 +148,8 @@ namespace pm {
     void uncompress()
     {
       if ((_iptr[0]&(1<<16))==0) return;
-      unsigned char obuf[0x100000];
-      unsigned long ldest=0x100000;
+      unsigned char obuf[0x400000];
+      unsigned long ldest=0x400000;
       int rc=::uncompress(obuf,&ldest, (unsigned char*) payload(),payloadSize());
       //std::cout<<_psize<<" "<<ldest<<std::endl;
       memcpy(payload(),obuf,ldest);

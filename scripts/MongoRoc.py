@@ -655,18 +655,26 @@ class MongoRoc:
             if (iasic != 0 and a["num"] != iasic):
                 continue
             try:
-                print(a["slc"]["6bDac"])
+                #print("Before ",a["slc"]["6bDac"])
                 for ich in range(32):
                     print(" Dac changed", idif, iasic, ich, cor[ich])
-                    ng= a["slc"]["6bDac"][ich]+cor[ich]
+                    # Mask channel with 255 mask (not in pin mapping)
+                    ng=0
+                    if (cor[ich]==255):
+                        ng=0
+                        a["slc"]["MaskDiscriTime"][ich]=1
+                        a["slc"]["InputDacCommand"][ich]=0
+                    else:
+                        ng= a["slc"]["6bDac"][ich]+cor[ich]
                     if (ng<0):
                         ng=1
                     if (ng>63):
                         ng=63
                     a["slc"]["6bDac"][ich] =ng
-                print(a["slc"]["6bDac"])
+                print("After ",a["slc"]["6bDac"])
                 a["_id"]=None
             except Exception as e:
+                print("Ececptiones ")
                 print(e)
 
 

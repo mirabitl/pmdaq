@@ -44,6 +44,7 @@ void Febv1Manager::initialise()
   this->addCommand("SETVTHTIME", std::bind(&Febv1Manager::c_setvthtime, this, std::placeholders::_1));
   this->addCommand("SETONEVTHTIME", std::bind(&Febv1Manager::c_set1vthtime, this, std::placeholders::_1));
   this->addCommand("SETMASK", std::bind(&Febv1Manager::c_setMask, this, std::placeholders::_1));
+  this->addCommand("SETMASK1", std::bind(&Febv1Manager::c_setMask1Channel, this, std::placeholders::_1));
   this->addCommand("DOWNLOADDB", std::bind(&Febv1Manager::c_downloadDB, this, std::placeholders::_1));
   this->addCommand("ASICS", std::bind(&Febv1Manager::c_asics, this, std::placeholders::_1));
 
@@ -230,19 +231,82 @@ void Febv1Manager::c_setMask(http_request m)
   par["MASK"] = _jControl;
   Reply(status_codes::OK, par);
 }
+void Febv1Manager::c_setMask1Channel(http_request m)
+{
+  PM_INFO(_logFebv1, "SetMask called ");
+  auto par = json::value::object();
+  par["STATUS"] = json::value::string(U("DONE"));
+
+  uint32_t channel = utils::queryIntValue(m, "channel", 32);
+  uint32_t asic = utils::queryIntValue(m, "asic", 15);
+  uint32_t value = utils::queryIntValue(m, "value", 2);
+
+  if (channel==32 || asic==15 || value ==2)
+    {
+	par["STATUS"] = json::value::string(U("FAILED"));
+	Reply(status_codes::OK, par);
+	return;
+    }
+
+  uint32_t mask=(1<<channel);
+  if (value==0) mask=0;
+  uint32_t umask;
+  uint32_t asica = asic;
+  for (auto it = _tca->asicMap().begin(); it != _tca->asicMap().end(); it++)
+  {
+    uint32_t iasic = it->first & 0xFF;
+    fprintf(stderr, "ASIC in map %d ASIC asked %d \n", iasic, asica);
+    if ((iasic & asica) == 0)
+    {
+      fprintf(stderr, "Skipping asic %d by masking all channels\n", iasic);
+      umask = 0;
+    }
+    else
+      umask = mask;
+
+    for (int i = 0; i < 32; i++)
+    {
+      if ((umask >> i) & 1)
+      {
+        it->second.setMaskDiscriTime(i, 0);
+      }
+      else
+      {
+        it->second.setMaskDiscriTime(i, 1);
+      }
+    }
+    //std::cout << "ASIC " << (int)iasic << "==========================" << std::endl;
+    //it->second.Print();
+  }
+
+  // Now loop on slowcontrol socket
+  this->configurePR2();
+
+  //uint32_t nc=atol(request.get("value","4294967295").c_str());
+ 
+  PM_INFO(_logFebv1, "SetMask1Channel called  with channel" << channel << std::dec << " and asic " << asic);
+  //this->setMask(nc, asic & 0xFF);
+  par["MASK"] = _jControl;
+  Reply(status_codes::OK, par);
+}
+
+
 
 void Febv1Manager::c_setCalibrationMask(http_request m)
 {
   PM_INFO(_logFebv1, "SetCalibrationMask called ");
   auto par = json::value::object();
   par["STATUS"] = json::value::string(U("DONE"));
-  uint64_t mask = 0;
-  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
-  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
-    if (it2->first.compare("value") == 0)
-      mask = std::stol(it2->second);
-
-  PM_INFO(_logFebv1, "SetCalibrationMask called  with mask" << std::hex << mask << std::dec);
+  // uint64_t mask = 0;
+  // auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  // for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+  //   if (it2->first.compare("value") == 0)
+  //     mask = std::stol(it2->second);
+  uint32_t channel = utils::queryIntValue(m, "value", 0);
+  
+  uint64_t mask =((uint64_t) 1<< channel);
+  PM_INFO(_logFebv1, "SetCalibrationMask called  with mask " << std::hex << mask << std::dec);
+  PM_INFO(_logFebv1, "SetCalibrationMask called  with channel " << channel);
   this->setCalibrationMask(mask);
   par["CMASK"] = json::value::number(mask);
   Reply(status_codes::OK, par);
@@ -964,11 +1028,23 @@ void Febv1Manager::Scurve(int mode, int thmin, int thmax, int step)
     return;
   if (builderUrl.compare("") == 0)
     return;
+  #undef FEBV2_LIKE
+  #ifdef FEBV2_LIKE
+  int nprc=16;
   int firmware[] = {0, 2, 4, 6,
                     8, 10, 12, 14,
                     16, 18, 20, 22,
                     24, 26, 28, 30};
+  #else
+  int nprc=24;
+  int firmware[] = {4,5,6,7,
+                    8,9,10,11,
+		    12,13,14,15,
+		    16,17,18,19,
+		    20,21,22,23,
+		    24,26,28,30};
 
+  #endif
   int mask = 0;
   if (mode == 255)
   {
@@ -989,7 +1065,7 @@ void Febv1Manager::Scurve(int mode, int thmin, int thmax, int step)
   if (mode == 1023)
   {
     int mask = 0;
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < nprc; i++)
     {
       mask = (1 << firmware[i]);
       std::cout << "Step PR2 " << i << " channel " << firmware[i] << std::endl;

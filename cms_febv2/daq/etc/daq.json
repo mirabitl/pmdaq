@@ -1,0 +1,24 @@
+{
+    "name":"acquisition_test",
+    "version":1,
+    "daq":
+    {
+	"location":"dome_cms",
+	"writer":
+	{
+	    "detector_id":190,
+	    "source_id":2,
+	    "file_directory":"/home/acqilc/data",
+	    "location":"dome_cms"
+	},
+        "logging":"INFO",
+        "gbt_init":1,
+	"vth_shift":0,
+        "db_state":"TEST_INSERTION",
+        "db_version":11,
+	"feb_id":2,
+        "orbit_fsm":{"s0":3560,"s1":106,"s2":10,"s3":5,"s4":5},
+        "n_bc0":200,
+        "config":{"buf_size":65535, "triggerless":0, "single":1, "keep":1, "external_window":0}       
+    }
+}

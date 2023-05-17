@@ -40,6 +40,7 @@ public:
   void c_set6bdac(http_request m );
   /// SETMASK Command handler
   void c_setMask(http_request m );
+  void c_setMask1Channel(http_request m );
   /// SETMODE Command handler
   void c_setMode(http_request m );
   /// SETDELAY Command handler

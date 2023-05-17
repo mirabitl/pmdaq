@@ -1,0 +1,35 @@
+{
+  "daq": {
+    "config": {
+      "buf_size": 65535,
+      "external_window": 0,
+      "keep": 1,
+      "single": 1,
+      "triggerless": 0
+    },
+    "db_state": "TEST_INSERTION",
+    "db_version": 11,
+    "feb_id": 2,
+    "gbt_init": 1,
+    "location": "dome_cms",
+    "logging": "INFO",
+    "n_bc0": 200,
+    "orbit_fsm": {
+      "s0": 3560,
+      "s1": 106,
+      "s2": 10,
+      "s3": 5,
+      "s4": 5
+    },
+    "vth_shift": 0,
+    "writer": {
+      "detector_id": 190,
+      "file_directory": "/home/acqilc/data",
+	"location": "dome_cms",
+	"shm_directory":"/dev/shm/feb_data",
+      "source_id": 2
+    }
+  },
+  "name": "acquisition_shm",
+  "version": 1
+}

@@ -240,7 +240,7 @@ void pmMerger::processData(std::string idd, zmq::message_t *message)
   std::map<uint64_t, std::vector<pm::buffer *>>::iterator it_gtc = _eventMap.find(gtc);
   if (gtc % 20 == 0)
     PM_INFO(_logPdaq, "Event Map size " << _eventMap.size());
-  pm::buffer *b = new pm::buffer(512 * 1024);
+  pm::buffer *b = new pm::buffer(1024 * 1024);
   // uint32_t* iptr=(uint32_t*) message->data();
   //   uint8_t* cptr=(uint8_t*) message->data();
   //   uint64_t* iptr64=(uint64_t*) &cptr[12];

@@ -1,0 +1,12 @@
+#!/bin/bash
+sudo systemctl disable WienerPico 
+sudo service WienerPico stop
+mkdir -p ../bin
+g++ -o ../bin/WienerPico.exe -I../include ../src/PicoInterface.cc WienerSnmp.cc WienerPico.cc -lcpprest  -lpaho-mqtt3a -lpaho-mqttpp3 -lpthread 
+
+sudo mkdir -p /usr/local/paho/bin
+sudo cp ../bin/WienerPico.exe /usr/local/paho/bin/
+sudo sed -e 's,SERVICENAME,WienerPico,g' ../etc/example.service > WienerPico.service
+sudo cp WienerPico.service /lib/systemd/system/
+sudo systemctl enable WienerPico 
+sudo service WienerPico stop

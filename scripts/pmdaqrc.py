@@ -50,13 +50,22 @@ class pmdaqControl(daqrc.daqControl):
                                 print("\t \t ID %x => %d " % (int(y['id'].split('-')[2]), y['received']))
 
     def TriggerStatus(self,verbose=False):
-        pn="lyon_mdcc"
+        pn=None
+        if ("lyon_mbmdcc" in self.session.apps): 
+            pn="lyon_mbmdcc"
         if ("lyon_mbmdcc" in self.session.apps): 
             pn="lyon_mbmdcc"
         if ("lyon_ipdc" in self.session.apps): 
             pn="lyon_ipdc"
         if ("lyon_liboard" in self.session.apps): 
             pn="lyon_liboard"
+        if (pn==None):
+            print("""
+            \t \t ****************************    
+            \t \t ** No Trigger information **
+            \t \t ****************************
+            """)
+            return
         mr = json.loads(self.mdcc_Status())
         #print(mr)
         #print("ON DEBUG ",mr)
@@ -90,7 +99,9 @@ class pmdaqControl(daqrc.daqControl):
         return self.processCommand("SETHEADER", "evb_builder", param)
     # MDCC
     def mdcc_command(self,cmd,par):
-        self.pn="lyon_mbmdcc"
+        self.pn=None
+        if ("lyon_mbmdcc" in self.session.apps):
+            self.pn="lyon_mbmdcc"
         if ("lyon_mdcc" in self.session.apps):
             self.pn="lyon_mdcc"
         if ("lyon_ipdc" in self.session.apps):
@@ -99,6 +110,9 @@ class pmdaqControl(daqrc.daqControl):
             self.pn="lyon_liboard"
             if (cmd=="STATUS"):
                 cmd="MDCCSTATUS"
+        if (self.pn==None):
+            print("===> No trigger control")
+            return {}
         return self.processCommand(cmd,  self.pn,par)      
     def mdcc_Status(self):
         return self.mdcc_command("STATUS",{})

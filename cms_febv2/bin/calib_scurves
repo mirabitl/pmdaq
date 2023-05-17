@@ -1,0 +1,372 @@
+#!/usr/bin/env python3
+import logging
+import sys
+import time
+
+
+import numpy as np 
+from matplotlib import pyplot as plt
+
+from minidaq.fc7 import fc7_board
+from minidaq.feb import feb_v2_cycloneV
+from minidaq.tools import bf, configFEBMinidaqLogger, TestError
+import csv_register_access as cra
+import os
+import json
+
+def make_pedestal_one_by_one(state,version,feb_id,feb,asic_name,thmin,thmax,thstep,v6=None):
+    try:
+
+        used_chan = [  
+            (1  , 0),
+            (2  , 1),
+            (4  , 2),
+            (6  , 3),
+            (8  , 4),
+            (10 , 5),
+            (12 , 6),
+            (14 , 7),
+            (16 , 8),
+            (18 , 9),
+            (20 , 10),
+            (22 , 11),
+            (24 , 12),
+            (26 , 13),
+            (28 , 14),
+            (30 , 15)
+        ]
+        used_chan_top = [  
+            (1  , 0),
+            (2  , 1),
+            (4  , 2),
+            (6  , 3),
+            (8  , 4),
+            (10 , 5),
+            (12 , 6),
+            (14 , 7),
+            (16 , 8),
+            (18 , 9),
+            (20 , 10),
+            (22 , 11),
+            (24 , 12),
+            (26 , 13),
+            (28 , 14),
+            (30 , 15)
+        ]
+        used_chan_bot = [  
+            (1  , 16),
+            (2  , 17),
+            (4  , 18),
+            (6  , 19),
+            (8  , 20),
+            (10 , 21),
+            (12 , 22),
+            (14 , 23),
+            (16 , 24),
+            (18 , 25),
+            (20 , 26),
+            (22 , 27),
+            (24 , 28),
+            (26 , 29),
+            (28 , 30),
+            (30 , 31)
+        ]
+        
+
+        f_tdc=None
+        f_asic=None
+        used_chan=used_chan_top
+        if (asic_name=='left_top'):
+            f_tdc=feb.tdc_left
+            f_asic=feb.asic_left_top
+        if (asic_name=='left_bot'):
+            f_tdc=feb.tdc_left
+            f_asic=feb.asic_left_bot
+            used_chan=used_chan_bot
+        if (asic_name=='middle_top'):
+            f_tdc=feb.tdc_middle
+            f_asic=feb.asic_middle_top
+        if (asic_name=='middle_bot'):
+            f_tdc=feb.tdc_middle
+            f_asic=feb.asic_middle_bot
+            used_chan=used_chan_bot
+        if (asic_name=='right_bot'):
+            f_tdc=feb.tdc_right
+            f_asic=feb.asic_right_bot
+            used_chan=used_chan_bot
+        if (asic_name=='right_top'):
+            f_tdc=feb.tdc_right
+            f_asic=feb.asic_right_top
+
+
+        used_petiroc_chan = [x[0] for x in used_chan]
+        scurves = [ [] for _ in range(32) ]         
+        res={}
+        res["state"]=state
+        res["version"]=version
+        res["feb"]=feb_id
+        res["thmin"]=thmin
+        res["thmax"]=thmax
+        res["thstep"]=thstep
+        res["asic"]=asic_name.upper()
+        res["ctime"]=time.time()
+        res["analysis"]="SCURVE_1"
+
+        res["channels"]=[]
+        
+        for petiroc_chan,tdc_ch in used_chan:
+            en=1
+            for o_chan in range(32):
+
+                if (o_chan==petiroc_chan):
+                    en = 0
+                else:
+                    en=1
+                f_asic.set_reg(f"mask_discri_time_ch{o_chan}", en)
+            if (v6!=None):
+                for o_chan in range(32):
+
+                    if (o_chan==petiroc_chan):
+                        en = v6[o_chan]
+                    else:
+                        en=1
+                    f_asic.set_reg(f"6b_dac_ch{o_chan}", en)
+                
+            f_tdc.set_tdc_injection_mode('standard')
+            f_tdc.enable_ch(tdc_ch)
+            # f_tdc.set_bc0_offset_correction(True) # we only need counter values for scurves so this is useless
+            f_tdc.cmd_valid()
+            f_tdc.set_counter_time_window(int(1e-3/8.33e-9)) # 1ms
+
+
+            for dac10b_val in range(thmin, thmax, thstep):
+#            for dac10b_val in range(thmax, thmin, -1*thstep):
+                f_asic.set_reg('10b_dac_vth_discri_time', dac10b_val)
+                feb.send_petiroc_conf(asic_name)
+                f_tdc.enable_tdc()
+                f_tdc.start_counter()
+                time.sleep(0.001)
+                f_tdc.enable_tdc(0)
+                counters = f_tdc.get_counter_data_all()
+                
+                scurves[tdc_ch].append(counters[tdc_ch])
+                print(f"{dac10b_val} / {2**10}", counters)
+
+
+            rc={}
+            rc["prc"]=petiroc_chan
+            rc["tdc"]=tdc_ch
+            rc["scurve"]=scurves[tdc_ch]
+            res["channels"].append(rc)
+            plt.plot(range(thmin, thmax, thstep), scurves[tdc_ch], '+-', label=f"top right ch{petiroc_chan}")
+        plt.grid()
+        plt.legend(loc="upper right")
+        plt.show() 
+        # Store results in json
+        res_dir='results/%s_%d_f_%d' % (state,version,feb_id)
+        os.system("mkdir -p %s" % res_dir)
+        fout=open("%s/scurves_one_by_one_%s.json" % (res_dir,asic_name),"w")
+        fout.write(json.dumps(res))
+        fout.close
+        return res
+
+
+    except TestError as e:
+        print(f"Test failed with message: {e}")
+def make_pedestal_all_channels(state,version,feb_id,feb,asic_name,thmin,thmax,thstep):
+    try:
+
+        used_chan_top = [  
+            (1  , 0),
+            (2  , 1),
+            (4  , 2),
+            (6  , 3),
+            (8  , 4),
+            (10 , 5),
+            (12 , 6),
+            (14 , 7),
+            (16 , 8),
+            (18 , 9),
+            (20 , 10),
+            (22 , 11),
+            (24 , 12),
+            (26 , 13),
+            (28 , 14),
+            (30 , 15)
+        ]
+        used_chan_bot = [  
+            (1  , 16),
+            (2  , 17),
+            (4  , 18),
+            (6  , 19),
+            (8  , 20),
+            (10 , 21),
+            (12 , 22),
+            (14 , 23),
+            (16 , 24),
+            (18 , 25),
+            (20 , 26),
+            (22 , 27),
+            (24 , 28),
+            (26 , 29),
+            (28 , 30),
+            (30 , 31)
+        ]
+        
+        nstep=thmax-thmin
+        
+        f_tdc=None
+        f_asic=None
+        used_chan=used_chan_top
+        if (asic_name=='left_top'):
+            f_tdc=feb.tdc_left
+            f_asic=feb.asic_left_top
+        if (asic_name=='left_bot'):
+            f_tdc=feb.tdc_left
+            f_asic=feb.asic_left_bot
+            used_chan=used_chan_bot
+        if (asic_name=='middle_top'):
+            f_tdc=feb.tdc_middle
+            f_asic=feb.asic_middle_top
+        if (asic_name=='middle_bot'):
+            f_tdc=feb.tdc_middle
+            f_asic=feb.asic_middle_bot
+            used_chan=used_chan_bot
+        if (asic_name=='right_bot'):
+            f_tdc=feb.tdc_right
+            f_asic=feb.asic_right_bot
+            used_chan=used_chan_bot
+        if (asic_name=='right_top'):
+            f_tdc=feb.tdc_right
+            f_asic=feb.asic_right_top
+
+        used_petiroc_chan = [x[0] for x in used_chan]
+        for petiroc_chan in range(32):
+            en = petiroc_chan not in used_petiroc_chan
+            f_asic.set_reg(f"mask_discri_time_ch{petiroc_chan}", en)
+            #feb.asic_right_top.set_reg(f"6b_dac_ch{petiroc_chan}", 32)
+
+        f_tdc.set_tdc_injection_mode('standard')
+        for _, tdc_ch in used_chan:
+            f_tdc.enable_ch(tdc_ch)
+        # f_tdc.set_bc0_offset_correction(True) # we only need counter values for scurves so this is useless
+        f_tdc.cmd_valid()
+        f_tdc.set_counter_time_window(int(1e-3/8.33e-9)) # 1ms
+
+        scurves = [ [] for _ in range(32) ]
+        for dac10b_val in range(thmin, thmax, thstep):
+            f_asic.set_reg('10b_dac_vth_discri_time', dac10b_val)
+            feb.send_petiroc_conf(asic_name)
+            f_tdc.enable_tdc()
+            f_tdc.start_counter()
+            time.sleep(0.001)
+            f_tdc.enable_tdc(0)
+            counters = f_tdc.get_counter_data_all()
+            for _, tdc_ch in used_chan:
+                scurves[tdc_ch].append(counters[tdc_ch])
+            print(f"{dac10b_val} / {2**10}", counters)
+
+        res={}
+        res["state"]=state
+        res["version"]=version
+        res["feb"]=feb_id
+        res["thmin"]=thmin
+        res["thmax"]=thmax
+        res["thstep"]=thstep
+        res["asic"]=asic_name.upper()
+        res["ctime"]=time.time()
+        res["analysis"]="SCURVE_A"
+        res["channels"]=[]
+        for petiroc_chan, tdc_chan in used_chan:
+            rc={}
+            rc["prc"]=petiroc_chan
+            rc["tdc"]=tdc_chan
+            rc["scurve"]=scurves[tdc_chan]
+            res["channels"].append(rc)
+            plt.plot(range(thmin, thmax, thstep), scurves[tdc_chan], '+-', label=f"top right ch{petiroc_chan}")
+        plt.grid()
+        plt.legend(loc="upper right")
+        plt.show() 
+        # Store results in json
+        res_dir='results/%s_%d_f_%d' % (state,version,feb_id)
+        os.system("mkdir -p %s" % res_dir)
+        fout=open("%s/scurves_all_channels_%s.json" % (res_dir,asic_name),"w")
+        fout.write(json.dumps(res))
+        fout.close
+        return res
+
+
+    except TestError as e:
+        print(f"Test failed with message: {e}")
+
+
+def main(state,version,feb_id,all_channels,gbt_init,upload_comment="scurve analysis"):
+    sdb=cra.instance()
+    sdb.download_setup(state,version)
+    sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",800)
+    sdb.setup.version=998
+    sdb.to_csv_files()
+    print(sdb.setup.febs[0].fpga_version,sdb.setup.febs[0].petiroc_version)
+    do_fc7_gbt_init = gbt_init
+    configFEBMinidaqLogger(logging.INFO)
+
+    try:
+        fc7 = fc7_board(False)
+        feb = feb_v2_cycloneV(fc7, fpga_fw_ver=sdb.setup.febs[0].fpga_version, petiroc_ver=sdb.setup.febs[0].petiroc_version, verbose=True)
+
+        fc7.init(init_gbt=do_fc7_gbt_init)
+        feb.boot(app_fw=False)
+
+        feb.load_config_from_csv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (state,998,feb_id))
+        asicl=["left_top","left_bot","middle_top","middle_bot","right_top","right_bot"]
+
+        for an in asicl:
+            print(an)
+            if (all_channels):
+                results=make_pedestal_all_channels(state,version,feb_id,feb,an,thi,tha,1)
+                sdb.upload_results(results["state"],results["version"],results["feb"],results["analysis"],results,upload_comment)
+            else:
+                v6=sdb.setup.febs[0].petiroc.get_6b_dac(an)
+                results=make_pedestal_one_by_one(state,version,feb_id,feb,an,thi,tha,1,v6)
+                sdb.upload_results(results["state"],results["version"],results["feb"],results["analysis"],results,upload_comment)
+    except TestError as e:
+        print(f"Test failed with message: {e}")
+
+    
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    
+    # configure all the actions
+    grp_action = parser.add_mutually_exclusive_group()
+    grp_action.add_argument('--allchan', dest='allchan', default=False, action='store_true',help="Make Scurve allchannels on")
+    grp_action.add_argument('--noinit', dest='noinit', default=False, action='store_true',help="Do not init GBT")
+    # Arguments
+    parser.add_argument('--state', action='store', type=str,default=None, dest='state', help='DB State')
+    parser.add_argument('--version', action='store',type=int,default=None,dest='version',help='DB state version' )
+    parser.add_argument('--feb', action='store', type=int,default=None, dest='feb', help='FEB id')
+    parser.add_argument('--min', action='store', type=int,default=200, dest='thmin', help='Minimal 10b dac')
+    parser.add_argument('--max', action='store', type=int,default=600, dest='thmax', help='Maximal 10b dac')
+
+    results = parser.parse_args()
+    print(results)
+
+    if (results.state==None):
+        print("--state should be specified")
+        exit(0)
+    if (results.version==None):
+        print("--version should be specified")
+        exit(0)
+    if (results.feb==None):
+        print("--feb should be specified")
+        exit(0)
+
+
+    state=results.state
+    version=results.version
+    feb_id=results.feb
+    all_channels=results.allchan
+    thi=results.thmin
+    tha=results.thmax
+    gbt_init=not results.noinit
+    main(state,version,feb_id,all_channels,gbt_init)

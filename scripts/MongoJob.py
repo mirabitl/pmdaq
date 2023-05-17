@@ -74,17 +74,18 @@ class MongoJob:
         resconf=self.db.configurations.insert_one(s)
         print(resconf)
 
-    def uploadCalibration(self,name,calib,ctype,comment):
+    def uploadCalibration(self,setup,run,ctype,results,comment="not set"):
         """
-        jobcontrol configuration upload
+        Calibration results upload
 
-        :param name: Name of the calibration
-        :param calib: dictionnary
-        :param ctype: SCURVE or GAIN
-        :param comment: A comment on the calibration
-
+        :param setup: Name of the experimental setup ($DAQSETUP)
+        :param run: Run analyzed
+        :param ctype: SCURVE or GAIN ...
+        :param results: dictionnary
+        :param comment: un commentaire
         """
         s={}
+        name="%s_%d" % (setup,run)
         res=self.db.calibrations.find({'name':name})
         last=0
         for x in res:
@@ -96,13 +97,13 @@ class MongoJob:
             s["version"]=last+1
 
 
-        s["content"]=calib
+        s["comment"]=comment
+        s["content"]=results
         s["type"]=ctype
         s["name"]=name
         s["time"]=time.time()
-        s["comment"]=comment
-        s["setup"]=calib["setup"]
-        s["run"]=calib["chambers"][0]["info"]["run"]
+        s["setup"]=setup
+        s["run"]=run
         resconf=self.db.calibrations.insert_one(s)
         print(resconf)
 

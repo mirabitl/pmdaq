@@ -1,0 +1,18 @@
+#!/bin/bash 
+
+
+
+PIDFILE="/var/log/pico_mon.log"
+
+PATH="/sbin:/bin:/usr/sbin:/usr/bin" #Ne pas toucher
+
+
+export LD_LIBRARY_PATH=/usr/local/pmdaq/lib:/usr/local/lib:/usr/lib:$LD_LIBRARY_PATH
+#export PATH=/opt/zdaq/scripts:$PATH
+export PYTHONPATH=/opt/pmdaq/mqtt/pico/services:/usr/local/pmdaq/share:$PYTHONPATH
+export PATH=/opt/pmdaq/mqtt/pico/services:/usr/local/pmdaq/bin:$PATH
+export MALLOC_ARENA_MAX=1
+
+
+
+/opt/pmdaq/mqtt/pico/services/pico_daemon.py 
