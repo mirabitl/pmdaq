@@ -6,7 +6,7 @@ if (APPLE)
   link_directories( /usr/local/lib ${OPENSSL_ROOT_DIR}/lib )
 endif()
 
-#ADD_DEFINITIONS(-std=c++11)
+ADD_DEFINITIONS(-std=c++17)
 if (NOT WINDOWS)
 ADD_DEFINITIONS(-DUNIX -fno-gnu-unique)
 endif()

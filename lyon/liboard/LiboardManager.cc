@@ -614,7 +614,7 @@ void LiboardManager::stop(http_request m)
   PMF_INFO(_logLiboard, " Stopping ");
   if (_slave)
     {
-       PMF_INFO(_logLiboard, " VALEVT OFF ")
+      PMF_INFO(_logLiboard, " VALEVT OFF ");
       _mdcc->setValEvtOff();
        std::map<uint32_t, LiboardInterface *> dm = this->getLiboardMap();
 

@@ -731,12 +731,13 @@ if (_mpi!=NULL)
 void Gricv0Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,int thmax,int step)
 {
 
-  int ncon=2000,ncoff=100,ntrg=20;
+  
+  int ncon = _sc_win, ncoff = 1000, ntrg = _sc_ntrg;
   utils::sendCommand(mdcc,"PAUSE",json::value::null());
   web::json::value p;
   p["nclock"]=ncon;  utils::sendCommand(mdcc,"SPILLON",p);
   p["nclock"]=ncoff;  utils::sendCommand(mdcc,"SPILLOFF",p);
-  printf("Clock On %d Off %d \n",ncon, ncoff);
+  PMF_DEBUG(_logGricv0,"Clock "<<ncon<<"/"<< ncoff);
   p["value"]=4;  utils::sendCommand(mdcc,"SETSPILLREGISTER",p);
   //::sleep(20);
   utils::sendCommand(mdcc,"CALIBON",json::value::null());
@@ -754,7 +755,16 @@ void Gricv0Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,in
 
       usleep(1000);
       //this->setThresholds(thmax-vth*step,512,512);
-      this->setThresholds(thmax-vth*step,thmax-vth*step,thmax-vth*step);
+
+      uint32_t threshold = thmax - vth * step;
+      // this->setThresholds(thmax-vth*step,512,512);
+      if (_sc_level == 0)
+	this->setThresholds(threshold, 512, 512);
+      if (_sc_level == 1)
+	this->setThresholds(512, threshold, 512);
+      if (_sc_level == 2)
+	this->setThresholds(512, 512, threshold);
+      ::usleep(2000);
       int firstEvent=0;
 #define USEFEBS
 #ifdef USEFEBS
@@ -771,7 +781,8 @@ void Gricv0Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,in
       h[0]=2;h[1]=json::value::number(thmax-vth*step);
       web::json::value ph;
       ph["header"]=h;
-      ph["nextevent"]=web::json::value::number(firstEvent+1);
+      //ph["nextevent"]=web::json::value::number(firstEvent+1);
+      ph["nextevent"]=web::json::value::number(2);
       utils::sendCommand(builder,"SETHEADER",ph);
       printf("SETHEADER executed\n");
       utils::sendCommand(mdcc,"RELOADCALIB",json::value::null());
@@ -827,8 +838,8 @@ void Gricv0Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,in
 
 
 
-      
-      printf("Step %d Th %d First %d Last %d loops %d \n",vth,thmax-vth*step,firstEvent,lastEvent,nloop);
+      PMF_INFO(_logGricv0, "Step:" << vth << " Threshold:" << thmax - vth * step << " First:" << firstEvent << " Last:" << lastEvent);
+      //printf("Step %d Th %d First %d Last %d loops %d \n",vth,thmax-vth*step,firstEvent,lastEvent,nloop);
       utils::sendCommand(mdcc,"PAUSE",json::value::null());
     }
   utils::sendCommand(mdcc,"CALIBOFF",json::value::null());
@@ -849,7 +860,21 @@ void Gricv0Manager::Scurve(int mode,int thmin,int thmax,int step)
   //std::string builder=utils::findUrl(session(),"lyon_evb",0);
   std::string builder=utils::findUrl(session(),"evb_builder",0);
 
-  if (mdcc.compare("")==0) return;
+
+   if (mdcc.compare("") == 0)
+    {
+      mdcc = utils::findUrl(session(), "lyon_mbmdcc", 0);
+      if (mdcc.compare("") == 0)
+	{
+	  mdcc = utils::findUrl(session(), "lyon_ipdc", 0);
+	  if (mdcc.compare("") == 0)
+	    {
+	      PMF_ERROR(_logGricv0,"No MDCC/MBMDCC/IPDC available, exiting Scurve");
+
+	      return;
+	    }
+	}
+    }
   if (builder.compare("")==0) return;
 
   uint64_t mask=0;
@@ -861,6 +886,7 @@ void Gricv0Manager::Scurve(int mode,int thmin,int thmax,int step)
 
       mask=0xFFFFFFFFFFFFFFFF;
       this->setAllMasks(mask);
+      this->setCTEST(0);
       this->ScurveStep(mdcc,builder,thmin,thmax,step);
       return;
       
@@ -873,16 +899,33 @@ void Gricv0Manager::Scurve(int mode,int thmin,int thmax,int step)
       for (int i=0;i<64;i++)
 	{
 	  mask=(1ULL<<i);
-	  std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
+	  PMF_INFO(_logGricv0, "Step HR2 " << i << "  channel" << i << std::dec);
+
 	  this->setAllMasks(mask);
 	  this->setCTEST(mask);
 	  this->ScurveStep(mdcc,builder,thmin,thmax,step);
 	}
       return;
     }
+ if (mode == 1022)
+    {
+      mask = 0;
+      for (int i = 0; i < 64; i++)
+	{
+	  mask = (1ULL << i);
+	  PMF_INFO(_logGricv0, "Step HR2 " << i << "  channel" << i << std::dec);
 
+	  // std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
+	  this->setCTEST(mask);
+	  this->setAllMasks(0xFFFFFFFFFFFFFFFF);
+
+	  this->ScurveStep(mdcc, builder, thmin, thmax, step);
+	}
+      return;
+    }
   // One channel pedestal
   mask=(1ULL<<mode);
+  PMF_INFO(_logGricv0, "CTEST One " << mode << " " << std::hex << mask << std::dec);
   this->setAllMasks(mask);
   this->setCTEST(mask);
   this->ScurveStep(mdcc,builder,thmin,thmax,step);
@@ -1051,19 +1094,18 @@ void Gricv0Manager::c_scurve(http_request m)
   auto par = json::value::object();
 
   par["STATUS"]=web::json::value::string(U("DONE"));
-
-  uint32_t first = utils::queryIntValue(m,"first",80);
-  uint32_t last = utils::queryIntValue(m,"last",250);
-  uint32_t step = utils::queryIntValue(m,"step",1);
-  uint32_t mode = utils::queryIntValue(m,"channel",255);
-  PMF_INFO(_logGricv0, " SCurve called " << mode << " first " << first << " last " << last <<" step "<<step);
+  _sc_thmin = utils::queryIntValue(m, "first", 80);
+  _sc_thmax = utils::queryIntValue(m, "last", 250);
+  _sc_step = utils::queryIntValue(m, "step", 1);
+  _sc_mode = utils::queryIntValue(m, "channel", 255);
+  _sc_win = utils::queryIntValue(m, "window", 50000);
+  _sc_ntrg = utils::queryIntValue(m, "ntrg", 50);
+  _sc_level = utils::queryIntValue(m, "level", 0);
+  
+  PMF_INFO(_logGricv0, " SCurve called  mode: " << _sc_mode << " TH_Min " << _sc_thmin << " TH_Max " << _sc_thmax <<" Step "<<_sc_step <<" Level "<<_sc_level);
   
   //this->Scurve(mode,first,last,step);
 
-  _sc_mode=mode;
-  _sc_thmin=first;
-  _sc_thmax=last;
-  _sc_step=step;
   if (_sc_running)
     {
       par["SCURVE"]=web::json::value::string(U("ALREADY_RUNNING"));
