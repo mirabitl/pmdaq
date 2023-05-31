@@ -27,6 +27,8 @@ public:
   uint32_t mask();
   void maskTrigger();
   void unmaskTrigger();
+  void resyncOn();
+  void resyncOff();
   uint32_t spillCount();
   void resetCounter();
   uint32_t spillOn();
@@ -81,7 +83,7 @@ public:
   void c_settrigext(http_request m);
   void c_status(http_request m);
   void c_setspsspill(http_request m);
-
+  void c_resync(http_request m);
 
 
 

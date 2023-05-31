@@ -46,7 +46,7 @@ void MbmdccManager::initialise()
   this->addCommand("PAUSE",std::bind(&MbmdccManager::c_pause,this,std::placeholders::_1));
   this->addCommand("RESUME",std::bind(&MbmdccManager::c_resume,this,std::placeholders::_1));
   this->addCommand("RESET",std::bind(&MbmdccManager::c_reset,this,std::placeholders::_1));
-
+  this->addCommand("RESYNC",std::bind(&MbmdccManager::c_resync,this,std::placeholders::_1));
   this->addCommand("SPILLON",std::bind(&MbmdccManager::c_spillon,this,std::placeholders::_1));
   this->addCommand("SPILLOFF",std::bind(&MbmdccManager::c_spilloff,this,std::placeholders::_1));
   this->addCommand("CHANNELON",std::bind(&MbmdccManager::c_channelon,this,std::placeholders::_1));
@@ -160,9 +160,9 @@ void MbmdccManager::fsm_initialise(http_request m)
   this->resetCounter();
   // Reset Busy state
   PMF_INFO(_logMbmdcc,"Resetting FSM"<<std::flush);
-  this->resetFSM(0x1);
-  ::usleep(100000);
-  this->resetFSM(0x0);
+  //this->resetFSM(0x1);
+  //::usleep(100000);
+  //this->resetFSM(0x0);
 
   PMF_INFO(_logMbmdcc,"Set parameters"<<std::flush);
   
@@ -229,6 +229,9 @@ void MbmdccManager::destroy(http_request m)
 
   // To be done: _mbmdcc->clear();
 }
+
+void MbmdccManager::resyncOn(){this->writeRegister(mbmdcc::Message::Register::RESYNC_MASK,0x1);}
+void MbmdccManager::resyncOff(){this->writeRegister(mbmdcc::Message::Register::RESYNC_MASK,0x0);}
 
 
 uint32_t MbmdccManager::version(){return this->readRegister(mbmdcc::Message::Register::VERSION);}
@@ -435,6 +438,21 @@ void MbmdccManager::c_reset(http_request m)
 }
 
 
+void MbmdccManager::c_resync(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logMbmdcc," Resync switch called ");
+  
+  uint32_t nc=utils::queryIntValue(m,"value",0);
+  if (nc==0)
+    this->resyncOff();
+  else
+    this->resyncOn();
+  par["STATUS"]=json::value::string(U("DONE"));
+  par["RESYNC"]=json::value::number(nc);
+  Reply(status_codes::OK,par);
+
+} 
 void MbmdccManager::c_spillon(http_request m)
 {
   auto par = json::value::object();

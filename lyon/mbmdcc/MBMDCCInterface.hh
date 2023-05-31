@@ -132,6 +132,7 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
 		     SPS_SPILL_DURATION=0x70,
 		     SPS_SPILL_CTRL=0x71,
 		     LEMO_MASK=0xA0,
+		     RESYNC_MASK=0x200,
 		     VERSION=0x100};
 		     
 
