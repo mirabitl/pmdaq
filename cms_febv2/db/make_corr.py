@@ -1,7 +1,8 @@
 import json
 import csv_register_access as cra
 import ROOT
-import numpy as np 
+import numpy as np
+from scipy import stats
 class pedcor:
     def __init__(self,state,version,feb,analysis):
         print(state,version)
@@ -176,18 +177,30 @@ class timecor:
         # find histo limits
         t_min=0xFFFFFF
         t_max=0
+        #print(d_sc["channels"])
         for ch in range(len(d_sc["channels"])):
+            if (ch==32):
+                continue
             vals=d_sc["channels"][ch]
             if (len(vals)>10):
+                vmean=stats.trim_mean(vals, 0.1)
                 v_min=min(vals)
                 v_max=max(vals)
+                v_min=vmean-1000
+                v_max=vmean+1000
                 if (v_min<t_min):
                     t_min=v_min
                 if(v_max>t_max):
                     t_max=v_max
+                    #print(np.mean(vals),stats.trim_mean(vals, 0.1))
+                    print(ch," Max")
         print(t_min,t_max)
         dt=(t_max-t_min+1)//5
-        nb=(t_max-t_min+1)+2*dt
+        nb=int((t_max-t_min+1)+2*dt)
+        #nb=nb//5
+        print("dt ",dt,"nb ",nb,t_min-dt,t_max+dt)
+        xmin=t_min-1.*dt
+        xmax=t_max+1*dt
         #return
                 
         c1=ROOT.TCanvas()
@@ -200,7 +213,7 @@ class timecor:
             if (nval==0):
                 continue
             shs="%s_%s_scurve-c%d" % (fn,asic,ch)
-            hs=ROOT.TH1F(shs,shs,nb,t_min-dt,t_max+dt)
+            hs=ROOT.TH1F(shs,shs,nb,xmin,xmax)
             for ith in range(nval):
                 hs.Fill(vals[ith])
             c1.cd()
@@ -234,7 +247,8 @@ class timecor:
             fpga_chan_mu[fpga]=[0 for i in range(34)]
             for ch in range(34):
                 if (ch!=32):
-                    fpga_chan_mu[fpga][ch] = np.mean(self.pedestals[fpga]["channels"][ch])
+                    #fpga_chan_mu[fpga][ch] = np.mean(self.pedestals[fpga]["channels"][ch])
+                    fpga_chan_mu[fpga][ch]=stats.trim_mean(self.pedestals[fpga]["channels"][ch], 0.1)
                 else:
                     fpga_chan_mu[fpga][ch]=0
             min_resync = min(min_resync, fpga_chan_mu[fpga][33])
