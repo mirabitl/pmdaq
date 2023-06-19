@@ -162,20 +162,21 @@ class febv2_setup:
 
         self.feb.enable_tdc(True)
         fout=open("debug.out","w")
+
         while (self.running):
             self.writer.newEvent()
             #self.fc7.reset_bc0_id()
-            self.fc7.configure_los_fsm(
-                s0_duration=int(89e-6/25e-9),
-                s1_duration=106,
-                s2_duration=10,
-                s3_duration=5,
-                s4_duration=5, 
-                enable_force_s2=True)
-            self.fc7.configure_resync_external(10) 
-            # fc7.configure_resync_after_bc0(500) 
+            #self.fc7.configure_los_fsm(
+            #    s0_duration=int(89e-6/25e-9),
+            #    s1_duration=106,
+            #    s2_duration=10,
+            #    s3_duration=5,
+            #    s4_duration=5, 
+            #    enable_force_s2=True)
+            
+            self.fc7.configure_resync_external(5100) 
+            #self.fc7.configure_resync_after_bc0(500) 
             self.fc7.reset_bc0_id()
-
 
             #self.feb.tdc_left.set_tdc_injection_mode('standard')
             #self.feb.tdc_left.discard_bc0(False)
@@ -190,17 +191,17 @@ class febv2_setup:
             #self.fc7.configure_ndata_trigger(32700)
             #self.fc7.configure_external_trigger(1)
             #self.fc7.configure_acquisition(buf_size=0xffff, triggerless=False, single=True, keep=True, external_window=True)
-            self.fc7.configure_acquisition(buf_size=self.params["config"]["buf_size"],
-                                            triggerless=(self.params["config"]["triggerless"]==1),
-                                            single=(self.params["config"]["single"]==1),
-                                            keep=(self.params["config"]["keep"]==1),
-                                            external_window=(self.params["config"]["external_window"]==1))
             #self.fc7.configure_acquisition(buf_size=self.params["config"]["buf_size"],
             #                               triggerless=1,
             #                               single=0,
             #                               keep=(self.params["config"]["keep"]==1),
             #                               external_window=0)
-            
+            self.fc7.configure_acquisition(buf_size=self.params["config"]["buf_size"],
+                                           triggerless=(self.params["config"]["triggerless"]==1),
+                                           single=(self.params["config"]["single"]==1),
+                                           keep=(self.params["config"]["keep"]==1),
+                                           external_window=(self.params["config"]["external_window"]==1))
+
             self.fc7.start_acquisition()
             nbt=0
             datawait=0

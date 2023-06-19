@@ -90,6 +90,7 @@ void FebWriter::writeRunHeader(std::vector<uint32_t> header)
 }
 void FebWriter::newEvent()
 {
+  _event++;
   _idx = 0;
   _eventSize = 0;
   _buffer[0] = READOUT_START;
@@ -134,7 +135,7 @@ uint32_t FebWriter::writeEvent()
     ++_idx;
     utils::store(_detectorId,_sourceId,_event,_event, _buffer,_idx, _shmDirectory);
     _totalSize += _idx;
-    _event++;
+
 
     
   }
