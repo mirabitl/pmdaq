@@ -19,6 +19,7 @@ parser = argparse.ArgumentParser()
 grp_action = parser.add_mutually_exclusive_group()
 
 grp_action.add_argument('--items', action='store_true',help='List all the available items')
+grp_action.add_argument('--list', action='store_true',help='List all the available path')
 grp_action.add_argument('--csv', action='store_true',help='List all the available items in csv file specified by --out fname (default /tmp/mgslow.csv)')
 
 
@@ -48,6 +49,20 @@ _wdd=mg.instance()
 lcgi = {}
 r_cmd = None
 
+if (results.list):
+    r_cmd = 'list'
+    lsince=1000000000
+    ldepth=1000000000
+    comment="No comment given"
+    if (results.since != None):
+       lsince=results.since
+       #print(version)
+    if (results.depth != None):
+       ldepth=results.depth
+       #print(comment)
+
+    _wdd.dump_path(depth=ldepth,from_time=lsince)
+    exit(0)
 if (results.items):
     r_cmd = 'items'
     lsince=1000000000

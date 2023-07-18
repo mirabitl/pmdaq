@@ -33,7 +33,7 @@ class pedcor:
         thrs=[]
         thre=[]
         scfit=ROOT.TF1("scfit","[0]*TMath::Erfc((x-[1])/[2])",thi+1,tha);
-
+        ROOT.gStyle.SetOptStat(0)
         for c in d_sc["channels"]:
             ch=c["prc"]
             vals=c["scurve"]
@@ -206,6 +206,7 @@ class timecor:
         c1=ROOT.TCanvas()
         icol=1
         histos=[]
+        ROOT.gStyle.SetOptStat(0)
         for ch in range(len(d_sc["channels"])):
             vals=d_sc["channels"][ch]
             nval=len(vals)
@@ -220,7 +221,7 @@ class timecor:
             hs.SetLineColor(icol)
 
             if (icol==1):
-                hs.GetYaxis().SetRangeUser(0.,200.)
+                #hs.GetYaxis().SetRangeUser(0.,200.)
                 hs.Draw()
             else:
                 hs.Draw("SAME")

@@ -77,6 +77,14 @@ class MongoSlow:
         #print("storing",mondoc)
         res=self.db.MQTT_ITEMS.insert_one(mondoc)
         #print(res)
+    def dump_path(self,depth=50000,from_time=0):
+        mintime=0
+        if (from_time>0):
+            mintime=time.time()-from_time
+        res=self.db.MONITORED_ITEMS.find({"ctime":{'$gt':mintime}},{"_id":0}).limit(depth).sort("ctime",pymongo.DESCENDING)
+        for x in res:
+            sti=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x["ctime"]))
+            print(sti,x["path"])
     def items(self,path,depth=50000,from_time=0):
         """
         List all the run informations stored
