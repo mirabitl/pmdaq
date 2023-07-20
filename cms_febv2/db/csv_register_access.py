@@ -1,3 +1,17 @@
+"""! @brief Defines the FEBV2 description classes and tools to access them."""
+##
+# @file csv_register_access.py
+#
+# @brief Defines the MongoDb classes and tools to store and access FEBV2 parameters.
+#
+# @section database objects 
+# Defines the classes to handle FEBV2 collections data.
+# - feb_fpga_registers 
+# - feb_petiroc_registers
+# - febv2_registers
+# - febv2_setup
+# @section Access and tools
+# - mgdb_feb
 import json
 import pprint
 import csv
@@ -9,17 +23,32 @@ import json
 import time
 from bson.objectid import ObjectId
 class feb_fpga_registers:
+    """The FEBV2 FPGA registers handler class.
+    Gives all tools to handle the csv string, to store or load it in file or db and to
+    modify its parameters
+    """
     def __init__(self):
+        """Bare initialisiation"""
         self.lines=[]
         self.headers= ['name', 'LEFT','MIDDLE','RIGHT','pseudo register']
         #self.defaults()
         self._id=None
     def load_defaults(self,fn="default_fpga.csv"):
+        """Load default csv values from a file.
+        Args:
+            fn: File name in csv ; separated
+        """
         print("Loading defaults for FPGA from %s" % fn)
         self.load_from_csv_file(fn)
         return
 
     def store_in_db(self,dbclient):
+        """ Store parameter in fpga_csv collection, given a MongoClient access
+        Args:
+            dbclient: The mongodb client access
+        Returns:
+            the bson id of the insertion
+        """
         self.make_csv_string()
         x={}
         x["csv"]=self.csv
@@ -27,6 +56,11 @@ class feb_fpga_registers:
         self._id=result.inserted_id
         return self._id
     def load_from_db(self,dbclient,bsid):
+        """ Load parameter from fpga_csv collection, given a MongoClient access and an id
+        Args:
+            dbclient: The mongodb client access
+            bsid: The bson id in mongo db collection
+        """       
         resl=dbclient.fpga_csv.find({'_id': {'$in': [bsid]}})
                     
         for resa in resl:
@@ -476,6 +510,13 @@ class febv2_setup:
             self.version=x["version"]
         return self._id
     def load_from_db(self,dbclient,name,version):
+        """
+        Fill the febs list with febs in a given setup
+        Args:
+            dbclient: databas MongoClient access
+            name: Setup name
+            version (int): Version number
+        """
         res=dbclient.febv2_setup.find({'name':name,'version':version})
         for resa in res:
             self._id=resa["_id"]
@@ -488,28 +529,31 @@ class febv2_setup:
                 f.load_from_db(dbclient,fid)
                 self.febs.append(f)
     def to_csv_files(self):
+        """
+        Store the febs csv data to files in /dev/shm/feb_csv with names
+        setup_version_feb_fpga/petiroc.csv
+        """
         for f in self.febs:
             f.to_csv_files(self.name,self.version)
 
 
 class mgdb_feb:
     """
-    Main class to access the Mongo DB
+    Main class to access the Mongo DB 
+    It gives access to all collections (febv2_setup,febv2_test,configurations,runs)
     """
 
     def __init__(self, host,port,dbname,username,pwd):
         """
         connect Mongodb database 
 
-        :param host: Hostanme of the PC running the mongo DB
+        Args:
 
-        :param port: Port to access the base
-
-        :param dbname: Data base name
-
-        :param username: Remote access user
-
-        :param pwd: Remote access password
+            host: Hostanme of the PC running the mongo DB
+            port (int): Port to access the base
+            dbname: Data base name
+            username: Remote access user
+            pwd: Remote access password
 
         """
 
@@ -529,23 +573,51 @@ class mgdb_feb:
         self.asiclist = []
         self.bson_id=[]
     def create_setup(self,name):
+        """
+        Create a new empty setup 
+
+        Args:
+            name: Setup name
+        """
         self.setup=febv2_setup(name)
         
     def download_setup(self,name,version):
+        """
+        Load from the febv2_setup collection the state with given name and version
+
+        Args:
+            name (str): Setup name
+            version (int): Setup version
+        """
         self.setup=febv2_setup(name,version)
         self.setup.load_from_db(self.db,name,version)
     def to_csv_files(self):
+        """
+        Save the current setup values in /dev/shm/feb_csv directory with name
+        state_version_fpga.csv and state_version_petiroc.csv
+        """
         self.setup.to_csv_files()
     def upload_changes(self,comment):
+        """
+        Upload changes in the last download setup and generates the next version number
+        Args:
+            comment (str): The comment for the new version
+        """
         if (self.setup!=None):
             self.setup.store_in_db(self.db,comment)
         else:
             print("No setup defined")
     def list_setups(self):
+        """
+        Print the list of states in the febv2_setup collection
+        """
         res=self.db.febv2_setup.find({})
         for resa in res:
             print(resa["name"],"/",resa["version"],"|",resa["comment"],"| Previous ",resa["last_version"])
     def list_tests(self):
+        """
+        Print the list of test in the febv2_test collection
+        """
         res=self.db.febv2_tests.find({})
         for resa in res:
             sti = time.strftime('%Y-%m-%d %H:%M:%S',
@@ -557,6 +629,16 @@ class mgdb_feb:
             #print(f'{sti}|{resa["state"]}/{resa["version"]}/{resa["analysis"]}|{resa["feb"]}|{resa["comment"]}')
                 
     def upload_results(self,state,version,feb,analysis,res,comment=None):
+        """
+        Store test results for a given analysis in febv2_test collection
+
+        Args:
+            state (str): DB state used for the test
+            version (int): DB version used for the test
+            feb (int): FEBV2 id
+            analysis (str): the analysis type (SCURVE_1,SCURVE_A or TIME_PEDESTAL)
+            res: An dictionnary conatining test results (histograms)       
+        """
         analysisType=["SCURVE_1","SCURVE_A","TIME_PEDESTAL","NOISE"]
         if not (analysis in analysisType):
             print(f"Analysis type is {analysis} not in {analysisType}")
@@ -575,6 +657,19 @@ class mgdb_feb:
         else:
             print(res)
     def get_scurve(self,state,version,feb,analysis,asic,channel=None):
+        """
+        Get the last stored test results of a SCURVE_1 or SCURVE_A analysis
+
+        Args:
+            state (str): DB state used for the test
+            version (int): DB version used for the test
+            feb (int): FEBV2 id
+            analysis (str): the analysis type (SCURVE_1 or SCURVE_A)
+            asic (str): ASIC name (LEFT_BOT/TOP,MIDDLE_BOT/TOP,RIGHT_BOT/TOP)
+            channel (int): Optionnal , if set only this channel is return
+        Returns:
+            The last scurves histograms inserted 
+        """
         res=self.db.febv2_tests.find({'state':state,'version':version,"feb":feb,"analysis":analysis,"asic":asic})
 
         results=[]
@@ -587,6 +682,19 @@ class mgdb_feb:
                 if (x["prc"]==channel):
                     return x
     def get_time_pedestal(self,state,version,feb,analysis,fpga,channel=None):
+        """
+        Get the last stored test results of a TIME_PEDESTAL analysis
+
+        Args:
+            state (str): DB state used for the test
+            version (int): DB version used for the test
+            feb (int): FEBV2 id
+            analysis (str): Must be TIME_PEDESTAL
+            fpga (str): FPGA name (LEFT,MIDDLE,RIGHT)
+            channel (int): Optionnal , if set only this channel is return
+        Returns:
+            The last TIME_PEDESTAL histograms inserted 
+        """
         print(state,version,feb,analysis,fpga,channel)
         res=self.db.febv2_tests.find({'state':state,'version':version,"feb":feb,"analysis":analysis,"fpga":fpga})
 
@@ -601,9 +709,11 @@ class mgdb_feb:
         """
         Get a new run number for a given setup
 
-        :param location: Setup Name
-        :param comment: Comment on the run
-        :return: a dictionnary corresponding to the base insertion {run,location,time,comment}
+        Args:
+            location: Setup Name
+            comment: Comment on the run
+        Returns:
+            a dictionnary corresponding to the base insertion {run,location,time,comment}
         """
         res=self.db.runs.find({'location':location})
         runod={}
@@ -628,6 +738,15 @@ class mgdb_feb:
         print(resconf)
         return runid
     def updateRun(self,run,loc,tag,vtag):
+        """
+        Update run information
+
+        Args:
+            run (int): The run number
+            loc (str): The setup name
+            tag (str): The tag in the collection runs to be updated
+            vtag (str): The value of the tag
+        """
         filter = { 'run': run,'location':loc }
  
         # Values to be updated.
@@ -639,7 +758,7 @@ class mgdb_feb:
         self.db.runs.update_one(filter, newvalues)
     def runs(self):
         """
-        List all the run informations stored
+        List all the run informations stored in the runs collection
         """
         res=self.db.runs.find({})
         for x in res:
@@ -656,7 +775,10 @@ class mgdb_feb:
                 #print(x["time"],x["location"],x["run"],x["comment"])
     def configurations(self):
         """
-        List all the configurations stored
+        List all the process (pmdaq) configurations stored in the configurations collection
+
+        Returns:
+            A List of tuplet with (name,version,comment)
         """
         cl=[]
         res=self.db.configurations.find({})
@@ -667,10 +789,12 @@ class mgdb_feb:
         return cl
     def upload_configuration(self,fname,comment):
         """
-        jobcontrol configuration upload
+        Upload a process configuration for pmdaq
+        The version number is set in the file 
 
-        :param fname: File name to upload
-        :param comment: A comment on the configuration
+        Args:
+            fname: File name to  be uploaded
+            comment: A comment on the configuration
         """
         s={}
         s["content"]=json.loads(open(fname).read())
@@ -684,9 +808,14 @@ class mgdb_feb:
         """
         Download a jobcontrol configuration to /dev/shm/config/ directory
         
-        :param cname: Configuration name
-        :param version: Configuration version
-        :param toFileOnly:if True and /dev/shm/config/cname_version.json exists, then it exits
+        Args:
+            cname (str): Configuration name
+            version (int): Configuration version
+            toFileOnly (bool):if True and /dev/shm/config/cname_version.json exists, then it exits
+
+        Returns:
+            slc, the slow control JSON content written in the file
+        
         """
         os.system("mkdir -p /dev/shm/config")
         fname="/dev/shm/config/%s_%s.json" % (cname,version)
@@ -707,9 +836,10 @@ class mgdb_feb:
             return slc
 def instance():
     """
-    Create a MongoRoc Object
+    Create an instance of the mgdb_feb Object
 
-    :return: The MongoRoc Object
+    Returns:
+        The MongoRoc Object
     """
     # create the default access
     login=os.getenv("MGDBLOGIN","NONE")
