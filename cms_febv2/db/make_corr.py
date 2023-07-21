@@ -1,10 +1,24 @@
+"""
+Two class to analyze FEBV2 commissioning tests
+"""
 import json
 import csv_register_access as cra
 import ROOT
 import numpy as np
 from scipy import stats
 class pedcor:
+    """
+    Class to analyze DAC10 bit scan of PETIROC and calculate DAC6bit correction per channel and DAC10bits threshold per ASIC
+    """
     def __init__(self,state,version,feb,analysis):
+        """ Initialise the analysis and download a test result
+
+        Args:
+            state(str): Setup state used for the test
+            version(int): Setup state version
+            feb(int): Feb id of the test
+            analysis(str): Name of the analysis SCURVE_1 or SCURVE_A
+        """
         print(state,version)
         self.sdb=cra.instance()
         self.sdb.download_setup(state,version)
@@ -15,9 +29,24 @@ class pedcor:
             self.scurves[a.upper()]=self.sdb.get_scurve(state,version,feb,analysis,a.upper())
         self.full_done=False
     def draw_all(self,save=False,debug=False):
+        """ Draw all Scurves of the test in ROOT TCanvas
+
+        Args:
+            save(bool): Save PDF (False by default)
+            debug(bool): Draw Scurves one by one (False by default)
+        """
         for a in self.scurves.keys():
             self.draw_scurves(self.scurves[a],save,debug)
     def draw_scurves(self,d_sc,save,debug):
+        """ Draw all Scurves of one asic in ROOT format
+
+        Args:
+            d_sc:JSON object stored in the febv2_test collection
+            save(bool): Save summary histograms to PDF
+            debug(bool): Fit each scurve one by one
+        Returns:
+            A list of ROOT.TH1F histos containing the SCURVES
+        """
         asic=d_sc["asic"]
         analysis=d_sc["analysis"]
         state=d_sc["state"]
@@ -81,6 +110,12 @@ class pedcor:
         v=input("Next ASIC?")
         return histos
     def full_threshold(self,c_upload=None):
+        """ Calculate DAC6b shift per channel and DAC10b thresholds for all asics and upload to DB collection
+            febv2_setup if required
+
+        Args:
+            c_upload(str): If set , upload to DB with this comment
+        """
         upload=(c_upload!=None)
         if (self.full_done):
             print("already corrected \n")
@@ -117,6 +152,12 @@ class pedcor:
             print ("{:<12} {:<10}".format(a,to))
         return
     def find_thresholds(self,asic):
+        """ Calculate turn on for one ASIC
+        Args:
+            asic(str): Asic name (LEFT_BOT...RIGHT_TOP)
+        Returns:
+            res an array of channels tuple (ch,turnon,crrection,mean asic turnon)
+        """
         d_sc=self.scurves[asic]
         thi=d_sc["thmin"]
         tha=d_sc["thmax"]
@@ -153,7 +194,18 @@ class pedcor:
         return res
 
 class timecor:
+    """
+    Class to analyze DAC10 bit scan of PETIROC and calculate DAC6bit correction per channel and DAC10bits threshold per ASIC
+    """
     def __init__(self,state,version,feb,analysis):
+        """ Initialise the analysis and download a test result
+        
+        Args:
+            state(str): Setup state used for the test
+            version(int): Setup state version
+            feb(int): Feb id of the test
+            analysis(str): Name of the analysis TIME_PEDESTAL
+        """
         print(state,version)
         self.sdb=cra.instance()
         self.sdb.download_setup(state,version)
@@ -165,9 +217,24 @@ class timecor:
         #print(self.pedestals["RIGHT"])
         self.full_done=False
     def draw_all(self,save=False,debug=False):
+        """ Draw all time pedestals of the test in ROOT TCanvas
+
+        Args:
+            save(bool): Save PDF (False by default)
+            debug(bool): Draw pedestals one by one (False by default)
+        """
         for a in self.pedestals.keys():
             self.draw_pedestals(self.pedestals[a],save,debug)
     def draw_pedestals(self,d_sc,save,debug):
+        """ Draw all pedestals of one fpga in ROOT format
+
+        Args:
+            d_sc:JSON object stored in the febv2_test collection
+            save(bool): Save summary histograms to PDF
+            debug(bool): draw each tdc channel one by one
+        Returns:
+            A list of ROOT.TH1F histos containing the channel pedestals
+        """
         asic=d_sc["fpga"]
         analysis=d_sc["analysis"]
         state=d_sc["state"]
@@ -238,6 +305,11 @@ class timecor:
         v=input("Next FPGA?")
         return histos
     def full_pedestals(self,c_upload=None):
+        """ Calculate pedestals for all channels and upload TS_OFFSET if required
+        Args:
+            c_upload(str): None, if set the DB is upload with this comment
+        
+        """
         if (self.full_done):
             print("already corrected \n")
             return
