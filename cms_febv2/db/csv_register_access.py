@@ -1,3 +1,9 @@
+"""! @brief Defines all the FEBV2 Db access classes."""
+##
+# @file csv_register_access.py
+#
+# @brief Defines all the FebV2 Db access classes.
+#
 import json
 import pprint
 import csv
@@ -9,17 +15,32 @@ import json
 import time
 from bson.objectid import ObjectId
 class feb_fpga_registers:
+    """! The FEB FPGA register class.
+    It stores the csv with the 3 FEB FPGAs registers values
+    """
     def __init__(self):
+        """! the feb_fpga_register initializer.
+        
+        @return an instance of  feb_fpga_register
+        """
         self.lines=[]
         self.headers= ['name', 'LEFT','MIDDLE','RIGHT','pseudo register']
         #self.defaults()
         self._id=None
     def load_defaults(self,fn="default_fpga.csv"):
+        """! load a default csv file
+
+        @param fn The name of the csv file (by defaults default_fpga.csv)
+        """
         print("Loading defaults for FPGA from %s" % fn)
         self.load_from_csv_file(fn)
         return
 
     def store_in_db(self,dbclient):
+        """! Store the object (csv file and id) in the fpga_csv collection
+
+        @param dbclient the db access in mongodb
+        """
         self.make_csv_string()
         x={}
         x["csv"]=self.csv
@@ -27,6 +48,12 @@ class feb_fpga_registers:
         self._id=result.inserted_id
         return self._id
     def load_from_db(self,dbclient,bsid):
+        """! Load the object from the db
+
+        @param dbclient the db access in mongodb
+
+        @param bsid the BSON object id in the db
+        """
         resl=dbclient.fpga_csv.find({'_id': {'$in': [bsid]}})
                     
         for resa in resl:
@@ -36,9 +63,17 @@ class feb_fpga_registers:
             break
         
     def set_csv(self,s_csv):
+        """! Change the csv string to be stored
+
+        @param s_csv the csv string
+        """
         self.csv=s_csv
         self.load_from_csv_string(s_csv)
     def load_from_csv_file(self,fname):
+        """!Load the csv from a file with semicolon separator
+
+        @param fname the name of the csv file
+        """
         f=open(fname)
         #f=open("/home/acqcmsmu/feb-backend-emulator/Python_project/FEB_config/QC_config_petiroc.csv")
         csv_reader = csv.DictReader(f, delimiter=';')
@@ -61,6 +96,8 @@ class feb_fpga_registers:
         self.make_csv_string()
         self._id=None
     def make_csv_string(self):
+        """! Crate csv string from the lines stored in the object
+        """
         # Open the file for writing.
 
         tmp = tempfile.NamedTemporaryFile()
@@ -72,6 +109,10 @@ class feb_fpga_registers:
         self.csv=open(tmp.name).read()
         #print(tmp.name)
     def load_from_csv_string(self,s_csv):
+        """! From a csv string, parse it to lines
+
+        @param s_csv the csv string
+        """
         if (s_csv==None):
             return
         tmp = tempfile.NamedTemporaryFile()
@@ -81,6 +122,10 @@ class feb_fpga_registers:
         #v=input()
         self.load_from_csv_file(tmp.name)
     def to_csv(self,fout):
+        """! Write lines to a csv semicolon separated, file
+
+        @param fout file descriptor of the output file
+        """
         
         hexl=["DATA_PATH_CTRL.FPGA_MIDDLE_DELAY.STEP_120MHz",
               "DATA_PATH_CTRL.MAX_QUEUE_SIZE.NB_FRAMES",
@@ -108,6 +153,12 @@ class feb_fpga_registers:
                 writer.writerow(cl)
     
     def write_csv_file(self,fn,direc="/dev/shm/feb_csv"):
+        """! Write a named csv file
+
+        @param fn file name
+        @param direc Output directory
+        """
+        
         os.system("mkdir -p %s" % direc)
         fname="%s/%s_config_fpga.csv" % (direc,fn)
         self.last_file=fname
@@ -116,9 +167,19 @@ class feb_fpga_registers:
         fout.close()
         
     def set_modified(self):
+        """! mark the object as modified
+        """
+
         self._id=None
 
     def set_parameter(self,cn,value,fpga=None):
+        """! Change one parameter
+
+        @param cn parameter name
+        @param value Value of the paramater
+        @param fpga FPGA name (LEFT,MIDDLE,RIGHT) or None for all
+        """
+        
         for l in self.lines:
             if (l["name"]==cn):
                 if fpga!=None:

@@ -212,8 +212,105 @@ class BME280:
             return result
  
         return array("i", (temp, pressure, humidity))
+    
+    def bosh_compensated_data(self, result=None):
+        """ Reads the data from the sensor and returns the compensated data.
+ 
+            Args:
+                result: array of length 3 or alike where the result will be
+                stored, in temperature, pressure, humidity order. You may use
+                this to read out the sensor without allocating heap memory
+ 
+            Returns:
+                array with temperature, pressure, humidity. Will be the one from
+                the result parameter if not None
+        """
+        self.read_raw_data(self._l3_resultarray)
+        raw_temp, raw_press, raw_hum = self._l3_resultarray
+        # temperature
+      
+    
+        temperature_min = -4000;
+        temperature_max = 8500;
+
+        var1 = int((raw_temp // 8) - ((self.dig_T1 * 2)))
+        var1 = (var1 * (self.dig_T2)) // 2048;
+        var2 = int((raw_temp// 16) - (self.dig_T1));
+        var2 = (((var2 * var2) // 4096) * (self.dig_T3)) // 16384;
+        self.t_fine = var1 + var2;
+        temperature = (self.t_fine * 5 + 128) // 256;
+        if (temperature < temperature_min):
+            temperature = temperature_min
+        if (temperature > temperature_max):
+            temperature = temperature_max;
+ 
+ 
+        #
+        pressure_min = 3000000;
+        pressure_max = 11000000;
+
+        var1 = int(self.t_fine) - 128000;
+        var2 = var1 * var1 * self.dig_P6;
+        var2 = var2 + (var1 * (self.dig_P5) * 131072);
+        var2 = var2 + int((self.dig_P4) * 34359738368);
+        var1 = int((var1 * var1 * self.dig_P3) // 256) + int((var1 * (self.dig_P2) * 4096));
+        var3 = 140737488355328
+        var1 = int(var3 + var1) * (self.dig_P1) // 8589934592;
+
+        if (var1 != 0):
+            var4 = 1048576 - raw_press;
+            var4 = (((var4 * 2147483648) - var2) * 3125) // var1;
+            var1 = ((self.dig_P9) * (var4 // 8192) * (var4 // 8192)) // 33554432;
+            var2 = ((self.dig_P8) * var4) // 524288;
+            var4 = ((var4 + var1 + var2) // 256) + ((self.dig_P7) * 16);
+            pressure = (((var4 // 2) * 100) // 128);
+
+            if (pressure < pressure_min):
+
+                pressure = pressure_min;
+        
+            if (pressure > pressure_max):
+        
+                pressure = pressure_max;
+
+    
+        else:
+            pressure = pressure_min;
+    
+    
+        humidity_max = 102400;
+        var1 = self.t_fine - (76800);
+        var2 = int(raw_hum * 16384);
+        var3 = int((self.dig_H4) * 1048576);
+        var4 = int((self.dig_H5) * var1);
+        var5 = int(((var2 - var3) - var4) + 16384) // 32768;
+        var2 = int(var1 * (self.dig_H6)) // 1024;
+        var3 = int(var1 * (self.dig_H3)) // 2048;
+        var4 = int((var2 * (var3 + 32768)) // 1024) + 2097152;
+        var2 = int((var4 * (self.dig_H2)) + 8192) // 16384;
+        var3 = int(var5 * var2);
+        var4 = int((var3 // 32768) * (var3 // 32768)) // 128;
+        var5 = int(var3 - ((var4 * (self.dig_H1)) // 16));
+        var5 = 0 if var5 < 0 else var5
+        var5 = 419430400 if (var5 > 419430400) else var5;
+        humidity = int(var5 // 4096);
+
+        if (humidity > humidity_max):
+            humidity = humidity_max;
+
+       
+        if result:
+            result[0] = temperature
+            result[1] = pressure
+            result[2] = humidity
+            return result
+ 
+        return array("i", (temperature, pressure, humidity))
     def  read_hrvalues(self):
         t, p, h = self.read_compensated_data()
+        print("micro ",t,p,h)
+        t, p, h = self.bosh_compensated_data()
+        print("bosh ",t,p,h)
 
         p = p // 256
         pi = p // 100
