@@ -1,4 +1,4 @@
-"""! @brief Defines the FEBV2 description classes and tools to access them."""
+""" Defines the FEBV2 description classes and tools to access them."""
 ##
 # @file csv_register_access.py
 #
@@ -178,6 +178,13 @@ class feb_fpga_registers:
         self._id=None
 
     def set_parameter(self,cn,value,fpga=None):
+        """ Set a parameter value for one line and one FPGA
+        if fpga is not set , all fpgas are set
+        Args:
+            cn(str): Line/tag name
+            value: The parameter value
+            fpga(str):FPGA name (LEFT,MIDDLE,RIGHT) or None by default
+        """
         for l in self.lines:
             if (l["name"]==cn):
                 if fpga!=None:
@@ -187,6 +194,12 @@ class feb_fpga_registers:
                         l[a]=value
         self.set_modified()
     def set_ts_offset(self,channel,value,fpga=None):
+        """ Set the Time offset of one channel
+        Args:
+            channel(int):TDC channel
+            value(int): Offset
+            fpga(str): FPGA name or None for all FPGA 
+        """
         cn="TDC_TS_CORRECTION.CHAN%d_TS_OFFSET" % channel
         for l in self.lines:
             if (l["name"]==cn):
@@ -198,6 +211,13 @@ class feb_fpga_registers:
         self.set_modified()
         
     def set_cmd_meas_en(self,channel,value,fpga=None):
+        """ Set the enable mask of one channel
+        Args:
+            channel(int):TDC channel
+            value(int): Enable
+            fpga(str): FPGA name or None for all FPGA 
+        """
+
         cn="TDC_CTRL.CMD_MEAS_EN_%d.CHAN%d" % (channel/16,channel)
         for l in self.lines:
             if (l["name"]==cn):
@@ -208,6 +228,13 @@ class feb_fpga_registers:
                         l[a]=value
         self.set_modified()
     def set_pair_filtering_en(self,strip,value,fpga=None):
+        """ Set the pair filtering enable of one channel
+        Args:
+            channel(int):TDC channel
+            value(int): Enable
+            fpga(str): FPGA name or None for all FPGA 
+        """
+
         cn="DATA_PATH_CTRL.PAIR_FILTERING_EN.STRIP%d" % strip
         for l in self.lines:
             if (l["name"]==cn):
@@ -218,6 +245,13 @@ class feb_fpga_registers:
                         l[a]=value
         self.set_modified()
     def set_pair_ts_diff_min(self,strip,value,fpga=None):
+        """ Set the pair filtering minimal dt of one channel
+        Args:
+            channel(int):TDC channel
+            value(int): dt minimum
+            fpga(str): FPGA name or None for all FPGA 
+        """
+
         cn="DATA_PATH_CTRL.PAIR_TS_DIFF_MIN_STRIP%d" % strip
         for l in self.lines:
             if (l["name"]==cn):
@@ -229,6 +263,13 @@ class feb_fpga_registers:
         self.set_modified()
         
     def set_pair_ts_diff_max(self,strip,value,fpga=None):
+        """ Set the pair filtering maximal dt of one channel
+        Args:
+            channel(int):TDC channel
+            value(int): dt maximum
+            fpga(str): FPGA name or None for all FPGA 
+        """
+
         cn="DATA_PATH_CTRL.PAIR_TS_DIFF_MAX_STRIP%d" % strip
         for l in self.lines:
             if (l["name"]==cn):
@@ -240,16 +281,30 @@ class feb_fpga_registers:
         self.set_modified()
 
 class feb_petiroc_registers:
+    """The FEBV2 PETIROC registers handler class.
+    Gives all tools to handle the csv string, to store or load it in file or db and to
+    modify its parameters
+    """
     def __init__(self):
+        """ Bare iitialisation
+        """
         self.lines=[]
         self.headers=["name","LEFT_TOP","LEFT_BOT","MIDDLE_TOP","MIDDLE_BOT","RIGHT_TOP","RIGHT_BOT"]
         #self.defaults()
         self._id=None
     def load_defaults(self,fn="default_petiroc.csv"):
+        """ Load default values of lines array from a csv file
+        Args:
+            fn(str): File name
+        """
         print("Loading defaults for PETIROC from %s" % fn)
         self.load_from_csv_file(fn)
         return
     def store_in_db(self,dbclient):
+        """ Save the object in db petiroc_csv collection
+        Args:
+            dbclient: MongoDB client access
+        """
         self.make_csv_string()
         x={}
         x["csv"]=self.csv
@@ -257,6 +312,11 @@ class feb_petiroc_registers:
         self._id=result.inserted_id
         return self._id
     def load_from_db(self,dbclient,bsid):
+        """ Load the object from the DB
+        Args:
+            dbclient: MongoDB client access
+            bsid: BSON id of the document in petiroc_csv collection
+        """
         resl=dbclient.petiroc_csv.find({'_id': {'$in': [bsid]}})
                     
         for resa in resl:
@@ -266,10 +326,19 @@ class feb_petiroc_registers:
             break
     
     def set_csv(self,s_csv):
+        """ cvs string setter, it is also parsed to lines 
+        Args:
+            s_csv(string): csv string
+        """
+        
         self.csv=s_csv
         self.load_from_csv_string(s_csv)
 
     def load_from_csv_file(self,fname):
+        """ Parse csv file to the lines array
+        Args:
+            fname(str): File name 
+        """
         f=open(fname)
         #f=open("/home/acqcmsmu/feb-backend-emulator/Python_project/FEB_config/QC_config_petiroc.csv")
         csv_reader = csv.DictReader(f, delimiter=';')
@@ -292,6 +361,8 @@ class feb_petiroc_registers:
         self.make_csv_string()
         self._id=None
     def make_csv_string(self):
+        """ Build the csv string from the lines
+        """
         # Open the file for writing.
 
         tmp = tempfile.NamedTemporaryFile()
@@ -303,6 +374,10 @@ class feb_petiroc_registers:
         self.csv=open(tmp.name).read()
         #print(tmp.name)
     def load_from_csv_string(self,s_csv):
+        """ Fill the lines list from the csv string
+        Args:
+            s_csv(str): The csv string
+        """
         if (s_csv==None):
             return
         tmp = tempfile.NamedTemporaryFile()
@@ -312,6 +387,11 @@ class feb_petiroc_registers:
         #v=input()
         self.load_from_csv_file(tmp.name)
     def to_csv(self,fout):
+        """ Write lines of the object to a csv file
+
+        Args:
+            fout: File object
+        """
         hexl=["input_dac_ch_dummy"]
         for i in range(32):
             hexl.append("input_dac_ch%d" %i)
@@ -335,6 +415,11 @@ class feb_petiroc_registers:
                 writer.writerow(cl)
     
     def write_csv_file(self,fn,direc="/dev/shm/feb_csv"):
+        """ Write the object as a csv file
+        Args:
+            fn(str): File name
+            direc(str): Directory name
+        """
         os.system("mkdir -p %s" % direc)
         fname="%s/%s_config_petiroc.csv" % (direc,fn)
         self.last_file=fname
@@ -343,8 +428,19 @@ class feb_petiroc_registers:
         fout.close()
 
     def set_modified(self):
+        """ Tag the object as modified
+        """
         self._id=None
     def set_mask_discri_time(self,channel,value,asic=None):
+        """ Set the mask value for one channel of an asic
+            mask(ch)=value
+            if asic is not set , all asics are set
+
+        Args:
+            channel(int): ASIC channel
+            value(int): value of 6b dac
+            asic(str):ASIC name (LEFT_BOT...RIGHT_TOP)
+        """
         cn="mask_discri_time_ch%d" % channel
         for l in self.lines:
             if (l["name"]==cn):
@@ -355,6 +451,15 @@ class feb_petiroc_registers:
                         l[a]=value
         self.set_modified()
     def set_input_dac(self,channel,value,asic=None):
+        """ Set the input_dac value for one channel of an asic
+            input_dac(ch)=value
+            if asic is not set , all asics are set
+
+        Args:
+            channel(int): ASIC channel
+            value(int): value of 6b dac
+            asic(str):ASIC name (LEFT_BOT...RIGHT_TOP)
+        """
         cn="input_dac_ch%d" % channel
         for l in self.lines:
             if (l["name"]==cn):
@@ -365,6 +470,15 @@ class feb_petiroc_registers:
                         l[a]=value
         self.set_modified()
     def set_cmd_input_dac(self,channel,value,asic=None):
+        """ Set the cmd_input_dac value for one channel of an asic
+            cmd_input_dac(ch)=value
+            if asic is not set , all asics are set
+
+        Args:
+            channel(int): ASIC channel
+            value(int): value of 6b dac
+            asic(str):ASIC name (LEFT_BOT...RIGHT_TOP)
+        """
         cn="cmd_input_dac_ch%d" % channel
         for l in self.lines:
             if (l["name"]==cn):
@@ -375,6 +489,15 @@ class feb_petiroc_registers:
                         l[a]=value
         self.set_modified()
     def set_6b_dac(self,channel,value,asic=None):
+        """ Set the 6bdac value for one channel of an asic
+            v_6b=value
+            if asic is not set , all asics are set
+
+        Args:
+            channel(int): ASIC channel
+            value(int): value of 6b dac
+            asic(str):ASIC name (LEFT_BOT...RIGHT_TOP)
+        """
         cn="6b_dac_ch%d" % channel
         for l in self.lines:
             if (l["name"]==cn):
@@ -385,6 +508,14 @@ class feb_petiroc_registers:
                         l[a]=value
         self.set_modified()
     def shift_10b_dac(self,dth,asic=None):
+        """ Correct the 10bdac value for an asic
+            vth_time=vth_time+dth
+        if asic is not set all asics are used
+
+        Args:
+            dth(int): correction of 10b dac
+            asic(str):ASIC name (LEFT_BOT...RIGHT_TOP)
+        """
         cn="10b_dac_vth_discri_time"
         for l in self.lines:
             if (l["name"]==cn):
@@ -398,6 +529,13 @@ class feb_petiroc_registers:
         self.set_modified()
 
     def correct_6b_dac(self,channel,cor,asic):
+        """ Correct the 6bdac value for one channel of an asic
+            v_6b=v_6b+cor
+        Args:
+            channel(int): ASIC channel
+            cor(int): correction of 6b dac
+            asic(str):ASIC name (LEFT_BOT...RIGHT_TOP)
+        """
         cn="6b_dac_ch%d" % channel
         for l in self.lines:
             if (l["name"]==cn):
@@ -405,6 +543,13 @@ class feb_petiroc_registers:
                 l[asic]=l[asic]+cor
         self.set_modified()
     def set_parameter(self,cn,value,asic=None):
+        """ Set a parameter value for one line and one ASIC
+        if asic is not set , all asics are set
+        Args:
+            cn(str): Line/tag name
+            value: The parameter value
+            asic(str):ASIC name (LEFT_BOT...RIGHT_TOP) or None by default
+        """
         for l in self.lines:
             if (l["name"]==cn):
                 if asic!=None:
@@ -414,10 +559,23 @@ class feb_petiroc_registers:
                         l[a]=value
         self.set_modified()
     def get_parameter(self,cn,asic):
+        """ Get a parameter value for one line and one ASIC
+        Args:
+            cn(str): Line/tag name
+            asic(str):ASIC name (LEFT_BOT...RIGHT_TOP)
+        Returns:
+            The parameter value
+        """
         for l in self.lines:
             if (l["name"]==cn):
                 return l[asic.upper()]
     def get_6b_dac(self,asic):
+        """ Get the 32 6bDAC settings of an asic
+        Args:
+            asic (str): ASIC name (LEFT_BOT...RIGHT_TOP)
+        Returns:
+            an array of 32 6bits int
+        """
         v=[]
         for channel in range(32):
             cn="6b_dac_ch%d" % channel
@@ -534,7 +692,7 @@ class febv2_registers:
         self.petiroc.write_csv_file(fn)
         
 class febv2_setup:
-     """
+    """
     It handles all febv2_registers object of a given setup and have 
     interfaces method to store/load them
     """
