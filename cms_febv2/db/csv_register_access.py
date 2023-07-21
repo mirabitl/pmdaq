@@ -70,9 +70,18 @@ class feb_fpga_registers:
             break
         
     def set_csv(self,s_csv):
+        """Initialise object from the csv string
+        Args:
+            s_csv(str): The csv string 
+        """
         self.csv=s_csv
         self.load_from_csv_string(s_csv)
+
     def load_from_csv_file(self,fname):
+        """Initialise object from the csv file
+        Args:
+            fname(str): The csv file name 
+        """
         f=open(fname)
         #f=open("/home/acqcmsmu/feb-backend-emulator/Python_project/FEB_config/QC_config_petiroc.csv")
         csv_reader = csv.DictReader(f, delimiter=';')
@@ -95,6 +104,8 @@ class feb_fpga_registers:
         self.make_csv_string()
         self._id=None
     def make_csv_string(self):
+        """ Build the csv string from the lines object
+        """
         # Open the file for writing.
 
         tmp = tempfile.NamedTemporaryFile()
@@ -106,6 +117,10 @@ class feb_fpga_registers:
         self.csv=open(tmp.name).read()
         #print(tmp.name)
     def load_from_csv_string(self,s_csv):
+        """ Load the csv lines from the csv string
+        Args:
+            s_csv(str): A string containing csv data
+        """
         if (s_csv==None):
             return
         tmp = tempfile.NamedTemporaryFile()
@@ -115,7 +130,10 @@ class feb_fpga_registers:
         #v=input()
         self.load_from_csv_file(tmp.name)
     def to_csv(self,fout):
-        
+        """ Writes lines as a csv file
+        Args:
+            fout(str): File name to write
+        """
         hexl=["DATA_PATH_CTRL.FPGA_MIDDLE_DELAY.STEP_120MHz",
               "DATA_PATH_CTRL.MAX_QUEUE_SIZE.NB_FRAMES",
               "DATA_PATH_CTRL.MAX_READOUT_TIME_DRIFT.STEP_120MHz"]
@@ -142,6 +160,11 @@ class feb_fpga_registers:
                 writer.writerow(cl)
     
     def write_csv_file(self,fn,direc="/dev/shm/feb_csv"):
+        """ Write lines in a file
+        Args:
+            fn(str): File name
+            direc(str): directory  (default /dev/shm/feb_csv)
+        """
         os.system("mkdir -p %s" % direc)
         fname="%s/%s_config_fpga.csv" % (direc,fn)
         self.last_file=fname
@@ -150,6 +173,8 @@ class feb_fpga_registers:
         fout.close()
         
     def set_modified(self):
+        """ Tag the object as modified, ie, one line was at least changed
+        """
         self._id=None
 
     def set_parameter(self,cn,value,fpga=None):
