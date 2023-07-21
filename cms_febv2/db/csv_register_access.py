@@ -426,7 +426,16 @@ class feb_petiroc_registers:
                     v.append(l[asic.upper()])
         return v
 class febv2_registers:
+    """ Handlers of the 2 csv objects per FEB
+    """
     def __init__(self,f_id=0,v_fpga="4.0",v_asic="2C"):
+        """
+        Initialise a febv2_registers object
+        Args:
+            f_id (int): The FEB number
+            v_fpga(str): Version of the FPGA firmware (4.0 default)
+            v_asic(str): PETIROC version (2C default)
+        """
         self.feb_id=f_id
         self.fpga=feb_fpga_registers()
         self.petiroc=feb_petiroc_registers()
@@ -434,10 +443,21 @@ class febv2_registers:
         self.petiroc_version=v_asic
         self._id=None
     def load_defaults(self,fna="default_fpga.csv",fnp="default_petiroc.csv"):
+        """ Load values of FPGA and PETIROC csv
+        Args:
+            fna(str): File name of the fpga csv to be used as default 
+            fnp(str): File name of the PETIROC csv to be used as default
+        """
         self.fpga.load_defaults(fna)
         self.petiroc.load_defaults(fnp)
         return
     def store_in_db(self,dbclient):
+        """ Store the febv2_register in the febv2 collection
+        Args:
+            dbclient: MongoDB client access
+        Returns:
+            bson id of the document
+        """
         x={}
         print(self.fpga_version)
         x["feb_id"]=self.feb_id
@@ -459,8 +479,17 @@ class febv2_registers:
             self._id=result.inserted_id
         return self._id
     def has_changes(self):
+        """ Check if one value has changed
+        Returns:
+            True if one of the csv object or firmware version has change
+        """
         return ((self._id==None) or (self.fpga._id==None) or (self.petiroc._id==None))
     def load_from_db(self,dbclient,bsid):
+        """ Load one FEB from the DB collection febv2
+        Args:
+            dbclient: MongoDB client access
+            bsid : Bson id of the docuement in DB collection
+        """
         self._id=bsid
         resl=dbclient.febv2.find({'_id': {'$in': [bsid]}})
                     
@@ -473,36 +502,79 @@ class febv2_registers:
             self.feb_id=resa["feb_id"]
             break
     def set_feb_id(self,f_id):
+        """ Change FEB id
+        Args:
+            f_id (int): new FEB id
+        """
         self.feb_id=f_id
         self._id=None
     def set_fpga_version(self,v):
+        """ Change FPGA version
+        Args:
+            v(str): FPGA version
+        """
         self.fpga_version=v
         self._id=None
     def set_petiroc_version(self,v):
+        """ Change PETIROC version
+        Args:
+            v(str): PETIROC version
+        """
         self.petiroc_version=v
         self._id=None
 
     def to_csv_files(self,name,version):
+        """ Writes the 2 csv files to disK (name_version_feb_fpga/petiroc.csv)
+        Args:
+            name(str) : State name
+            version(int): State version
+        """
         fn="%s_%d_f_%d" % (name,version,self.feb_id)
         self.fpga.write_csv_file(fn)
         self.petiroc.write_csv_file(fn)
         
 class febv2_setup:
+     """
+    It handles all febv2_registers object of a given setup and have 
+    interfaces method to store/load them
+    """
     def __init__(self,name=None,version=0):
+        """ Initialisation
+        Args:
+            name(str): Name of the state
+            version(int): version number (0 by default)
+        Returns:
+            An instance of febv2_setup    
+        """
         self.name=name
         self.version=version
         self.last_version=version
         self.febs=[]
         self._id=None
     def add_febv2(self,feb):
+        """ Add a febv2_register object to the list of feb
+        Args:
+            feb: febv2_register object
+        """
         self.febs.append(feb)
     def has_changes(self):
+        """ Check if there is any changes ins setup
+        Returns: 
+            true if one of the febv2_registers object has changes
+        """
         changes=False
         for f in self.febs:
             changes=changes or f.has_changes()
         return changes
         
     def store_in_db(self,dbclient,comment):
+        """ Store the setup in db
+        Args:
+            dbclient: MongoDb Client access
+            comment(str): A comment for the update
+        Returns:
+            The bson id of the insertion    
+        """
         #
         if not self.has_changes():
             print("No changes in setup %s %d , exiting " % (self.name,self.version))
