@@ -14,7 +14,13 @@ _wdd=None
 _wjobc=None
 _sconf=None
 class MyApplication(Application):
-    def createAccess(self):    
+    """ Spyne base application class
+    """
+    def createAccess(self):
+        """ Access creation
+
+        No access to the daq is created here but in the CREATE method of the wddService
+        """
         # global _wdd
         # if (_wdd!=None):
         #     del _wdd;
@@ -25,6 +31,9 @@ class MyApplication(Application):
         print('febv2 daq is running')
 
     def call_wrapper(self, ctx):
+        """
+        Wrapper
+        """
         try:
             return super(MyApplication, self).call_wrapper(ctx)
 
@@ -32,8 +41,16 @@ class MyApplication(Application):
             raise ResourceNotFoundError(ctx.in_object)
 
 class wddService(ServiceBase):
+    """ Main service class
+    """
     @srpc(String,UnsignedInteger,_returns=Iterable(String))
     def CREATE(name,version):
+        """ Create a febv2_fsm object
+
+        Args:
+            name (str): configuration file name or acquisition state name
+            version (int): 0 if file is used or version number
+        """
         global _wdd
         if (name[0]=='"'):
             name=name[1:len(name)-1]
@@ -56,6 +73,8 @@ class wddService(ServiceBase):
 
     @srpc(_returns=Iterable(String))
     def INITIALISE():
+        """ calls febv2_fsm initialise transition
+        """
         global _wdd
         if (_wdd!=None ):
             
@@ -71,6 +90,8 @@ class wddService(ServiceBase):
 
     @srpc(_returns=Iterable(String))
     def STATUS():
+        """ Gte the febv2_setup status
+        """
         global _wdd
         if (_wdd!=None ):
             #_wdd.status()
@@ -87,6 +108,8 @@ class wddService(ServiceBase):
     
     @srpc(_returns=Iterable(String))
     def CONFIGURE():
+        """ calls febv2_fsm configure transition
+        """
         global _wdd
         if (_wdd!=None ):
             _wdd.configure()
@@ -100,6 +123,8 @@ class wddService(ServiceBase):
             yield json.dumps(status)
     @srpc(_returns=Iterable(String))
     def START():
+        """ calls febv2_fsm start transition
+        """
         global _wdd
         if (_wdd!=None ):
             _wdd.start()
@@ -113,6 +138,8 @@ class wddService(ServiceBase):
             yield json.dumps(status)
     @srpc(_returns=Iterable(String))
     def STOP():
+        """ calls febv2_fsm stop transition
+        """
         global _wdd
         if (_wdd!=None ):
             _wdd.stop()
@@ -126,6 +153,8 @@ class wddService(ServiceBase):
             yield json.dumps(status)
     @srpc(_returns=Iterable(String))
     def DESTROY():
+        """ calls febv2_fsm destroy transition
+        """
         global _wdd
         if (_wdd!=None ):
             _wdd.destroy()
@@ -143,6 +172,12 @@ class wddService(ServiceBase):
 
     @srpc( String, UnsignedInteger, _returns=Iterable(String))
     def CHANGEDB(statename,version):
+        """ calls febv2_fsm changeDb method
+
+        Args:
+            statename (str): name of the state
+            version (int): state version
+        """
         global _wdd
         if (_wdd!=None):
             if (statename[0]=='"'):
@@ -158,6 +193,11 @@ class wddService(ServiceBase):
             yield json.dumps(status)
     @srpc(Integer16, _returns=Iterable(String))
     def SHIFTVTH(shift):
+        """ calls febv2_fsm change_vth_time method
+
+        Args:
+            shift (int): VTH_TIME shift
+        """
         global _wdd
         if (_wdd!=None):
             _wdd.change_vth_shift(shift)

@@ -29,7 +29,18 @@ logging.basicConfig(
 
 
 class febv2_setup:
+    """The FEBV2 setup interface class.
+    It hides access to MINIDAQ driver classes and implements basics function as
+    init,configure,start,stop ....
+    """
     def __init__(self, config,verbose=False):
+        """
+        Object creation
+
+        Args:
+            config: a python object conatining the daq configuration
+            verbose (bool): False by default, tune to true for debug printout
+        """
         self.params=config
         self.verbose=verbose
         self.run=0
@@ -40,10 +51,9 @@ class febv2_setup:
         self.writer=None
     def init(self):
         """
-        Initialise the setup
+        Initialise the setup. 
+        It creates the access to the DB, access to FC7 and boot the FEB
 
-        :param usefc7: trigger the initialisiation of fc7
-        :param use_auto_reset_asic: Use reset of asic instead of FPGA FSM
         """
         self.sdb=cra.instance()
         self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
@@ -66,10 +76,21 @@ class febv2_setup:
             print(f"Test failed with message: {e}")
 
     def change_vth_shift(self,shift):
+        """ Change the PETIROC VTH_TIME threshold
+            The PETIROC parameters to be used are modified but not load (configure needed)
+        Args:
+            shift (int): Shift to add to VTH_TIME DAC10 bits taken in the DB
+        """
         self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
         self.sdb.setup.febs[0].petiroc.shift_10b_dac(shift)
         self.sdb.to_csv_files()
     def change_db(self,state_name,version):
+        """ Download and store a new DB version
+            The FPGA/PETIROC parameters to be used are stored but not load (configure needed)
+        Args:
+            state_name (str): name of the state
+            version (int)" version number
+        """
         self.params["db_state"]=state_name
         self.params["db_version"]=version
         
@@ -77,6 +98,10 @@ class febv2_setup:
         self.sdb.to_csv_files()
 
     def configure(self):
+        """ Configure the setup
+
+        It configures the FEB and prepare the FC7 for a run setting the orbit and trigger definition
+        """
         self.feb.load_config_from_csv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.params["db_state"],self.params["db_version"],self.params["feb_id"]))
         enableforces2=True
         if ("disable_force_s2" in self.params):
@@ -105,8 +130,16 @@ class febv2_setup:
 
       
     def setWriter(self,fw):
+        """ Set the FEBWriter object to be used
+
+        Args:
+            fw: The FebWriter object
+        """
         self.writer=fw
     def writeRunHeader(self):
+        """  Create and write the run header using the FebWriter object
+
+        """
         if (self.writer==None):
             logging.fatal("no writer defined")
             return
@@ -128,6 +161,14 @@ class febv2_setup:
         self.writer.writeRunHeader(runHeaderWordList)
 
     def start(self,run=0):
+        """ Start a run.
+
+        It launches a thread that spy the data in the readout FIFO of the FEB
+        If run is different from 0, it creates a new run (file) and writes the run header
+        Args:
+            run (int): By default it's 0 and shared memory is used. 
+            
+        """
         if (self.writer==None):
             logging.fatal("no writer defined")
             return
@@ -147,6 +188,10 @@ class febv2_setup:
         logging.info(message)
 
     def status(self):
+        """ returns the status of the acquisition
+        Returns:
+            A dictionnary object with status and event number
+        """
         r={}
         if (self.writer!=None):
             r["state"]="running"
@@ -156,6 +201,11 @@ class febv2_setup:
             r["event"]=-1
         return r  
     def acquiring_data(self):
+        """ Acquisition thread
+
+        While running, it loops continously and spy data in the FC7 readout fifo
+        It writes data to disk or shared memory until running is false and the run stopped. 
+        """
         nacq= 0
         ntrig = 0
         configFEBMinidaqLogger(loglevel=logging.WARN)
@@ -270,6 +320,10 @@ class febv2_setup:
             #time.sleep(0.005)
         logging.info("Thread %d: finishing", self.run)
     def stop(self):
+        """ Stop the run
+
+        It sets running to false, wait for the thread to stop and disable FEB and FC7  acquisition
+        """
         self.running= False
         self.producer_thread.join()
         self.fc7.stop_acquisition()
