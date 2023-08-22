@@ -68,7 +68,7 @@ class wddService(ServiceBase):
         status={}
  
         print("On est la",state,version)
-        status["content"]=_wdd.download(state,version,True)
+        status["content"]=_wdd.download(state,version,False)
         yield json.dumps(status)
     @srpc(String,UnsignedInteger,_returns=Iterable(String))
     def CONFIGURATION(name,version):
@@ -85,7 +85,9 @@ class wddService(ServiceBase):
         status={}
  
         print("On est la",name,version)
-        status["content"]=_wdj.downloadConfig(name,version,True)
+        #print(_wdj.configurations())
+        status["content"]=_wdj.downloadConfig(name,version,False)
+        #print(status)
         yield json.dumps(status)
         
 
