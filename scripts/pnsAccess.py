@@ -129,8 +129,13 @@ class pnsAccess:
         return    
 
     def Print(self,session,verbose=False):
+        res={}
         for x in self.registered:
             if (x.session!=session):
                  continue
             y=sac.serviceAccess(x.host,x.port,x.session,x.name,x.instance)
-            y.printInfos(verbose)
+            if (verbose):
+                y.printInfos(verbose)
+            else:
+              res["%s:%d" % (x.name,x.instance)]=y.printInfos(verbose)
+        return res

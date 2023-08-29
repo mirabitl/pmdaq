@@ -72,29 +72,154 @@ class wddService(CorsService):
             _wdj.downloadConfig(daqmongo.split(':')[0],int(daqmongo.split(':')[1]),True)
             file_config="/dev/shm/mgjob/%s_%s.json" % (daqmongo.split(':')[0],daqmongo.split(':')[1])
             #exit(0)
-            session_name=daqmongo.split(':')[0]
+            _daq_map[daqmongo]["session_name"]=daqmongo.split(':')[0]
             j_sess=json.loads(open(file_config).read())
             pm_hosts=[]
             for x in j_sess["apps"]:
                 sh="http://%s:%d" % (x["host"],x["port"])
                 if (not sh in pm_hosts):
                     pm_hosts.append(sh)
-            _daq_map[daqmongo]["pm_host"]=pm_hosts
+            _daq_map[daqmongo]["pm_hosts"]=pm_hosts
             _daq_map[daqmongo]["pnsname"]=pnsname
             os.environ["PNS_NAME"] =pnsname
-            _daq_map[daqmongo]["pns"]=pnsAccess,pnsAccess()
+            _daq_map[daqmongo]["pns"]=pnsAccess.pnsAccess()
             _daq_map[daqmongo]["daq"]=crc.combRC(file_config)
         
-        global _fdc
-        global _fpns
-        if (state[0]=='"'):
-            state=state[1:len(state)-1]
-        
-        status={}
- 
-        print("On est la",state,version)
-        status["content"]=_wdd.download(state,version,False)
+        print("On est la",daqmongo,pnsname)
+        status["content"]={'daq':daqmongo,'pns':pnsname}
         yield json.dumps(status)
+    @srpc(String,_returns=Iterable(String))
+    def RESTART(daq):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        pm_hosts=_daq_map[daq]["pm_hosts"]
+        pns_host=_daq_map[daq]["pnsname"]
+        for x in pm_hosts:
+            print(x+"/EXIT will be called")
+            sac.executeRequest(x+"/EXIT")
+        # clear PNS
+        pnsurl="http://"+pns_host+":8888/PNS/CLEAR"
+        sac.executeRequest(pnsurl)
+        status={}
+        status["status"]="RESTARTED"
+        yield json.dumps(status)
+    @srpc(String,_returns=Iterable(String))
+    def JC_DESTROY(daq):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fpns=_daq_map[daq]["pns"]
+        fpns.remove(_daq_map[daq]["session_name"])
+        status={}
+        status["status"]="DESTROYED"
+        yield json.dumps(status)
+
+    @srpc(String,_returns=Iterable(String))
+    def PNS_LIST(daq):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fpns=_daq_map[daq]["pns"]
+        rep=fpns.pns_list(_daq_map[daq]["session_name"])
+        status={}
+        status["content"]=rep
+        yield json.dumps(status)
+
+    @srpc(String,_returns=Iterable(String))
+    def PNS_SESSION(daq):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fpns=_daq_map[daq]["pns"]
+        rep=fpns.pns_session_list()
+        status={}
+        status["content"]=rep
+        yield json.dumps(status)
+        
+    @srpc(String,_returns=Iterable(String))
+    def JC_INFO(daq):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fpns=_daq_map[daq]["pns"]
+        fpns.check()
+        rep=fpns.pns_list(_daq_map[daq]["session_name"])
+        status={}
+        status["content"]=fpns.Print(session_name,False)
+        yield json.dumps(status)
+        
+    @srpc(String,_returns=Iterable(String))
+    def CREATE(daq):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        fdc.session.Print(True)
+        status={}
+        status["status"]="CREATED"
+        yield json.dumps(status)
+        
+    @srpc(String,Integer,_returns=Iterable(String))
+    def INITIALISE(daq,delay):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        if (delay!=0):
+            fdc.reset=delay
+            fdc.initialise()
+        else:
+            fdc.initialise()
+        status={}
+        status["status"]="INITIALISED"
+        yield json.dumps(status)
+    @srpc(String,_returns=Iterable(String))
+    def CONFIGURE(daq):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        fdc.configure()
+        status={}
+        status["status"]="CONFIGURED"
+        yield json.dumps(status)
+        
+    @srpc(String,String,_returns=Iterable(String))
+    def START(daq,comment):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        fdc.comment=comment
+        fdc.start()
+        status={}
+        status["status"]="RUNNING"
+        yield json.dumps(status)
+        
+    @srpc(String,_returns=Iterable(String))
+    def STOP(daq):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        fdc.stop()
+        status={}
+        status["status"]="CONFIGURED"
+        yield json.dumps(status)
+        
+    @srpc(String,_returns=Iterable(String))
+    def DESTROY(daq):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        fdc.stop()
+        status={}
+        status["status"]="DETROYED"
+        yield json.dumps(status)
+
+
     @srpc(String,UnsignedInteger,_returns=Iterable(String))
     def DOWNLOAD(state,version):
         """ Create a febv2_fsm object

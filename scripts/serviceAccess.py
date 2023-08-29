@@ -400,4 +400,12 @@ class serviceAccess:
                 print("\t \t", k, v)
         else:
             print("FSM is %s on %s,  Service %s"  % (self.state, self.url, self.path))
-            
+            r={}
+            r["state"]=self.state
+            r["url"]=self.url
+            r["path"]=self.path
+            r["commands"]=self.commands
+            r["transitions"]=self.transitions
+            r["allowed"]=self.allowed
+            r["paramss"]=self.params
+            return r
