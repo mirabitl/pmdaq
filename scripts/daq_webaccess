@@ -253,77 +253,80 @@ class wddService(CorsService):
         status["status"]=rep
         yield json.dumps(status)
 
-    @srpc(String,UnsignedInteger,_returns=Iterable(String))
-    def DOWNLOAD(state,version):
-        """ Create a febv2_fsm object
-
-        Args:
-            name (str): configuration file name or acquisition state name
-            version (int): 0 if file is used or version number
-        """
-        global _wdd
-        if (state[0]=='"'):
-            state=state[1:len(state)-1]
-        
+    @srpc(String,_returns=Iterable(String))
+    def RESUME(daq):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        fdc.mdcc_Resume()
         status={}
- 
-        print("On est la",state,version)
-        status["content"]=_wdd.download(state,version,False)
+        status["status"]="RESUMED"
         yield json.dumps(status)
-    @srpc(String,UnsignedInteger,_returns=Iterable(String))
-    def CONFIGURATION(name,version):
-        """ Create a febv2_fsm object
 
-        Args:
-            name (str): configuration file name or acquisition state name
-            version (int): 0 if file is used or version number
-        """
-        global _wdj
-        if (name[0]=='"'):
-            name=name[1:len(name)-1]
-        
+    @srpc(String,_returns=Iterable(String))
+    def PAUSE(daq):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        fdc.mdcc_Pause()
         status={}
- 
-        print("On est la",name,version)
-        #print(_wdj.configurations())
-        status["content"]=_wdj.downloadConfig(name,version,False)
-        #print(status)
+        status["status"]="RESUMED"
+        yield json.dumps(status)
+
+    @srpc(String,String,String,String,_returns=Iterable(String))
+    def PROCESS(daq,method,app,params):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        param=json.loads(params)
+        rep =fdc.processCommand(method,app,param)
+        status={}
+        status["status"]=rep
+        yield json.dumps(status)
+
+    @srpc(String,String,String,UnsignedInteger,_returns=Iterable(String))
+    def DOWNLOADDB(daq,app,state,version):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        lcgi = {}
+        lcgi['state'] = state
+        lcgi['version'] = version
+        rep=fdc.processCommand("DOWNLOADDB",app, lcgi)
+        status={}
+        status["status"]=rep
+        yield json.dumps(status)
+
+    @srpc(String,UnsignedInteger,UnsignedInteger,_returns=Iterable(String))
+    def LUTCALIB(daq,tdc,nchannels):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        for i in range(nchannels):
+            print("Calibrating channel %d \n" % i )
+            fdc.tdcLUTCalib(tdc, i)
+        status={}
+        status["status"]="DONE"
+        yield json.dumps(status)
+        
+    @srpc(String,String,UnsignedInteger,UnsignedInteger,_returns=Iterable(String))
+    def LUTMASK(daq,mask,tdc,feb,nchannels):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        fdc.tdcLUTMask(tdc,mask,feb)
+        status={}
+        status["status"]="DONE"
         yield json.dumps(status)
         
 
-        
 
-    @srpc(_returns=Iterable(String))
-    def STATES():
-        """ calls febv2_fsm initialise transition
-        """
-        global _wdd
-        if (_wdd!=None ):
-            
-            status={}
-            status["content"]=_wdd.states()
-            yield json.dumps(status)
-        else:
-            status={}
-            status["STATUS"]="FAILED"
-            yield json.dumps(status)
-            
-    @srpc(_returns=Iterable(String))
-    def CONFIGURATIONS():
-        """ calls febv2_fsm initialise transition
-        """
-        global _wdj
-        if (_wdj!=None ):
-            
-            status={}
-            status["content"]=_wdj.configurations()
-            yield json.dumps(status)
-        else:
-            status={}
-            status["STATUS"]="FAILED"
-            yield json.dumps(status)
-
-            
 if __name__=='__main__':
     # Python daemon boilerplate
     from wsgiref.simple_server import make_server
@@ -356,9 +359,9 @@ if __name__=='__main__':
 
     # More daemon boilerplate
     
-    server = make_server(socket.gethostname(), 29029, wsgi_application)
+    server = make_server(socket.gethostname(), 27027, wsgi_application)
 
-    logging.info("listening to %s:%d" % (socket.gethostname(), 29029))
+    logging.info("listening to %s:%d" % (socket.gethostname(), 27027))
     ##logging.info("wsdl is at: http://lyosdhcal12:8100/?wsdl")
 
     server.serve_forever()
