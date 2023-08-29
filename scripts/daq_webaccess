@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import logging
-from spyne import Application, srpc, ServiceBase, Iterable, UnsignedInteger,String,Float,Unicode,Integer16
+from spyne import Application, srpc, ServiceBase, Iterable, UnsignedInteger,Integer,String,Float,Unicode,Integer16
 from spyne.protocol.json import JsonDocument
 from spyne.protocol.csv import Csv
 from spyne.protocol.http import HttpRpc
 from spyne.server.wsgi import WsgiApplication
 from spyne.model.complex import ComplexModelMeta
+from spyne.error import ResourceNotFoundError
 import os
 #import socks
 import socket
@@ -214,11 +215,43 @@ class wddService(CorsService):
             yield {"status":"NOTREGISTERED","name":daq}
             return
         fdc=_daq_map[daq]["daq"]
-        fdc.stop()
+        fdc.destroy()
         status={}
         status["status"]="DETROYED"
         yield json.dumps(status)
 
+    @srpc(String,_returns=Iterable(String))
+    def BUILDERSTATUS(daq):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        rep=fdc.BuilderStatus(False)
+        status={}
+        status["status"]=rep
+        yield json.dumps(status)
+
+    @srpc(String,_returns=Iterable(String))
+    def SOURCESTATUS(daq):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        rep=fdc.SourceStatus(False)
+        status={}
+        status["status"]=rep
+        yield json.dumps(status)
+
+    @srpc(String,_returns=Iterable(String))
+    def TRIGGERSTATUS(daq):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        rep=fdc.TriggerStatus(False)
+        status={}
+        status["status"]=rep
+        yield json.dumps(status)
 
     @srpc(String,UnsignedInteger,_returns=Iterable(String))
     def DOWNLOAD(state,version):
