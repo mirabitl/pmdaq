@@ -348,8 +348,39 @@ class wddService(CorsService):
         status={}
         status["status"]="DONE"
         yield json.dumps(status)
-        
 
+    @srpc(String,UnsignedInteger,_returns=Iterable(String))
+    def SETTDCMODE(daq,mode):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        fdc.setTdcMode(mode)
+        status={}
+        status["status"]="DONE"
+        yield json.dumps(status)
+        
+    @srpc(String,UnsignedInteger,UnsignedInteger,_returns=Iterable(String))
+    def SETTDCDELAYS(daq,active,dead):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        fdc.setTdcDelays(active,dead)
+        status={}
+        status["status"]="DONE"
+        yield json.dumps(status)
+
+    @srpc(String,UnsignedInteger,_returns=Iterable(String))
+    def SETDIFCTRL(daq,ctrlreg):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        fdc.setControlRegister(ctrlreg)
+        status={}
+        status["status"]="DONE"
+        yield json.dumps(status)
 
 if __name__=='__main__':
     # Python daemon boilerplate
