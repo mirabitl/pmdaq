@@ -58,6 +58,15 @@ class MyApplication(Application):
 class wddService(CorsService):
     """ Main service class
     """
+    @srpc(_returns=Iterable(String))
+    def DAQLIST():
+        global _daq_map
+        status={}
+        status["content"]=list(_daq_map.keys())
+        yield status
+        
+    
+    
     @srpc(String,String,_returns=Iterable(String))
     def REGISTERDAQ(daqmongo,pnsname):
         """ Create a febv2_fsm object
@@ -70,7 +79,12 @@ class wddService(CorsService):
         global _daq_map
         if not daqmongo in _daq_map:
             _daq_map[daqmongo]={}
-            _wdj.downloadConfig(daqmongo.split(':')[0],int(daqmongo.split(':')[1]),True)
+            try:
+                _wdj.downloadConfig(daqmongo.split(':')[0],int(daqmongo.split(':')[1]),True)
+            except:
+                yield {"status":"ConfigLoadFailure"}
+                del _daq_map[daqmongo]
+                return
             file_config="/dev/shm/mgjob/%s_%s.json" % (daqmongo.split(':')[0],daqmongo.split(':')[1])
             #exit(0)
             _daq_map[daqmongo]["session_name"]=daqmongo.split(':')[0]
@@ -83,10 +97,20 @@ class wddService(CorsService):
             _daq_map[daqmongo]["pm_hosts"]=pm_hosts
             _daq_map[daqmongo]["pnsname"]=pnsname
             os.environ["PNS_NAME"] =pnsname
-            _daq_map[daqmongo]["pns"]=pnsAccess.pnsAccess()
-            _daq_map[daqmongo]["daq"]=crc.combRC(file_config)
-        
+            try:
+                _daq_map[daqmongo]["pns"]=pnsAccess.pnsAccess()
+            except:
+                yield {"status":"PnsAccessFailure"}
+                del _daq_map[daqmongo]
+                return
+            try:
+                _daq_map[daqmongo]["daq"]=crc.combRC(file_config)
+            except:
+                yield {"status":"DaqAccessFailure"}
+                del _daq_map[daqmongo]
+                return
         print("On est la",daqmongo,pnsname)
+        status={}
         status["content"]={'daq':daqmongo,'pns':pnsname}
         yield json.dumps(status)
     @srpc(String,_returns=Iterable(String))
@@ -145,9 +169,9 @@ class wddService(CorsService):
             return
         fpns=_daq_map[daq]["pns"]
         fpns.check()
-        rep=fpns.pns_list(_daq_map[daq]["session_name"])
+        #rep=fpns.pns_list(_daq_map[daq]["session_name"])
         status={}
-        status["content"]=fpns.Print(session_name,False)
+        status["content"]=fpns.Print(_daq_map[daq]["session_name"],False)
         yield json.dumps(status)
         
     @srpc(String,_returns=Iterable(String))
@@ -314,7 +338,7 @@ class wddService(CorsService):
         status["status"]="DONE"
         yield json.dumps(status)
         
-    @srpc(String,String,UnsignedInteger,UnsignedInteger,_returns=Iterable(String))
+    @srpc(String,String,UnsignedInteger,UnsignedInteger,UnsignedInteger,_returns=Iterable(String))
     def LUTMASK(daq,mask,tdc,feb,nchannels):
         if not daq in _daq_map:
             yield {"status":"NOTREGISTERED","name":daq}
