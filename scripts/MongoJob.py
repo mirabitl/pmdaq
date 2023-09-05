@@ -258,10 +258,11 @@ class MongoJob:
             return
         res=self.db.configurations.find({'name':cname,'version':version})
         for x in res:
+            print(x)
             print(x["name"],x["version"],x["comment"])
             #var=raw_input()
             slc=x["content"]
-            if ("slc" in x):
+            if ("pns" in x):
                 slc["pns"]=x["pns"]
             os.system("mkdir -p /dev/shm/mgjob")
             fname="/dev/shm/mgjob/%s_%s.json" % (cname,version)
