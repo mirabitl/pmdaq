@@ -127,8 +127,13 @@ class MongoJob:
         cl=[]
         res=self.db.configurations.find({})
         for x in res:
+            #print(x)
             if ("comment" in x):
-                print(time.ctime(x["time"]),x["version"],x["name"],x["comment"])
+                if ("pns" in x):
+                    print(time.ctime(x["time"]),x["version"],x["name"],x["comment"],x["pns"])
+                else:
+                    print(time.ctime(x["time"]),x["version"],x["name"],x["comment"])
+
                 cl.append((x["name"],x['version'],x['comment']))
         return cl
     def updateRun(self,run,loc,tag,vtag):
@@ -256,6 +261,8 @@ class MongoJob:
             print(x["name"],x["version"],x["comment"])
             #var=raw_input()
             slc=x["content"]
+            if ("slc" in x):
+                slc["pns"]=x["pns"]
             os.system("mkdir -p /dev/shm/mgjob")
             fname="/dev/shm/mgjob/%s_%s.json" % (cname,version)
             f=open(fname,"w+")
