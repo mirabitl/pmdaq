@@ -28,8 +28,22 @@ var pnsdaq=null;
 async function getConfigurations() {
     let mghost = document.getElementById("mg_host").value;
     let mgport = document.getElementById("mg_port").value;
-
-
+    /*
+    let ptest={
+	"db":JSON.stringify({"name":"toto","version":2})
+    };
+    urk="http://toto:1234/TITU";
+    if (ptest!=null)
+    {
+        urk=urk+"?"
+        for (const [key, value] of Object.entries(ptest)) {
+            urk=urk+key+"="+value+"&"
+            //console.log(`${key} ${value}`); // "a 5", "b 7", "c 9"
+          }
+          urk=urk.substring(0, urk.length-1);
+    }
+    alert(urk);
+    */
     const orig = 'http://' + mghost + ':' + mgport;
     //const url = orig+'/CONFIGURATIONS'
 
@@ -85,14 +99,14 @@ async function getConfigurations() {
         }
         let jdaq = await spyneCommand(origdaq, "REGISTERDAQ",pdaq);
         console.log(jdaq);
-
+	document.getElementById("messages").innerHTML += "<span> Connecting to " + daqhost + "on port " + daqport + "</span><br>";
     };
 
     document.getElementById("configsel").appendChild(label).appendChild(list_conf)
     document.getElementById("configsel").append(bSetConfig);
 
 
-    document.getElementById("messages").innerHTML += "<span> Connecting to " + host + "on port " + port + "</span><br>";
+    
 
 
 }
