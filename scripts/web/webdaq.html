@@ -67,11 +67,14 @@ body {font-family: Arial;}
   <h3>Connection to DB</h3>
   <form id="connection-information-form">
     <b>Hostname or IP Address and Port Number of mg_webaccess service:</b> 
-    <input id="host" type="text" name="host" placeholder="mg_webaccess server address">
+    <input id="mg_host" type="text" name="mghost" placeholder="mg_webaccess server address" value="lyoilc07">
             
-    <input id="port" type="text" name="port" value="29029"><br>
+    <input id="mg_port" type="text" name="mgport" value="29029"><br>
            
-    
+    <b>Hostname or IP Address and Port Number of daq_webaccess service:</b> 
+    <input id="daq_host" type="text" name="daqhost" placeholder="daq_webaccess server address" value="lyoilc07">
+            
+    <input id="daq_port" type="text" name="daqport" value="27027"><br>
     <b>Queries:</b>
     <input type="button" onclick="getConfigurations()"  value="Configurations">
     <!--input type="button"  onclick="startDisconnect()" value="Disconnect"--> <br>

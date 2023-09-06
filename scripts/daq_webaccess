@@ -58,6 +58,7 @@ class MyApplication(Application):
 class wddService(CorsService):
     """ Main service class
     """
+
     @srpc(_returns=Iterable(String))
     def DAQLIST():
         global _daq_map
@@ -65,8 +66,19 @@ class wddService(CorsService):
         status["content"]=list(_daq_map.keys())
         yield status
         
-    
-    
+    @srpc(String,_returns=Iterable(String))
+    def REMOVEDAQ(daqmongo):
+        """ Create a febv2_fsm object
+
+        Args:
+            name (str): configuration file name or acquisition state name
+            version (int): 0 if file is used or version number
+        """
+        global _daq_map
+        if not daqmongo in _daq_map:    
+            yield {'error':"NOTREGISTERED"}
+        else:
+            del _daq_map[daqmongo]
     @srpc(String,String,_returns=Iterable(String))
     def REGISTERDAQ(daqmongo,pnsname):
         """ Create a febv2_fsm object
@@ -82,7 +94,7 @@ class wddService(CorsService):
             try:
                 _wdj.downloadConfig(daqmongo.split(':')[0],int(daqmongo.split(':')[1]),True)
             except:
-                yield {"status":"ConfigLoadFailure"}
+                yield {"error":"ConfigLoadFailure"}
                 del _daq_map[daqmongo]
                 return
             file_config="/dev/shm/mgjob/%s_%s.json" % (daqmongo.split(':')[0],daqmongo.split(':')[1])
@@ -100,18 +112,18 @@ class wddService(CorsService):
             try:
                 _daq_map[daqmongo]["pns"]=pnsAccess.pnsAccess()
             except:
-                yield {"status":"PnsAccessFailure"}
+                yield {"error":"PnsAccessFailure"}
                 del _daq_map[daqmongo]
                 return
             try:
                 _daq_map[daqmongo]["daq"]=crc.combRC(file_config)
             except:
-                yield {"status":"DaqAccessFailure"}
+                yield {"error":"DaqAccessFailure"}
                 del _daq_map[daqmongo]
                 return
         print("On est la",daqmongo,pnsname)
         status={}
-        status["content"]={'daq':daqmongo,'pns':pnsname}
+        status["status"]={'daq':daqmongo,'pns':pnsname}
         yield json.dumps(status)
     @srpc(String,_returns=Iterable(String))
     def RESTART(daq):
