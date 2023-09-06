@@ -54,10 +54,12 @@ function onMessageArrived(message) {
     document.getElementById("messages").innerHTML += "<span> Topic:" + message.destinationName + "| Message : " + message.payloadString + "</span><br>";
     jmsg = JSON.parse(message.payloadString);
     console.log(jmsg);
-    //console.log(message.destinationName);
+    console.log(message.destinationName);
+    //alert(message.destinationName);
     //console.log(pico_location+"/RUNNING");
     //console.log(jmsg["devices"]);
     /// List of RUNNING devices
+    // balance {"location": "pico_dome", "subsystem": "balance_tfe", "devices": ["rp2040", "cpwplus"]}
     if (message.destinationName == (pico_location + "/RUNNING")) {
         id_brooks = jmsg["devices"].findIndex((element) => element === "brooks");
 	id_genesys = jmsg["devices"].findIndex((element) => element === "genesys");
@@ -65,7 +67,9 @@ function onMessageArrived(message) {
 	id_bme = jmsg["devices"].findIndex((element) => element === "bme");
 	id_hih = jmsg["devices"].findIndex((element) => element === "hih");
 	id_pico = jmsg["devices"].findIndex((element) => element === "rp2040");
+	id_cpw = jmsg["devices"].findIndex((element) => element === "cpwplus");
 	id_wiener=jmsg["devices"].findIndex((element) => element === "wiener");
+	//alert(id_cpw)
         // Create brooks_head object
         if (id_brooks >= 0) {
             var s_sub = jmsg["subsystem"];
@@ -177,6 +181,23 @@ function onMessageArrived(message) {
             client.subscribe(topic_pico);
             //createListBrooks();
         }
+        if (id_cpw >= 0) {
+            var s_sub = jmsg["subsystem"];
+
+            // Query existing gas
+            topic_cpw = pico_location + "/" + s_sub + "/cpwplus/#"
+            if (document.getElementById('cpwplus-' + s_sub) == null) {
+                var iDiv = document.createElement('div');
+                iDiv.id = 'cpwplus-' + s_sub;
+                iDiv.className = 'cpwplus-' + s_sub;
+                iDiv.innerHTML = "<H2> cpwplus board " + s_sub + "</H2>"
+                document.getElementById("Status").appendChild(iDiv);
+                addCpwplusTable(iDiv.className);
+            }
+            
+            client.subscribe(topic_cpw);
+            //createListBrooks();
+        }
 
 	if (id_wiener >= 0) {
             var s_sub = jmsg["subsystem"];
@@ -203,7 +224,7 @@ function onMessageArrived(message) {
     }
     /// List of gases
     v_t = message.destinationName.split("/");
-    //console.log(v_t);
+    console.log(v_t);
     /// Check gas infos
     if (v_t.length >= 5) {
         if (v_t[2] == "brooks" && v_t[3] == "GAS") {
@@ -262,6 +283,10 @@ function onMessageArrived(message) {
      if (v_t.length==3)
 	if (v_t[2] =="rp2040" )
    	    addPicoRow("pico-"+v_t[1],jmsg);
+    // CPW
+     if (v_t.length==3)
+	if (v_t[2] =="cpwplus" )
+   	    addCpwplusRow("cpwplus-"+v_t[1],jmsg);
     // WIENER
      if (v_t.length==3)
 	if (v_t[2] =="wiener" )
@@ -967,6 +992,63 @@ function addPicoRow(div_name, g_obj) {
     var c_T = row.insertCell(0);
     c_T.id = row.id + "-T";
     c_T.innerHTML = g_obj["T"].toFixed(3);
+    
+    
+
+
+}
+function addCpwplusTable(div_name) {
+
+    var myTableDiv = document.getElementById(div_name);
+    var req_tab = document.getElementById(div_name + "-table-id");
+    console.log("req_tab "+req_tab)
+    if (req_tab != null) return;
+    var table = document.createElement('TABLE');
+    table.id = div_name + '-table-id';
+    table.className = div_name + '-table';
+    table.border = '1';
+    var headers = ["Net Weight (kg)"];
+
+    var tableBody = document.createElement('TBODY');
+    table.appendChild(tableBody);
+    for (var i = 0; i < 1; i++) {
+        var tr = document.createElement('TR');
+        tableBody.appendChild(tr);
+
+       
+        for (var j = 0; j < headers.length; j++) {
+            var td = document.createElement('TD');
+            td.width = '75';
+            td.appendChild(document.createTextNode(headers[j]));
+            tr.appendChild(td);
+        }
+
+    }
+
+    myTableDiv.appendChild(table);
+    //alert("Genesis table "+div_name+" "+headers.length);
+}
+
+function addCpwplusRow(div_name, g_obj) {
+    var s_mod = div_name.split("-")[0];
+    var s_sub = div_name.split("-")[1];
+
+    var table = document.getElementById(div_name + '-table-id');
+    var row_name= div_name + "-table-0";
+    var req_row = document.getElementById(row_name);
+    if (req_row != null)
+    {
+	var c_T=document.getElementById(row_name+"-weight");
+	c_T.innerHTML = g_obj["net"].toFixed(3);
+	return;
+    }
+    var rowCount = table.rows.length;
+    var row = table.insertRow(rowCount);
+    row.id = div_name + "-table-0";
+
+    var c_T = row.insertCell(0);
+    c_T.id = row.id + "-weight";
+    c_T.innerHTML = g_obj["net"].toFixed(3);
     
     
 
