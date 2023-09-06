@@ -136,6 +136,9 @@ file(GLOB SCRIPT_TARGET
 file(GLOB MG_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/mg*"
      )
+file(GLOB DAQWEB_TARGET
+     "${CMAKE_CURRENT_SOURCE_DIR}/scripts/daq_web*"
+     )
 file(GLOB RC_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/combdaq*"
      )
