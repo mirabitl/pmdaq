@@ -113,8 +113,6 @@ async function getConfigurations() {
 
 async function CreateDaq() {
 
-
-
     // create the daq in webdaq
     let daqhost = document.getElementById("daq_host").value;
     let daqport = document.getElementById("daq_port").value;
