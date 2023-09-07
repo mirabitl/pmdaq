@@ -425,8 +425,9 @@ if __name__=='__main__':
     wsgi_application = WsgiApplication(application)
 
     # More daemon boilerplate
-    
-    server = make_server(socket.gethostname(), 27027, wsgi_application)
+    ipname=os.getenv("SERVER_ADDRESS","NONE")
+    server = make_server(ipname, 27027, wsgi_application)
+    #server = make_server(socket.gethostname(), 27027, wsgi_application)
 
     logging.info("listening to %s:%d" % (socket.gethostname(), 27027))
     ##logging.info("wsdl is at: http://lyosdhcal12:8100/?wsdl")

@@ -18,7 +18,7 @@ PATH="/sbin:/bin:/usr/sbin:/usr/bin" #Ne pas toucher
 source  /usr/local/pmdaq/etc/pmdaq.bashrc
 export MALLOC_ARENA_MAX=1
 export MGDBLOGIN=acqilc/RPC_2008@lyocmsmu04:27017@LYONROC
-
+export SERVER_ADDRESS="lyoilc07.in2p3.fr"
 /usr/local/pmdaq/bin/mg_webaccess
 
 

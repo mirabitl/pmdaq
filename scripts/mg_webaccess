@@ -20,8 +20,8 @@ class CorsService(ServiceBase):
     origin = '*'
 
 def _on_method_return_object(ctx):
-    #ctx.transport.resp_headers['Access-Control-Allow-Origin'] = ctx.descriptor.service_class.origin
-    ctx.transport.resp_headers['Access-Control-Allow-Origin'] ="*"
+    ctx.transport.resp_headers['Access-Control-Allow-Origin'] = ctx.descriptor.service_class.origin
+    #ctx.transport.resp_headers['Access-Control-Allow-Origin'] ="*"
 
 CorsService.event_manager.add_listener('method_return_object',_on_method_return_object)
 _wdd=None
@@ -165,7 +165,8 @@ if __name__=='__main__':
     # More daemon boilerplate
     
     #server = make_server(socket.gethostname(), 29029, wsgi_application)
-    server = make_server("lyoilc07.in2p3.fr", 29029, wsgi_application)
+    ipname=os.getenv("SERVER_ADDRESS","NONE")
+    server = make_server(ipname, 29029, wsgi_application)
 
     logging.info("listening to %s:%d" % (socket.gethostname(), 29029))
     ##logging.info("wsdl is at: http://lyosdhcal12:8100/?wsdl")
