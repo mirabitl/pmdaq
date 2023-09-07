@@ -86,20 +86,28 @@ body {font-family: Arial;}
 
 <div id="Daq" class="tabcontent">
   <h2>Daq</h2>
-       <!--
-  <h3> Browse Gas systems</h3>
-  <div id="brooks-subsystem-select"></div>
+       
+  <h3> DAQ Control </h3>
+  <div id="daqcontrol-subsystem-select"></div>
    
 
   <div>
     <form>
-      <input type="button"  onclick="createListBrooks()" value="get subsystem list">
-        
-      <input type="button"  onclick="getGasList()" value="get GAS list"><br>
+      <input type="button"  onclick="CreateDaq()" value="CREATE"> <br>
+      <label> Reset dead time </label>
+      <input id="delay_reset" type="number" name="delayreset" value=0>
+      <input type="button"  onclick="InitDaq()" value="INIT"><br>
+      <input type="button"  onclick="ConfigureDaq()" value="CONFIGURE"><br>
+      <input type="button"  onclick="StartDaq()" value="START"><br>
+      <input type="button"  onclick="StopDaq()" value="STOP"><br>
+      <input type="button"  onclick="DestroyDaq()" value="DESTROY"><br>
+      <input type="button"  onclick="RemoveDaq()" value="REMOVE"><br>
+
+      <br>
       
     </form>
   </div>
- 
+ <!--
   <div id="brooks-gas-select"></div>
 
   <h3> Gases Information</h3>
