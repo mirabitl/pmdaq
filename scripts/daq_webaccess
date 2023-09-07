@@ -79,8 +79,8 @@ class wddService(CorsService):
             yield {'error':"NOTREGISTERED"}
         else:
             del _daq_map[daqmongo]
-    @srpc(String,String,_returns=Iterable(String))
-    def REGISTERDAQ(daqmongo,pnsname):
+    @srpc(String,String,String,_returns=Iterable(String))
+    def REGISTERDAQ(daqmongo,pnsname,location):
         """ Create a febv2_fsm object
 
         Args:
@@ -121,6 +121,7 @@ class wddService(CorsService):
                 yield {"error":"DaqAccessFailure"}
                 del _daq_map[daqmongo]
                 return
+            _daq_map[daqmongo]["daq"].location=location
         print("On est la",daqmongo,pnsname)
         status={}
         status["status"]={'daq':daqmongo,'pns':pnsname}

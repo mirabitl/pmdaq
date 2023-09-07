@@ -87,6 +87,7 @@ async function getConfigurations() {
             pnsdaq=jconf["content"]["pns"];
         else
             pnsdaq=prompt("Enter the PMDAQ name server","lyocmsmu03")
+        let loc=prompt("Enter the setup name","???")
         // create the daq in webdaq
         let daqhost = document.getElementById("daq_host").value;
         let daqport = document.getElementById("daq_port").value;
@@ -95,7 +96,8 @@ async function getConfigurations() {
         const origdaq = 'http://' + daqhost + ':' + daqport;
         let pdaq={
             daqmongo:daqname,
-            pnsname:pnsdaq
+            pnsname:pnsdaq,
+            location:loc
         }
         let jdaq = await spyneCommand(origdaq, "REGISTERDAQ",pdaq);
         console.log(jdaq);
