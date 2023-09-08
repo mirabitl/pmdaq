@@ -150,6 +150,24 @@ async function InitDaq() {
 
 
 }
+async function ConfigureDaq() {
+
+    // create the daq in webdaq
+    let daqhost = document.getElementById("daq_host").value;
+    let daqport = document.getElementById("daq_port").value;
+
+
+    const origdaq = 'http://' + daqhost + ':' + daqport;
+    
+    let pdaq = {
+        daq: daqname
+        }
+    let jdaq = await spyneCommand(origdaq, "CONFIGURE", pdaq);
+    console.log(jdaq);
+    document.getElementById("messages").innerHTML += "<span> CONFIGURE on " + daqname + "/" + daqloc +  "</span><br>";
+
+
+}
 function onConnect() {
     //topic =  document.getElementById("topic_s").value;
     pico_location = document.getElementById("pico_location").value;
