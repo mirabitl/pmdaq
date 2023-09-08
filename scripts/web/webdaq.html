@@ -93,24 +93,27 @@ body {font-family: Arial;}
 
   <div>
     <form>
-      <input type="button"  onclick="CreateDaq()" value="CREATE"> <br>
       <label> Reset dead time </label>
-      <input id="delay_reset" type="number" name="delayreset" value=0>
-      <input type="button"  onclick="InitDaq()" value="INIT"><br>
-      <input type="button"  onclick="ConfigureDaq()" value="CONFIGURE"><br>
-      <input type="button"  onclick="StartDaq()" value="START"><br>
-      <input type="button"  onclick="StopDaq()" value="STOP"><br>
-      <input type="button"  onclick="DestroyDaq()" value="DESTROY"><br>
-      <input type="button"  onclick="RemoveDaq()" value="REMOVE"><br>
+      <input id="delay_reset" type="number" name="delayreset" value=0><br>
+      <input type="button"  onclick="CreateDaq()" value="CREATE"> 
+     
+      <input type="button"  onclick="InitDaq()" value="INIT">
+      <input type="button"  onclick="ConfigureDaq()" value="CONFIGURE">
+      <input type="button"  onclick="StartDaq()" value="START">
+      <input type="button"  onclick="StopDaq()" value="STOP">
+      <input type="button"  onclick="ResumeDaq()" value="RESUME">
+      <input type="button"  onclick="PauseDaq()" value="PAUSE">
+      <input type="button"  onclick="DestroyDaq()" value="DESTROY">
+      <input type="button"  onclick="RemoveDaq()" value="REMOVE">
 
       <br>
       
     </form>
   </div>
-  <h3>Run types</h3>
-
+  <h3>Presets</h3>
+  <h4>LUT Calibration (for FEB once after INIT)</h4>
   <div id="lutcalib">
-    <h4>LUT Calibration (for FEB once after INIT)</h4>
+    
     <form>
     <label> TDC number  </label>
       <input id="tdc_number" type="number" name="tdcnumber" value=0> 
@@ -125,8 +128,8 @@ body {font-family: Arial;}
     <input type="button"  onclick="LutMask()" value="Set Mask"> <br>  
     </form>
   </div>
+  <h4>Before a normal run </h4>
   <div id="NormalRun">
-    <h4>Normal run</h4>
     <form>
       <input type="button"  onclick="CreateDaq()" value="CREATE"> <br>
       <label> Reset dead time </label>
