@@ -24,7 +24,7 @@ async function spyneCommand(orig, command,pdict) {
 
 var daqname=null;
 var pnsdaq=null;
-
+var daqloc=null;
 async function getConfigurations() {
     let mghost = document.getElementById("mg_host").value;
     let mgport = document.getElementById("mg_port").value;
@@ -82,12 +82,12 @@ async function getConfigurations() {
             version:vc[1]
         };
         let jconf = await spyneCommand(orig, "CONFIGURATION",pdict)
-        console.log(jconf["content"])
+        console.log(jconf["content"]);
         if ( "pns" in jconf["content"])
             pnsdaq=jconf["content"]["pns"];
         else
-            pnsdaq=prompt("Enter the PMDAQ name server","lyocmsmu03")
-        let loc=prompt("Enter the setup name","???")
+            pnsdaq=prompt("Enter the PMDAQ name server","lyocmsmu03");
+        daqloc=prompt("Enter the setup name","???");
         // create the daq in webdaq
         let daqhost = document.getElementById("daq_host").value;
         let daqport = document.getElementById("daq_port").value;
@@ -97,7 +97,7 @@ async function getConfigurations() {
         let pdaq={
             daqmongo:daqname,
             pnsname:pnsdaq,
-            location:loc
+            location:daqloc
         }
         let jdaq = await spyneCommand(origdaq, "REGISTERDAQ",pdaq);
         console.log(jdaq);
@@ -127,7 +127,27 @@ async function CreateDaq() {
     }
     let jdaq = await spyneCommand(origdaq, "CREATE", pdaq);
     console.log(jdaq);
-    document.getElementById("messages").innerHTML += "<span> Connecting to " + daqhost + "on port " + daqport + "</span><br>";
+    document.getElementById("messages").innerHTML += "<span> CREATE on " + daqname + "/" + daqloc +  "</span><br>";
+
+}
+async function InitDaq() {
+
+    // create the daq in webdaq
+    let daqhost = document.getElementById("daq_host").value;
+    let daqport = document.getElementById("daq_port").value;
+    let rdelay = document.getElementById("delay_reset").value;
+
+
+    const origdaq = 'http://' + daqhost + ':' + daqport;
+    
+    let pdaq = {
+        daq: daqname,
+        delay:rdelay
+    }
+    let jdaq = await spyneCommand(origdaq, "INITIALISE", pdaq);
+    console.log(jdaq);
+    document.getElementById("messages").innerHTML += "<span> INITIALISE on " + daqname + "/" + daqloc +  "</span><br>";
+
 
 }
 function onConnect() {
