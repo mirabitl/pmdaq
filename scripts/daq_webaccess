@@ -352,7 +352,7 @@ class wddService(CorsService):
         yield json.dumps(status)
         
     @srpc(String,String,UnsignedInteger,UnsignedInteger,UnsignedInteger,_returns=Iterable(String))
-    def LUTMASK(daq,mask,tdc,feb,nchannels):
+    def LUTMASK(daq,tdc,mask,feb):
         if not daq in _daq_map:
             yield {"status":"NOTREGISTERED","name":daq}
             return

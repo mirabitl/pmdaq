@@ -168,6 +168,47 @@ async function ConfigureDaq() {
 
 
 }
+async function LutCalib() {
+
+    // create the daq in webdaq
+    let daqhost = document.getElementById("daq_host").value;
+    let daqport = document.getElementById("daq_port").value;
+
+
+    const origdaq = 'http://' + daqhost + ':' + daqport;
+    
+    let pdaq = {
+        daq: daqname,
+        tdc: document.getElementById("tdc_number").value,
+        nchannels: document.getElementById("tdc_channels").value
+        }
+    let jdaq = await spyneCommand(origdaq, "LUTCALIB", pdaq);
+    console.log(jdaq);
+    document.getElementById("messages").innerHTML += "<span> LUTCALIB on " + daqname + "/" + daqloc +  "</span><br>";
+
+
+}
+async function LutMask() {
+
+    // create the daq in webdaq
+    let daqhost = document.getElementById("daq_host").value;
+    let daqport = document.getElementById("daq_port").value;
+
+
+    const origdaq = 'http://' + daqhost + ':' + daqport;
+    
+    let pdaq = {
+        daq: daqname,
+        tdc: document.getElementById("tdc_number").value,
+        mask: document.getElementById("tdc_mask").value,
+        feb: document.getElementById("tdc_feb").value
+        }
+    let jdaq = await spyneCommand(origdaq, "LUTMASK", pdaq);
+    console.log(jdaq);
+    document.getElementById("messages").innerHTML += "<span> LUTMASK on " + daqname + "/" + daqloc +  "</span><br>";
+
+
+}
 function onConnect() {
     //topic =  document.getElementById("topic_s").value;
     pico_location = document.getElementById("pico_location").value;

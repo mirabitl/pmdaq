@@ -108,13 +108,43 @@ body {font-family: Arial;}
     </form>
   </div>
   <h3>Run types</h3>
-  
+
+  <div id="lutcalib">
+    <h4>LUT Calibration (for FEB once after INIT)</h4>
+    <form>
+    <label> TDC number  </label>
+      <input id="tdc_number" type="number" name="tdcnumber" value=0> 
+      <label> Channels </label>
+      <input id="tdc_channels" type="number" name="tdcchannels" value=56> <br>
+
+    <input type="button"  onclick="LutCalib()" value="LUT Calibration"> <br>
+    <label> Mask </label>
+    <input id="tdc_mask" type="text" name="tdcmask" value="0xFFFFFFFF"> 
+    <label> FEB </label>
+      <input id="tdc_feb" type="number" name="tdcfeb" value=14> <br>
+    <input type="button"  onclick="LutMask()" value="Set Mask"> <br>  
+    </form>
+  </div>
   <div id="NormalRun">
-    <h3>Settings</h3>
-   
+    <h4>Normal run</h4>
+    <form>
+      <input type="button"  onclick="CreateDaq()" value="CREATE"> <br>
+      <label> Reset dead time </label>
+      <input id="delay_reset" type="number" name="delayreset" value=0>
+      <input type="button"  onclick="InitDaq()" value="INIT"><br>
+      <input type="button"  onclick="ConfigureDaq()" value="CONFIGURE"><br>
+      <input type="button"  onclick="StartDaq()" value="START"><br>
+      <input type="button"  onclick="StopDaq()" value="STOP"><br>
+      <input type="button"  onclick="DestroyDaq()" value="DESTROY"><br>
+      <input type="button"  onclick="RemoveDaq()" value="REMOVE"><br>
+
+      <br>
+      
+    </form>
   </div>
   <div id="FebScurve" >
-    <h3>Settings</h3>
+    <h4>FEB Scurves </h4>
+
    
   </div>
  
