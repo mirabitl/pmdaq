@@ -155,7 +155,25 @@ body {font-family: Arial;}
 
 <div id="Synchro" class="tabcontent">
   <h3>Synchronisation  Control</h3>
-  
+  <div id="tab1" onClick="JavaScript:selectTab(1);">Tab 1</div>
+   <div id="tab2" onClick="JavaScript:selectTab(2);">Tab 2</div>
+   <div id="tab3" onClick="JavaScript:selectTab(3);">Tab 3</div>
+   <br />
+   <div id="tab1Content">This is first tab.</div>
+   <div id="tab2Content">This is Second tab</div>
+   <div id="tab3Content">This is third tab</div>
+   <!-- Javascript Code of the tab -->
+   <script>
+      function selectTab(tabIndex) {
+         //Hide All Tabs
+         document.getElementById("tab1Content").style.display = "none";
+         document.getElementById("tab2Content").style.display = "none";
+         document.getElementById("tab3Content").style.display = "none";
+         //Show the Selected Tab
+         document.getElementById("tab" + tabIndex + "Content").style.display =
+         "block";
+      }
+   </script>
 </div>
 <div id="Status" class="tabcontent">
   <h3>Status Monitoring</h3>
