@@ -129,22 +129,8 @@ body {font-family: Arial;}
     </form>
   </div>
   <h4>Before a normal run </h4>
-  <div id="NormalRun">
-    <form>
-      <input type="button"  onclick="CreateDaq()" value="CREATE"> <br>
-      <label> Reset dead time </label>
-      <input id="delay_reset" type="number" name="delayreset" value=0>
-      <input type="button"  onclick="InitDaq()" value="INIT"><br>
-      <input type="button"  onclick="ConfigureDaq()" value="CONFIGURE"><br>
-      <input type="button"  onclick="StartDaq()" value="START"><br>
-      <input type="button"  onclick="StopDaq()" value="STOP"><br>
-      <input type="button"  onclick="DestroyDaq()" value="DESTROY"><br>
-      <input type="button"  onclick="RemoveDaq()" value="REMOVE"><br>
-
-      <br>
-      
-    </form>
-  </div>
+  
+ 
   <div id="FebScurve" >
     <h4>FEB Scurves </h4>
 
@@ -154,20 +140,6 @@ body {font-family: Arial;}
 </div>
 
 <div id="Synchro" class="tabcontent">
-  
- 
-   <!-- Javascript Code of the tab -->
-   <script>
-      function selectTab(tabIndex) {
-         //Hide All Tabs
-         document.getElementById("tab1Content").style.display = "none";
-         document.getElementById("tab2Content").style.display = "none";
-         document.getElementById("tab3Content").style.display = "none";
-         //Show the Selected Tab
-         document.getElementById("tab" + tabIndex + "Content").style.display =
-         "block";
-      }
-   </script>
 </div>
 <div id="Status" class="tabcontent">
   <h3>Status Monitoring</h3>
