@@ -154,14 +154,8 @@ body {font-family: Arial;}
 </div>
 
 <div id="Synchro" class="tabcontent">
-  <h3>Synchronisation  Control</h3>
-  <div id="tab1" onClick="JavaScript:selectTab(1);">Tab 1</div>
-   <div id="tab2" onClick="JavaScript:selectTab(2);">Tab 2</div>
-   <div id="tab3" onClick="JavaScript:selectTab(3);">Tab 3</div>
-   <br />
-   <div id="tab1Content">This is first tab.</div>
-   <div id="tab2Content">This is Second tab</div>
-   <div id="tab3Content">This is third tab</div>
+  
+ 
    <!-- Javascript Code of the tab -->
    <script>
       function selectTab(tabIndex) {
@@ -181,24 +175,17 @@ body {font-family: Arial;}
 </div>
 <div id="Settings" class="tabcontent">
   <h3>Other settings</h3>
-
+  <div class="tab" id="test1">
+    <button class="tablinks" onclick="openTab(event, 'tab1Content')">Configuration</button>
+    <button class="tablinks" onclick="openTab(event, 'tab2Content')">Daq</button>
+    <button class="tablinks" onclick="openTab(event, 'tab3Content')">Synchronisation</button>
+  </div>
+  <div id="tab1Content">This is first tab.</div>
+  <div id="tab2Content">This is Second tab</div>
+  <div id="tab3Content">This is third tab</div>
 </div>
 
-<script>
-function openTab(evt, cityName) {
-  var i, tabcontent, tablinks;
-  tabcontent = document.getElementsByClassName("tabcontent");
-  for (i = 0; i < tabcontent.length; i++) {
-    tabcontent[i].style.display = "none";
-  }
-  tablinks = document.getElementsByClassName("tablinks");
-  for (i = 0; i < tablinks.length; i++) {
-    tablinks[i].className = tablinks[i].className.replace(" active", "");
-  }
-  document.getElementById(cityName).style.display = "block";
-  evt.currentTarget.className += " active";
-}
-</script>
+
    
 </body>
 </html> 
