@@ -124,7 +124,7 @@ class wddService(CorsService):
             _daq_map[daqmongo]["daq"].location=location
         print("On est la",daqmongo,pnsname)
         status={}
-        status["status"]={'daq':daqmongo,'pns':pnsname}
+        status["status"]={'daq':daqmongo,'pns':pnsname,'state':_daq_map[daqmongo]["daq"].state}
         yield json.dumps(status)
     @srpc(String,_returns=Iterable(String))
     def RESTART(daq):
@@ -186,7 +186,16 @@ class wddService(CorsService):
         status={}
         status["content"]=fpns.Print(_daq_map[daq]["session_name"],False)
         yield json.dumps(status)
-        
+
+    @srpc(String,_returns=Iterable(String))
+    def STATE(daq):
+        if not daq in _daq_map:
+            yield {"status":"NOTREGISTERED","name":daq}
+            return
+        fdc=_daq_map[daq]["daq"]
+        status={}
+        status["state"]=fdc.state
+        yield json.dumps(status)
     @srpc(String,_returns=Iterable(String))
     def CREATE(daq):
         if not daq in _daq_map:
@@ -196,6 +205,7 @@ class wddService(CorsService):
         fdc.session.Print(True)
         status={}
         status["status"]="CREATED"
+        status['state']=fdc.state
         yield json.dumps(status)
         
     @srpc(String,Integer,_returns=Iterable(String))
@@ -211,6 +221,7 @@ class wddService(CorsService):
             fdc.initialise()
         status={}
         status["status"]="INITIALISED"
+        status['state']=fdc.state
         yield json.dumps(status)
     @srpc(String,_returns=Iterable(String))
     def CONFIGURE(daq):
@@ -221,6 +232,7 @@ class wddService(CorsService):
         fdc.configure()
         status={}
         status["status"]="CONFIGURED"
+        status['state']=fdc.state
         yield json.dumps(status)
         
     @srpc(String,String,_returns=Iterable(String))
@@ -233,6 +245,7 @@ class wddService(CorsService):
         fdc.start()
         status={}
         status["status"]="RUNNING"
+        status['state']=fdc.state
         yield json.dumps(status)
         
     @srpc(String,_returns=Iterable(String))
@@ -244,6 +257,7 @@ class wddService(CorsService):
         fdc.stop()
         status={}
         status["status"]="CONFIGURED"
+        status['state']=fdc.state
         yield json.dumps(status)
         
     @srpc(String,_returns=Iterable(String))
@@ -255,6 +269,7 @@ class wddService(CorsService):
         fdc.destroy()
         status={}
         status["status"]="DETROYED"
+        status['state']=fdc.state
         yield json.dumps(status)
 
     @srpc(String,_returns=Iterable(String))
@@ -266,6 +281,7 @@ class wddService(CorsService):
         rep=fdc.BuilderStatus(False)
         status={}
         status["status"]=rep
+        
         yield json.dumps(status)
 
     @srpc(String,_returns=Iterable(String))

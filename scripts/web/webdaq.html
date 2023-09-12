@@ -47,6 +47,16 @@ body {font-family: Arial;}
   border: 1px solid #ccc;
   border-top: none;
 }
+
+.runcontent {
+  display: none;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-top: none;
+}
+.form-control {
+  max-width:100px;
+}
 </style>
 </head>
 <body>
@@ -67,14 +77,14 @@ body {font-family: Arial;}
   <h3>Connection to DB</h3>
   <form id="connection-information-form">
     <b>Hostname or IP Address and Port Number of mg_webaccess service:</b> 
-    <input id="mg_host" type="text" name="mghost" placeholder="mg_webaccess server address" value="lyoilc07">
+    <input id="mg_host" type="text" name="mghost" placeholder="mg_webaccess server address" value="lyoilc07"  style="width: 200px;">
             
-    <input id="mg_port" type="text" name="mgport" value="29029"><br>
+    <input id="mg_port" type="number" name="mgport" value="29029"><br>
            
     <b>Hostname or IP Address and Port Number of daq_webaccess service:</b> 
-    <input id="daq_host" type="text" name="daqhost" placeholder="daq_webaccess server address" value="lyoilc07">
+    <input id="daq_host" type="text" name="daqhost" placeholder="daq_webaccess server address" value="lyoilc07"  style="width: 200px;">
             
-    <input id="daq_port" type="text" name="daqport" value="27027"><br>
+    <input id="daq_port" type="number" name="daqport" value="27027"><br>
     <b>Queries:</b>
     <input type="button" onclick="getConfigurations()"  value="Configurations">
     <!--input type="button"  onclick="startDisconnect()" value="Disconnect"--> <br>
@@ -92,6 +102,8 @@ body {font-family: Arial;}
    
 
   <div>
+    <label id="daqstate">NONE</label>
+    <br>
     <form>
       <label> Reset dead time </label>
       <input id="delay_reset" type="number" name="delayreset" value=0><br>
@@ -111,9 +123,17 @@ body {font-family: Arial;}
     </form>
   </div>
   <h3>Presets</h3>
-  <h4>LUT Calibration (for FEB once after INIT)</h4>
-  <div id="lutcalib">
-    
+<div class="tab">
+  <button class="runlinks" onclick="openRunType(event, 'lutcalib')">Calibration of LUT</button>
+  <button class="runlinks" onclick="openRunType(event, 'febscurve')">FEB Scurves</button>
+  <button class="runlinks" onclick="openRunType(event, 'normalrun')"> Normal Run</button>
+</div>
+
+ <div id="lutcalib" class="runcontent">
+   <h2> Calibration of FEBV1 LUTs </h2>
+   <it>It must be done after the <b>FIRST</b> initialisation </it> <br>
+   <br>
+   
     <form>
     <label> TDC number  </label>
       <input id="tdc_number" type="number" name="tdcnumber" value=0> 
@@ -122,70 +142,115 @@ body {font-family: Arial;}
 
     <input type="button"  onclick="LutCalib()" value="LUT Calibration"> <br>
     <label> Mask </label>
-    <input id="tdc_mask" type="text" name="tdcmask" value="0xFFFFFFFF"> 
+    <input id="tdc_mask" type="text" name="tdcmask" value="0xFFFFFFFFFFFFFFF"  style="width: 200px;"> 
     <label> FEB </label>
       <input id="tdc_feb" type="number" name="tdcfeb" value=14> <br>
     <input type="button"  onclick="LutMask()" value="Set Mask"> <br>  
     </form>
-  </div>
-  <h4>Before a normal run </h4>
-  <div id="NormalRun">
-    <form>
-      <input type="button"  onclick="CreateDaq()" value="CREATE"> <br>
-      <label> Reset dead time </label>
-      <input id="delay_reset" type="number" name="delayreset" value=0>
-      <input type="button"  onclick="InitDaq()" value="INIT"><br>
-      <input type="button"  onclick="ConfigureDaq()" value="CONFIGURE"><br>
-      <input type="button"  onclick="StartDaq()" value="START"><br>
-      <input type="button"  onclick="StopDaq()" value="STOP"><br>
-      <input type="button"  onclick="DestroyDaq()" value="DESTROY"><br>
-      <input type="button"  onclick="RemoveDaq()" value="REMOVE"><br>
+ </div>
 
-      <br>
+ <div id="febscurve" class="runcontent">
+   <h2> FEBV1 SCURVE</h2>
+
+   <h3>Settings  before the start of run </h3>
+   <it> The daq should be <b>INITIALISED|CONFIGURED</b> when launch.</it>
+   <br>
+   <!--
+combdaq -M CALIBON -A lyon_mdcc -P '{"value":0}'
+combdaq -M CALIBOFF -A lyon_mdcc -P '{}'
+combdaq -M SETCALIBCOUNT -A lyon_mdcc -P '{"nclock":0}'
+combdaq -M SPILLOFF -A lyon_mdcc -P '{"nclock":100}'
+combdaq -M SPILLON -A lyon_mdcc -P '{"nclock":20000000}'
+combdaq -M SETEXTERNAL -A lyon_mdcc -P '{"value":0}'
+combdaq -M SETSPILLREGISTER -A lyon_mdcc -P '{"value":32}'
+ 
+combdaq -M SETDELAY -A lyon_febv1 -P '{"value":3}'
+combdaq -M SETDURATION -A lyon_febv1 -P '{"value":3}'
+combdaq -M SETMODE -A lyon_febv1 -P '{"value":0}'
+
+combdaq --daq-download --dbstate=TEST_FEBV1_2022 --dbversion=1 --name lyon_febv1
+
+combdaq --daq-configure
+combdaq -M SETVTHTIME -A lyon_febv1 -P '{"value":360}'
+
+     -->
+   <h4> Trigger settings</h4>
+    <form>
+      <label> Spill OFF </label> <input id="trg_spilloff" type="number"  value=100>
+      <label> Spill ON </label> <input id="trg_spillon" type="number"  value=20000000> 
+      <label> External Trigger </label> <input id="trg_external" type="number"  value=0>
+      <label> Control register </label> <input id="trg_spillreg" type="number"  value=32>
+      <label> Trigger Board</label> <input id="trg_board" type="text"  value="lyon_mdcc" style="width: 100px;"><br>
+      <input type="button"  onclick="SetTriggerMdcc()" value="Set trigger values"> <br>
+    </form>
+    <h4> FEBV1 FSM settings</h4>
+    <form>
+      <label> Dealy </label> <input id="febv1_delay" type="number"  value=3>
+      <label> Duration </label> <input id="febv1_duration" type="number"  value=3> 
+      <label> Mode </label> <input id="febv1_mode" type="number"  value=0>
+      <label> FEBV1 Board</label> <input id="febv1_board" type="text"  value="lyon_febv1" style="width: 100px;"><br>
+      <input type="button"  onclick="SetFebv1Values()" value="Set FEBV1 values"> <br>
       
     </form>
-  </div>
-  <div id="FebScurve" >
-    <h4>FEB Scurves </h4>
+    <h4> Configuration </h4>
+    <form>
+      <label> Database changes </label>
+      <input id="dbconf" type="text" value="UNKNOWN:1" style="width: 100px;"> 
+      <label> Application</label> <input id="db_board" type="text"  value="lyon_febv1" style="width: 100px;"><br>
+      <input type="button"  onclick="SetDBValues()" value="Set DB"> 
+      <input type="button"  onclick="ConfigureDaq()" value="Make Configure again"> 
+      <label> VTH Time </label> <input id="febv1_vthtime" type="number"  value=360 >
+      <input type="button"  onclick="SetVthTime()" value="Set VTH time"> <br>
 
-   
-  </div>
+    </form>
+       
+ <div id="normalrun" class="runcontent">
+ <h2>Settings for a standard run</h2>
+</div>
+
+
  
 </div>
 
 <div id="Synchro" class="tabcontent">
-  
- 
-   <!-- Javascript Code of the tab -->
-   <script>
-      function selectTab(tabIndex) {
-         //Hide All Tabs
-         document.getElementById("tab1Content").style.display = "none";
-         document.getElementById("tab2Content").style.display = "none";
-         document.getElementById("tab3Content").style.display = "none";
-         //Show the Selected Tab
-         document.getElementById("tab" + tabIndex + "Content").style.display =
-         "block";
-      }
-   </script>
-</div>
+  <h3>Synchronisation  Control</h3>
 <div id="Status" class="tabcontent">
   <h3>Status Monitoring</h3>
 
 </div>
 <div id="Settings" class="tabcontent">
   <h3>Other settings</h3>
-  <div class="tab" id="test1">
-    <button class="tablinks" onclick="openTab(event, 'tab1Content')">Configuration</button>
-    <button class="tablinks" onclick="openTab(event, 'tab2Content')">Daq</button>
-    <button class="tablinks" onclick="openTab(event, 'tab3Content')">Synchronisation</button>
-  </div>
-  <div id="tab1Content">This is first tab.</div>
-  <div id="tab2Content">This is Second tab</div>
-  <div id="tab3Content">This is third tab</div>
+
 </div>
 
-
+<script>
+function openTab(evt, cityName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(cityName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+function openRunType(evt, cityName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("runcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("runlinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(cityName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+</script>
    
 </body>
 </html> 
