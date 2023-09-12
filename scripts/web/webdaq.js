@@ -142,7 +142,7 @@ async function CreateDaq() {
     let jdaq = await spyneCommand(origdaq, "CREATE", pdaq);
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> CREATE on " + daqname + "/" + daqloc +  "</span><br>";
-
+    console.log(getState());
 }
 async function InitDaq() {
 
@@ -161,7 +161,7 @@ async function InitDaq() {
     let jdaq = await spyneCommand(origdaq, "INITIALISE", pdaq);
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> INITIALISE on " + daqname + "/" + daqloc +  "</span><br>";
-
+    console.log(getState());
 
 }
 async function ConfigureDaq() {
@@ -179,7 +179,7 @@ async function ConfigureDaq() {
     let jdaq = await spyneCommand(origdaq, "CONFIGURE", pdaq);
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> CONFIGURE on " + daqname + "/" + daqloc +  "</span><br>";
-
+    console.log(getState());
 
 }
 async function StartDaq() {
@@ -198,9 +198,155 @@ async function StartDaq() {
     let jdaq = await spyneCommand(origdaq, "CONFIGURE", pdaq);
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> CONFIGURE on " + daqname + "/" + daqloc +  "</span><br>";
-
+    console.log(getState());
 
 }
+
+async function StopDaq() {
+
+    // create the daq in webdaq
+    let daqhost = document.getElementById("daq_host").value;
+    let daqport = document.getElementById("daq_port").value;
+
+
+    const origdaq = 'http://' + daqhost + ':' + daqport;
+    
+    let pdaq = {
+        daq: daqname
+        }
+    let jdaq = await spyneCommand(origdaq, "STOP", pdaq);
+    console.log(jdaq);
+    document.getElementById("messages").innerHTML += "<span> STOP on " + daqname + "/" + daqloc +  "</span><br>";
+    console.log(getState());
+
+}
+async function DestroyDaq() {
+
+    // create the daq in webdaq
+    let daqhost = document.getElementById("daq_host").value;
+    let daqport = document.getElementById("daq_port").value;
+
+
+    const origdaq = 'http://' + daqhost + ':' + daqport;
+    
+    let pdaq = {
+        daq: daqname
+        }
+    let jdaq = await spyneCommand(origdaq, "DESTROY", pdaq);
+    console.log(jdaq);
+    document.getElementById("messages").innerHTML += "<span> DESTROY on " + daqname + "/" + daqloc +  "</span><br>";
+    console.log(getState());
+
+}
+async function RemoveDaq() {
+
+    // create the daq in webdaq
+    let daqhost = document.getElementById("daq_host").value;
+    let daqport = document.getElementById("daq_port").value;
+
+
+    const origdaq = 'http://' + daqhost + ':' + daqport;
+    
+    let pdaq = {
+        daq: daqname
+        }
+    let jdaq = await spyneCommand(origdaq, "REMOVE", pdaq);
+    console.log(jdaq);
+    document.getElementById("messages").innerHTML += "<span> REMOVE on " + daqname + "/" + daqloc +  "</span><br>";
+    console.log(getState());
+
+}
+
+async function ResumeDaq() {
+
+    // create the daq in webdaq
+    let daqhost = document.getElementById("daq_host").value;
+    let daqport = document.getElementById("daq_port").value;
+
+
+    const origdaq = 'http://' + daqhost + ':' + daqport;
+    
+    let pdaq = {
+        daq: daqname
+        }
+    let jdaq = await spyneCommand(origdaq, "RESUME", pdaq);
+    console.log(jdaq);
+    document.getElementById("messages").innerHTML += "<span> RESUME on " + daqname + "/" + daqloc +  "</span><br>";
+    console.log(getState());
+
+}
+
+
+async function PauseDaq() {
+
+    // create the daq in webdaq
+    let daqhost = document.getElementById("daq_host").value;
+    let daqport = document.getElementById("daq_port").value;
+
+
+    const origdaq = 'http://' + daqhost + ':' + daqport;
+    
+    let pdaq = {
+        daq: daqname
+        }
+    let jdaq = await spyneCommand(origdaq, "PAUSE", pdaq);
+    console.log(jdaq);
+    document.getElementById("messages").innerHTML += "<span> PAUSE on " + daqname + "/" + daqloc +  "</span><br>";
+    console.log(getState());
+
+}
+async function SetTriggerMdcc() {
+
+    // create the daq in webdaq
+    let daqhost = document.getElementById("daq_host").value;
+    let daqport = document.getElementById("daq_port").value;
+
+
+    const origdaq = 'http://' + daqhost + ':' + daqport;
+    
+    let pdaq = {
+        daq: daqname,
+	method:"SPILLOFF",
+	app:document.getElementById("trg_board").value,
+	params:JSON.stringify({nclock:document.getElementById("trg_spilloff").value})
+        }
+    let jdaq = await spyneCommand(origdaq, "PROCESS", pdaq);
+    console.log(jdaq);
+    
+    pdaq.method="SPILLON"
+    pdaq.params=JSON.stringify({nclock:document.getElementById("trg_spillon").value})
+    jdaq = await spyneCommand(origdaq, "PROCESS", pdaq);
+    console.log(jdaq);
+    
+    pdaq.method="SETEXTERNAL"
+    pdaq.params=JSON.stringify({value:document.getElementById("trg_external").value})
+    jdaq = await spyneCommand(origdaq, "PROCESS", pdaq);
+    console.log(jdaq);
+
+    pdaq.method="SETSPILLREGISTER"
+    pdaq.params=JSON.stringify({value:document.getElementById("trg_spillreg").value})
+    jdaq = await spyneCommand(origdaq, "PROCESS", pdaq);
+    console.log(jdaq);
+
+    if (document.getElementById("trg_board").value == "lyon_mbmdcc")
+    {
+	pdaq.method="ENABLE"
+	pdaq.params=JSON.stringify({value:document.getElementById("trg_channels").value})
+	jdaq = await spyneCommand(origdaq, "PROCESS", pdaq);
+	console.log(jdaq);
+	pdaq.method="CHANNELON"
+	pdaq.params=JSON.stringify({value:document.getElementById("trg_channels").value})
+	jdaq = await spyneCommand(origdaq, "PROCESS", pdaq);
+	console.log(jdaq);
+    }
+
+    
+    document.getElementById("messages").innerHTML += "<span> SetTriggerMdcc on " + daqname + "/" + daqloc +  "</span><br>";
+    console.log(getState());
+
+}
+
+
 async function LutCalib() {
 
     // create the daq in webdaq
