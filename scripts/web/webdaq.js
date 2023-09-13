@@ -295,9 +295,9 @@ async function PauseDaq() {
     console.log(getState());
 
 }
-async function SetTriggerMdcc() {
-
-    // create the daq in webdaq
+async function processCommand(appname,methodname,parameters)
+{
+       // create the daq in webdaq
     let daqhost = document.getElementById("daq_host").value;
     let daqport = document.getElementById("daq_port").value;
 
@@ -306,38 +306,27 @@ async function SetTriggerMdcc() {
     
     let pdaq = {
         daq: daqname,
-	method:"SPILLOFF",
-	app:document.getElementById("trg_board").value,
-	params:JSON.stringify({nclock:document.getElementById("trg_spilloff").value})
+	method: methodname,
+	app: appname,
+	params:JSON.stringify(parameters)
         }
-    let jdaq = await spyneCommand(origdaq, "PROCESS", pdaq);
-    console.log(jdaq);
-    
-    pdaq.method="SPILLON"
-    pdaq.params=JSON.stringify({nclock:document.getElementById("trg_spillon").value})
     jdaq = await spyneCommand(origdaq, "PROCESS", pdaq);
     console.log(jdaq);
-    
-    pdaq.method="SETEXTERNAL"
-    pdaq.params=JSON.stringify({value:document.getElementById("trg_external").value})
-    jdaq = await spyneCommand(origdaq, "PROCESS", pdaq);
-    console.log(jdaq);
+    return jdaq;
+}
+async function SetTriggerMdcc() {
 
-    pdaq.method="SETSPILLREGISTER"
-    pdaq.params=JSON.stringify({value:document.getElementById("trg_spillreg").value})
-    jdaq = await spyneCommand(origdaq, "PROCESS", pdaq);
-    console.log(jdaq);
+    let board=document.getElementById("trg_board").value;
+    let jdaq = await processCommand(board,"SPILLOFF",{nclock:document.getElementById("trg_spilloff").value});
+    jdaq = await processCommand(board,"SPILLON",{nclock:document.getElementById("trg_spillon").value});
+    jdaq = await processCommand(board,"SETEXTERNAL",{value:document.getElementById("trg_external").value});
+    jdaq = await processCommand(board,"SETSPILLREG",{value:document.getElementById("trg_spillreg").value});
 
-    if (document.getElementById("trg_board").value == "lyon_mbmdcc")
+
+    if (board == "lyon_mbmdcc")
     {
-	pdaq.method="ENABLE"
-	pdaq.params=JSON.stringify({value:document.getElementById("trg_channels").value})
-	jdaq = await spyneCommand(origdaq, "PROCESS", pdaq);
-	console.log(jdaq);
-	pdaq.method="CHANNELON"
-	pdaq.params=JSON.stringify({value:document.getElementById("trg_channels").value})
-	jdaq = await spyneCommand(origdaq, "PROCESS", pdaq);
-	console.log(jdaq);
+	jdaq = await processCommand(board,"ENABLE",{value:document.getElementById("trg_channels").value});
+	jdaq = await processCommand(board,"CHANNELON",{value:document.getElementById("trg_channels").value});
     }
 
     
