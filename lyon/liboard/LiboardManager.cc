@@ -529,6 +529,7 @@ void LiboardManager::c_status(http_request m)
   }
   par["STATUS"] = web::json::value::string(U("DONE"));
   par["DIFLIST"] = array_slc;
+  mqtt_publish("status",par);
   Reply(status_codes::OK, par);
 
   return;

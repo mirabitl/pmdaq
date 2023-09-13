@@ -128,7 +128,7 @@ void Febv2Manager::c_status(http_request m)
   par["DETID"] = _detId;
   par["SOURCEID"] = _sourceId;
   par["EVENT"]=w_rep.as_object()["STATUS"];
-
+  mqtt_publish("status",par);
   Reply(status_codes::OK, par);
 }
 

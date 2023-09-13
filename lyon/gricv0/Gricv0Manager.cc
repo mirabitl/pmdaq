@@ -133,8 +133,9 @@ void Gricv0Manager::c_status(http_request m)
       jt["triggers"]=web::json::value::number(x.second->data()->triggers());
       jl[mb++]=jt;
     }
+
   par["GRICSTATUS"]=jl;
-  
+  mqtt_publish("status",jl);  
   Reply(status_codes::OK,par);
 
 }

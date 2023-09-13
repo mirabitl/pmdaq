@@ -99,6 +99,7 @@ void Febv1Manager::c_status(http_request m)
     jl[mb++] = jt;
   }
   par["TDCSTATUS"] = jl;
+  mqtt_publish("status",jl);
   Reply(status_codes::OK, par);
 }
 void Febv1Manager::c_diflist(http_request m)

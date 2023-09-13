@@ -655,6 +655,7 @@ void MbmdccManager::c_status(http_request m)
   rc["external"]=json::value::number(this->externalTrigger());
   par["COUNTERS"]=rc;
   par["STATUS"]=json::value::string(U("DONE"));
+  mqtt_publish("status",par);
   Reply(status_codes::OK,par);
 
 } 

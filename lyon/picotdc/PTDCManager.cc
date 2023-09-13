@@ -118,7 +118,7 @@ void PTDCManager::c_status(http_request m)
   par["DETID"]=jrep.get().as_object()["DETID"];
   par["SOURCEID"]=jrep.get().as_object()["SOURCEID"];
 
-
+  mqtt_publish("status",par);
   Reply(status_codes::OK, par);
 }
 

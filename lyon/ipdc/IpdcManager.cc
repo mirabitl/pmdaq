@@ -368,6 +368,7 @@ void IpdcManager::c_status(http_request m)
   rc["external"]=json::value::number(_ipdc->externalTrigger());
   par["COUNTERS"]=rc;
   par["STATUS"]=web::json::value::string(U("DONE"));
+  mqtt_publish("status",par);
   Reply(status_codes::OK,par);  
 
 } 

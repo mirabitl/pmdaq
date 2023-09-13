@@ -400,6 +400,7 @@ void MdccManager::c_status(http_request m)
   rc["external"]=json::value::number(_mdcc->externalTrigger());
   par["COUNTERS"]=rc;
   par["STATUS"]=web::json::value::string(U("DONE"));
+  mqtt_publish("status",par);
   Reply(status_codes::OK,par);  
 
 } 
