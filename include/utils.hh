@@ -35,6 +35,6 @@ class utils
   static void ls(std::string sourcedir, std::vector<std::string> &res);
   static uint32_t pull(std::string name,void* buf,std::string sourcedir);
   static uint64_t get_file_size(int fd);
-
+  static void mqtt_publish(std::string broker,std::string tag,web::json::value v);
 };
 

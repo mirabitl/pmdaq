@@ -377,3 +377,11 @@ void fsmw::Reply(http::status_code code, const json::value &body_data)
   _response.set_status_code(code);
   _response.set_body(body_data);
 }
+void fsmw::mqtt_publish(std::string topic,const json::value &body_data)
+{
+  if (utils::isMember(params(),"mqtt_broker") )
+    {
+      std::stringstream stag("");stag<<path().substr(1,path().size()-1)<<topic;
+      utils::mqtt_publish(params()["mqtt_broker"].as_string(),stag.str(),body_data);
+    }
+}

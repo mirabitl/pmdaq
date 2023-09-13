@@ -593,3 +593,15 @@ uint32_t utils::pull(std::string name,void* buf,std::string sourcedir)
   ::unlink(sd.str().c_str());
 return (size_buf-(3*sizeof(uint32_t)+sizeof(uint64_t)));
 }
+void utils::mqtt_publish(std::string broker,std::string tag,web::json::value v)
+{
+  //  Json::StreamWriterBuilder builder;
+  //builder["indentation"] = "";
+  std::stringstream ss("");
+  const std::string msg = v.serialize();
+  ss<<"mosquitto_pub -h "<<broker<<" -t "<<tag<<" -m '"<<msg<<"'";
+  std::cout<<ss.str()<<std::endl;
+  system(ss.str().c_str());
+  return;
+}
+

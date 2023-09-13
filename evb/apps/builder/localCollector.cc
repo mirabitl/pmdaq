@@ -31,6 +31,7 @@ void pm::builder::collector::initialise()
   _running=false;
 
   // Monitoring
+
   if (utils::isMember(params(),"broker") && _cli==NULL)
     {
       std::stringstream ss,ssid;
@@ -253,6 +254,7 @@ void pm::builder::collector::status(http_request m)
   PMF_DEBUG(_logCollector, "STATUS"<<par);
   
   publish("STATUS",par.serialize());
+  mqtt_publish("status",par);
   Reply(status_codes::OK,par);
 
 }

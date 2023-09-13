@@ -3,7 +3,7 @@
 #include "handlerPlugin.hh"
 #include "stdafx.hh"
 #include <thread>
-
+#include "utils.hh"
 typedef std::function<void (http_request&)> CMDFunctor;
 
 class fsmTransition
@@ -107,6 +107,10 @@ class fsmw : public handlerPlugin
     web::json::value& params(){return _params;}
     web::http::http_response& answer(){return _response;}
     void Reply(http::status_code code,const json::value &body_data);
+    /**
+       \brief mosquitto publication
+     */
+    void mqtt_publish(std::string topic,const json::value &body_data);
   private:
     std::map<std::string,CMDFunctor> _commands;
     std::vector<std::string> _states;
