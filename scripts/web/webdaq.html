@@ -1,198 +1,214 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta charset="utf-8">
-    <title>LYON DAQ Interface</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.2/mqttws31.min.js" type="text/javascript"></script>
-    <script src="webdaq.js" type="text/javascript"></script>
-    <style>
-      body {font-family: Arial;}
 
-      /* Style the tab */
-      .tab {
-	  overflow: hidden;
-	  border: 1px solid #ccc;
-	  background-color: #f1f1f1;
-      }
-      .cmdbutton {
-	  background-color: yellow;
-	  border: none;
-	  color: black;
-	  padding: 15px 32px;
-	  text-align: center;
-	  text-decoration: none;
-	  display: inline-block;
-	  font-size: 16px;
-	  margin: 4px 2px;
-	  cursor: pointer;
-      }
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="utf-8">
+	<title>LYON DAQ Interface</title>
+	<link rel="stylesheet" href="style.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.2/mqttws31.min.js"
+		type="text/javascript"></script>
+	<script src="webdaq.js" type="text/javascript"></script>
+	<style>
+		body {
+			font-family: Arial;
+		}
 
-      /* Style the buttons inside the tab */
-      .tab button {
-	  background-color: inherit;
-	  float: left;
-	  border: none;
-	  outline: none;
-	  cursor: pointer;
-	  padding: 14px 16px;
-	  transition: 0.3s;
-	  font-size: 17px;
-      }
-    
-      /* Change background color of buttons on hover 
+		/* Style the tab */
+		.tab {
+			overflow: hidden;
+			border: 1px solid #ccc;
+			background-color: #f1f1f1;
+		}
+
+		.cmdbutton {
+			background-color: yellow;
+			border: none;
+			color: black;
+			padding: 15px 32px;
+			text-align: center;
+			text-decoration: none;
+			display: inline-block;
+			font-size: 16px;
+			margin: 4px 2px;
+			cursor: pointer;
+		}
+
+		/* Style the buttons inside the tab */
+		.tab button {
+			background-color: inherit;
+			float: left;
+			border: none;
+			outline: none;
+			cursor: pointer;
+			padding: 14px 16px;
+			transition: 0.3s;
+			font-size: 17px;
+		}
+
+		/* Change background color of buttons on hover 
 .tab button:hover {
   background-color: #ddd;
 }
      */
-      .tab button:hover {
-	  background-color: green;
-      }
+		.tab button:hover {
+			background-color: green;
+		}
 
-      /* Create an active/current tablink class */
-      .tab button.active {
-	  background-color: red;
-      }
+		/* Create an active/current tablink class */
+		.tab button.active {
+			background-color: red;
+		}
 
-      /* Style the tab content */
-      .tabcontent {
-	  display: none;
-	  padding: 6px 12px;
-	  border: 1px solid #ccc;
-	  border-top: none;
-      }
+		/* Style the tab content */
+		.tabcontent {
+			display: none;
+			padding: 6px 12px;
+			border: 1px solid #ccc;
+			border-top: none;
+		}
 
-      .runcontent {
-	  display: none;
-	  padding: 6px 12px;
-	  border: 1px solid #ccc;
-	  border-top: none;
-      }
-      .febscontent {
-	  display: none;
-	  padding: 6px 12px;
-	  border: 1px solid #ccc;
-	  border-top: none;
-      }
-      .calcontent {
-	  display: none;
-	  padding: 6px 12px;
-	  border: 1px solid #ccc;
-	  border-top: none;
-      }
-      .form-control {
-	  max-width:100px;
-      }
-    </style>
-  </head>
-  <body>
+		.runcontent {
+			display: none;
+			padding: 6px 12px;
+			border: 1px solid #ccc;
+			border-top: none;
+		}
 
-    <h2>Lyon DAQ interface</h2>
-    <p>Data display is available in
-      <a href="http://lyocms09:3000/dashboards">GRAFANA</a> </p>
+		.febscontent {
+			display: none;
+			padding: 6px 12px;
+			border: 1px solid #ccc;
+			border-top: none;
+		}
 
-    <div class="tab">
-      <button class="tablinks" onclick="openTab(event, 'Configuration')">Configuration</button>
-      <button class="tablinks" onclick="openTab(event, 'Daq')">Daq</button>
-      <button class="tablinks" onclick="openTab(event, 'Calibration')">Calibration</button>
-      <button class="tablinks" onclick="openTab(event, 'Settings')">Settings</button>
-      <button class="tablinks" onclick="openTab(event, 'Status')">Status</button>
-    </div>
+		.calcontent {
+			display: none;
+			padding: 6px 12px;
+			border: 1px solid #ccc;
+			border-top: none;
+		}
 
+		.form-control {
+			max-width: 100px;
+		}
+	</style>
+</head>
 
-    <div id="Configuration" class="tabcontent">
-      <h3>Connection to DB</h3>
-      <form id="connection-information-form">
-	<b>Hostname or IP Address and Port Number of mg_webaccess service:</b> 
-	<input id="mg_host" type="text" name="mghost" placeholder="mg_webaccess server address" value="lyoilc07"  style="width: 200px;">
-        
-	<input id="mg_port" type="number" name="mgport" value="29029"><br>
-        
-	<b>Hostname or IP Address and Port Number of daq_webaccess service:</b> 
-	<input id="daq_host" type="text" name="daqhost" placeholder="daq_webaccess server address" value="lyoilc07"  style="width: 200px;">
-        
-	<input id="daq_port" type="number" name="daqport" value="27027"><br>
-	<b>Queries:</b>
-	<input type="button" onclick="getConfigurations()"  value="Configurations">
-	<!--input type="button"  onclick="startDisconnect()" value="Disconnect"--> <br>
-      </form>
-      <div id="configsel"></div>
-      <div id="messages"></div>
-      <!--p>London is the capital city of England.</p-->
-    </div>
+<body>
 
-    <div id="Daq" class="tabcontent">
-      <h2>Daq</h2>
-      
-      <h3> DAQ Control </h3>
-      <div id="daqcontrol-subsystem-select"></div>
-      
+	<h2>Lyon DAQ interface</h2>
+	<p>Data display is available in
+		<a href="http://lyocms09:3000/dashboards">GRAFANA</a>
+	</p>
 
-      <div>
-	<h4> Status </h4>
-	<label id="daqstate">NONE</label>
-	<br>
-	<h4> Commands</h4>
-	<form>
-	  <label> Reset dead time </label>
-	  <input id="delay_reset" type="number" name="delayreset" value=0><br>
-	  <input type="button"  onclick="CreateDaq()" value="CREATE"> 
-	  
-	  <input type="button"  onclick="InitDaq()" value="INIT">
-	  <input type="button"  onclick="ConfigureDaq()" value="CONFIGURE">
-	  <input type="button"  onclick="StartDaq()" value="START">
-	  <input type="button"  onclick="StopDaq()" value="STOP">
-	  <input type="button"  onclick="ResumeDaq()" value="RESUME">
-	  <input type="button"  onclick="PauseDaq()" value="PAUSE">
-	  <input type="button"  onclick="DestroyDaq()" value="DESTROY">
-	  <input type="button"  onclick="RemoveDaq()" value="REMOVE">
-
-	  <br>
-	  
-	</form>
-      </div>
-      <h3>Presets</h3>
-      <h3>Settings  before the start of run </h3>
-      <it> The daq should be <b>INITIALISED|CONFIGURED</b> when launch.</it>
-      <br>
-      
-      <div class="tab">
-	<button class="runlinks" onclick="opentab(event, 'lutcalib','runlinks','runcontent')">Calibration of LUT</button>
-	<button class="runlinks" onclick="opentab(event, 'runtrg','runlinks','runcontent')">Trigger settings</button>
-	<button class="runlinks" onclick="opentab(event, 'runfebv1','runlinks','runcontent')">FEBV1 settings</button>
-	<button class="runlinks" onclick="opentab(event, 'rundb','runlinks','runcontent')"> Database settings</button>
-
-	
-      </div>
-
-      <div id="lutcalib" class="runcontent">
-	<h2> Calibration of FEBV1 LUTs </h2>
-	<it>It must be done after the <b>FIRST</b> initialisation </it> <br>
-	<br>
-	
-	<form>
-	  <label> TDC number  </label>
-	  <input id="tdc_number" type="number" name="tdcnumber" value=0> 
-	  <label> Channels </label>
-	  <input id="tdc_channels" type="number" name="tdcchannels" value=56> <br>
-
-	  <input type="button"  onclick="LutCalib()" value="LUT Calibration"> <br>
-	  <label> Mask </label>
-	  <input id="tdc_mask" type="text" name="tdcmask" value="0xFFFFFFFFFFFFFFF"  style="width: 200px;"> 
-	  <label> FEB </label>
-	  <input id="tdc_feb" type="number" name="tdcfeb" value=14> <br>
-	  <input type="button"  onclick="LutMask()" value="Set Mask"> <br>  
-	</form>
-      </div>
-
-      
+	<div class="tab">
+		<button class="tablinks" onclick="openTab(event, 'Configuration')">Configuration</button>
+		<button class="tablinks" onclick="openTab(event, 'Daq')">Daq</button>
+		<button class="tablinks" onclick="openTab(event, 'Calibration')">Calibration</button>
+		<button class="tablinks" onclick="openTab(event, 'Settings')">Settings</button>
+		<button class="tablinks" onclick="openTab(event, 'Status')">Status</button>
+	</div>
 
 
+	<div id="Configuration" class="tabcontent">
+		<h3>Connection to DB</h3>
+		<form id="connection-information-form">
+			<b>Hostname or IP Address and Port Number of mg_webaccess service:</b>
+			<input id="mg_host" type="text" name="mghost" placeholder="mg_webaccess server address" value="lyoilc07"
+				style="width: 200px;">
 
-	
-	<!--
+			<input id="mg_port" type="number" name="mgport" value="29029"><br>
+
+			<b>Hostname or IP Address and Port Number of daq_webaccess service:</b>
+			<input id="daq_host" type="text" name="daqhost" placeholder="daq_webaccess server address" value="lyoilc07"
+				style="width: 200px;">
+
+			<input id="daq_port" type="number" name="daqport" value="27027"><br>
+			<b>Queries:</b>
+			<input type="button" onclick="getConfigurations()" value="Configurations">
+			<!--input type="button"  onclick="startDisconnect()" value="Disconnect"--> <br>
+		</form>
+		<div id="configsel"></div>
+		<div id="messages"></div>
+		<!--p>London is the capital city of England.</p-->
+	</div>
+
+	<div id="Daq" class="tabcontent">
+		<h2>Daq</h2>
+
+		<h3> DAQ Control </h3>
+		<div id="daqcontrol-subsystem-select"></div>
+
+
+		<div>
+			<h4> Status </h4>
+			<label id="daqstate">NONE</label>
+			<br>
+			<h4> Commands</h4>
+			<form>
+				<label> Reset dead time </label>
+				<input id="delay_reset" type="number" name="delayreset" value=0><br>
+				<input type="button" onclick="CreateDaq()" value="CREATE">
+
+				<input type="button" onclick="InitDaq()" value="INIT">
+				<input type="button" onclick="ConfigureDaq()" value="CONFIGURE">
+				<input type="button" onclick="StartDaq()" value="START">
+				<input type="button" onclick="StopDaq()" value="STOP">
+				<input type="button" onclick="ResumeDaq()" value="RESUME">
+				<input type="button" onclick="PauseDaq()" value="PAUSE">
+				<input type="button" onclick="DestroyDaq()" value="DESTROY">
+				<input type="button" onclick="RemoveDaq()" value="REMOVE">
+
+				<br>
+
+			</form>
+		</div>
+		<h3>Presets</h3>
+		<h3>Settings before the start of run </h3>
+		<it> The daq should be <b>INITIALISED|CONFIGURED</b> when launch.</it>
+		<br>
+
+		<div class="tab">
+			<button class="runlinks" onclick="opentab(event, 'lutcalib','runlinks','runcontent')">Calibration of
+				LUT</button>
+			<button class="runlinks" onclick="opentab(event, 'runtrg','runlinks','runcontent')">Trigger
+				settings</button>
+			<button class="runlinks" onclick="opentab(event, 'runfebv1','runlinks','runcontent')">FEBV1
+				settings</button>
+			<button class="runlinks" onclick="opentab(event, 'rundb','runlinks','runcontent')"> Database
+				settings</button>
+
+
+		</div>
+
+		<div id="lutcalib" class="runcontent">
+			<h2> Calibration of FEBV1 LUTs </h2>
+			<it>It must be done after the <b>FIRST</b> initialisation </it> <br>
+			<br>
+
+			<form>
+				<label> TDC number </label>
+				<input id="tdc_number" type="number" name="tdcnumber" value=0>
+				<label> Channels </label>
+				<input id="tdc_channels" type="number" name="tdcchannels" value=56> <br>
+
+				<input type="button" onclick="LutCalib()" value="LUT Calibration"> <br>
+				<label> Mask </label>
+				<input id="tdc_mask" type="text" name="tdcmask" value="0xFFFFFFFFFFFFFFF" style="width: 200px;">
+				<label> FEB </label>
+				<input id="tdc_feb" type="number" name="tdcfeb" value=14> <br>
+				<input type="button" onclick="LutMask()" value="Set Mask"> <br>
+			</form>
+		</div>
+
+
+
+
+
+
+		<!--
 	    combdaq -M CALIBON -A lyon_mdcc -P '{"value":0}'
 	    combdaq -M CALIBOFF -A lyon_mdcc -P '{}'
 	    combdaq -M SETCALIBCOUNT -A lyon_mdcc -P '{"nclock":0}'
@@ -211,147 +227,157 @@
 	    combdaq -M SETVTHTIME -A lyon_febv1 -P '{"value":360}'
 
 	  -->
-      <div id="runtrg" class="runcontent" >
-	<h4> Trigger settings</h4>
-	<form>
-	  <label> Spill OFF </label> <input id="trg_spilloff" type="number"  value=100>
-	  <label> Spill ON </label> <input id="trg_spillon" type="number"  value=20000000> 
-	  <label> External Trigger </label> <input id="trg_external" type="number"  value=0>
-	  <label> Control register </label> <input id="trg_spillreg" type="number"  value=32>
-	  <label> Trigger Board</label> <input id="trg_board" type="text"  value="lyon_mdcc" style="width: 100px;"><br>
-	  <br>
-	  <label><b> MBMDCC specific </label><br>
-	  <label> Channels (bit pattern) </label> <input id="trg_channels" type="number"  value=1023><br>
-	  <input type="button"  onclick="SetTriggerMdcc()" value="Set trigger values"> <br>
-	</form>
-      </div>
-      <div id="runfebv1" class="runcontent" >
-	<h4> FEBV1 FSM settings</h4>
-	<form>
-	  <label> Delay </label> <input id="febv1_delay" type="number"  value=3>
-	  <label> Duration </label> <input id="febv1_duration" type="number"  value=3> 
-	  <label> Mode </label> <input id="febv1_mode" type="number"  value=0>
-	  <label> FEBV1 Board</label> <input id="febv1_board" type="text"  value="lyon_febv1" style="width: 100px;"><br>
-	  <input type="button"  onclick="SetFebv1Values()" value="Set FEBV1 values"> <br>
-	  
-	</form>
-      </div>
-      <div  id="rundb" class="runcontent">
-	<h4> Configuration </h4>
-	<form>
-	  
-	  <label> Database changes </label><br>
-	  <label> State </label>
-	  <input id="dbstate" type="text" value="UNKNOWN" style="width: 100px;">
-	  <label> Version </label>
-	  <input id="dbversion" type="number" value=1><br>
-	  
-	  <label> Application</label> <input id="db_board" type="text"  value="lyon_febv1" style="width: 100px;"><br>
-	  <input type="button"  onclick="SetDBValues()" value="Set DB"> 
-	  <input type="button"  onclick="ConfigureDaq()" value="Make Configure again"> <br>
-	  <label> VTH Time </label> <input id="febv1_vthtime" type="number"  value=360 >
-	  <input type="button"  onclick="SetVthTime()" value="Set VTH time"> <br>
-	  
-	</form>
-      </div>
-      
-    </div>
-    <div id="Calibration" class="tabcontent">
-       <it> The daq should be <b>RUNNING</b> when launch.</it>
-        <div class="tab">
-	<button class="callinks" onclick="opentab(event, 'cal_dac10febv1','callinks','calcontent')">FEBV1 Scurves</button>
-	<button class="callinks" onclick="opentab(event, 'cal_b0pmr','callinks','calcontent')">PMR threshold scan</button>
-	<button class="callinks" onclick="opentab(event, 'cal_b0gric','callinks','calcontent')">GRIC threshold scan</button>
-	</div>
+		<div id="runtrg" class="runcontent">
+			<h4> Trigger settings</h4>
+			<form>
+				<label> Spill OFF </label> <input id="trg_spilloff" type="number" value=100>
+				<label> Spill ON </label> <input id="trg_spillon" type="number" value=20000000>
+				<label> External Trigger </label> <input id="trg_external" type="number" value=0>
+				<label> Control register </label> <input id="trg_spillreg" type="number" value=32>
+				<label> Trigger Board</label> <input id="trg_board" type="text" value="lyon_mdcc"
+					style="width: 100px;"><br>
+				<br>
+				<label><b> MBMDCC specific </label><br>
+				<label> Channels (bit pattern) </label> <input id="trg_channels" type="number" value=1023><br>
+				<input type="button" onclick="SetTriggerMdcc()" value="Set trigger values"> <br>
+			</form>
+		</div>
+		<div id="runfebv1" class="runcontent">
+			<h4> FEBV1 FSM settings</h4>
+			<form>
+				<label> Delay </label> <input id="febv1_delay" type="number" value=3>
+				<label> Duration </label> <input id="febv1_duration" type="number" value=3>
+				<label> Mode </label> <input id="febv1_mode" type="number" value=0>
+				<label> FEBV1 Board</label> <input id="febv1_board" type="text" value="lyon_febv1"
+					style="width: 100px;"><br>
+				<input type="button" onclick="SetFebv1Values()" value="Set FEBV1 values"> <br>
 
-	<div id="cal_dac10febv1" class="calcontent">
-	  <h3> FEBV1 DAC10-bits scan </h3>
-	      <form>
-		<label> First threshold </label> <input id="calf1_1st" type="number"  value=300><br>
-		<label> Last threshold </label> <input id="calf1_last" type="number"  value=600><br>
-		<label> Step threshold </label> <input id="calf1_step" type="number"  value=2> <br>
-		<label> Spill ON </label> <input id="calf1_spillon" type="number"  value=200><br>
-		<label> Spil OFF </label> <input id="calf1_spilloff" type="number"  value=100><br>
-		<label> Channel mask </label> <input id="calf1_mask" type="text"  value="0xFFFFFFFF" style="width: 100px;"><br>
-		<label> Mode (channel or 255 or 1023) </label> <input id="calf1_channel" type="number"  value=255><br>
-		<label> FEBV1 Board</label> <input id="calf1_board" type="text"  value="lyon_febv1" style="width: 100px;">
-		<input type="button"  onclick="doCal_dac10febv1()" value="Start Scurves"> <br>
-	      </form>
-	</div>
-	
-	<div id="cal_b0pmr" class="calcontent">
-	  <h3> PMR Threshold scan </h3>
-	      <form>
-		<label> First threshold </label> <input id="calpmr_1st" type="number"  value=300><br>
-		<label> Last threshold </label> <input id="calpmr_last" type="number"  value=600><br>
-		<label> Step threshold </label> <input id="calpmr_step" type="number"  value=2> <br>
-		<label> Window </label> <input id="calpmr_window" type="number"  value=50000><br>
-		<label> # Trigger </label> <input id="calpmr_ntrg" type="number"  value=50><br>
-		<label> Level </label> <input id="calpmr_level" type="number"  value=0 > <br>
-		<label> Mode (channel or 255 or 1023) </label> <input id="calpmr_channel" type="number"  value=255><br>
-		<label> MR Board</label> <input id="calpmr_board" type="text"  value="lyon_pmr" style="width: 100px;">
-		<input type="button"  onclick="doCal_b0pmr()" value="Start Scurves"> <br>
-	      </form>
+			</form>
+		</div>
+		<div id="rundb" class="runcontent">
+			<h4> Configuration </h4>
+			<form>
+
+				<label> Database changes </label><br>
+				<label> State </label>
+				<input id="dbstate" type="text" value="UNKNOWN" style="width: 100px;">
+				<label> Version </label>
+				<input id="dbversion" type="number" value=1><br>
+
+				<label> Application</label> <input id="db_board" type="text" value="lyon_febv1"
+					style="width: 100px;"><br>
+				<input type="button" onclick="SetDBValues()" value="Set DB">
+				<input type="button" onclick="ConfigureDaq()" value="Make Configure again"> <br>
+				<label> VTH Time </label> <input id="febv1_vthtime" type="number" value=360>
+				<input type="button" onclick="SetVthTime()" value="Set VTH time"> <br>
+
+			</form>
+		</div>
 
 	</div>
-	<div id="cal_b0gric" class="calcontent">
-	  <h3> GRIC Threshold scan </h3>
-	      <form>
-		<label> First threshold </label> <input id="calgric_1st" type="number"  value=300><br>
-		<label> Last threshold </label> <input id="calgric_last" type="number"  value=600><br>
-		<label> Step threshold </label> <input id="calgric_step" type="number"  value=2> <br>
-		<label> Window </label> <input id="calgric_window" type="number"  value=50000><br>
-		<label> # Trigger </label> <input id="calgric_ntrg" type="number"  value=50><br>
-		<label> Level </label> <input id="calgric_level" type="number"  value=0 > <br>
-		<label> Mode (channel or 255 or 1023) </label> <input id="calgric_channel" type="number"  value=255><br>
-		<label> MR Board</label> <input id="calgric_board" type="text"  value="lyon_gricv0" style="width: 100px;">
-		<input type="button"  onclick="doCal_b0gric()" value="Start Scurves"> <br>
-	      </form>
+	<div id="Calibration" class="tabcontent">
+		<it> The daq should be <b>RUNNING</b> when launch.</it>
+		<div class="tab">
+			<button class="callinks" onclick="opentab(event, 'cal_dac10febv1','callinks','calcontent')">FEBV1
+				Scurves</button>
+			<button class="callinks" onclick="opentab(event, 'cal_b0pmr','callinks','calcontent')">PMR threshold
+				scan</button>
+			<button class="callinks" onclick="opentab(event, 'cal_b0gric','callinks','calcontent')">GRIC threshold
+				scan</button>
+		</div>
+
+		<div id="cal_dac10febv1" class="calcontent">
+			<h3> FEBV1 DAC10-bits scan </h3>
+			<form>
+				<label> First threshold </label> <input id="calf1_1st" type="number" value=300><br>
+				<label> Last threshold </label> <input id="calf1_last" type="number" value=600><br>
+				<label> Step threshold </label> <input id="calf1_step" type="number" value=2> <br>
+				<label> Spill ON </label> <input id="calf1_spillon" type="number" value=200><br>
+				<label> Spil OFF </label> <input id="calf1_spilloff" type="number" value=100><br>
+				<label> Channel mask </label> <input id="calf1_mask" type="text" value="0xFFFFFFFF"
+					style="width: 100px;"><br>
+				<label> Mode (channel or 255 or 1023) </label> <input id="calf1_channel" type="number" value=255><br>
+				<label> FEBV1 Board</label> <input id="calf1_board" type="text" value="lyon_febv1"
+					style="width: 100px;">
+				<input type="button" onclick="doCal_dac10febv1()" value="Start Scurves"> <br>
+			</form>
+		</div>
+
+		<div id="cal_b0pmr" class="calcontent">
+			<h3> PMR Threshold scan </h3>
+			<form>
+				<label> First threshold </label> <input id="calpmr_1st" type="number" value=300><br>
+				<label> Last threshold </label> <input id="calpmr_last" type="number" value=600><br>
+				<label> Step threshold </label> <input id="calpmr_step" type="number" value=2> <br>
+				<label> Window </label> <input id="calpmr_window" type="number" value=50000><br>
+				<label> # Trigger </label> <input id="calpmr_ntrg" type="number" value=50><br>
+				<label> Level </label> <input id="calpmr_level" type="number" value=0> <br>
+				<label> Mode (channel or 255 or 1023) </label> <input id="calpmr_channel" type="number" value=255><br>
+				<label> MR Board</label> <input id="calpmr_board" type="text" value="lyon_pmr" style="width: 100px;">
+				<input type="button" onclick="doCal_b0pmr()" value="Start Scurves"> <br>
+			</form>
+
+		</div>
+		<div id="cal_b0gric" class="calcontent">
+			<h3> GRIC Threshold scan </h3>
+			<form>
+				<label> First threshold </label> <input id="calgric_1st" type="number" value=300><br>
+				<label> Last threshold </label> <input id="calgric_last" type="number" value=600><br>
+				<label> Step threshold </label> <input id="calgric_step" type="number" value=2> <br>
+				<label> Window </label> <input id="calgric_window" type="number" value=50000><br>
+				<label> # Trigger </label> <input id="calgric_ntrg" type="number" value=50><br>
+				<label> Level </label> <input id="calgric_level" type="number" value=0> <br>
+				<label> Mode (channel or 255 or 1023) </label> <input id="calgric_channel" type="number" value=255><br>
+				<label> MR Board</label> <input id="calgric_board" type="text" value="lyon_gricv0"
+					style="width: 100px;">
+				<input type="button" onclick="doCal_b0gric()" value="Start Scurves"> <br>
+			</form>
+
+		</div>
 
 	</div>
 
-    </div>
+	<div id="Synchro" class="tabcontent">
+		<h3>Synchronisation Control</h3>
+	</div>
+	<div id="Status" class="tabcontent">
+		<h3>Status Monitoring</h3>
 
-    <div id="Synchro" class="tabcontent">
-      <h3>Synchronisation  Control</h3>
-    </div> 
-    <div id="Status" class="tabcontent">
-	<h3>Status Monitoring</h3>
-	
-    </div>
-    <div id="Settings" class="tabcontent">
-      <h3>Other settings</h3>
-      
-    </div>
-      
-      <script>
-	function opentab(evt, cityName,tlnk,tcnt) {
-	    var i, tabcontent, tablinks;
-	    tabcontent = document.getElementsByClassName(tcnt);
-	    for (i = 0; i < tabcontent.length; i++) {
-		tabcontent[i].style.display = "none";
-	    }
-	    tablinks = document.getElementsByClassName(tlnk);
-	    for (i = 0; i < tablinks.length; i++) {
-		tablinks[i].className = tablinks[i].className.replace(" active", "");
-	    }
-	    document.getElementById(cityName).style.display = "block";
-	    evt.currentTarget.className += " active";
-	}
-	function openTab(evt, cityName) {
-	    var i, tabcontent, tablinks;
-	    tabcontent = document.getElementsByClassName("tabcontent");
-	    for (i = 0; i < tabcontent.length; i++) {
-		tabcontent[i].style.display = "none";
-	    }
-	    tablinks = document.getElementsByClassName("tablinks");
-	    for (i = 0; i < tablinks.length; i++) {
-		tablinks[i].className = tablinks[i].className.replace(" active", "");
-	    }
-	    document.getElementById(cityName).style.display = "block";
-	    evt.currentTarget.className += " active";
-	}
-      </script>
-      
-  </body>
-</html> 
+	</div>
+	<div id="Settings" class="tabcontent">
+		<h3>Other settings</h3>
+
+	</div>
+
+	<script>
+		function opentab(evt, cityName, tlnk, tcnt) {
+			var i, tabcontent, tablinks;
+			tabcontent = document.getElementsByClassName(tcnt);
+			for (i = 0; i < tabcontent.length; i++) {
+				tabcontent[i].style.display = "none";
+			}
+			tablinks = document.getElementsByClassName(tlnk);
+			for (i = 0; i < tablinks.length; i++) {
+				tablinks[i].className = tablinks[i].className.replace(" active", "");
+			}
+			document.getElementById(cityName).style.display = "block";
+			evt.currentTarget.className += " active";
+		}
+		function openTab(evt, cityName) {
+			var i, tabcontent, tablinks;
+			tabcontent = document.getElementsByClassName("tabcontent");
+			for (i = 0; i < tabcontent.length; i++) {
+				tabcontent[i].style.display = "none";
+			}
+			tablinks = document.getElementsByClassName("tablinks");
+			for (i = 0; i < tablinks.length; i++) {
+				tablinks[i].className = tablinks[i].className.replace(" active", "");
+			}
+			document.getElementById(cityName).style.display = "block";
+			evt.currentTarget.className += " active";
+		}
+	</script>
+
+</body>
+
+</html>
