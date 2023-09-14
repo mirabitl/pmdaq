@@ -122,7 +122,8 @@ async function getState() {
         daq: daqname
     };
     let jstate = await spyneCommand(origdaq, "STATE", pdaq);
-    document.getElementById("daqstate").value = jstate["state"];
+    console.log(jstate)
+    document.getElementById("daqstate").innerHTML = jstate["state"];
     return jstate["state"];
 }
 async function CreateDaq() {
@@ -140,7 +141,7 @@ async function CreateDaq() {
     let jdaq = await spyneCommand(origdaq, "CREATE", pdaq);
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> CREATE on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(getState());
+    console.log(await getState());
 }
 async function InitDaq() {
 
@@ -159,7 +160,7 @@ async function InitDaq() {
     let jdaq = await spyneCommand(origdaq, "INITIALISE", pdaq);
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> INITIALISE on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(getState());
+    console.log(await getState());
 
 }
 async function ConfigureDaq() {
@@ -177,7 +178,7 @@ async function ConfigureDaq() {
     let jdaq = await spyneCommand(origdaq, "CONFIGURE", pdaq);
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> CONFIGURE on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(getState());
+    console.log(await getState());
 
 }
 async function StartDaq() {
@@ -193,10 +194,10 @@ async function StartDaq() {
         daq: daqname,
         comment: rcom
     }
-    let jdaq = await spyneCommand(origdaq, "CONFIGURE", pdaq);
+    let jdaq = await spyneCommand(origdaq, "START", pdaq);
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> CONFIGURE on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(getState());
+    console.log(await getState());
 
 }
 
@@ -215,7 +216,7 @@ async function StopDaq() {
     let jdaq = await spyneCommand(origdaq, "STOP", pdaq);
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> STOP on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(getState());
+    console.log(await getState());
 
 }
 async function DestroyDaq() {
@@ -233,7 +234,7 @@ async function DestroyDaq() {
     let jdaq = await spyneCommand(origdaq, "DESTROY", pdaq);
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> DESTROY on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(getState());
+    console.log(await getState());
 
 }
 async function RemoveDaq() {
@@ -248,10 +249,12 @@ async function RemoveDaq() {
     let pdaq = {
         daq: daqname
     }
-    let jdaq = await spyneCommand(origdaq, "REMOVE", pdaq);
+    let jdaq = await spyneCommand(origdaq, "JC_DESTROY", pdaq);
+    console.log(jdaq);
+    jdaq = await spyneCommand(origdaq, "REMOVEDAQ", pdaq);
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> REMOVE on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(getState());
+    console.log(await getState());
 
 }
 
@@ -270,7 +273,7 @@ async function ResumeDaq() {
     let jdaq = await spyneCommand(origdaq, "RESUME", pdaq);
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> RESUME on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(getState());
+    console.log(await getState());
 
 }
 
@@ -290,7 +293,7 @@ async function PauseDaq() {
     let jdaq = await spyneCommand(origdaq, "PAUSE", pdaq);
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> PAUSE on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(getState());
+    console.log(await getState());
 
 }
 async function processCommand(appname, methodname, parameters) {
@@ -317,7 +320,7 @@ async function SetTriggerMdcc() {
     let jrep = await processCommand(board, "SPILLOFF", { nclock: document.getElementById("trg_spilloff").value });
     jrep = await processCommand(board, "SPILLON", { nclock: document.getElementById("trg_spillon").value });
     jrep = await processCommand(board, "SETEXTERNAL", { value: document.getElementById("trg_external").value });
-    jrep = await processCommand(board, "SETSPILLREG", { value: document.getElementById("trg_spillreg").value });
+    jrep = await processCommand(board, "SETSPILLREGISTER", { value: document.getElementById("trg_spillreg").value });
 
 
     if (board == "lyon_mbmdcc") {
@@ -327,7 +330,7 @@ async function SetTriggerMdcc() {
 
 
     document.getElementById("messages").innerHTML += "<span> SetTriggerMdcc on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(getState());
+    console.log(await getState());
 
 }
 async function SetFebv1Values() {
@@ -342,7 +345,7 @@ async function SetFebv1Values() {
 
 
     document.getElementById("messages").innerHTML += "<span> SetFebv1Values on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(getState());
+    console.log(await getState());
 
 }
 async function SetDBValues() {
@@ -350,20 +353,18 @@ async function SetDBValues() {
     let board = document.getElementById("db_board").value;
     // create the daq in webdaq
     const origdaq = 'http://' + document.getElementById("daq_host").value + ':' + document.getElementById("daq_port").value;
-    let jdaq = await spyneCommand(origdaq, "", { daq: daqname, mode: document.getElementById("febv1_mode").value });
-    console.log(jdaq);
-    jdaq = await spyneCommand(origdaq, "DOWNLOADDB", { daq: daqname, app: board, state: document.getElementById("dbstate").value, version: document.getElementById("dbversion").value });
+    let jdaq = await spyneCommand(origdaq, "DOWNLOADDB", { daq: daqname, app: board, state: document.getElementById("dbstate").value, version: document.getElementById("dbversion").value });
     console.log(jdaq);
 
 
     document.getElementById("messages").innerHTML += "<span> SetDBValues on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(getState());
+    console.log(await getState());
 
 }
 async function SetVthTime() {
     let jrep = await processCommand("lyon_febv1", "SETVTHTIME", { value: document.getElementById("febv1_vthtime").value });
     document.getElementById("messages").innerHTML += "<span> SetVthTime on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(getState());
+    console.log(await getState());
 
 }
 async function LutCalib() {
@@ -416,7 +417,8 @@ async function LutMask() {
 
 }
 async function doCal_dac10febv1() {
-    if (getState() == "RUNNING") {
+    state=await getState();
+    if (state == "RUNNING") {
         let jrep = await processCommand(document.getElementById("calf1_board").value, "SCURVE", {
             first: document.getElementById("calf1_1st").value,
             last: document.getElementById("calf1_last").value,
@@ -429,15 +431,16 @@ async function doCal_dac10febv1() {
         console.log(jrep);
     }
     else {
-        alert("The DAQ must be running");
+        alert("The DAQ must be running "+state);
     }
     document.getElementById("messages").innerHTML += "<span> doCal_dac10febv1 on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(getState());
+    console.log(await getState());
 
 }
 
 async function doCal_b0pmr() {
-    if (getState() == "RUNNING") {
+    state=await getState();
+    if (state == "RUNNING") {
         let jrep = await processCommand(document.getElementById("calpmr_board").value, "SCURVE", {
             first: document.getElementById("calpmr_1st").value,
             last: document.getElementById("calpmr_last").value,
@@ -453,13 +456,14 @@ async function doCal_b0pmr() {
         alert("The DAQ must be running");
     }
     document.getElementById("messages").innerHTML += "<span> doCal_b0pmr on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(getState());
+    console.log(await getState());
 
 }
 
 
 async function doCal_b0gric() {
-    if (getState() == "RUNNING") {
+    state=await getState();
+    if (state == "RUNNING") {
         let jrep = await processCommand(document.getElementById("calgric_board").value, "SCURVE", {
             first: document.getElementById("calgric_1st").value,
             last: document.getElementById("calgric_last").value,
@@ -475,7 +479,7 @@ async function doCal_b0gric() {
         alert("The DAQ must be running");
     }
     document.getElementById("messages").innerHTML += "<span> doCal_b0gric on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(getState());
+    console.log(await getState());
 
 }
 

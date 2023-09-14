@@ -27,7 +27,7 @@ class CorsService(ServiceBase):
 
 def _on_method_return_object(ctx):
     ctx.transport.resp_headers['Access-Control-Allow-Origin'] = ctx.descriptor.service_class.origin
-
+    ctx.transport.resp_headers['Access-Control-Allow-Origin'] ="*"
 CorsService.event_manager.add_listener('method_return_object',_on_method_return_object)
 _daq_map={}
 _wdj=None
@@ -67,7 +67,7 @@ class wddService(CorsService):
         yield status
         
     @srpc(String,_returns=Iterable(String))
-    def REMOVEDAQ(daqmongo):
+    def REMOVEDAQ(daq):
         """ Create a febv2_fsm object
 
         Args:
@@ -75,10 +75,10 @@ class wddService(CorsService):
             version (int): 0 if file is used or version number
         """
         global _daq_map
-        if not daqmongo in _daq_map:    
+        if not daq in _daq_map:    
             yield {'error':"NOTREGISTERED"}
         else:
-            del _daq_map[daqmongo]
+            del _daq_map[daq]
     @srpc(String,String,String,_returns=Iterable(String))
     def REGISTERDAQ(daqmongo,pnsname,location):
         """ Create a febv2_fsm object
@@ -87,6 +87,9 @@ class wddService(CorsService):
             name (str): configuration file name or acquisition state name
             version (int): 0 if file is used or version number
         """
+        print(daqmongo)
+        print(pnsname)
+        print(location)
         global _wdj
         global _daq_map
         if not daqmongo in _daq_map:
@@ -148,7 +151,7 @@ class wddService(CorsService):
             yield {"status":"NOTREGISTERED","name":daq}
             return
         fpns=_daq_map[daq]["pns"]
-        fpns.remove(_daq_map[daq]["session_name"])
+        fpns.pns_remove(_daq_map[daq]["session_name"])
         status={}
         status["status"]="DESTROYED"
         yield json.dumps(status)
@@ -266,7 +269,10 @@ class wddService(CorsService):
             yield {"status":"NOTREGISTERED","name":daq}
             return
         fdc=_daq_map[daq]["daq"]
-        fdc.destroy()
+        try:
+            fdc.destroy()
+        except:
+            yield {"status":"FAILED","name":daq}
         status={}
         status["status"]="DETROYED"
         status['state']=fdc.state
@@ -367,13 +373,14 @@ class wddService(CorsService):
         status["status"]="DONE"
         yield json.dumps(status)
         
-    @srpc(String,String,UnsignedInteger,UnsignedInteger,UnsignedInteger,_returns=Iterable(String))
+    @srpc(String,UnsignedInteger,String,UnsignedInteger,_returns=Iterable(String))
     def LUTMASK(daq,tdc,mask,feb):
         if not daq in _daq_map:
             yield {"status":"NOTREGISTERED","name":daq}
             return
         fdc=_daq_map[daq]["daq"]
-        fdc.tdcLUTMask(tdc,mask,feb)
+        hexmask=int(mask,16)
+        fdc.tdcLUTMask(tdc,hexmask,feb)
         status={}
         status["status"]="DONE"
         yield json.dumps(status)
