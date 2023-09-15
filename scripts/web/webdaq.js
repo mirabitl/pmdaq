@@ -1,3 +1,8 @@
+function showlog(jcnt)
+{
+    document.getElementById("logmessages").innerHTML += "<span>============================================></span><br>";
+    document.getElementById("logmessages").innerHTML += "<span>"+jcnt+ "</span><br>";
+}
 async function spyneCommand(orig, command, pdict) {
     url = orig + "/" + command
     if (pdict != null) {
@@ -9,13 +14,15 @@ async function spyneCommand(orig, command, pdict) {
         url = url.substring(0, url.length - 1);
     }
     //alert(url);
-    console.log("Calling "+url);
+    showlog("Calling "+url);
+
     try {
         let res = await fetch(url);
         let jmsg = await res.json();
-        console.log(jmsg);
+	
         vcm = command.split("?")
         let jcnt = jmsg[vcm[0] + "Response"][vcm[0] + "Result"][0];
+	showlog(jcnt);
         return JSON.parse(jcnt);
     } catch (error) {
         console.log(error);
@@ -122,7 +129,7 @@ async function refreshStatus(deadline)
 	requestIdleCallback(refreshStatus);
 	return;
     }
-    if (Date.now()-last_refresh <5000){
+    if (Date.now()-last_refresh <10000){
 	
 	requestIdleCallback(refreshStatus);
 	return;
