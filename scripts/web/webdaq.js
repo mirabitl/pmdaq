@@ -8,11 +8,12 @@ async function spyneCommand(orig, command, pdict) {
         }
         url = url.substring(0, url.length - 1);
     }
-    alert(url);
+    //alert(url);
+    console.log("Calling "+url);
     try {
         let res = await fetch(url);
         let jmsg = await res.json();
-        //console.log(jmsg);
+        console.log(jmsg);
         vcm = command.split("?")
         let jcnt = jmsg[vcm[0] + "Response"][vcm[0] + "Result"][0];
         return JSON.parse(jcnt);
@@ -20,10 +21,11 @@ async function spyneCommand(orig, command, pdict) {
         console.log(error);
     }
 }
-
 var daqname = null;
+var registered=null;
 var pnsdaq = null;
 var daqloc = null;
+
 async function getConfigurations() {
     let mghost = document.getElementById("mg_host").value;
     let mgport = document.getElementById("mg_port").value;
@@ -101,8 +103,9 @@ async function getConfigurations() {
         let jdaq = await spyneCommand(origdaq, "REGISTERDAQ", pdaq);
         console.log(jdaq);
         document.getElementById("messages").innerHTML += "<span> Connecting to " + daqhost + "on port " + daqport + "</span><br>";
+	registered=daqname;
     };
-
+    
     document.getElementById("configsel").appendChild(label).appendChild(list_conf)
     document.getElementById("configsel").append(bSetConfig);
 
@@ -111,8 +114,33 @@ async function getConfigurations() {
 
 
 }
+var last_refresh=0;
+async function refreshStatus(deadline)
+{
+    if (registered==null)
+    {
+	requestIdleCallback(refreshStatus);
+	return;
+    }
+    if (Date.now()-last_refresh <5000){
+	
+	requestIdleCallback(refreshStatus);
+	return;
+    }
+    if (deadline.timeRemaining() <= 5) {
+    // This will take more than 5ms so wait until we
+    // get called back with a long enough deadline.
+	requestIdleCallback(refreshStatus);
+	return;
+    }
+    console.log("Refreshing ... ");
+    await getState();
+    last_refresh=Date.now();
+    requestIdleCallback(refreshStatus);
+}
 async function getState() {
     // create the daq in webdaq
+    
     let daqhost = document.getElementById("daq_host").value;
     let daqport = document.getElementById("daq_port").value;
 
@@ -123,8 +151,15 @@ async function getState() {
     };
     let jstate = await spyneCommand(origdaq, "STATE", pdaq);
     console.log(jstate)
-    document.getElementById("daqstate").innerHTML = jstate["state"];
-    return jstate["state"];
+    if (jstate.hasOwnProperty("state")){
+	document.getElementById("daqstate").innerHTML = jstate["state"];
+	return jstate["state"];
+    }
+    else
+    {
+	document.getElementById("daqstate").innerHTML ="NONE";
+	return "NONE";
+    }
 }
 async function CreateDaq() {
 
@@ -251,8 +286,7 @@ async function RemoveDaq() {
     }
     let jdaq = await spyneCommand(origdaq, "JC_DESTROY", pdaq);
     console.log(jdaq);
-    jdaq = await spyneCommand(origdaq, "REMOVEDAQ", pdaq);
-    console.log(jdaq);
+    registered=null;
     document.getElementById("messages").innerHTML += "<span> REMOVE on " + daqname + "/" + daqloc + "</span><br>";
     console.log(await getState());
 
@@ -493,3 +527,4 @@ function removeOptions(selectElement) {
         }
     }
 }
+requestId = window.requestIdleCallback(refreshStatus);

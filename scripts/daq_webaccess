@@ -132,7 +132,7 @@ class wddService(CorsService):
     @srpc(String,_returns=Iterable(String))
     def RESTART(daq):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         pm_hosts=_daq_map[daq]["pm_hosts"]
         pns_host=_daq_map[daq]["pnsname"]
@@ -148,10 +148,14 @@ class wddService(CorsService):
     @srpc(String,_returns=Iterable(String))
     def JC_DESTROY(daq):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fpns=_daq_map[daq]["pns"]
+        print("removing session "+_daq_map[daq]["session_name"])
+        fpns.check(True)
         fpns.pns_remove(_daq_map[daq]["session_name"])
+        del _daq_map[daq]
+        print(daq +" is no more registered")
         status={}
         status["status"]="DESTROYED"
         yield json.dumps(status)
@@ -159,7 +163,7 @@ class wddService(CorsService):
     @srpc(String,_returns=Iterable(String))
     def PNS_LIST(daq):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fpns=_daq_map[daq]["pns"]
         rep=fpns.pns_list(_daq_map[daq]["session_name"])
@@ -170,7 +174,7 @@ class wddService(CorsService):
     @srpc(String,_returns=Iterable(String))
     def PNS_SESSION(daq):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fpns=_daq_map[daq]["pns"]
         rep=fpns.pns_session_list()
@@ -181,7 +185,7 @@ class wddService(CorsService):
     @srpc(String,_returns=Iterable(String))
     def JC_INFO(daq):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fpns=_daq_map[daq]["pns"]
         fpns.check()
@@ -193,7 +197,9 @@ class wddService(CorsService):
     @srpc(String,_returns=Iterable(String))
     def STATE(daq):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            status={}
+            status["state"]="NOTREGISTERED"
+            yield json.dumps(status)
             return
         fdc=_daq_map[daq]["daq"]
         status={}
@@ -202,7 +208,7 @@ class wddService(CorsService):
     @srpc(String,_returns=Iterable(String))
     def CREATE(daq):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         fdc.session.Print(True)
@@ -214,7 +220,7 @@ class wddService(CorsService):
     @srpc(String,Integer,_returns=Iterable(String))
     def INITIALISE(daq,delay):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         if (delay!=0):
@@ -229,7 +235,7 @@ class wddService(CorsService):
     @srpc(String,_returns=Iterable(String))
     def CONFIGURE(daq):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         fdc.configure()
@@ -241,7 +247,7 @@ class wddService(CorsService):
     @srpc(String,String,_returns=Iterable(String))
     def START(daq,comment):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         fdc.comment=comment
@@ -254,7 +260,7 @@ class wddService(CorsService):
     @srpc(String,_returns=Iterable(String))
     def STOP(daq):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         fdc.stop()
@@ -266,7 +272,7 @@ class wddService(CorsService):
     @srpc(String,_returns=Iterable(String))
     def DESTROY(daq):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         try:
@@ -281,7 +287,7 @@ class wddService(CorsService):
     @srpc(String,_returns=Iterable(String))
     def BUILDERSTATUS(daq):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         rep=fdc.BuilderStatus(False)
@@ -293,7 +299,7 @@ class wddService(CorsService):
     @srpc(String,_returns=Iterable(String))
     def SOURCESTATUS(daq):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         rep=fdc.SourceStatus(False)
@@ -304,7 +310,7 @@ class wddService(CorsService):
     @srpc(String,_returns=Iterable(String))
     def TRIGGERSTATUS(daq):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         rep=fdc.TriggerStatus(False)
@@ -315,7 +321,7 @@ class wddService(CorsService):
     @srpc(String,_returns=Iterable(String))
     def RESUME(daq):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         fdc.mdcc_Resume()
@@ -326,7 +332,7 @@ class wddService(CorsService):
     @srpc(String,_returns=Iterable(String))
     def PAUSE(daq):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         fdc.mdcc_Pause()
@@ -337,7 +343,7 @@ class wddService(CorsService):
     @srpc(String,String,String,String,_returns=Iterable(String))
     def PROCESS(daq,method,app,params):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         param=json.loads(params)
@@ -349,7 +355,7 @@ class wddService(CorsService):
     @srpc(String,String,String,UnsignedInteger,_returns=Iterable(String))
     def DOWNLOADDB(daq,app,state,version):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         lcgi = {}
@@ -363,7 +369,7 @@ class wddService(CorsService):
     @srpc(String,UnsignedInteger,UnsignedInteger,_returns=Iterable(String))
     def LUTCALIB(daq,tdc,nchannels):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         for i in range(nchannels):
@@ -376,7 +382,7 @@ class wddService(CorsService):
     @srpc(String,UnsignedInteger,String,UnsignedInteger,_returns=Iterable(String))
     def LUTMASK(daq,tdc,mask,feb):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         hexmask=int(mask,16)
@@ -388,7 +394,7 @@ class wddService(CorsService):
     @srpc(String,UnsignedInteger,_returns=Iterable(String))
     def SETTDCMODE(daq,mode):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         fdc.setTdcMode(mode)
@@ -399,7 +405,7 @@ class wddService(CorsService):
     @srpc(String,UnsignedInteger,UnsignedInteger,_returns=Iterable(String))
     def SETTDCDELAYS(daq,active,dead):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         fdc.setTdcDelays(active,dead)
@@ -410,7 +416,7 @@ class wddService(CorsService):
     @srpc(String,UnsignedInteger,_returns=Iterable(String))
     def SETDIFCTRL(daq,ctrlreg):
         if not daq in _daq_map:
-            yield {"status":"NOTREGISTERED","name":daq}
+            yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
         fdc.setControlRegister(ctrlreg)
