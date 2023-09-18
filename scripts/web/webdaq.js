@@ -109,7 +109,7 @@ async function getConfigurations() {
         daqinfo.name=daqname;
         daqinfo.state=vc[0];
         daqinfo.version=parseInt(vc[1]);
-        daqinfo.pns=pnsname;
+        daqinfo.pns=pnsdaq;
         daqinfo.location=daqloc;
         // create the daq in webdaq
         let daqhost = document.getElementById("daq_host").value;
@@ -120,11 +120,11 @@ async function getConfigurations() {
         daqinfo.url=origdaq;
 
         let pdaq = {
-            daqmongo: daqname,
-            pnsname: pnsdaq,
+            daqmongo: daqinfo.name,
+            pnsname: daqinfo.pns,
             location: daqloc
         }
-        let jdaq = await spyneCommand(origdaq, "REGISTERDAQ", pdaq);
+        let jdaq = await spyneCommand(daqinfo.url, "REGISTERDAQ", pdaq);
         console.log(jdaq);
         document.getElementById("messages").innerHTML += "<span> Connecting to " + daqhost + "on port " + daqport + "</span><br>";
 	registered=daqname;
