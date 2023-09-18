@@ -548,3 +548,50 @@ function removeOptions(selectElement) {
     }
 }
 requestId = window.requestIdleCallback(refreshStatus);
+
+function subscribeMqtt(){
+
+
+    clientID = "clientID-" + parseInt(Math.random() * 100);
+
+    client = new Paho.MQTT.Client("lyoilc07.in2p3.fr",8080  , clientID);
+
+    client.onConnectionLost = onConnectionLost;
+    client.onMessageArrived = onMessageArrived;
+
+    client.connect({ onSuccess: onConnect });
+
+
+}
+
+
+function onConnect() {
+    for (app of daqinfo.config["content"]["apps"]) {
+        mqtt_topic=daqinfo.state+"/"+app["name"]+"/"+app["instance"]+"/status";
+
+        document.getElementById("messages").innerHTML += "<span> Subscribing to topic " + mqtt_topic + "</span><br>";
+        client.subscribe(mqtt_topic);
+
+    }
+    //console.log("in On connect")
+
+    
+}
+
+
+
+function onConnectionLost(responseObject) {
+    document.getElementById("messages").innerHTML += "<span> ERROR: Connection is lost.</span><br>";
+    if (responseObject != 0) {
+        document.getElementById("messages").innerHTML += "<span> ERROR:" + responseObject.errorMessage + "</span><br>";
+    }
+}
+
+function onMessageArrived(message) {
+    console.log("OnMessageArrived: " + message.payloadString);
+    document.getElementById("messages").innerHTML += "<span> Topic:" + message.destinationName + "| Message : " + message.payloadString + "</span><br>";
+    jmsg = JSON.parse(message.payloadString);
+    console.log(jmsg);
+    console.log(message.destinationName);
+    
+}
