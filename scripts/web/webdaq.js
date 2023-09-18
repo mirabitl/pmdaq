@@ -32,6 +32,15 @@ var daqname = null;
 var registered=null;
 var pnsdaq = null;
 var daqloc = null;
+var daqinfo={
+    name:null,
+    version:0,
+    pns:null,
+    config:null,
+    location:null,
+    url:null,
+    registered:false;
+};
 
 async function getConfigurations() {
     let mghost = document.getElementById("mg_host").value;
@@ -89,19 +98,25 @@ async function getConfigurations() {
             name: vc[0],
             version: vc[1]
         };
-        let jconf = await spyneCommand(orig, "CONFIGURATION", pdict)
-        console.log(jconf["content"]);
-        if ("pns" in jconf["content"])
-            pnsdaq = jconf["content"]["pns"];
+        daqinfo.config = await spyneCommand(orig, "CONFIGURATION", pdict)
+        console.log(daqinfo.config["content"]);
+        if ("pns" in daqinfo.config["content"])
+            pnsdaq = daqinfo.config["content"]["pns"];
         else
             pnsdaq = prompt("Enter the PMDAQ name server", "lyocmsmu03");
         daqloc = prompt("Enter the setup name", "???");
+        daqinfo.name=vc[0];
+        daqinfo.version=int(vc[1]);
+        daqinfo.pns=pnsname;
+        daqinfo.location=daqloc;
         // create the daq in webdaq
         let daqhost = document.getElementById("daq_host").value;
         let daqport = document.getElementById("daq_port").value;
 
 
         const origdaq = 'http://' + daqhost + ':' + daqport;
+        daqinfo.url=origdaq;
+
         let pdaq = {
             daqmongo: daqname,
             pnsname: pnsdaq,
@@ -111,6 +126,7 @@ async function getConfigurations() {
         console.log(jdaq);
         document.getElementById("messages").innerHTML += "<span> Connecting to " + daqhost + "on port " + daqport + "</span><br>";
 	registered=daqname;
+    daqinfo.registered=true;
     };
     
     document.getElementById("configsel").appendChild(label).appendChild(list_conf)
@@ -147,211 +163,161 @@ async function refreshStatus(deadline)
 }
 async function getState() {
     // create the daq in webdaq
-    
-    let daqhost = document.getElementById("daq_host").value;
-    let daqport = document.getElementById("daq_port").value;
-
-
-    const origdaq = 'http://' + daqhost + ':' + daqport;
-    let pdaq = {
-        daq: daqname
-    };
-    let jstate = await spyneCommand(origdaq, "STATE", pdaq);
+    if (!daqinfo.registered){
+        document.getElementById("daqstate").innerHTML ="NONE";
+	    return "NONE";
+    }
+    let jstate = await spyneCommand(daqinfo.url, "STATE", {daq:daqinfo.name});
     console.log(jstate)
     if (jstate.hasOwnProperty("state")){
-	document.getElementById("daqstate").innerHTML = jstate["state"];
-	return jstate["state"];
+	    document.getElementById("daqstate").innerHTML = jstate["state"];
+	    return jstate["state"];
     }
     else
     {
-	document.getElementById("daqstate").innerHTML ="NONE";
-	return "NONE";
+	    document.getElementById("daqstate").innerHTML ="NONE";
+	    return "NONE";
     }
 }
 async function CreateDaq() {
-
-    // create the daq in webdaq
-    let daqhost = document.getElementById("daq_host").value;
-    let daqport = document.getElementById("daq_port").value;
-
-
-    const origdaq = 'http://' + daqhost + ':' + daqport;
-
-    let pdaq = {
-        daq: daqname,
+    if (!daqinfo.registered){
+        document.getElementById("daqstate").innerHTML ="NONE";
+        alert("No DAQ registered");
+	    return "NONE";
     }
-    let jdaq = await spyneCommand(origdaq, "CREATE", pdaq);
+    
+    let jdaq = await spyneCommand(daqinfo.url, "CREATE", {daq:daqinfo.name});
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> CREATE on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(await getState());
+    await getState();
 }
 async function InitDaq() {
-
-    // create the daq in webdaq
-    let daqhost = document.getElementById("daq_host").value;
-    let daqport = document.getElementById("daq_port").value;
-    let rdelay = document.getElementById("delay_reset").value;
-
-
-    const origdaq = 'http://' + daqhost + ':' + daqport;
-
-    let pdaq = {
-        daq: daqname,
-        delay: rdelay
+    if (!daqinfo.registered){
+        document.getElementById("daqstate").innerHTML ="NONE";
+        alert("No DAQ registered");
+	    return "NONE";
     }
-    let jdaq = await spyneCommand(origdaq, "INITIALISE", pdaq);
+    // create the daq in webdaq
+    let rdelay = document.getElementById("delay_reset").value;
+    let jdaq = await spyneCommand(daqinfo.url, "INITIALISE", {daq:daqinfo.name,delay:rdelay});
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> INITIALISE on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(await getState());
+    await getState();
 
 }
 async function ConfigureDaq() {
-
-    // create the daq in webdaq
-    let daqhost = document.getElementById("daq_host").value;
-    let daqport = document.getElementById("daq_port").value;
-
-
-    const origdaq = 'http://' + daqhost + ':' + daqport;
-
-    let pdaq = {
-        daq: daqname
+    if (!daqinfo.registered){
+        document.getElementById("daqstate").innerHTML ="NONE";
+        alert("No DAQ registered");
+	    return "NONE";
     }
-    let jdaq = await spyneCommand(origdaq, "CONFIGURE", pdaq);
+    
+    let jdaq = await spyneCommand(daqinfo.url, "CONFIGURE", {daq:daqinfo.name});
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> CONFIGURE on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(await getState());
+    await getState();
+    
 
 }
 async function StartDaq() {
-
-    // create the daq in webdaq
-    let daqhost = document.getElementById("daq_host").value;
-    let daqport = document.getElementById("daq_port").value;
-
-
-    const origdaq = 'http://' + daqhost + ':' + daqport;
-    let rcom = prompt("Enter a comment for this run", "Chez les papous y'a des papous a pou...");
-    let pdaq = {
-        daq: daqname,
-        comment: rcom
+    if (!daqinfo.registered){
+        document.getElementById("daqstate").innerHTML ="NONE";
+        alert("No DAQ registered");
+	    return "NONE";
     }
-    let jdaq = await spyneCommand(origdaq, "START", pdaq);
+    let rcom = prompt("Enter a comment for this run", "Chez les papous y'a des papous a poux...");
+    let jdaq = await spyneCommand(daqinfo.url, "START", {daq:daqinfo.name,comment:rcom});
     console.log(jdaq);
-    document.getElementById("messages").innerHTML += "<span> CONFIGURE on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(await getState());
+    document.getElementById("messages").innerHTML += "<span> START on " + daqname + "/" + daqloc + "</span><br>";
+    await getState();
+   
 
 }
 
 async function StopDaq() {
-
-    // create the daq in webdaq
-    let daqhost = document.getElementById("daq_host").value;
-    let daqport = document.getElementById("daq_port").value;
-
-
-    const origdaq = 'http://' + daqhost + ':' + daqport;
-
-    let pdaq = {
-        daq: daqname
+    if (!daqinfo.registered){
+        document.getElementById("daqstate").innerHTML ="NONE";
+        alert("No DAQ registered");
+	    return "NONE";
     }
-    let jdaq = await spyneCommand(origdaq, "STOP", pdaq);
+    
+    let jdaq = await spyneCommand(daqinfo.url, "STOP", {daq:daqinfo.name});
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> STOP on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(await getState());
-
+    await getState();
 }
 async function DestroyDaq() {
-
-    // create the daq in webdaq
-    let daqhost = document.getElementById("daq_host").value;
-    let daqport = document.getElementById("daq_port").value;
-
-
-    const origdaq = 'http://' + daqhost + ':' + daqport;
-
-    let pdaq = {
-        daq: daqname
+    if (!daqinfo.registered){
+        document.getElementById("daqstate").innerHTML ="NONE";
+        alert("No DAQ registered");
+	    return "NONE";
     }
-    let jdaq = await spyneCommand(origdaq, "DESTROY", pdaq);
+    
+    let jdaq = await spyneCommand(daqinfo.url, "DESTROY", {daq:daqinfo.name});
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> DESTROY on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(await getState());
+    await getState();
+    
 
 }
 async function RemoveDaq() {
-
-    // create the daq in webdaq
-    let daqhost = document.getElementById("daq_host").value;
-    let daqport = document.getElementById("daq_port").value;
-
-
-    const origdaq = 'http://' + daqhost + ':' + daqport;
-
-    let pdaq = {
-        daq: daqname
+    if (!daqinfo.registered){
+        document.getElementById("daqstate").innerHTML ="NONE";
+        alert("No DAQ registered");
+	    return "NONE";
     }
-    let jdaq = await spyneCommand(origdaq, "JC_DESTROY", pdaq);
+    
+    let jdaq = await spyneCommand(daqinfo.url, "JC_DESTROY", {daq:daqinfo.name});
     console.log(jdaq);
-    registered=null;
     document.getElementById("messages").innerHTML += "<span> REMOVE on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(await getState());
-
+    registered=null;
+    daqinfo.registered=false;
+    await getState();
 }
 
 async function ResumeDaq() {
-
-    // create the daq in webdaq
-    let daqhost = document.getElementById("daq_host").value;
-    let daqport = document.getElementById("daq_port").value;
-
-
-    const origdaq = 'http://' + daqhost + ':' + daqport;
-
-    let pdaq = {
-        daq: daqname
+    if (!daqinfo.registered){
+        document.getElementById("daqstate").innerHTML ="NONE";
+        alert("No DAQ registered");
+	    return "NONE";
     }
-    let jdaq = await spyneCommand(origdaq, "RESUME", pdaq);
+    
+    let jdaq = await spyneCommand(daqinfo.url, "RESUME", {daq:daqinfo.name});
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> RESUME on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(await getState());
+    await getState();
 
 }
 
 
 async function PauseDaq() {
-
-    // create the daq in webdaq
-    let daqhost = document.getElementById("daq_host").value;
-    let daqport = document.getElementById("daq_port").value;
-
-
-    const origdaq = 'http://' + daqhost + ':' + daqport;
-
-    let pdaq = {
-        daq: daqname
+    if (!daqinfo.registered){
+        document.getElementById("daqstate").innerHTML ="NONE";
+        alert("No DAQ registered");
+	    return "NONE";
     }
-    let jdaq = await spyneCommand(origdaq, "PAUSE", pdaq);
+    
+    let jdaq = await spyneCommand(daqinfo.url, "PAUSE", {daq:daqinfo.name});
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> PAUSE on " + daqname + "/" + daqloc + "</span><br>";
-    console.log(await getState());
+    await getState();
+   
 
 }
 async function processCommand(appname, methodname, parameters) {
-    // create the daq in webdaq
-    let daqhost = document.getElementById("daq_host").value;
-    let daqport = document.getElementById("daq_port").value;
-
-
-    const origdaq = 'http://' + daqhost + ':' + daqport;
+    if (!daqinfo.registered){
+        document.getElementById("daqstate").innerHTML ="NONE";
+        alert("No DAQ registered");
+	    return "NONE";
+    }
 
     let pdaq = {
-        daq: daqname,
+        daq: daqinfo.name,
         method: methodname,
         app: appname,
         params: JSON.stringify(parameters)
     }
-    jdaq = await spyneCommand(origdaq, "PROCESS", pdaq);
+    jdaq = await spyneCommand(daqinfo.url, "PROCESS", pdaq);
     console.log(jdaq);
     return jdaq;
 }
@@ -409,49 +375,43 @@ async function SetVthTime() {
 
 }
 async function LutCalib() {
-
-    // create the daq in webdaq
-    let daqhost = document.getElementById("daq_host").value;
-    let daqport = document.getElementById("daq_port").value;
-
-
-    const origdaq = 'http://' + daqhost + ':' + daqport;
-    let pdaq = {
-        daq: daqname
-    };
-    let jstate = await spyneCommand(origdaq, "STATE", pdaq);
-    console.log(jstate)
-    if (jstate["state"] != "INITIALISED") {
+    if (!daqinfo.registered){
+        document.getElementById("daqstate").innerHTML ="NONE";
+        alert("No DAQ registered");
+	    return "NONE";
+    }
+   
+    let read_state = await getState();
+    console.log(read_state)
+    if (read_state != "INITIALISED") {
         alert("DAQ must be initialised to make FEBV1 Lut calibration");
         return;
     }
     pdaq = {
-        daq: daqname,
+        daq: daqinfo.name,
         tdc: document.getElementById("tdc_number").value,
         nchannels: document.getElementById("tdc_channels").value
     }
-    let jdaq = await spyneCommand(origdaq, "LUTCALIB", pdaq);
+    let jdaq = await spyneCommand(daqinfo.url, "LUTCALIB", pdaq);
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> LUTCALIB on " + daqname + "/" + daqloc + "</span><br>";
 
 
 }
 async function LutMask() {
-
-    // create the daq in webdaq
-    let daqhost = document.getElementById("daq_host").value;
-    let daqport = document.getElementById("daq_port").value;
-
-
-    const origdaq = 'http://' + daqhost + ':' + daqport;
-
+    if (!daqinfo.registered){
+        document.getElementById("daqstate").innerHTML ="NONE";
+        alert("No DAQ registered");
+	    return "NONE";
+    }
+    
     let pdaq = {
-        daq: daqname,
+        daq: daqinfo.name,
         tdc: document.getElementById("tdc_number").value,
         mask: document.getElementById("tdc_mask").value,
         feb: document.getElementById("tdc_feb").value
     }
-    let jdaq = await spyneCommand(origdaq, "LUTMASK", pdaq);
+    let jdaq = await spyneCommand(daqinfo.url, "LUTMASK", pdaq);
     console.log(jdaq);
     document.getElementById("messages").innerHTML += "<span> LUTMASK on " + daqname + "/" + daqloc + "</span><br>";
 
