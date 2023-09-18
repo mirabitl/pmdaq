@@ -127,6 +127,12 @@ async function getConfigurations() {
         let jdaq = await spyneCommand(daqinfo.url, "REGISTERDAQ", pdaq);
         console.log(jdaq);
         document.getElementById("messages").innerHTML += "<span> Connecting to " + daqhost + "on port " + daqport + "</span><br>";
+        for (app of daqinfo.config["content"]["apps"]) {
+            document.getElementById("messages").innerHTML += "<span> Application " + app["name"] + " instance " + app["instance"] + " found </span><br>"; 
+            mqtt_topic=daqinfo.state+"/"+app["name"]+"/"+app["instance"]+"/status";
+            document.getElementById("messages").innerHTML += "<span> One can subscribe "+mqtt_topic+ "  </span><br>"; 
+
+        }
 	registered=daqname;
     daqinfo.registered=true;
     };
