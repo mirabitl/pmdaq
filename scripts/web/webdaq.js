@@ -312,6 +312,51 @@ async function PauseDaq() {
    
 
 }
+
+async function builderStatus() {
+    if (!daqinfo.registered){
+        document.getElementById("daqstate").innerHTML ="NONE";
+        alert("No DAQ registered");
+	    return "NONE";
+    }
+    
+    let jdaq = await spyneCommand(daqinfo.url, "BUILDERSTATUS", {daq:daqinfo.name});
+    console.log(jdaq);
+    document.getElementById("messages").innerHTML += "<span> BUILDERSTATUS on " + daqname + "/" + daqloc + "</span><br>";
+    await getState();
+   
+
+}
+async function sourceStatus() {
+    if (!daqinfo.registered){
+        document.getElementById("daqstate").innerHTML ="NONE";
+        alert("No DAQ registered");
+	    return "NONE";
+    }
+    
+    let jdaq = await spyneCommand(daqinfo.url, "SOURCESTATUS", {daq:daqinfo.name});
+    console.log(jdaq);
+    document.getElementById("messages").innerHTML += "<span> SOURCESTATUS on " + daqname + "/" + daqloc + "</span><br>";
+    await getState();
+   
+
+}
+async function triggerStatus() {
+    if (!daqinfo.registered){
+        document.getElementById("daqstate").innerHTML ="NONE";
+        alert("No DAQ registered");
+	    return "NONE";
+    }
+    
+    let jdaq = await spyneCommand(daqinfo.url, "TRIGGERSTATUS", {daq:daqinfo.name});
+    console.log(jdaq);
+    document.getElementById("messages").innerHTML += "<span> TRIGGERSTATUS on " + daqname + "/" + daqloc + "</span><br>";
+    await getState();
+   
+
+}
+
+
 async function processCommand(appname, methodname, parameters) {
     if (!daqinfo.registered){
         document.getElementById("daqstate").innerHTML ="NONE";
