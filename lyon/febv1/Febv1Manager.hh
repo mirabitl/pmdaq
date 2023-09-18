@@ -96,7 +96,7 @@ public:
 
   void configurePR2();
 
-
+  web::json::value& build_status();
 private:
   Febv1ConfigAccess *_tca;
 
@@ -117,5 +117,6 @@ private:
   int _sc_mode,_sc_thmin,_sc_thmax,_sc_step;
   uint32_t _sc_spillon,_sc_spilloff,_sc_ntrg,_sc_mask;
   bool _sc_running;
+  uint32_t _running_mode;
   std::thread* g_scurve;
 };

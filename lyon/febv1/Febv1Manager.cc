@@ -14,7 +14,7 @@ using namespace mpi;
 #include <arpa/inet.h>
 #include "stdafx.hh"
 
-Febv1Manager::Febv1Manager() : _context(NULL), _tca(NULL), _mpi(NULL), _sc_running(false), _running(false), g_scurve(NULL), _sc_spillon(200), _sc_spilloff(100), _sc_ntrg(50),_sc_mask(0xFFFFFFFF)
+Febv1Manager::Febv1Manager() : _context(NULL), _tca(NULL), _mpi(NULL), _sc_running(false), _running(false), g_scurve(NULL), _sc_spillon(200), _sc_spilloff(100), _sc_ntrg(50),_sc_mask(0xFFFFFFFF),_running_mode(0)
 {
   ;
 }
@@ -71,19 +71,39 @@ void Febv1Manager::end()
     g_scurve->join();
     delete g_scurve;
     g_scurve = NULL;
+    _running_mode=0;
   }
   //Stop listening
   if (_mpi != NULL)
     _mpi->terminate();
 }
+web::json::value& Febv1Manager::build_status()
+{
+  web::json::value jl;
+  uint32_t mb = 0;
+  for (auto x : _mpi->boards())
+  {
 
+    json::value jt;
+    jt["detid"] = json::value::number(x.second->data()->detectorId());
+    jt["sourceid"] = json::value::number(x.second->data()->difId());
+    jt["gtc"] = json::value::number(x.second->data()->gtc());
+    jt["abcid"] = json::value::number(x.second->data()->abcid());
+    jt["event"] = json::value::number(x.second->data()->event());
+    jt["triggers"] = json::value::number(x.second->data()->triggers());
+    jt["mode"]=_running_mode;
+    jl[mb++] = jt;
+  }
+  
+  return jl;
+}
 void Febv1Manager::c_status(http_request m)
 {
   PM_INFO(_logFebv1, "Status CMD called ");
   auto par = json::value::object();
 
   par["STATUS"] = json::value::string(U("DONE"));
-
+  /*
   json::value jl;
   uint32_t mb = 0;
   for (auto x : _mpi->boards())
@@ -98,6 +118,8 @@ void Febv1Manager::c_status(http_request m)
     jt["triggers"] = json::value::number(x.second->data()->triggers());
     jl[mb++] = jt;
   }
+  */
+  auto jl=build_status();
   par["TDCSTATUS"] = jl;
   mqtt_publish("status",jl);
   Reply(status_codes::OK, par);
@@ -310,6 +332,8 @@ void Febv1Manager::c_setCalibrationMask(http_request m)
   PM_INFO(_logFebv1, "SetCalibrationMask called  with channel " << channel);
   this->setCalibrationMask(mask);
   par["CMASK"] = json::value::number(mask);
+  _running_mode=100+channel;
+  mqtt_publish("status",build_status());
   Reply(status_codes::OK, par);
 }
 void Febv1Manager::c_setMeasurementMask(http_request m)
@@ -333,6 +357,8 @@ void Febv1Manager::c_setMeasurementMask(http_request m)
   PM_INFO(_logFebv1, "c_setMeasurementMask called  with mask " << smask << " ->" << std::hex << mask << std::dec << " On FEB " << feb);
   this->setMeasurementMask(mask, feb);
   par["MMASK"] = json::value::number(mask);
+  _running_mode=0;
+  mqtt_publish("status",build_status());
   Reply(status_codes::OK, par);
 }
 void Febv1Manager::c_setDelay(http_request m)
@@ -956,6 +982,8 @@ void Febv1Manager::ScurveStep(std::string mdcc, std::string builder, int thmin, 
       break;
     utils::sendCommand(mdcc, "PAUSE", json::value::null());
     this->setVthTime(thmax - vth * step);
+    _running_mode=1000+vth;
+    mqtt_publish("status",build_status());
     PMF_INFO(_logFebv1, "VTH Step " << thmax - vth * step);
     int firstEvent = 0;
 #undef USEFEBS
@@ -1053,6 +1081,8 @@ void Febv1Manager::Scurve(int mode, int thmin, int thmax, int step)
     //for (int i=0;i<16;i++) mask|=(1<<firmware[i]);
     //this->setMask(mask,0xFF);
     this->ScurveStep(mdccUrl, builderUrl, thmin, thmax, step);
+    _running_mode=0;
+    mqtt_publish("status",build_status());
     return;
   }
   if (mode == 511)
@@ -1061,6 +1091,8 @@ void Febv1Manager::Scurve(int mode, int thmin, int thmax, int step)
     //for (int i=0;i<16;i++) mask|=(1<<firmware[i]);
     this->setMask(_sc_mask,0xFF);
     this->ScurveStep(mdccUrl, builderUrl, thmin, thmax, step);
+    _running_mode=0;
+    mqtt_publish("status",build_status());
     return;
   }
   if (mode == 1023)
@@ -1073,11 +1105,16 @@ void Febv1Manager::Scurve(int mode, int thmin, int thmax, int step)
       this->setMask(mask, 0xFF);
       this->ScurveStep(mdccUrl, builderUrl, thmin, thmax, step);
     }
+    _running_mode=0;
+    mqtt_publish("status",build_status());
     return;
   }
   mask = (1 << mode);
   this->setMask(mask, 0xFF);
   this->ScurveStep(mdccUrl, builderUrl, thmin, thmax, step);
+  _running_mode=0;
+  mqtt_publish("status",build_status());
+  return;
 }
 
 extern "C"
