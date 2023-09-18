@@ -96,7 +96,7 @@ public:
 
   void configurePR2();
 
-  web::json::value& build_status();
+  web::json::value build_status();
 private:
   Febv1ConfigAccess *_tca;
 

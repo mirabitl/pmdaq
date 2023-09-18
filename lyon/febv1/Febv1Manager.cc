@@ -77,7 +77,7 @@ void Febv1Manager::end()
   if (_mpi != NULL)
     _mpi->terminate();
 }
-web::json::value& Febv1Manager::build_status()
+web::json::value Febv1Manager::build_status()
 {
   web::json::value jl;
   uint32_t mb = 0;
