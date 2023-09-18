@@ -39,7 +39,7 @@ var daqinfo={
     config:null,
     location:null,
     url:null,
-    registered:false;
+    registered:false
 };
 
 async function getConfigurations() {
