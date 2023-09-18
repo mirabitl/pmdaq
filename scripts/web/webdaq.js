@@ -34,6 +34,7 @@ var pnsdaq = null;
 var daqloc = null;
 var daqinfo={
     name:null,
+    state:null,
     version:0,
     pns:null,
     config:null,
@@ -105,8 +106,9 @@ async function getConfigurations() {
         else
             pnsdaq = prompt("Enter the PMDAQ name server", "lyocmsmu03");
         daqloc = prompt("Enter the setup name", "???");
-        daqinfo.name=vc[0];
-        daqinfo.version=int(vc[1]);
+        daqinfo.name=daqname;
+        daqinfo.state=vc[0];
+        daqinfo.version=parseInt(vc[1]);
         daqinfo.pns=pnsname;
         daqinfo.location=daqloc;
         // create the daq in webdaq
