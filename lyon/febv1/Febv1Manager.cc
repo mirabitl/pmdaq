@@ -91,7 +91,7 @@ web::json::value& Febv1Manager::build_status()
     jt["abcid"] = json::value::number(x.second->data()->abcid());
     jt["event"] = json::value::number(x.second->data()->event());
     jt["triggers"] = json::value::number(x.second->data()->triggers());
-    jt["mode"]=_running_mode;
+    jt["mode"]=json::value::number(_running_mode);
     jl[mb++] = jt;
   }
   
@@ -326,14 +326,14 @@ void Febv1Manager::c_setCalibrationMask(http_request m)
   //   if (it2->first.compare("value") == 0)
   //     mask = std::stol(it2->second);
   uint32_t channel = utils::queryIntValue(m, "value", 0);
-  
+  _running_mode=100+channel;
+  mqtt_publish("status",build_status());
   uint64_t mask =((uint64_t) 1<< channel);
   PM_INFO(_logFebv1, "SetCalibrationMask called  with mask " << std::hex << mask << std::dec);
   PM_INFO(_logFebv1, "SetCalibrationMask called  with channel " << channel);
   this->setCalibrationMask(mask);
   par["CMASK"] = json::value::number(mask);
-  _running_mode=100+channel;
-  mqtt_publish("status",build_status());
+  
   Reply(status_codes::OK, par);
 }
 void Febv1Manager::c_setMeasurementMask(http_request m)
