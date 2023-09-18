@@ -51,8 +51,8 @@ class pmdaqControl(daqrc.daqControl):
 
     def TriggerStatus(self,verbose=False):
         pn=None
-        if ("lyon_mbmdcc" in self.session.apps): 
-            pn="lyon_mbmdcc"
+        if ("lyon_mdcc" in self.session.apps): 
+            pn="lyon_mdcc"
         if ("lyon_mbmdcc" in self.session.apps): 
             pn="lyon_mbmdcc"
         if ("lyon_ipdc" in self.session.apps): 
