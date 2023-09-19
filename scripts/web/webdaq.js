@@ -14,7 +14,10 @@ function typeComment(e,divname){  // Execute this function on enter key
     }
     
 }
-
+function setComment(e,divname){
+    document.getElementById(divname).innerHTML="<pre>"+e+"</pre>";
+    
+}
 function showlog(jcnt)
 {
     typeComment(jcnt,"logmessages");
@@ -616,7 +619,28 @@ function onConnectionLost(responseObject) {
 
 function onMessageArrived(message) {
     console.log("OnMessageArrived: " + message.payloadString);
-    typeComment("Topic:" + message.destinationName + "| Message : " + message.payloadString ,"messages");
+    vc = message.destinationName.split("/");
+    if (vc[1]=="lyon_febv1" && vc[3]=="status")
+    {
+	jfebs=JSON.parse( message.payloadString);
+	let  rmode=jfebs[0]["mode"]
+	if (rmode!=0){
+	    if (rmode&1)
+	    {
+		let chan=(rmode>>4)&0xFFFF;
+		setComment("LUT calibration Channel "+chan,"calmessages");
+	    }
+	    if (rmode&2)
+	    {
+		let chan=(rmode>>4)&0xFFF;
+		let step=(rmode>>16)&0xFFF;
+		setComment("SCURVE Channel "+chan+ " step "+step,"calmessages");
+	
+	    }
+	}
+    }
+    else
+	typeComment("Topic:" + message.destinationName + "| Message : " + message.payloadString ,"messages");
     jmsg = JSON.parse(message.payloadString);
     console.log(jmsg);
     console.log(message.destinationName);

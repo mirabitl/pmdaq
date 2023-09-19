@@ -982,7 +982,7 @@ void Febv1Manager::ScurveStep(std::string mdcc, std::string builder, int thmin, 
       break;
     utils::sendCommand(mdcc, "PAUSE", json::value::null());
     this->setVthTime(thmax - vth * step);
-    _running_mode=2+(_sc_mode<<4)+(vth<<16);
+    _running_mode=2+((_sc_mode&0xFFF)<<4)+((vth&0XFFF)<<16);
     mqtt_publish("status",build_status());
     PMF_INFO(_logFebv1, "VTH Step " << thmax - vth * step);
     int firstEvent = 0;
