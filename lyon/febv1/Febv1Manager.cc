@@ -326,7 +326,7 @@ void Febv1Manager::c_setCalibrationMask(http_request m)
   //   if (it2->first.compare("value") == 0)
   //     mask = std::stol(it2->second);
   uint32_t channel = utils::queryIntValue(m, "value", 0);
-  _running_mode=100+channel;
+  _running_mode=1+(channel<<4);
   mqtt_publish("status",build_status());
   uint64_t mask =((uint64_t) 1<< channel);
   PM_INFO(_logFebv1, "SetCalibrationMask called  with mask " << std::hex << mask << std::dec);
@@ -982,7 +982,7 @@ void Febv1Manager::ScurveStep(std::string mdcc, std::string builder, int thmin, 
       break;
     utils::sendCommand(mdcc, "PAUSE", json::value::null());
     this->setVthTime(thmax - vth * step);
-    _running_mode=1000+vth;
+    _running_mode=2+(_sc_mode<<4)+(vth<<16);
     mqtt_publish("status",build_status());
     PMF_INFO(_logFebv1, "VTH Step " << thmax - vth * step);
     int firstEvent = 0;
