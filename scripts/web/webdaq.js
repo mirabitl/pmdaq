@@ -21,6 +21,7 @@ function showlog(jcnt)
     //document.getElementById("logmessages").innerHTML += "<span>============================================></span><br>";
     //document.getElementById("logmessages").innerHTML += "<span>"+jcnt+ "</span><br>";
 }
+var verboselog=true;
 async function spyneCommand(orig, command, pdict) {
     url = orig + "/" + command
     if (pdict != null) {
@@ -32,7 +33,8 @@ async function spyneCommand(orig, command, pdict) {
         url = url.substring(0, url.length - 1);
     }
     //alert(url);
-    showlog("Calling "+url);
+    if (verboselog)
+	showlog("Calling "+url);
 
     try {
         let res = await fetch(url);
@@ -40,7 +42,8 @@ async function spyneCommand(orig, command, pdict) {
 	
         vcm = command.split("?")
         let jcnt = jmsg[vcm[0] + "Response"][vcm[0] + "Result"][0];
-	showlog(jcnt);
+	if (verboselog)
+	    showlog(jcnt);
         return JSON.parse(jcnt);
     } catch (error) {
         console.log(error);
@@ -185,9 +188,11 @@ async function refreshStatus(deadline)
 	requestIdleCallback(refreshStatus);
 	return;
     }
+    verboselog=false;
     console.log("Refreshing ... ");
     await getState();
     last_refresh=Date.now();
+    verboselog=true;
     requestIdleCallback(refreshStatus);
 }
 async function getState() {
