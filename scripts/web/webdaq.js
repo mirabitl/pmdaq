@@ -160,6 +160,7 @@ async function getConfigurations() {
             //document.getElementById("messages").innerHTML += "<span> One can subscribe "+mqtt_topic+ "  </span><br>"; 
 
         }
+	subscribeMqtt();
 	registered=daqname;
     daqinfo.registered=true;
     };
@@ -193,7 +194,10 @@ async function refreshStatus(deadline)
     }
     verboselog=false;
     console.log("Refreshing ... ");
-    await getState();
+    let state=await getState();
+    if (state=="RUNNING")
+	await spyneCommand(daqinfo.url, "BUILDERSTATUS", {daq:daqinfo.name});
+	
     last_refresh=Date.now();
     verboselog=true;
     requestIdleCallback(refreshStatus);
@@ -639,6 +643,14 @@ function onMessageArrived(message) {
 	    }
 	}
     }
+    else
+	if (vc[1]=="evb_builder" && vc[3]=="status"){
+	    jevb=JSON.parse( message.payloadString);
+	    let run=jevb["answer"]["run"];
+	    let event=jevb["answer"]["event"];
+	    document.getElementById("daqrun").innerHTML=run;
+	    document.getElementById("daqevent").innerHTML=event;
+	}
     else
 	typeComment("Topic:" + message.destinationName + "| Message : " + message.payloadString ,"messages");
     jmsg = JSON.parse(message.payloadString);
