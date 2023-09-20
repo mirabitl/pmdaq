@@ -633,18 +633,41 @@ function onMessageArrived(message) {
 	if (run_mode!=0){
 	    if (run_mode&1)
 	    {
-		let chan=(run_mode>>4)&0xFFFF;
+		let chan=(run_mode>>4)&0xFF;
 		setComment("LUT calibration Channel "+chan,"calmessages");
 	    }
 	    if (run_mode&2)
 	    {
-		let chan=(run_mode>>4)&0xFFF;
-		let step=(run_mode>>16)&0xFFF;
+		let chan=(run_mode>>4)&0xFF;
+		let step=(run_mode>>12)&0xFFF;
 		setComment("SCURVE Channel "+chan+ " step "+step,"calmessages");
 	
 	    }
 	}
     }
+    else
+	if (vc[1]=="lyon_pmr" && vc[3]=="status") {
+	    jprms=JSON.parse( message.payloadString);
+	    let  run_mode=jpmrs[0]["mode"]
+	    if (run_mode!=0){
+		if (run_mode&2)
+		{
+		    let chan=(run_mode>>4)&0xFF;
+		    let step=(run_mode>>12)&0xFFF;
+		    setComment("SCURVE Channel "+chan+ " step "+step,"calmessages");
+		    
+		}
+		if (run_mode&4)
+		{
+		    let chan=(run_mode>>4)&0xFF;
+		    let thre=(run_mode>>12)&0xFFF;
+		    let step=(run_mode>>24)&0xFFF;
+		    setComment("Gain curve Channel "+chan+" Threshold "+thre+ " step "+step,"calmessages");
+		    
+		}
+	    }
+	}
+
     else
 	if (vc[1]=="evb_builder" && vc[3]=="status"){
 	    last_status=Date.now();

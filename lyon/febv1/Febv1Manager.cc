@@ -983,7 +983,7 @@ void Febv1Manager::ScurveStep(std::string mdcc, std::string builder, int thmin, 
     utils::sendCommand(mdcc, "PAUSE", json::value::null());
     uint32_t threff=(thmax - vth * step);
     this->setVthTime(thmax - vth * step);
-    _running_mode=2+((_sc_channel&0xFFF)<<4)+((threff&0XFFF)<<16);
+    _running_mode=2+((_sc_channel&0xFF)<<4)+((threff&0XFFF)<<12);
     mqtt_publish("status",build_status());
     PMF_INFO(_logFebv1, "VTH Step " << thmax - vth * step);
     int firstEvent = 0;
@@ -1080,6 +1080,7 @@ void Febv1Manager::Scurve(int mode, int thmin, int thmax, int step)
   if (mode == 255)
   {
 
+    _sc_channel=0xFE;
     //for (int i=0;i<16;i++) mask|=(1<<firmware[i]);
     //this->setMask(mask,0xFF);
     

@@ -445,18 +445,14 @@ void PmrManager::c_downloadDB(http_request m)
   par["DBSTATE"] = web::json::value::string(dbstate);
   Reply(status_codes::OK, par);
 }
-
-void PmrManager::c_status(http_request m)
+web::json::value PmrManager::build_status()
 {
-  auto par = json::value::object();
-  int32_t rc = 1;
-  std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
   web::json::value array_slc;
   uint32_t nd = 0;
-
+  std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
   for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
     {
-
+      
       web::json::value ds;
       ds["detid"] = json::value::number(it->second->detectorId());
       ds["state"] = json::value::string(U(it->second->state()));
@@ -468,11 +464,20 @@ void PmrManager::c_status(http_request m)
       ds["published"] = json::value::number(it->second->status()->published);
       ds["bytes"] = json::value::number(it->second->status()->bytes);
       ds["host"] = json::value::string(U(std::string((it->second->status()->host))));
+      ds["mode"]=json::value::number(_running_mode);
       array_slc[nd++] = ds;
     }
+  return array_slc;
+}
+void PmrManager::c_status(http_request m)
+{
+  auto par = json::value::object();
+  int32_t rc = 1;
+
+  web::json::value array_slc=build_status();
   par["STATUS"] = web::json::value::string(U("DONE"));
   par["DIFLIST"] = array_slc;
-  mqtt_publish("status",par);
+  mqtt_publish("status",array_slc);
   Reply(status_codes::OK, par);
 
   return;
@@ -633,7 +638,7 @@ void PmrManager::destroy(http_request m)
   return;
 }
 
-PmrManager::PmrManager() : _running(false), _sc_running(false) { ; }
+PmrManager::PmrManager() : _running(false), _sc_running(false),_running_mode(0) { ; }
 
 void PmrManager::initialise()
 {
@@ -678,6 +683,7 @@ void PmrManager::end()
     {
       _sc_running = false;
       g_scurve.join();
+      _running_mode=0;
     }
   // Stop listening
   std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
@@ -784,7 +790,8 @@ void PmrManager::ScurveStep(std::string mdccUrl, std::string builderUrl, int thm
       if (_sc_level == 2)
 	this->setThresholds(512, 512, threshold);
       ::usleep(2000);
-
+      _running_mode=2+((_sc_channel&0xFF)<<4)+((threshold&0XFFF)<<12);
+      mqtt_publish("status",build_status());
       web::json::value h;
       web::json::value ph;
       h[0] = json::value::number(2);
@@ -875,16 +882,19 @@ void PmrManager::Scurve(int mode, int thmin, int thmax, int step)
   if (builder.compare("") == 0)
     return;
   uint64_t mask = 0;
-
+  _sc_channel=mode;
   // All channel pedestal
   if (mode == 255)
     {
-
+      _sc_channel=0xFE;
       // for (int i=0;i<64;i++) mask|=(1<<i);
       mask = 0xFFFFFFFFFFFFFFFF;
       this->setAllMasks(mask);
       this->setCTEST(0);
       this->ScurveStep(mdcc, builder, thmin, thmax, step);
+      _running_mode=0;
+      mqtt_publish("status",build_status());
+
       return;
     }
 
@@ -898,10 +908,14 @@ void PmrManager::Scurve(int mode, int thmin, int thmax, int step)
 	  PMF_INFO(_logPmr, "Step HR2 " << i << "  channel" << i << std::dec);
 
 	  // std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
+	  _sc_channel=i;
 	  this->setAllMasks(mask);
 	  this->setCTEST(mask);
 	  this->ScurveStep(mdcc, builder, thmin, thmax, step);
 	}
+      _running_mode=0;
+      mqtt_publish("status",build_status());
+
       return;
     }
 
@@ -916,9 +930,12 @@ void PmrManager::Scurve(int mode, int thmin, int thmax, int step)
 	  // std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
 	  this->setCTEST(mask);
 	  this->setAllMasks(0xFFFFFFFFFFFFFFFF);
-
+	  _sc_channel=i;
 	  this->ScurveStep(mdcc, builder, thmin, thmax, step);
 	}
+      _running_mode=0;
+      mqtt_publish("status",build_status());
+
       return;
     }
 
@@ -929,6 +946,9 @@ void PmrManager::Scurve(int mode, int thmin, int thmax, int step)
   this->setAllMasks(mask);
   this->setCTEST(mask);
   this->ScurveStep(mdcc, builder, thmin, thmax, step);
+  _running_mode=0;
+  mqtt_publish("status",build_status());
+
 }
 
 void PmrManager::c_scurve(http_request m)
@@ -1000,7 +1020,9 @@ void PmrManager::GainCurveStep(std::string mdccUrl,std::string builderUrl,int gm
       ::usleep(100000);
       this->setThresholds(threshold, 512, 512);
       ::usleep(100000);
-      
+      _running_mode=4+((_sc_channel&0xFF)<<4)+((threshold&0XFFF)<<12)+((g&0XFFF)<<24);
+      mqtt_publish("status",build_status());
+
       web::json::value h;
       web::json::value ph;
       h[0] = json::value::number(3);
@@ -1096,16 +1118,19 @@ void PmrManager::GainCurve(int mode,int gmin,int gmax,int step,int threshold)
   if (builder.compare("")==0) return;
 
   uint64_t mask=0;
-
+  _sc_channel=mode;
   // All channel pedestal
   if (mode==255)
     {
-
+      _sc_channel=0xFE;
 
       mask=0xFFFFFFFFFFFFFFFF;
       this->setAllMasks(mask);
       this->setCTEST(0);
       this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
+      _running_mode=0;
+      mqtt_publish("status",build_status());
+
       return;
       
     }
@@ -1118,12 +1143,15 @@ void PmrManager::GainCurve(int mode,int gmin,int gmax,int step,int threshold)
 	{
 	  mask=(1ULL<<i);
 	  std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
-
+	  _sc_channel=i;
 	  this->setCTEST(mask);
 	  this->setAllMasks(0xFFFFFFFFFFFFFFFF);
 	  this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
 	  //this->ScurveStep(mdcc,builder,thmin,thmax,step);
 	}
+      _running_mode=0;
+      mqtt_publish("status",build_status());
+
       return;
     }
   if (mode==1023)
@@ -1135,10 +1163,14 @@ void PmrManager::GainCurve(int mode,int gmin,int gmax,int step,int threshold)
 	  std::cout<<"Step HR2 CTEST "<<i<<" channel "<<i<<std::endl;
 	  this->setAllMasks(mask);
 	  this->setCTEST(mask);
+	  _sc_channel=i;
 	  this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
 	  //this->ScurveStep(mdcc,builder,thmin,thmax,step);
 	}
       return;
+      _running_mode=0;
+      mqtt_publish("status",build_status());
+
     }
 
   // One channel pedestal
@@ -1147,7 +1179,9 @@ void PmrManager::GainCurve(int mode,int gmin,int gmax,int step,int threshold)
   this->setCTEST(mask);
   //this->ScurveStep(mdcc,builder,thmin,thmax,step);
   this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
-  
+  _running_mode=0;
+  mqtt_publish("status",build_status());
+
 }
 
 
