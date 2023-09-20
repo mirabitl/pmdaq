@@ -1,0 +1,11 @@
+[Unit]
+Description = Starting DAQ access service
+After = network.target
+
+[Service]
+ExecStart = /usr/local/pmdaq/bin/daq_webaccess_service_daemon
+Restart=always
+RestartSec=20
+
+[Install]
+WantedBy = multi-user.target

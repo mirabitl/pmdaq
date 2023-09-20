@@ -1,0 +1,24 @@
+#!/bin/bash 
+
+
+
+PIDFILE="/var/log/mg_webaccess.log"
+
+PATH="/sbin:/bin:/usr/sbin:/usr/bin" #Ne pas toucher
+
+#export DAQREPO=/home/acqilc/feb-backend-emulator/Python_project
+#export DBREPO=/home/acqilc/febv2_access
+#export LD_LIBRARY_PATH=/opt/cactus/lib/:/usr/local/pmdaq/lib:$LD_LIBRARY_PATH 
+#export MGDBLOGIN=acqcmsmu/OpacIP2I@lyocmsmu06:27017@FEBROC
+#export PYTHONPATH=${DBREPO}:${DAQREPO}:${DAQREPO}/daq:$PYTHONPATH 
+#export PATH=${DBREPO}:${DAQREPO}:${DAQREPO}/daq:$PATH 
+
+
+
+source  /usr/local/pmdaq/etc/pmdaq.bashrc
+export MALLOC_ARENA_MAX=1
+export MGDBLOGIN=acqilc/RPC_2008@lyocmsmu04:27017@LYONROC
+export SERVER_ADDRESS="lyoilc07.in2p3.fr"
+/usr/local/pmdaq/bin/daq_webaccess
+
+
