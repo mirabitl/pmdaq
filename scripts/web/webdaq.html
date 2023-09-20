@@ -290,15 +290,13 @@
 	<form>
 
 	  <label> Database changes </label><br>
-	  <label> State </label>
-	  <input id="dbstate" type="text" value="UNKNOWN" style="width: 100px;">
-	  <label> Version </label>
-	  <input id="dbversion" type="number" value=1><br>
-
+	  	<b>Queries:</b>
+		<input type="button" onclick="getStates()" value="DB states">
+		<!--input type="button"  onclick="startDisconnect()" value="Disconnect"--> <br>
+		<div id="statesel" style="width: 700px"> </div>
 	  <label> Application</label> <input id="db_board" type="text" value="lyon_febv1"
 					     style="width: 100px;"><br>
-	  <input type="button" onclick="SetDBValues()" value="Set DB">
-	  <input type="button" onclick="ConfigureDaq()" value="Make Configure again"> <br>
+	  <input type="button" onclick="ConfigureDaq()" value="Re-Configure"> <br>
 	  <label> VTH Time </label> <input id="febv1_vthtime" type="number" value=360>
 	  <input type="button" onclick="SetVthTime()" value="Set VTH time"> <br>
 

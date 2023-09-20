@@ -661,3 +661,55 @@ function onMessageArrived(message) {
     console.log(message.destinationName);
     
 }
+
+async function getStates() {
+    let mghost = document.getElementById("mg_host").value;
+    let mgport = document.getElementById("mg_port").value;
+    const orig = 'http://' + mghost + ':' + mgport;
+
+
+    let jlist = await spyneCommand(orig, "STATES", null)
+    console.log(jlist["content"].length)
+    var list_state = document.createElement("select");
+    list_state.name = "sel_states";
+    list_state.id = "sel_states"
+
+    for (const val of jlist["content"]) {
+        var state_option = document.createElement("option");
+        state_option.value = val;
+        state_option.text = val[0] + "  |  " + val[1] + " => " + val[2];
+        //console.log(state_option.text)
+        list_state.appendChild(state_option);
+    }
+
+    var label = document.createElement("label");
+    label.innerHTML = "Choose your state: "
+    label.htmlFor = "states";
+    var bSetState = document.createElement('input');
+    bSetState.type = 'button';
+    bSetState.id = 'setstate';
+    bSetState.value = 'Download DB';
+    bSetState.className = 'btn';
+    let board = document.getElementById("db_board").value;
+
+    bSetState.onclick = async function () {
+        // …
+        let theState = list_state.options[list_state.selectedIndex].value
+        vc = theState.split(",")
+        var statename = vc[0] + ":" + vc[1];
+        alert(vc[0] + " version " + vc[1] + " -> " + daqname);
+	let jdaq = await spyneCommand(daqinfo.url, "DOWNLOADDB",{daq:daqinfo.name,app:board,state: vc[0],	version: vc[1]});
+	console.log(jdaq);
+
+
+	typeComment("SetDBValues on " + statename,"messages");
+    };
+    
+    document.getElementById("statesel").appendChild(label).appendChild(list_state)
+    document.getElementById("statesel").append(bSetState);
+
+
+
+
+
+}
