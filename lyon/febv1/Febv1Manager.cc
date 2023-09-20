@@ -981,8 +981,9 @@ void Febv1Manager::ScurveStep(std::string mdcc, std::string builder, int thmin, 
     if (!_sc_running)
       break;
     utils::sendCommand(mdcc, "PAUSE", json::value::null());
+    uint32_t threff=(thmax - vth * step);
     this->setVthTime(thmax - vth * step);
-    _running_mode=2+((_sc_mode&0xFFF)<<4)+((vth&0XFFF)<<16);
+    _running_mode=2+((_sc_channel&0xFFF)<<4)+((threff&0XFFF)<<16);
     mqtt_publish("status",build_status());
     PMF_INFO(_logFebv1, "VTH Step " << thmax - vth * step);
     int firstEvent = 0;
@@ -1075,11 +1076,13 @@ void Febv1Manager::Scurve(int mode, int thmin, int thmax, int step)
 
   #endif
   int mask = 0;
+  _sc_channel=mode;
   if (mode == 255)
   {
 
     //for (int i=0;i<16;i++) mask|=(1<<firmware[i]);
     //this->setMask(mask,0xFF);
+    
     this->ScurveStep(mdccUrl, builderUrl, thmin, thmax, step);
     _running_mode=0;
     mqtt_publish("status",build_status());
@@ -1089,6 +1092,7 @@ void Febv1Manager::Scurve(int mode, int thmin, int thmax, int step)
   {
 
     //for (int i=0;i<16;i++) mask|=(1<<firmware[i]);
+    
     this->setMask(_sc_mask,0xFF);
     this->ScurveStep(mdccUrl, builderUrl, thmin, thmax, step);
     _running_mode=0;
@@ -1102,6 +1106,7 @@ void Febv1Manager::Scurve(int mode, int thmin, int thmax, int step)
     {
       mask = (1 << firmware[i]);
       std::cout << "Step PR2 " << i << " channel " << firmware[i] << std::endl;
+      _sc_channel=firmware[i];
       this->setMask(mask, 0xFF);
       this->ScurveStep(mdccUrl, builderUrl, thmin, thmax, step);
     }

@@ -114,7 +114,7 @@ private:
   zmq::context_t* _context;
    bool _running;
   // Scurve parameters
-  int _sc_mode,_sc_thmin,_sc_thmax,_sc_step;
+  int _sc_mode,_sc_thmin,_sc_thmax,_sc_step,_sc_channel;
   uint32_t _sc_spillon,_sc_spilloff,_sc_ntrg,_sc_mask;
   bool _sc_running;
   uint32_t _running_mode;
