@@ -25,6 +25,7 @@ function showlog(jcnt)
     //document.getElementById("logmessages").innerHTML += "<span>"+jcnt+ "</span><br>";
 }
 var verboselog=true;
+var last_status=0;
 async function spyneCommand(orig, command, pdict) {
     url = orig + "/" + command
     if (pdict != null) {
@@ -181,7 +182,8 @@ async function refreshStatus(deadline)
 	requestIdleCallback(refreshStatus);
 	return;
     }
-    if (Date.now()-last_refresh <10000){
+    let t_now=Date.now();
+    if (t_now-last_refresh <10000){
 	
 	requestIdleCallback(refreshStatus);
 	return;
@@ -195,7 +197,7 @@ async function refreshStatus(deadline)
     verboselog=false;
     console.log("Refreshing ... ");
     let state=await getState();
-    if (state=="RUNNING")
+    if (state=="RUNNING" && (t_now-last_status)>10000)
 	await spyneCommand(daqinfo.url, "BUILDERSTATUS", {daq:daqinfo.name});
 	
     last_refresh=Date.now();
@@ -627,17 +629,17 @@ function onMessageArrived(message) {
     if (vc[1]=="lyon_febv1" && vc[3]=="status")
     {
 	jfebs=JSON.parse( message.payloadString);
-	let  rmode=jfebs[0]["mode"]
-	if (rmode!=0){
-	    if (rmode&1)
+	let  run_mode=jfebs[0]["mode"]
+	if (run_mode!=0){
+	    if (run_mode&1)
 	    {
-		let chan=(rmode>>4)&0xFFFF;
+		let chan=(run_mode>>4)&0xFFFF;
 		setComment("LUT calibration Channel "+chan,"calmessages");
 	    }
-	    if (rmode&2)
+	    if (run_mode&2)
 	    {
-		let chan=(rmode>>4)&0xFFF;
-		let step=(rmode>>16)&0xFFF;
+		let chan=(run_mode>>4)&0xFFF;
+		let step=(run_mode>>16)&0xFFF;
 		setComment("SCURVE Channel "+chan+ " step "+step,"calmessages");
 	
 	    }
@@ -645,6 +647,7 @@ function onMessageArrived(message) {
     }
     else
 	if (vc[1]=="evb_builder" && vc[3]=="status"){
+	    last_status=Date.now();
 	    jevb=JSON.parse( message.payloadString);
 	    let run=jevb["answer"]["run"];
 	    let event=jevb["answer"]["event"];
