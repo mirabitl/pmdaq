@@ -140,8 +140,8 @@
     <div class="tab">
       <button class="tablinks" onclick="openTab(event, 'Configuration')">Configuration</button>
       <button class="tablinks" onclick="openTab(event, 'Daq')">Daq</button>
-      <button class="tablinks" onclick="openTab(event, 'Calibration')">Calibration</button>
-      <button class="tablinks" onclick="openTab(event, 'Settings')">Settings</button>
+	  <button class="tablinks" onclick="openTab(event, 'Settings')"> Pre-Settings</button>
+      <button class="tablinks" onclick="openTab(event, 'Calibration')">Calibration runs</button>
       <button class="tablinks" onclick="openTab(event, 'Status')">Status</button>
     </div>
 
@@ -196,112 +196,7 @@
 
 	</form>
       </div>
-      <h3>Presets</h3>
-      <h3>Settings before the start of run </h3>
-      <it> The daq should be <b>INITIALISED|CONFIGURED</b> when launch.</it>
-      <br>
-
-      <div class="tab">
-	<button class="runlinks" onclick="opentab(event, 'lutcalib','runlinks','runcontent')">Calibration of
-	  LUT</button>
-	<button class="runlinks" onclick="opentab(event, 'runtrg','runlinks','runcontent')">Trigger
-	  settings</button>
-	<button class="runlinks" onclick="opentab(event, 'runfebv1','runlinks','runcontent')">FEBV1
-	  settings</button>
-	<button class="runlinks" onclick="opentab(event, 'rundb','runlinks','runcontent')"> Database
-	  settings</button>
-
-
-      </div>
-
-      <div id="lutcalib" class="runcontent">
-	<h2> Calibration of FEBV1 LUTs </h2>
-	<it>It must be done after the <b>FIRST</b> initialisation </it> <br>
-	<br>
-
-	<form>
-	  <label> TDC number </label>
-	  <input id="tdc_number" type="number" name="tdcnumber" value=0>
-	  <label> Channels </label>
-	  <input id="tdc_channels" type="number" name="tdcchannels" value=56> <br>
-
-	  <input type="button" onclick="LutCalib()" value="LUT Calibration"> <br>
-	  <label> Mask </label>
-	  <input id="tdc_mask" type="text" name="tdcmask" value="0xFFFFFFFFFFFFFFF" style="width: 200px;">
-	  <label> FEB </label>
-	  <input id="tdc_feb" type="number" name="tdcfeb" value=14> <br>
-	  <input type="button" onclick="LutMask()" value="Set Mask"> <br>
-	</form>
-      </div>
-
-
-
-
-
-
-      <!--
-	  combdaq -M CALIBON -A lyon_mdcc -P '{"value":0}'
-	  combdaq -M CALIBOFF -A lyon_mdcc -P '{}'
-	  combdaq -M SETCALIBCOUNT -A lyon_mdcc -P '{"nclock":0}'
-	  combdaq -M SPILLOFF -A lyon_mdcc -P '{"nclock":100}'
-	  combdaq -M SPILLON -A lyon_mdcc -P '{"nclock":20000000}'
-	  combdaq -M SETEXTERNAL -A lyon_mdcc -P '{"value":0}'
-	  combdaq -M SETSPILLREGISTER -A lyon_mdcc -P '{"value":32}'
-	  
-	  combdaq -M SETDELAY -A lyon_febv1 -P '{"value":3}'
-	  combdaq -M SETDURATION -A lyon_febv1 -P '{"value":3}'
-	  combdaq -M SETMODE -A lyon_febv1 -P '{"value":0}'
-
-	  combdaq --daq-download --dbstate=TEST_FEBV1_2022 --dbversion=1 --name lyon_febv1
-
-	  combdaq --daq-configure
-	  combdaq -M SETVTHTIME -A lyon_febv1 -P '{"value":360}'
-
-	-->
-      <div id="runtrg" class="runcontent">
-	<h4> Trigger settings</h4>
-	<form>
-	  <label> Spill OFF </label> <input id="trg_spilloff" type="number" value=100>
-	  <label> Spill ON </label> <input id="trg_spillon" type="number" value=20000000>
-	  <label> External Trigger </label> <input id="trg_external" type="number" value=0>
-	  <label> Control register </label> <input id="trg_spillreg" type="number" value=32>
-	  <label> Trigger Board</label> <input id="trg_board" type="text" value="lyon_mdcc"
-					       style="width: 100px;"><br>
-	  <br>
-	  <label><b> MBMDCC specific </label><br>
-	  <label> Channels (bit pattern) </label> <input id="trg_channels" type="number" value=1023><br>
-	  <input type="button" onclick="SetTriggerMdcc()" value="Set trigger values"> <br>
-	</form>
-      </div>
-      <div id="runfebv1" class="runcontent">
-	<h4> FEBV1 FSM settings</h4>
-	<form>
-	  <label> Delay </label> <input id="febv1_delay" type="number" value=3>
-	  <label> Duration </label> <input id="febv1_duration" type="number" value=3>
-	  <label> Mode </label> <input id="febv1_mode" type="number" value=0>
-	  <label> FEBV1 Board</label> <input id="febv1_board" type="text" value="lyon_febv1"
-					     style="width: 100px;"><br>
-	  <input type="button" onclick="SetFebv1Values()" value="Set FEBV1 values"> <br>
-
-	</form>
-      </div>
-      <div id="rundb" class="runcontent">
-	<h4> Configuration </h4>
-	<form>
-
-	  <label> Database changes </label><br>
-	  	<b>Queries:</b>
-		<input type="button" onclick="getStates()" value="DB states">
-		<!--input type="button"  onclick="startDisconnect()" value="Disconnect"--> <br>
-		<div id="statesel" style="width: 700px"> </div>
-	  <label> Application</label> <input id="db_board" type="text" value="lyon_febv1"
-					     style="width: 100px;"><br>
-	  <input type="button" onclick="ConfigureDaq()" value="Re-Configure"> <br>
-	  <label> VTH Time </label> <input id="febv1_vthtime" type="number" value=360>
-	  <input type="button" onclick="SetVthTime()" value="Set VTH time"> <br>
-
-	</form>
-      </div>
+ 
 
     </div>
     <div id="Calibration" class="tabcontent">
@@ -366,24 +261,102 @@
 
     </div>
 
-    <div id="Synchro" class="tabcontent">
-      <h3>Synchronisation Control</h3>
-    </div>
-    <div id="Status" class="tabcontent">
-      <h3>Status Monitoring</h3>
-	  <form>
-		<input type="button" onclick="builderStatus()" value="Builder Status"> 
-		<input type="button" onclick="sourceStatus()" value=" Source Status"> 
-		<input type="button" onclick="triggerStatus()" value="Trigger Status"> 
-		<input type="button" onclick="subscribeMqtt()" value="Subscribe"> 
-
-		<br>
-	  </form>
-    </div>
+   
+    
     <div id="Settings" class="tabcontent">
-      <h3>Other settings</h3>
-	  
+	  <h3>Presets</h3>
+      <h3>Settings before the start of run </h3>
+      <it> The daq should be <b>INITIALISED|CONFIGURED</b> when launch.</it>
+      <br>
+
+      <div class="tab">
+	<button class="runlinks" onclick="opentab(event, 'lutcalib','runlinks','runcontent')">Calibration of
+	  LUT</button>
+	<button class="runlinks" onclick="opentab(event, 'runtrg','runlinks','runcontent')">Trigger
+	  settings</button>
+	<button class="runlinks" onclick="opentab(event, 'runfebv1','runlinks','runcontent')">FEBV1
+	  settings</button>
+	<button class="runlinks" onclick="opentab(event, 'rundb','runlinks','runcontent')"> Database
+	  settings</button>
+
+
+      </div>
+
+      <div id="lutcalib" class="runcontent">
+	<h2> Calibration of FEBV1 LUTs </h2>
+	<it>It must be done after the <b>FIRST</b> initialisation </it> <br>
+	<br>
+
+	<form>
+	  <label> TDC number </label>
+	  <input id="tdc_number" type="number" name="tdcnumber" value=0>
+	  <label> Channels </label>
+	  <input id="tdc_channels" type="number" name="tdcchannels" value=56> <br>
+
+	  <input type="button" onclick="LutCalib()" value="LUT Calibration"> <br>
+	  <label> Mask </label>
+	  <input id="tdc_mask" type="text" name="tdcmask" value="0xFFFFFFFFFFFFFFF" style="width: 200px;">
+	  <label> FEB </label>
+	  <input id="tdc_feb" type="number" name="tdcfeb" value=14> <br>
+	  <input type="button" onclick="LutMask()" value="Set Mask"> <br>
+	</form>
+      </div>
+      <div id="runtrg" class="runcontent">
+	<h4> Trigger settings</h4>
+	<form>
+	  <label> Spill OFF </label> <input id="trg_spilloff" type="number" value=100>
+	  <label> Spill ON </label> <input id="trg_spillon" type="number" value=20000000>
+	  <label> External Trigger </label> <input id="trg_external" type="number" value=0>
+	  <label> Control register </label> <input id="trg_spillreg" type="number" value=32>
+	  <label> Trigger Board</label> <input id="trg_board" type="text" value="lyon_mdcc"
+					       style="width: 100px;"><br>
+	  <br>
+	  <label><b> MBMDCC specific </label><br>
+	  <label> Channels (bit pattern) </label> <input id="trg_channels" type="number" value=1023><br>
+	  <input type="button" onclick="SetTriggerMdcc()" value="Set trigger values"> <br>
+	</form>
+      </div>
+      <div id="runfebv1" class="runcontent">
+	<h4> FEBV1 FSM settings</h4>
+	<form>
+	  <label> Delay </label> <input id="febv1_delay" type="number" value=3>
+	  <label> Duration </label> <input id="febv1_duration" type="number" value=3>
+	  <label> Mode </label> <input id="febv1_mode" type="number" value=0>
+	  <label> FEBV1 Board</label> <input id="febv1_board" type="text" value="lyon_febv1"
+					     style="width: 100px;"><br>
+	  <input type="button" onclick="SetFebv1Values()" value="Set FEBV1 values"> <br>
+
+	</form>
+      </div>
+      <div id="rundb" class="runcontent">
+	<h4> Configuration </h4>
+	<form>
+
+	  <label> Database changes </label><br>
+	  	<b>Queries:</b>
+		<input type="button" onclick="getStates()" value="DB states">
+		<!--input type="button"  onclick="startDisconnect()" value="Disconnect"--> <br>
+		<div id="statesel" style="width: 700px"> </div>
+	  <label> Application</label> <input id="db_board" type="text" value="lyon_febv1"
+					     style="width: 100px;"><br>
+	  <input type="button" onclick="ConfigureDaq()" value="Re-Configure"> <br>
+	  <label> VTH Time </label> <input id="febv1_vthtime" type="number" value=360>
+	  <input type="button" onclick="SetVthTime()" value="Set VTH time"> <br>
+
+	</form>
+      </div>
     </div>
+	<div id="Status" class="tabcontent">
+		<h3>Status Monitoring</h3>
+		<form>
+		  <input type="button" onclick="builderStatus()" value="Builder Status"> 
+		  <input type="button" onclick="sourceStatus()" value=" Source Status"> 
+		  <input type="button" onclick="triggerStatus()" value="Trigger Status"> 
+		  <input type="button" onclick="subscribeMqtt()" value="Subscribe"> 
+  
+		  <br>
+		</form>
+	  </div>
     <div id="messages"></div>
     <script>
       function opentab(evt, cityName, tlnk, tcnt) {

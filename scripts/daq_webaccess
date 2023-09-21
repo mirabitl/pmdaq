@@ -27,7 +27,7 @@ class CorsService(ServiceBase):
 
 def _on_method_return_object(ctx):
     ctx.transport.resp_headers['Access-Control-Allow-Origin'] = ctx.descriptor.service_class.origin
-    ctx.transport.resp_headers['Access-Control-Allow-Origin'] ="*"
+    #ctx.transport.resp_headers['Access-Control-Allow-Origin'] ="*"
 CorsService.event_manager.add_listener('method_return_object',_on_method_return_object)
 _daq_map={}
 _wdj=None
@@ -290,7 +290,7 @@ class wddService(CorsService):
             yield json.dumps({"status":"NOTREGISTERED","name":daq})
             return
         fdc=_daq_map[daq]["daq"]
-        rep=fdc.BuilderStatus(False)
+        rep=fdc.BuilderStatus(verbose=False,mqtt=False)
         status={}
         status["status"]=rep
         

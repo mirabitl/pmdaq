@@ -1,31 +1,30 @@
-function typeComment(e,divname){  // Execute this function on enter key
+function typeComment(e, divname) {  // Execute this function on enter key
     var _comment = document.createElement('pre'); //create a pre tag 
     _comment.textContent = e; //put the value inside pre tag
     console.log(_comment)
     var _commentDiv = document.getElementById(divname);
-    if(_commentDiv.firstChild === null){ // Will validate if any comment is there
-	    // If no comment is present just append the child
-	document.getElementById(divname).appendChild(_comment) 
+    if (_commentDiv.firstChild === null) { // Will validate if any comment is there
+        // If no comment is present just append the child
+        document.getElementById(divname).appendChild(_comment)
     }
-    else{
-	// If a comment is present insert the new 
-	// comment before the present first child in comment section
-	document.getElementById(divname).insertBefore( _comment,_commentDiv.firstChild );
+    else {
+        // If a comment is present insert the new 
+        // comment before the present first child in comment section
+        document.getElementById(divname).insertBefore(_comment, _commentDiv.firstChild);
     }
-    
+
 }
-function setComment(e,divname){
-    document.getElementById(divname).innerHTML="<pre>"+e+"</pre>";
-    
+function setComment(e, divname) {
+    document.getElementById(divname).innerHTML = "<pre>" + e + "</pre>";
+
 }
-function showlog(jcnt)
-{
-    typeComment(jcnt,"logmessages");
+function showlog(jcnt) {
+    typeComment(jcnt, "logmessages");
     //document.getElementById("logmessages").innerHTML += "<span>============================================></span><br>";
     //document.getElementById("logmessages").innerHTML += "<span>"+jcnt+ "</span><br>";
 }
-var verboselog=true;
-var last_status=0;
+var verboselog = true;
+var last_status = 0;
 async function spyneCommand(orig, command, pdict) {
     url = orig + "/" + command
     if (pdict != null) {
@@ -38,34 +37,34 @@ async function spyneCommand(orig, command, pdict) {
     }
     //alert(url);
     if (verboselog)
-	showlog("Calling "+url);
+        showlog("Calling " + url);
 
     try {
         let res = await fetch(url);
         let jmsg = await res.json();
-	
+
         vcm = command.split("?")
         let jcnt = jmsg[vcm[0] + "Response"][vcm[0] + "Result"][0];
-	if (verboselog)
-	    showlog(jcnt);
+        if (verboselog)
+            showlog(jcnt);
         return JSON.parse(jcnt);
     } catch (error) {
         console.log(error);
     }
 }
 var daqname = null;
-var registered=null;
+var registered = null;
 var pnsdaq = null;
 var daqloc = null;
-var daqinfo={
-    name:null,
-    state:null,
-    version:0,
-    pns:null,
-    config:null,
-    location:null,
-    url:null,
-    registered:false
+var daqinfo = {
+    name: null,
+    state: null,
+    version: 0,
+    pns: null,
+    config: null,
+    location: null,
+    url: null,
+    registered: false
 };
 
 async function getConfigurations() {
@@ -131,18 +130,18 @@ async function getConfigurations() {
         else
             pnsdaq = prompt("Enter the PMDAQ name server", "lyocmsmu03");
         daqloc = prompt("Enter the setup name", "???");
-        daqinfo.name=daqname;
-        daqinfo.state=vc[0];
-        daqinfo.version=parseInt(vc[1]);
-        daqinfo.pns=pnsdaq;
-        daqinfo.location=daqloc;
+        daqinfo.name = daqname;
+        daqinfo.state = vc[0];
+        daqinfo.version = parseInt(vc[1]);
+        daqinfo.pns = pnsdaq;
+        daqinfo.location = daqloc;
         // create the daq in webdaq
         let daqhost = document.getElementById("daq_host").value;
         let daqport = document.getElementById("daq_port").value;
 
 
         const origdaq = 'http://' + daqhost + ':' + daqport;
-        daqinfo.url=origdaq;
+        daqinfo.url = origdaq;
 
         let pdaq = {
             daqmongo: daqinfo.name,
@@ -151,21 +150,21 @@ async function getConfigurations() {
         }
         let jdaq = await spyneCommand(daqinfo.url, "REGISTERDAQ", pdaq);
         console.log(jdaq);
-	typeComment(" Connecting to " + daqhost + "on port " + daqport,"messages");
+        typeComment(" Connecting to " + daqhost + "on port " + daqport, "messages");
         //document.getElementById("messages").innerHTML += "<span> Connecting to " + daqhost + "on port " + daqport + "</span><br>";
         for (app of daqinfo.config["content"]["apps"]) {
-	    typeComment("Application " + app["name"] + " instance " + app["instance"] + " found","messages");
+            typeComment("Application " + app["name"] + " instance " + app["instance"] + " found", "messages");
             //document.getElementById("messages").innerHTML += "<span> Application " + app["name"] + " instance " + app["instance"] + " found </span><br>"; 
-            mqtt_topic=daqinfo.state+"/"+app["name"]+"/"+app["instance"]+"/status";
-	    typeComment("One can subscribe "+mqtt_topic,"messages");
+            mqtt_topic = daqinfo.state + "/" + app["name"] + "/" + app["instance"] + "/status";
+            typeComment("One can subscribe " + mqtt_topic, "messages");
             //document.getElementById("messages").innerHTML += "<span> One can subscribe "+mqtt_topic+ "  </span><br>"; 
 
         }
-	subscribeMqtt();
-	registered=daqname;
-    daqinfo.registered=true;
+        subscribeMqtt();
+        registered = daqname;
+        daqinfo.registered = true;
     };
-    
+
     document.getElementById("configsel").appendChild(label).appendChild(list_conf)
     document.getElementById("configsel").append(bSetConfig);
 
@@ -174,230 +173,227 @@ async function getConfigurations() {
 
 
 }
-var last_refresh=0;
-async function refreshStatus(deadline)
-{
-    if (registered==null)
-    {
-	requestIdleCallback(refreshStatus);
-	return;
+var last_refresh = 0;
+async function refreshStatus(deadline) {
+    if (registered == null) {
+        requestIdleCallback(refreshStatus);
+        return;
     }
-    let t_now=Date.now();
-    if (t_now-last_refresh <10000){
-	
-	requestIdleCallback(refreshStatus);
-	return;
+    let t_now = Date.now();
+    if (t_now - last_refresh < 10000) {
+
+        requestIdleCallback(refreshStatus);
+        return;
     }
     if (deadline.timeRemaining() <= 5) {
-    // This will take more than 5ms so wait until we
-    // get called back with a long enough deadline.
-	requestIdleCallback(refreshStatus);
-	return;
+        // This will take more than 5ms so wait until we
+        // get called back with a long enough deadline.
+        requestIdleCallback(refreshStatus);
+        return;
     }
-    verboselog=false;
+    verboselog = false;
     console.log("Refreshing ... ");
-    let state=await getState();
-    if (state=="RUNNING" && (t_now-last_status)>10000)
-	await spyneCommand(daqinfo.url, "BUILDERSTATUS", {daq:daqinfo.name});
-	
-    last_refresh=Date.now();
-    verboselog=true;
+    let state = await getState();
+    if (state == "RUNNING" && (t_now - last_status) > 10000)
+        await spyneCommand(daqinfo.url, "BUILDERSTATUS", { daq: daqinfo.name });
+
+    last_refresh = Date.now();
+    verboselog = true;
     requestIdleCallback(refreshStatus);
 }
 async function getState() {
     // create the daq in webdaq
-    if (!daqinfo.registered){
-        document.getElementById("daqstate").innerHTML ="NONE";
-	    return "NONE";
+    if (!daqinfo.registered) {
+        document.getElementById("daqstate").innerHTML = "NONE";
+        return "NONE";
     }
-    let jstate = await spyneCommand(daqinfo.url, "STATE", {daq:daqinfo.name});
+    let jstate = await spyneCommand(daqinfo.url, "STATE", { daq: daqinfo.name });
     console.log(jstate)
-    if (jstate.hasOwnProperty("state")){
-	    document.getElementById("daqstate").innerHTML = jstate["state"];
-	    return jstate["state"];
+    if (jstate.hasOwnProperty("state")) {
+        document.getElementById("daqstate").innerHTML = jstate["state"];
+        return jstate["state"];
     }
-    else
-    {
-	    document.getElementById("daqstate").innerHTML ="NONE";
-	    return "NONE";
+    else {
+        document.getElementById("daqstate").innerHTML = "NONE";
+        return "NONE";
     }
 }
 async function CreateDaq() {
-    if (!daqinfo.registered){
-        document.getElementById("daqstate").innerHTML ="NONE";
+    if (!daqinfo.registered) {
+        document.getElementById("daqstate").innerHTML = "NONE";
         alert("No DAQ registered");
-	    return "NONE";
+        return "NONE";
     }
-    
-    let jdaq = await spyneCommand(daqinfo.url, "CREATE", {daq:daqinfo.name});
+
+    let jdaq = await spyneCommand(daqinfo.url, "CREATE", { daq: daqinfo.name });
     console.log(jdaq);
-    
-    typeComment("CREATE on " + daqname + "/" + daqloc ,"messages");
+
+    typeComment("CREATE on " + daqname + "/" + daqloc, "messages");
     await getState();
 }
 async function InitDaq() {
-    if (!daqinfo.registered){
-        document.getElementById("daqstate").innerHTML ="NONE";
+    if (!daqinfo.registered) {
+        document.getElementById("daqstate").innerHTML = "NONE";
         alert("No DAQ registered");
-	    return "NONE";
+        return "NONE";
     }
     // create the daq in webdaq
     let rdelay = document.getElementById("delay_reset").value;
-    let jdaq = await spyneCommand(daqinfo.url, "INITIALISE", {daq:daqinfo.name,delay:rdelay});
+    let jdaq = await spyneCommand(daqinfo.url, "INITIALISE", { daq: daqinfo.name, delay: rdelay });
     console.log(jdaq);
-    typeComment("INITIALISE on " + daqname + "/" + daqloc ,"messages");
+    typeComment("INITIALISE on " + daqname + "/" + daqloc, "messages");
     await getState();
 
 }
 async function ConfigureDaq() {
-    if (!daqinfo.registered){
-        document.getElementById("daqstate").innerHTML ="NONE";
+    if (!daqinfo.registered) {
+        document.getElementById("daqstate").innerHTML = "NONE";
         alert("No DAQ registered");
-	    return "NONE";
+        return "NONE";
     }
-    
-    let jdaq = await spyneCommand(daqinfo.url, "CONFIGURE", {daq:daqinfo.name});
+
+    let jdaq = await spyneCommand(daqinfo.url, "CONFIGURE", { daq: daqinfo.name });
     console.log(jdaq);
-    typeComment("CONFIGURE on " + daqname + "/" + daqloc ,"messages");
+    typeComment("CONFIGURE on " + daqname + "/" + daqloc, "messages");
     await getState();
-    
+
 
 }
 async function StartDaq() {
-    if (!daqinfo.registered){
-        document.getElementById("daqstate").innerHTML ="NONE";
+    if (!daqinfo.registered) {
+        document.getElementById("daqstate").innerHTML = "NONE";
         alert("No DAQ registered");
-	    return "NONE";
+        return "NONE";
     }
     let rcom = prompt("Enter a comment for this run", "Chez les papous y'a des papous a poux...");
-    let jdaq = await spyneCommand(daqinfo.url, "START", {daq:daqinfo.name,comment:rcom});
+    let jdaq = await spyneCommand(daqinfo.url, "START", { daq: daqinfo.name, comment: rcom });
     console.log(jdaq);
-    typeComment("START on " + daqname + "/" + daqloc ,"messages");
+    typeComment("START on " + daqname + "/" + daqloc, "messages");
     await getState();
-   
+
 
 }
 
 async function StopDaq() {
-    if (!daqinfo.registered){
-        document.getElementById("daqstate").innerHTML ="NONE";
+    if (!daqinfo.registered) {
+        document.getElementById("daqstate").innerHTML = "NONE";
         alert("No DAQ registered");
-	    return "NONE";
+        return "NONE";
     }
-    
-    let jdaq = await spyneCommand(daqinfo.url, "STOP", {daq:daqinfo.name});
+
+    let jdaq = await spyneCommand(daqinfo.url, "STOP", { daq: daqinfo.name });
     console.log(jdaq);
-    typeComment("STOP on " + daqname + "/" + daqloc ,"messages");
+    typeComment("STOP on " + daqname + "/" + daqloc, "messages");
     await getState();
 }
 async function DestroyDaq() {
-    if (!daqinfo.registered){
-        document.getElementById("daqstate").innerHTML ="NONE";
+    if (!daqinfo.registered) {
+        document.getElementById("daqstate").innerHTML = "NONE";
         alert("No DAQ registered");
-	    return "NONE";
+        return "NONE";
     }
-    
-    let jdaq = await spyneCommand(daqinfo.url, "DESTROY", {daq:daqinfo.name});
+
+    let jdaq = await spyneCommand(daqinfo.url, "DESTROY", { daq: daqinfo.name });
     console.log(jdaq);
-    typeComment("DESTROY on " + daqname + "/" + daqloc ,"messages");
+    typeComment("DESTROY on " + daqname + "/" + daqloc, "messages");
     await getState();
-    
+
 
 }
 async function RemoveDaq() {
-    if (!daqinfo.registered){
-        document.getElementById("daqstate").innerHTML ="NONE";
+    if (!daqinfo.registered) {
+        document.getElementById("daqstate").innerHTML = "NONE";
         alert("No DAQ registered");
-	    return "NONE";
+        return "NONE";
     }
-    
-    let jdaq = await spyneCommand(daqinfo.url, "JC_DESTROY", {daq:daqinfo.name});
+
+    let jdaq = await spyneCommand(daqinfo.url, "JC_DESTROY", { daq: daqinfo.name });
     console.log(jdaq);
-    typeComment("REMOVE on " + daqname + "/" + daqloc ,"messages");
-    registered=null;
-    daqinfo.registered=false;
+    typeComment("REMOVE on " + daqname + "/" + daqloc, "messages");
+    registered = null;
+    daqinfo.registered = false;
     await getState();
 }
 
 async function ResumeDaq() {
-    if (!daqinfo.registered){
-        document.getElementById("daqstate").innerHTML ="NONE";
+    if (!daqinfo.registered) {
+        document.getElementById("daqstate").innerHTML = "NONE";
         alert("No DAQ registered");
-	    return "NONE";
+        return "NONE";
     }
-    
-    let jdaq = await spyneCommand(daqinfo.url, "RESUME", {daq:daqinfo.name});
+
+    let jdaq = await spyneCommand(daqinfo.url, "RESUME", { daq: daqinfo.name });
     console.log(jdaq);
-    typeComment("RESUME on " + daqname + "/" + daqloc ,"messages");
+    typeComment("RESUME on " + daqname + "/" + daqloc, "messages");
     await getState();
 
 }
 
 
 async function PauseDaq() {
-    if (!daqinfo.registered){
-        document.getElementById("daqstate").innerHTML ="NONE";
+    if (!daqinfo.registered) {
+        document.getElementById("daqstate").innerHTML = "NONE";
         alert("No DAQ registered");
-	    return "NONE";
+        return "NONE";
     }
-    
-    let jdaq = await spyneCommand(daqinfo.url, "PAUSE", {daq:daqinfo.name});
+
+    let jdaq = await spyneCommand(daqinfo.url, "PAUSE", { daq: daqinfo.name });
     console.log(jdaq);
-    typeComment("PAUSE on " + daqname + "/" + daqloc ,"messages");
+    typeComment("PAUSE on " + daqname + "/" + daqloc, "messages");
     await getState();
-   
+
 
 }
 
 async function builderStatus() {
-    if (!daqinfo.registered){
-        document.getElementById("daqstate").innerHTML ="NONE";
+    if (!daqinfo.registered) {
+        document.getElementById("daqstate").innerHTML = "NONE";
         alert("No DAQ registered");
-	    return "NONE";
+        return "NONE";
     }
-    
-    let jdaq = await spyneCommand(daqinfo.url, "BUILDERSTATUS", {daq:daqinfo.name});
+
+    let jdaq = await spyneCommand(daqinfo.url, "BUILDERSTATUS", { daq: daqinfo.name });
     console.log(jdaq);
-    typeComment("BUILDERSTATUS on " + daqname + "/" + daqloc ,"messages");
+    typeComment("BUILDERSTATUS on " + daqname + "/" + daqloc, "messages");
     await getState();
-   
+
 
 }
 async function sourceStatus() {
-    if (!daqinfo.registered){
-        document.getElementById("daqstate").innerHTML ="NONE";
+    if (!daqinfo.registered) {
+        document.getElementById("daqstate").innerHTML = "NONE";
         alert("No DAQ registered");
-	    return "NONE";
+        return "NONE";
     }
-    
-    let jdaq = await spyneCommand(daqinfo.url, "SOURCESTATUS", {daq:daqinfo.name});
+
+    let jdaq = await spyneCommand(daqinfo.url, "SOURCESTATUS", { daq: daqinfo.name });
     console.log(jdaq);
-    typeComment("SOURCESTATUS on " + daqname + "/" + daqloc ,"messages");
+    typeComment("SOURCESTATUS on " + daqname + "/" + daqloc, "messages");
     await getState();
-   
+
 
 }
 async function triggerStatus() {
-    if (!daqinfo.registered){
-        document.getElementById("daqstate").innerHTML ="NONE";
+    if (!daqinfo.registered) {
+        document.getElementById("daqstate").innerHTML = "NONE";
         alert("No DAQ registered");
-	    return "NONE";
+        return "NONE";
     }
-    
-    let jdaq = await spyneCommand(daqinfo.url, "TRIGGERSTATUS", {daq:daqinfo.name});
+
+    let jdaq = await spyneCommand(daqinfo.url, "TRIGGERSTATUS", { daq: daqinfo.name });
     console.log(jdaq);
-    typeComment("TRIGGERSTATUS on " + daqname + "/" + daqloc ,"messages");
+    typeComment("TRIGGERSTATUS on " + daqname + "/" + daqloc, "messages");
     await getState();
-   
+
 
 }
 
 
 async function processCommand(appname, methodname, parameters) {
-    if (!daqinfo.registered){
-        document.getElementById("daqstate").innerHTML ="NONE";
+    if (!daqinfo.registered) {
+        document.getElementById("daqstate").innerHTML = "NONE";
         alert("No DAQ registered");
-	    return "NONE";
+        return "NONE";
     }
 
     let pdaq = {
@@ -425,7 +421,7 @@ async function SetTriggerMdcc() {
     }
 
 
-    typeComment("SetTriggerMdcc on " + daqname + "/" + daqloc ,"messages");
+    typeComment("SetTriggerMdcc on " + daqname + "/" + daqloc, "messages");
     console.log(await getState());
 
 }
@@ -440,7 +436,7 @@ async function SetFebv1Values() {
     console.log(jdaq);
 
 
-    typeComment("SetFebv1Values on " + daqname + "/" + daqloc ,"messages");
+    typeComment("SetFebv1Values on " + daqname + "/" + daqloc, "messages");
     console.log(await getState());
 
 }
@@ -453,23 +449,23 @@ async function SetDBValues() {
     console.log(jdaq);
 
 
-    typeComment("SetDBValues on " + daqname + "/" + daqloc ,"messages");
+    typeComment("SetDBValues on " + daqname + "/" + daqloc, "messages");
     console.log(await getState());
 
 }
 async function SetVthTime() {
     let jrep = await processCommand("lyon_febv1", "SETVTHTIME", { value: document.getElementById("febv1_vthtime").value });
-    typeComment("SetVthTime on " + daqname + "/" + daqloc ,"messages");
+    typeComment("SetVthTime on " + daqname + "/" + daqloc, "messages");
     console.log(await getState());
 
 }
 async function LutCalib() {
-    if (!daqinfo.registered){
-        document.getElementById("daqstate").innerHTML ="NONE";
+    if (!daqinfo.registered) {
+        document.getElementById("daqstate").innerHTML = "NONE";
         alert("No DAQ registered");
-	    return "NONE";
+        return "NONE";
     }
-   
+
     let read_state = await getState();
     console.log(read_state)
     if (read_state != "INITIALISED") {
@@ -483,17 +479,17 @@ async function LutCalib() {
     }
     let jdaq = await spyneCommand(daqinfo.url, "LUTCALIB", pdaq);
     console.log(jdaq);
-    typeComment("LUTCALIB on " + daqname + "/" + daqloc ,"messages");
+    typeComment("LUTCALIB on " + daqname + "/" + daqloc, "messages");
 
 
 }
 async function LutMask() {
-    if (!daqinfo.registered){
-        document.getElementById("daqstate").innerHTML ="NONE";
+    if (!daqinfo.registered) {
+        document.getElementById("daqstate").innerHTML = "NONE";
         alert("No DAQ registered");
-	    return "NONE";
+        return "NONE";
     }
-    
+
     let pdaq = {
         daq: daqinfo.name,
         tdc: document.getElementById("tdc_number").value,
@@ -502,12 +498,12 @@ async function LutMask() {
     }
     let jdaq = await spyneCommand(daqinfo.url, "LUTMASK", pdaq);
     console.log(jdaq);
-    typeComment("LUTMASK on " + daqname + "/" + daqloc ,"messages");
+    typeComment("LUTMASK on " + daqname + "/" + daqloc, "messages");
 
 
 }
 async function doCal_dac10febv1() {
-    state=await getState();
+    state = await getState();
     if (state == "RUNNING") {
         let jrep = await processCommand(document.getElementById("calf1_board").value, "SCURVE", {
             first: document.getElementById("calf1_1st").value,
@@ -521,15 +517,15 @@ async function doCal_dac10febv1() {
         console.log(jrep);
     }
     else {
-        alert("The DAQ must be running "+state);
+        alert("The DAQ must be running " + state);
     }
-    typeComment("doCal_dac10febv1 on " + daqname + "/" + daqloc ,"messages");
+    typeComment("doCal_dac10febv1 on " + daqname + "/" + daqloc, "messages");
     console.log(await getState());
 
 }
 
 async function doCal_b0pmr() {
-    state=await getState();
+    state = await getState();
     if (state == "RUNNING") {
         let jrep = await processCommand(document.getElementById("calpmr_board").value, "SCURVE", {
             first: document.getElementById("calpmr_1st").value,
@@ -545,14 +541,14 @@ async function doCal_b0pmr() {
     else {
         alert("The DAQ must be running");
     }
-    typeComment("doCal_b0pmr on " + daqname + "/" + daqloc ,"messages");
+    typeComment("doCal_b0pmr on " + daqname + "/" + daqloc, "messages");
     console.log(await getState());
 
 }
 
 
 async function doCal_b0gric() {
-    state=await getState();
+    state = await getState();
     if (state == "RUNNING") {
         let jrep = await processCommand(document.getElementById("calgric_board").value, "SCURVE", {
             first: document.getElementById("calgric_1st").value,
@@ -568,7 +564,7 @@ async function doCal_b0gric() {
     else {
         alert("The DAQ must be running");
     }
-    typeComment("doCal_b0gric on " + daqname + "/" + daqloc ,"messages");
+    typeComment("doCal_b0gric on " + daqname + "/" + daqloc, "messages");
     console.log(await getState());
 
 }
@@ -585,12 +581,12 @@ function removeOptions(selectElement) {
 }
 requestId = window.requestIdleCallback(refreshStatus);
 
-function subscribeMqtt(){
+function subscribeMqtt() {
 
 
     clientID = "clientID-" + parseInt(Math.random() * 100);
 
-    client = new Paho.MQTT.Client("lyoilc07.in2p3.fr",8080  , clientID);
+    client = new Paho.MQTT.Client("lyoilc07.in2p3.fr", 8080, clientID);
 
     client.onConnectionLost = onConnectionLost;
     client.onMessageArrived = onMessageArrived;
@@ -603,86 +599,82 @@ function subscribeMqtt(){
 
 function onConnect() {
     for (app of daqinfo.config["content"]["apps"]) {
-        mqtt_topic=daqinfo.state+"/"+app["name"]+"/"+app["instance"]+"/status";
+        mqtt_topic = daqinfo.state + "/" + app["name"] + "/" + app["instance"] + "/status";
 
-        typeComment("Subscribing to topic " + mqtt_topic ,"messages");
+        typeComment("Subscribing to topic " + mqtt_topic, "messages");
         client.subscribe(mqtt_topic);
 
     }
     //console.log("in On connect")
 
-    
+
 }
 
 
 
 function onConnectionLost(responseObject) {
-    typeComment("ERROR: Connection is lost","messages");
+    typeComment("ERROR: Connection is lost", "messages");
     if (responseObject != 0) {
-        typeComment("ERROR:" + responseObject.errorMessage ,"messages");
+        typeComment("ERROR:" + responseObject.errorMessage, "messages");
     }
 }
 
 function onMessageArrived(message) {
     console.log("OnMessageArrived: " + message.payloadString);
     vc = message.destinationName.split("/");
-    if (vc[1]=="lyon_febv1" && vc[3]=="status")
-    {
-	jfebs=JSON.parse( message.payloadString);
-	let  run_mode=jfebs[0]["mode"]
-	if (run_mode!=0){
-	    if (run_mode&1)
-	    {
-		let chan=(run_mode>>4)&0xFF;
-		setComment("LUT calibration Channel "+chan+" on "+vc[1],"calmessages");
-	    }
-	    if (run_mode&2)
-	    {
-		let chan=(run_mode>>4)&0xFF;
-		let step=(run_mode>>12)&0xFFF;
-		setComment("SCURVE Channel "+chan+ " step "+step+" on "+vc[1],"calmessages");
-	
-	    }
-	}
+    if (vc[1] == "lyon_febv1" && vc[3] == "status") {
+        jfebs = JSON.parse(message.payloadString);
+        let run_mode = jfebs[0]["mode"]
+        if (run_mode != 0) {
+            if (run_mode & 1) {
+                let chan = (run_mode >> 4) & 0xFF;
+                setComment("LUT calibration Channel " + chan + " on " + vc[1], "calmessages");
+            }
+            if (run_mode & 2) {
+                let chan = (run_mode >> 4) & 0xFF;
+                let step = (run_mode >> 12) & 0xFFF;
+                setComment("SCURVE Channel " + chan + " step " + step + " on " + vc[1], "calmessages");
+
+            }
+        }
     }
     else
-	if ((vc[1]=="lyon_pmr"||(vc[1]=="lyon_gricv0"||(vc[1]=="lyon_gricv1") && vc[3]=="status") {
-	    jprms=JSON.parse( message.payloadString);
-	    let  run_mode=jpmrs[0]["mode"]
-	    if (run_mode!=0){
-		if (run_mode&2)
-		{
-		    let chan=(run_mode>>4)&0xFF;
-		    let step=(run_mode>>12)&0xFFF;
-		    setComment("SCURVE Channel "+chan+ " step "+step+" on "+vc[1],"calmessages");
-		    
-		}
-		if (run_mode&4)
-		{
-		    let chan=(run_mode>>4)&0xFF;
-		    let thre=(run_mode>>12)&0xFFF;
-		    let step=(run_mode>>24)&0xFFF;
-		    setComment("Gain curve Channel "+chan+" Threshold "+thre+ " step "+step+" on "+vc[1],"calmessages");
-		    
-		}
-	    }
-	}
+        if (((vc[1] == "lyon_pmr") || (vc[1] == "lyon_gricv0") || (vc[1] == "lyon_gricv1")) && vc[3] == "status") {
+            jprms = JSON.parse(message.payloadString);
+            let run_mode = jpmrs[0]["mode"]
+            if (run_mode != 0) {
+                if (run_mode & 2) {
+                    let chan = (run_mode >> 4) & 0xFF;
+                    let step = (run_mode >> 12) & 0xFFF;
+                    setComment("SCURVE Channel " + chan + " step " + step + " on " + vc[1], "calmessages");
 
-    else
-	if (vc[1]=="evb_builder" && vc[3]=="status"){
-	    last_status=Date.now();
-	    jevb=JSON.parse( message.payloadString);
-	    let run=jevb["answer"]["run"];
-	    let event=jevb["answer"]["event"];
-	    document.getElementById("daqrun").innerHTML=run;
-	    document.getElementById("daqevent").innerHTML=event;
-	}
-    else
-	typeComment("Topic:" + message.destinationName + "| Message : " + message.payloadString ,"messages");
+                }
+                if (run_mode & 4) {
+                    let chan = (run_mode >> 4) & 0xFF;
+                    let thre = (run_mode >> 12) & 0xFFF;
+                    let step = (run_mode >> 24) & 0xFFF;
+                    setComment("Gain curve Channel " + chan + " Threshold " + thre + " step " + step + " on " + vc[1], "calmessages");
+
+                }
+            }
+        }
+
+        else
+            if (vc[1] == "evb_builder" && vc[3] == "status") {
+                last_status = Date.now();
+                jevb = JSON.parse(message.payloadString);
+                let run = jevb["answer"]["run"];
+                let event = jevb["answer"]["event"];
+                document.getElementById("daqrun").innerHTML = run;
+                document.getElementById("daqevent").innerHTML = event;
+                typeComment("Topic:" + message.destinationName + "| Message : " + message.payloadString, "messages");
+            }
+            else
+                typeComment("Topic:" + message.destinationName + "| Message : " + message.payloadString, "messages");
     jmsg = JSON.parse(message.payloadString);
     console.log(jmsg);
     console.log(message.destinationName);
-    
+
 }
 
 async function getStates() {
@@ -721,13 +713,13 @@ async function getStates() {
         vc = theState.split(",")
         var statename = vc[0] + ":" + vc[1];
         alert(vc[0] + " version " + vc[1] + " -> " + daqname);
-	let jdaq = await spyneCommand(daqinfo.url, "DOWNLOADDB",{daq:daqinfo.name,app:board,state: vc[0],	version: vc[1]});
-	console.log(jdaq);
+        let jdaq = await spyneCommand(daqinfo.url, "DOWNLOADDB", { daq: daqinfo.name, app: board, state: vc[0], version: vc[1] });
+        console.log(jdaq);
 
 
-	typeComment("SetDBValues on " + statename,"messages");
+        typeComment("SetDBValues on " + statename, "messages");
     };
-    
+
     document.getElementById("statesel").appendChild(label).appendChild(list_state)
     document.getElementById("statesel").append(bSetState);
 

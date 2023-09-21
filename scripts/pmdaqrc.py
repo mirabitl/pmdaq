@@ -8,7 +8,7 @@ import time
 class pmdaqControl(daqrc.daqControl):
 
 
-    def BuilderStatus(self, verbose=False):
+    def BuilderStatus(self, verbose=False,mqtt=True):
         if (not "evb_builder" in self.session.apps):
             print("No Event builder found in thi session ",self.session.name())
         rep = {}
@@ -18,7 +18,10 @@ class pmdaqControl(daqrc.daqControl):
             r['run'] = -1
             r['event'] = -1
             r['url'] = s.host
-            mr = json.loads(s.sendCommand("STATUS",{}))
+            par={}
+            if (mqtt):
+                par={"mqtt":1}
+            mr = json.loads(s.sendCommand("STATUS",par))
             #print("Event Builder",mr)
             if (mr['status'] != "FAILED"):
                 r["run"] = mr["answer"]["run"]
