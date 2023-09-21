@@ -634,19 +634,19 @@ function onMessageArrived(message) {
 	    if (run_mode&1)
 	    {
 		let chan=(run_mode>>4)&0xFF;
-		setComment("LUT calibration Channel "+chan,"calmessages");
+		setComment("LUT calibration Channel "+chan+" on "+vc[1],"calmessages");
 	    }
 	    if (run_mode&2)
 	    {
 		let chan=(run_mode>>4)&0xFF;
 		let step=(run_mode>>12)&0xFFF;
-		setComment("SCURVE Channel "+chan+ " step "+step,"calmessages");
+		setComment("SCURVE Channel "+chan+ " step "+step+" on "+vc[1],"calmessages");
 	
 	    }
 	}
     }
     else
-	if (vc[1]=="lyon_pmr" && vc[3]=="status") {
+	if ((vc[1]=="lyon_pmr"||(vc[1]=="lyon_gricv0"||(vc[1]=="lyon_gricv1") && vc[3]=="status") {
 	    jprms=JSON.parse( message.payloadString);
 	    let  run_mode=jpmrs[0]["mode"]
 	    if (run_mode!=0){
@@ -654,7 +654,7 @@ function onMessageArrived(message) {
 		{
 		    let chan=(run_mode>>4)&0xFF;
 		    let step=(run_mode>>12)&0xFFF;
-		    setComment("SCURVE Channel "+chan+ " step "+step,"calmessages");
+		    setComment("SCURVE Channel "+chan+ " step "+step+" on "+vc[1],"calmessages");
 		    
 		}
 		if (run_mode&4)
@@ -662,7 +662,7 @@ function onMessageArrived(message) {
 		    let chan=(run_mode>>4)&0xFF;
 		    let thre=(run_mode>>12)&0xFFF;
 		    let step=(run_mode>>24)&0xFFF;
-		    setComment("Gain curve Channel "+chan+" Threshold "+thre+ " step "+step,"calmessages");
+		    setComment("Gain curve Channel "+chan+" Threshold "+thre+ " step "+step+" on "+vc[1],"calmessages");
 		    
 		}
 	    }
