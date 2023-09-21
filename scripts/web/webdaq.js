@@ -195,8 +195,10 @@ async function refreshStatus(deadline) {
     console.log("Refreshing ... ");
     let state = await getState();
     if (state == "RUNNING" && (t_now - last_status) > 10000)
+    {
         await spyneCommand(daqinfo.url, "BUILDERSTATUS", { daq: daqinfo.name });
-
+        last_status =t_now; 
+    }
     last_refresh = Date.now();
     verboselog = true;
     requestIdleCallback(refreshStatus);
@@ -353,7 +355,7 @@ async function builderStatus() {
     }
 
     let jdaq = await spyneCommand(daqinfo.url, "BUILDERSTATUS", { daq: daqinfo.name });
-    console.log(jdaq);
+    console.log(jdaq["status"]);
     typeComment("BUILDERSTATUS on " + daqname + "/" + daqloc, "messages");
     await getState();
 
@@ -661,7 +663,7 @@ function onMessageArrived(message) {
 
         else
             if (vc[1] == "evb_builder" && vc[3] == "status") {
-                last_status = Date.now();
+                last_status= Date.now();
                 jevb = JSON.parse(message.payloadString);
                 let run = jevb["answer"]["run"];
                 let event = jevb["answer"]["event"];

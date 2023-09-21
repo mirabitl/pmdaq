@@ -18,9 +18,10 @@ class pmdaqControl(daqrc.daqControl):
             r['run'] = -1
             r['event'] = -1
             r['url'] = s.host
-            par={}
+            par={"mqtt":0}
             if (mqtt):
                 par={"mqtt":1}
+
             mr = json.loads(s.sendCommand("STATUS",par))
             #print("Event Builder",mr)
             if (mr['status'] != "FAILED"):
