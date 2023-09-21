@@ -237,6 +237,7 @@ void pm::builder::collector::halt(http_request m)
 }
 void pm::builder::collector::status(http_request m)
 {
+  uint32_t usemqtt=utils::queryIntValue(m, "mqtt", 0);
   auto par = json::value::object(); 
 
   if (_merger != NULL)
@@ -253,8 +254,9 @@ void pm::builder::collector::status(http_request m)
     }
   PMF_DEBUG(_logCollector, "STATUS"<<par);
   
-  publish("STATUS",par.serialize());
-  mqtt_publish("status",par);
+  //publish("STATUS",par.serialize());
+  if (usemqtt>0)
+    mqtt_publish("status",par);
   Reply(status_codes::OK,par);
 
 }
