@@ -20,7 +20,7 @@ using namespace mpi;
 using namespace gricv0;
 
 
-Gricv0Manager::Gricv0Manager() : _context(NULL),_hca(NULL),_mpi(NULL),_running(false)
+Gricv0Manager::Gricv0Manager() : _context(NULL),_hca(NULL),_mpi(NULL),_running(false),_running_mode(0)
 {;}
 void Gricv0Manager::initialise()
 {
@@ -75,6 +75,7 @@ void Gricv0Manager::end()
     {
       _sc_running=false;
       g_scurve.join();
+      _running_mode=0;
     }
   //Stop listening
   if (_mpi!=NULL)
@@ -107,17 +108,9 @@ void Gricv0Manager::end()
     }
   
 }
-
-
-void Gricv0Manager::c_status(http_request m)
+web::json::value Gricv0Manager::build_status()
 {
-
-  auto par = json::value::object();
-
-  PMF_INFO(_logGricv0,"Status CMD called ");
-  par["STATUS"]=web::json::value::string(U("DONE"));
-
-  web::json::value jl;uint32_t mb=0;
+   web::json::value jl;uint32_t mb=0;
   for (auto x:_mpi->boards())
     {
 
@@ -131,9 +124,21 @@ void Gricv0Manager::c_status(http_request m)
       jt["abcid"]=web::json::value::number(x.second->data()->abcid());
       jt["event"]=web::json::value::number(x.second->data()->event());
       jt["triggers"]=web::json::value::number(x.second->data()->triggers());
+      jt["mode"]=web::json::value::number(_running_mode);
       jl[mb++]=jt;
     }
+  return jl;
+}
 
+void Gricv0Manager::c_status(http_request m)
+{
+
+  auto par = json::value::object();
+
+  PMF_INFO(_logGricv0,"Status CMD called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
+
+  auto jl=build_status();
   par["GRICSTATUS"]=jl;
   mqtt_publish("status",jl);  
   Reply(status_codes::OK,par);
@@ -766,6 +771,8 @@ void Gricv0Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,in
       if (_sc_level == 2)
 	this->setThresholds(512, 512, threshold);
       ::usleep(2000);
+      _running_mode=2+((_sc_channel&0xFF)<<4)+((threshold&0XFFF)<<12);
+      mqtt_publish("status",build_status());
       int firstEvent=0;
 #define USEFEBS
 #ifdef USEFEBS
@@ -879,16 +886,19 @@ void Gricv0Manager::Scurve(int mode,int thmin,int thmax,int step)
   if (builder.compare("")==0) return;
 
   uint64_t mask=0;
-
+  _sc_channel=mode;
   // All channel pedestal
   if (mode==255)
     {
 
+      _sc_channel=0xFE;
 
       mask=0xFFFFFFFFFFFFFFFF;
       this->setAllMasks(mask);
       this->setCTEST(0);
       this->ScurveStep(mdcc,builder,thmin,thmax,step);
+       _running_mode=0;
+       mqtt_publish("status",build_status());
       return;
       
     }
@@ -901,11 +911,13 @@ void Gricv0Manager::Scurve(int mode,int thmin,int thmax,int step)
 	{
 	  mask=(1ULL<<i);
 	  PMF_INFO(_logGricv0, "Step HR2 " << i << "  channel" << i << std::dec);
-
+	  _sc_channel=i;
 	  this->setAllMasks(mask);
 	  this->setCTEST(mask);
 	  this->ScurveStep(mdcc,builder,thmin,thmax,step);
 	}
+       _running_mode=0;
+       mqtt_publish("status",build_status());
       return;
     }
  if (mode == 1022)
@@ -913,6 +925,7 @@ void Gricv0Manager::Scurve(int mode,int thmin,int thmax,int step)
       mask = 0;
       for (int i = 0; i < 64; i++)
 	{
+	  _sc_channel=i;
 	  mask = (1ULL << i);
 	  PMF_INFO(_logGricv0, "Step HR2 " << i << "  channel" << i << std::dec);
 
@@ -922,6 +935,8 @@ void Gricv0Manager::Scurve(int mode,int thmin,int thmax,int step)
 
 	  this->ScurveStep(mdcc, builder, thmin, thmax, step);
 	}
+       _running_mode=0;
+       mqtt_publish("status",build_status());
       return;
     }
   // One channel pedestal
@@ -930,7 +945,8 @@ void Gricv0Manager::Scurve(int mode,int thmin,int thmax,int step)
   this->setAllMasks(mask);
   this->setCTEST(mask);
   this->ScurveStep(mdcc,builder,thmin,thmax,step);
-
+ _running_mode=0;
+ mqtt_publish("status",build_status());
   
 }
 
@@ -964,6 +980,8 @@ void Gricv0Manager::GainCurveStep(std::string mdcc,std::string builder,int gmin,
       usleep(1000);
       this->setThresholds(threshold,512,512);
       this->setGain(gmin+g*step);
+      _running_mode=4+((_sc_channel&0xFF)<<4)+((threshold&0XFFF)<<12)+((g&0XFFF)<<24);
+      mqtt_publish("status",build_status());
       int firstEvent=0;
 #define USEFEBS
 #ifdef USEFEBS
@@ -1049,15 +1067,19 @@ void Gricv0Manager::GainCurve(int mode,int gmin,int gmax,int step,int threshold)
   if (builder.compare("")==0) return;
 
   uint64_t mask=0;
-
+  _sc_channel=mode;
   // All channel pedestal
   if (mode==255)
     {
 
+      _sc_channel=0XFE;
 
       mask=0xFFFFFFFFFFFFFFFF;
       this->setAllMasks(mask);
       this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
+      _running_mode=0;
+      mqtt_publish("status",build_status());
+
       return;
       
     }
@@ -1068,6 +1090,7 @@ void Gricv0Manager::GainCurve(int mode,int gmin,int gmax,int step,int threshold)
       mask=0;
       for (int i=0;i<64;i++)
 	{
+	  _sc_channel=i;
 	  mask=(1ULL<<i);
 	  std::cout<<"Step HR2 "<<i<<" channel "<<i<<std::endl;
 	  this->setAllMasks(mask);
@@ -1075,6 +1098,9 @@ void Gricv0Manager::GainCurve(int mode,int gmin,int gmax,int step,int threshold)
 	  this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
 	  //this->ScurveStep(mdcc,builder,thmin,thmax,step);
 	}
+       _running_mode=0;
+       mqtt_publish("status",build_status());
+ 
       return;
     }
 
@@ -1084,7 +1110,9 @@ void Gricv0Manager::GainCurve(int mode,int gmin,int gmax,int step,int threshold)
   this->setCTEST(mask);
   //this->ScurveStep(mdcc,builder,thmin,thmax,step);
   this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
-  
+  _running_mode=0;
+  mqtt_publish("status",build_status());
+
 }
 
 

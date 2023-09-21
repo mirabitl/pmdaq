@@ -51,6 +51,7 @@ public:
   void c_gaincurve(http_request m);
   void c_ctest(http_request m);
   void c_setrunmode(http_request m);
+  web::json::value build_status();
 private:
   HR2ConfigAccess* _hca;
   gricv1::Interface* _mpi;
@@ -66,8 +67,9 @@ private:
 
   bool _running;
  // Scurve parameters
-  
-  int _sc_mode,_sc_thmin,_sc_thmax,_sc_step,_sc_gmin,_sc_gmax,_sc_threshold,_sc_level;
+  uint32_t _running_mode;
+
+  int _sc_mode,_sc_thmin,_sc_thmax,_sc_step,_sc_gmin,_sc_gmax,_sc_threshold,_sc_level,_sc_channel;
   int _sc_win,_sc_ntrg;
   bool _sc_running;
   int _run_mode;
