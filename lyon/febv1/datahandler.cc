@@ -69,7 +69,8 @@ bool febv1::dataHandler::processPacket()
       if (_lastABCID != 0)
 	{
 	  // Write Event
-	  PM_INFO(_logFebv1,  "Writing completed Event" << _event << " GTC " << _lastGTC << " ABCID " << _lastABCID << " Lines " << _chlines << " ID " << id());
+	  if (_event%100==1)
+	    PM_INFO(_logFebv1,  "Writing completed Event" << _event << " GTC " << _lastGTC << " ABCID " << _lastABCID << " Lines " << _chlines << " ID " << id());
 	  // To be done
 	  this->processEventTdc();
 	  // Reset lines number
@@ -116,7 +117,8 @@ bool febv1::dataHandler::processPacket()
   uint16_t *tmp = (uint16_t *)&_buf[7];
   uint32_t gtc = (_buf[9] | (_buf[8] << 8) | (_buf[7] << 16) | (_buf[6] << 24));
   uint16_t nlines = ntohs(_sBuf[5]);
-  PM_INFO(_logFebv1,  id() << " Packets=" << _nProcessed << " channel=" << channel << " GTC=" << gtc << " lines=" << nlines << " index=" << _idx);
+  if (gtc%100==1)
+    PM_INFO(_logFebv1,  id() << " Packets=" << _nProcessed << " channel=" << channel << " GTC=" << gtc << " lines=" << nlines << " index=" << _idx);
   
   uint8_t *cl = (uint8_t *)&_buf[12];
   uint8_t *cdestl = (uint8_t *)&_linesbuf[_chlines * CHBYTES];
@@ -180,7 +182,7 @@ void febv1::dataHandler::processEventTdc()
     {
       memcpy((unsigned char *)_dsData->payload(), temp, idx);
       _dsData->publish(_lastABCID, _lastGTC, idx);
-      if (_event % 100 == 0)
+      if (_event % 100 == 1)
 	PM_INFO(_logFebv1,  id() << "Publish  Event=" << _event << " GTC=" << _lastGTC << " ABCID=" << _lastABCID << " Lines=" << _chlines << " size=" << idx);
     }
 }

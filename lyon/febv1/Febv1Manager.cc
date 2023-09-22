@@ -795,7 +795,7 @@ void Febv1Manager::setVthTime(uint32_t vth)
     int iasic = it->first & 0xFF;
 
     it->second.setVthTime(vth);
-    it->second.Print();
+    //it->second.Print();
     // 1 seul ASIC break;
   }
   this->configurePR2();

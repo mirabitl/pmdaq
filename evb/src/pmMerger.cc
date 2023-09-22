@@ -238,8 +238,8 @@ void pmMerger::processData(std::string idd, zmq::message_t *message)
   sscanf(idd.c_str(), "DS-%d-%d %d %ld", &detid, &sid, &gtc, &bx);
   //fprintf(stderr,"Message %s DS-%d-%d %d %ld\n",idd.c_str(),detid,sid,gtc,bx);
   std::map<uint64_t, std::vector<pm::buffer *>>::iterator it_gtc = _eventMap.find(gtc);
-  if (gtc % 20 == 0)
-    PM_INFO(_logPdaq, "Event Map size " << _eventMap.size());
+  if (_eventMap.size()>20)
+    PM_WARN(_logPdaq, "Event Map size increased " << _eventMap.size());
   pm::buffer *b = new pm::buffer(1024 * 1024);
   // uint32_t* iptr=(uint32_t*) message->data();
   //   uint8_t* cptr=(uint8_t*) message->data();
