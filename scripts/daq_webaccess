@@ -63,8 +63,15 @@ class wddService(CorsService):
     def DAQLIST():
         global _daq_map
         status={}
-        status["content"]=list(_daq_map.keys())
-        yield status
+        status["content"]=[]
+        for d in _daq_map.keys():
+            dm={}
+            dm["name"]=d
+            dm["pns"]=_daq_map[d]["pnsname"]
+            dm["setup"]=_daq_map[d]["daq"].location
+            status["content"].append(dm)
+            #list(_daq_map.keys())
+        yield  json.dumps(status)
         
     @srpc(String,_returns=Iterable(String))
     def REMOVEDAQ(daq):
@@ -76,7 +83,7 @@ class wddService(CorsService):
         """
         global _daq_map
         if not daq in _daq_map:    
-            yield {'error':"NOTREGISTERED"}
+            yield  json.dumps({'error':"NOTREGISTERED"})
         else:
             del _daq_map[daq]
     @srpc(String,String,String,_returns=Iterable(String))
@@ -115,13 +122,13 @@ class wddService(CorsService):
             try:
                 _daq_map[daqmongo]["pns"]=pnsAccess.pnsAccess()
             except:
-                yield {"error":"PnsAccessFailure"}
+                yield  json.dumps({"error":"PnsAccessFailure"})
                 del _daq_map[daqmongo]
                 return
             try:
                 _daq_map[daqmongo]["daq"]=crc.combRC(file_config)
             except:
-                yield {"error":"DaqAccessFailure"}
+                yield  json.dumps({"error":"DaqAccessFailure"})
                 del _daq_map[daqmongo]
                 return
             _daq_map[daqmongo]["daq"].location=location

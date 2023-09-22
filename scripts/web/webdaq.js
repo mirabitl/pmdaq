@@ -1,7 +1,7 @@
 function typeComment(e, divname) {  // Execute this function on enter key
     var _comment = document.createElement('pre'); //create a pre tag 
     _comment.textContent = e; //put the value inside pre tag
-    console.log(_comment)
+    //console.log(_comment)
     var _commentDiv = document.getElementById(divname);
     if (_commentDiv.firstChild === null) { // Will validate if any comment is there
         // If no comment is present just append the child
@@ -66,6 +66,99 @@ var daqinfo = {
     url: null,
     registered: false
 };
+
+async function runningDaqs()
+{
+    let mghost = document.getElementById("mg_host").value;
+    let mgport = document.getElementById("mg_port").value;
+    const orig = 'http://' + mghost + ':' + mgport;
+    let daqhost = document.getElementById("daq_host").value;
+    let daqport = document.getElementById("daq_port").value;
+    const origdaq = 'http://' + daqhost + ':' + daqport;
+    daqinfo.url = origdaq;
+
+    let jdaq = await spyneCommand(daqinfo.url, "DAQLIST", {});
+    //console.log(jdaq);
+    //console.log(jdaq["content"]);
+    typeComment("Running DAQs " + jdaq["content"], "messages");
+    var list_daq = document.createElement("select");
+    list_daq.name = "sel_configs";
+    list_daq.id = "sel_configs"
+
+    for (const val of jdaq["content"]) {
+        let conf_option = document.createElement("option");
+        conf_option.value = val["name"];
+        conf_option.text = val["name"] ;
+        //console.log(conf_option.text)
+        list_daq.appendChild(conf_option);
+    }
+
+    let label = document.createElement("label");
+    label.innerHTML = "Choose your daq: "
+    label.htmlFor = "daqs";
+    let bSetDaq = document.createElement('input');
+    bSetDaq.type = 'button';
+    bSetDaq.id = 'setdaq';
+    bSetDaq.value = 'Set';
+    bSetDaq.className = 'btn';
+
+    bSetDaq.onclick = async function () {
+        // …
+        theDaq = list_daq.options[list_daq.selectedIndex].value
+        vc = theDaq.split(":")
+        daqname = vc[0] + ":" + vc[1];
+        alert(vc[0] + " version " + vc[1] + " -> " + daqname);
+        let pdict =
+        {
+            name: vc[0],
+            version: vc[1]
+        };
+        daqinfo.config = await spyneCommand(orig, "CONFIGURATION", pdict)
+        console.log(daqinfo.config["content"]);
+        if ("pns" in daqinfo.config["content"])
+            pnsdaq = daqinfo.config["content"]["pns"];
+        else
+            pnsdaq = prompt("Enter the PMDAQ name server", "lyocmsmu03");
+        daqloc = prompt("Enter the setup name", "???");
+        daqinfo.name = daqname;
+        daqinfo.state = vc[0];
+        daqinfo.version = parseInt(vc[1]);
+        daqinfo.pns = pnsdaq;
+        daqinfo.location = daqloc;
+        // create the daq in webdaq
+        let daqhost = document.getElementById("daq_host").value;
+        let daqport = document.getElementById("daq_port").value;
+
+
+        const origdaq = 'http://' + daqhost + ':' + daqport;
+        daqinfo.url = origdaq;
+
+        let pdaq = {
+            daqmongo: daqinfo.name,
+            pnsname: daqinfo.pns,
+            location: daqloc
+        }
+        let jdaq = await spyneCommand(daqinfo.url, "REGISTERDAQ", pdaq);
+        console.log(jdaq);
+        typeComment(" Connecting to " + daqhost + "on port " + daqport, "messages");
+        //document.getElementById("messages").innerHTML += "<span> Connecting to " + daqhost + "on port " + daqport + "</span><br>";
+        for (app of daqinfo.config["content"]["apps"]) {
+            typeComment("Application " + app["name"] + " instance " + app["instance"] + " found", "messages");
+            //document.getElementById("messages").innerHTML += "<span> Application " + app["name"] + " instance " + app["instance"] + " found </span><br>"; 
+            mqtt_topic = daqinfo.state + "/" + app["name"] + "/" + app["instance"] + "/status";
+            typeComment("One can subscribe " + mqtt_topic, "messages");
+            //document.getElementById("messages").innerHTML += "<span> One can subscribe "+mqtt_topic+ "  </span><br>"; 
+
+        }
+        subscribeMqtt();
+        registered = daqname;
+        daqinfo.registered = true;
+    };
+    document.getElementById("daqsel").innerHTML="";
+    document.getElementById("daqsel").appendChild(label).appendChild(list_daq)
+    document.getElementById("daqsel").append(bSetDaq);
+
+}
 
 async function getConfigurations() {
     let mghost = document.getElementById("mg_host").value;
@@ -192,7 +285,7 @@ async function refreshStatus(deadline) {
         return;
     }
     verboselog = false;
-    console.log("Refreshing ... ");
+    //console.log("Refreshing ... ");
     let state = await getState();
     if (state == "RUNNING" && (t_now - last_status) > 10000)
     {
@@ -210,7 +303,7 @@ async function getState() {
         return "NONE";
     }
     let jstate = await spyneCommand(daqinfo.url, "STATE", { daq: daqinfo.name });
-    console.log(jstate)
+    //console.log(jstate)
     if (jstate.hasOwnProperty("state")) {
         document.getElementById("daqstate").innerHTML = jstate["state"];
         return jstate["state"];
@@ -424,7 +517,7 @@ async function SetTriggerMdcc() {
 
 
     typeComment("SetTriggerMdcc on " + daqname + "/" + daqloc, "messages");
-    console.log(await getState());
+    //console.log(await getState());
 
 }
 async function SetFebv1Values() {
@@ -439,7 +532,7 @@ async function SetFebv1Values() {
 
 
     typeComment("SetFebv1Values on " + daqname + "/" + daqloc, "messages");
-    console.log(await getState());
+    //console.log(await getState());
 
 }
 async function SetDBValues() {
@@ -458,7 +551,7 @@ async function SetDBValues() {
 async function SetVthTime() {
     let jrep = await processCommand("lyon_febv1", "SETVTHTIME", { value: document.getElementById("febv1_vthtime").value });
     typeComment("SetVthTime on " + daqname + "/" + daqloc, "messages");
-    console.log(await getState());
+    //console.log(await getState());
 
 }
 async function LutCalib() {
@@ -469,7 +562,7 @@ async function LutCalib() {
     }
 
     let read_state = await getState();
-    console.log(read_state)
+    //console.log(read_state)
     if (read_state != "INITIALISED") {
         alert("DAQ must be initialised to make FEBV1 Lut calibration");
         return;
@@ -522,7 +615,7 @@ async function doCal_dac10febv1() {
         alert("The DAQ must be running " + state);
     }
     typeComment("doCal_dac10febv1 on " + daqname + "/" + daqloc, "messages");
-    console.log(await getState());
+    //console.log(await getState());
 
 }
 
@@ -544,7 +637,7 @@ async function doCal_b0pmr() {
         alert("The DAQ must be running");
     }
     typeComment("doCal_b0pmr on " + daqname + "/" + daqloc, "messages");
-    console.log(await getState());
+    //console.log(await getState());
 
 }
 
@@ -567,7 +660,7 @@ async function doCal_b0gric() {
         alert("The DAQ must be running");
     }
     typeComment("doCal_b0gric on " + daqname + "/" + daqloc, "messages");
-    console.log(await getState());
+    //console.log(await getState());
 
 }
 
@@ -622,7 +715,7 @@ function onConnectionLost(responseObject) {
 }
 
 function onMessageArrived(message) {
-    console.log("OnMessageArrived: " + message.payloadString);
+    //console.log("OnMessageArrived: " + message.payloadString);
     vc = message.destinationName.split("/");
     if (vc[1] == "lyon_febv1" && vc[3] == "status") {
         jfebs = JSON.parse(message.payloadString);
@@ -674,8 +767,8 @@ function onMessageArrived(message) {
             else
                 typeComment("Topic:" + message.destinationName + "| Message : " + message.payloadString, "messages");
     jmsg = JSON.parse(message.payloadString);
-    console.log(jmsg);
-    console.log(message.destinationName);
+    //console.log(jmsg);
+    //console.log(message.destinationName);
 
 }
 

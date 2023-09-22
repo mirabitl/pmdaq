@@ -160,10 +160,14 @@
 	       style="width: 200px;">
 
 	<input id="daq_port" type="number" name="daqport" value="27027"><br>
-	<b>Queries:</b>
-	<input type="button" onclick="getConfigurations()" value="Configurations">
+	<b>Queries:</b><br>
+	<input type="button" onclick="runningDaqs()" value="List Running DAQs">
+	<br>
+	
+	<input type="button" onclick="getConfigurations()" value=" List Configurations">
 	<!--input type="button"  onclick="startDisconnect()" value="Disconnect"--> <br>
       </form>
+      <div id="daqsel"></div>
       <div id="configsel"></div>
 
       <!--p>London is the capital city of England.</p-->
