@@ -506,6 +506,10 @@ async function SetTriggerMdcc() {
     let board = document.getElementById("trg_board").value;
     let jrep = await processCommand(board, "SPILLOFF", { nclock: document.getElementById("trg_spilloff").value });
     jrep = await processCommand(board, "SPILLON", { nclock: document.getElementById("trg_spillon").value });
+    jrep = await processCommand(board, "CALIBON", { value: 0});
+    jrep = await processCommand(board, "CALIBOFF", {});
+    jrep = await processCommand(board, "SETCALIBCOUNT", { nclock: 0 });
+
     jrep = await processCommand(board, "SETEXTERNAL", { value: document.getElementById("trg_external").value });
     jrep = await processCommand(board, "SETSPILLREGISTER", { value: document.getElementById("trg_spillreg").value });
 
