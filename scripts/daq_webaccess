@@ -393,7 +393,7 @@ class wddService(CorsService):
             return
         fdc=_daq_map[daq]["daq"]
         hexmask=int(mask,16)
-        fdc.tdcLUTMask(tdc,hexmask,feb)
+        fdc.tdcLUTMask(tdc,mask,feb)
         status={}
         status["status"]="DONE"
         yield json.dumps(status)
