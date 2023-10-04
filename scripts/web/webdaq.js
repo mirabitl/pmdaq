@@ -257,7 +257,7 @@ async function getConfigurations() {
         registered = daqname;
         daqinfo.registered = true;
     };
-
+    document.getElementById("configsel").innerHTML="";
     document.getElementById("configsel").appendChild(label).appendChild(list_conf)
     document.getElementById("configsel").append(bSetConfig);
 
@@ -819,6 +819,7 @@ async function getStates() {
         typeComment("SetDBValues on " + statename, "messages");
     };
 
+    document.getElementById("statesel").innerHTML="";
     document.getElementById("statesel").appendChild(label).appendChild(list_state)
     document.getElementById("statesel").append(bSetState);
 
