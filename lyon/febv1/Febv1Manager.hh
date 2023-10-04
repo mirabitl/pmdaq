@@ -49,6 +49,8 @@ public:
   void c_setDuration(http_request m );
   /// SETVTHTIME Command Handler
   void c_setvthtime(http_request m );
+  /// SHIFTVTHTIME Command Handler
+  void c_shiftvthtime(http_request m );
   /// SETONEVTHTIME Command handler
   void c_set1vthtime(http_request m );
   /// DOWNLOADDB Command handler
@@ -76,6 +78,8 @@ public:
   void setVthTime(uint32_t dac);
   /// Change VTHTIME (FEB and asic specified)
   void setSingleVthTime(uint32_t vth, uint32_t feb, uint32_t asic);
+  ///  Shift VTHTIME (FEB and asic specified)
+  void shiftVthTime(int32_t delta_vth, uint32_t feb, uint32_t asic);
   /// Change Dead time
   void setDelay();
   /// Change active time

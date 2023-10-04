@@ -43,6 +43,8 @@ void Febv1Manager::initialise()
   this->addCommand("CAL6BDAC", std::bind(&Febv1Manager::c_cal6bdac, this, std::placeholders::_1));
   this->addCommand("SETVTHTIME", std::bind(&Febv1Manager::c_setvthtime, this, std::placeholders::_1));
   this->addCommand("SETONEVTHTIME", std::bind(&Febv1Manager::c_set1vthtime, this, std::placeholders::_1));
+  this->addCommand("SHIFTVTHTIME", std::bind(&Febv1Manager::c_shiftvthtime, this, std::placeholders::_1));
+
   this->addCommand("SETMASK", std::bind(&Febv1Manager::c_setMask, this, std::placeholders::_1));
   this->addCommand("SETMASK1", std::bind(&Febv1Manager::c_setMask1Channel, this, std::placeholders::_1));
   this->addCommand("DOWNLOADDB", std::bind(&Febv1Manager::c_downloadDB, this, std::placeholders::_1));
@@ -228,6 +230,34 @@ void Febv1Manager::c_set1vthtime(http_request m)
   par["FEB"] = json::value::number(feb);
   par["ASIC"] = json::value::number(asic);
   par["1VTH"] = _jControl;
+  Reply(status_codes::OK, par);
+}
+void Febv1Manager::c_shiftvthtime(http_request m)
+{
+  auto par = json::value::object();
+  par["STATUS"] = json::value::string(U("DONE"));
+
+  uint32_t vth = 0;
+  uint32_t feb = 14;
+  uint32_t asic = 1;
+  auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
+  for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
+  {
+    if (it2->first.compare("vth") == 0)
+      vth = std::stoi(it2->second);
+    if (it2->first.compare("feb") == 0)
+      feb = std::stoi(it2->second);
+    if (it2->first.compare("asic") == 0)
+      asic = std::stoi(it2->second);
+  }
+
+  PM_INFO(_logFebv1, " ShiftVthTime called with vth " << vth << " feb " << feb << " asic " << asic);
+
+  this->shiftVthTime(vth, feb, asic);
+  par["VTH"] = json::value::number(vth);
+  par["FEB"] = json::value::number(feb);
+  par["ASIC"] = json::value::number(asic);
+  par["SHIFTVTH"] = _jControl;
   Reply(status_codes::OK, par);
 }
 void Febv1Manager::c_setMask(http_request m)
@@ -816,6 +846,28 @@ void Febv1Manager::setSingleVthTime(uint32_t vth, uint32_t feb, uint32_t asic)
     uint64_t eid = (((uint64_t)utils::convertIP(ip.str())) << 32) | asic;
     if (eid != it->first)
       continue;
+    it->second.setVthTime(vth);
+  }
+  this->configurePR2();
+
+  PMF_DEBUG(_logFebv1, __PRETTY_FUNCTION__ << " Fin ");
+}
+void Febv1Manager::shiftVthTime(int32_t delta_vth, uint32_t feb, uint32_t asic)
+{
+  // Encode IP
+  std::stringstream ip;
+  ip << "192.168.10." << feb;
+
+  PMF_DEBUG(_logFebv1, __PRETTY_FUNCTION__ << " Debut ");
+  for (auto it = _tca->asicMap().begin(); it != _tca->asicMap().end(); it++)
+  {
+    //  Change VTH time only on specified ASIC
+    uint64_t eid = (((uint64_t)utils::convertIP(ip.str())) << 32) | asic;
+    if (eid != it->first)
+      continue;
+    uint32_t cur_vth=it->second.getVthTime();
+    uint32_t vth =cur_vth+delta_vth;
+
     it->second.setVthTime(vth);
   }
   this->configurePR2();
