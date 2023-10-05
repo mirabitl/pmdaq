@@ -239,7 +239,7 @@ void Febv1Manager::c_shiftvthtime(http_request m)
 
   uint32_t vth = 0;
   uint32_t feb = 14;
-  uint32_t asic = 1;
+  uint32_t asic = 0;
   auto querym = uri::split_query(uri::decode(m.relative_uri().query()));
   for (auto it2 = querym.begin(); it2 != querym.end(); it2++)
   {
@@ -861,14 +861,18 @@ void Febv1Manager::shiftVthTime(int32_t delta_vth, uint32_t feb, uint32_t asic)
   PMF_DEBUG(_logFebv1, __PRETTY_FUNCTION__ << " Debut ");
   for (auto it = _tca->asicMap().begin(); it != _tca->asicMap().end(); it++)
   {
-    //  Change VTH time only on specified ASIC
-    uint64_t eid = (((uint64_t)utils::convertIP(ip.str())) << 32) | asic;
-    if (eid != it->first)
-      continue;
-    uint32_t cur_vth=it->second.getVthTime();
-    uint32_t vth =cur_vth+delta_vth;
+    for (int iasic=1;iasic<=2;iasic++)
+      {
+	//  Change VTH time only on specified ASIC
+	if (asic!=0 && iasic!=asic) continue;
+	uint64_t eid = (((uint64_t)utils::convertIP(ip.str())) << 32) | asic;
+	if (eid != it->first)
+	  continue;
+	uint32_t cur_vth=it->second.getVthTime();
+	uint32_t vth =cur_vth+delta_vth;
 
-    it->second.setVthTime(vth);
+	it->second.setVthTime(vth);
+      }
   }
   this->configurePR2();
 
