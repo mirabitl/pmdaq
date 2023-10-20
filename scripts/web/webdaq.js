@@ -552,6 +552,12 @@ async function SetDBValues() {
     console.log(await getState());
 
 }
+async function ShiftVthTime() {
+    let jrep = await processCommand("lyon_febv1", "SHIFTVTHTIME", { vth: document.getElementById("febv1_shiftvth").value, feb: document.getElementById("febv1_febid").value,asic: document.getElementById("febv1_asic").value });
+    typeComment("ShiftVthTime on " + daqname + "/" + daqloc, "messages");
+    //console.log(await getState());
+
+}
 async function SetVthTime() {
     let jrep = await processCommand("lyon_febv1", "SETVTHTIME", { value: document.getElementById("febv1_vthtime").value });
     typeComment("SetVthTime on " + daqname + "/" + daqloc, "messages");
