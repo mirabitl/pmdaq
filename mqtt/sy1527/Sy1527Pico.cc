@@ -21,10 +21,21 @@ Sy1527Pico::Sy1527Pico(std::string id, std::string subid,std::string account,uin
   std::cout<<Pwd<<"|"<<std::endl;
   std::cout<<Host<<"|"<<std::endl;
 
-  _hv= new caen::HVCaenInterface(Host,Name,Pwd);
 
+  _host=Host;
+  _name=Name;
+  _pwd=Pwd;
   unlock();
   registerCommands();
+}
+void Sy1527Pico::opensocket()
+{
+  if (_hv!=NULL)
+    {
+      delete _hv;
+      _hv=NULL;
+    }
+  _hv= new caen::HVCaenInterface(_host,_name,_pwd);
 }
 Sy1527Pico::~Sy1527Pico()
 {
@@ -98,7 +109,7 @@ void Sy1527Pico::status(web::json::value v)
   //PMF_INFO(_logSy1527,"Querying Status");
 
   auto par = web::json::value::object();
-
+  this->opensocket();
  if (_hv==NULL)
   {
     //PMF_ERROR(_logSy1527,"No Sy1527Snmp opened");
@@ -121,7 +132,7 @@ void Sy1527Pico::status(web::json::value v)
 void Sy1527Pico::on(web::json::value v)
 {
 
- 
+   this->opensocket();
  uint32_t first = _first;
  uint32_t last =_last;
  if (v.as_object().find("first")!=v.as_object().end())
@@ -136,7 +147,7 @@ void Sy1527Pico::on(web::json::value v)
  }
 void Sy1527Pico::off(web::json::value v)
 {
-
+  this->opensocket();
   uint32_t first = _first;
  uint32_t last =_last;
  if (v.as_object().find("first")!=v.as_object().end())
@@ -151,7 +162,7 @@ void Sy1527Pico::off(web::json::value v)
 }
 void Sy1527Pico::clearalarm(web::json::value v)
 {
-
+  this->opensocket();
    uint32_t first = _first;
    uint32_t last =_last;
    if (v.as_object().find("first")!=v.as_object().end())
@@ -167,6 +178,7 @@ void Sy1527Pico::clearalarm(web::json::value v)
 }
 void Sy1527Pico::vset(web::json::value v)
 {
+  this->opensocket();
   if (v.as_object().find("vset")==v.as_object().end())
     return;
   uint32_t first = _first;
@@ -185,7 +197,7 @@ void Sy1527Pico::vset(web::json::value v)
 
 void Sy1527Pico::iset(web::json::value v)
 {
-
+  this->opensocket();
  if (v.as_object().find("iset")==v.as_object().end())
     return;
   uint32_t first = _first;
@@ -206,6 +218,7 @@ void Sy1527Pico::iset(web::json::value v)
 
 void Sy1527Pico::rampup(web::json::value v)
 {
+  this->opensocket();
 if (v.as_object().find("rampup")==v.as_object().end())
     return;
   uint32_t first = _first;

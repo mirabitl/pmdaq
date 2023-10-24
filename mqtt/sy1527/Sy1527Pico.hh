@@ -8,7 +8,7 @@ public:
   void registerCommands();
   web::json::value channelStatus(uint32_t channel);
   web::json::value rangeStatus(int32_t first,int32_t last);
-
+  void opensocket();
   virtual void status(web::json::value v);
   virtual void reset(web::json::value v);
   virtual void vset(web::json::value v);
@@ -22,6 +22,6 @@ public:
 private:
   caen::HVCaenInterface* _hv;
   std::mutex _bsem;
-  std::string _account;
+  std::string _account,_host,_name,_pwd;
   uint32_t _first,_last;
 };
