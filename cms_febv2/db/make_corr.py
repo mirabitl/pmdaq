@@ -61,8 +61,15 @@ class pedcor:
         histos=[]
         thrs=[]
         thre=[]
+        thrm=[]
+        thrr=[]
+        all_lines=[]
         scfit=ROOT.TF1("scfit","[0]*TMath::Erfc((x-[1])/[2])",thi+1,tha);
         ROOT.gStyle.SetOptStat(0)
+        hpmean=ROOT.TH1F("hpmean",f"Summary pedestal {fn} {asic} ",16,0.,16.0)
+        hpnoise=ROOT.TH1F("hpnoise",f"Summary Noise {fn} {asic} ",16,0.,16.0)
+        hpmean.GetYaxis().SetRangeUser(thi,tha)
+
         for c in d_sc["channels"]:
             ch=c["prc"]
             vals=c["scurve"]
@@ -76,7 +83,8 @@ class pedcor:
             for ith in range(nval):
                 hs.SetBinContent(ith+1,vals[ith])
                 if (ith-1>0):
-                    hd.SetBinContent(ith,vals[ith-1]-vals[ith])
+                    if (vals[ith-1]-vals[ith]>-10):
+                        hd.SetBinContent(ith,vals[ith-1]-vals[ith])
             c1.cd()
             hs.SetLineColor(icol)
 
@@ -95,18 +103,65 @@ class pedcor:
             hsc.Fit("scfit","","");
             thrs.append(scfit.GetParameter(1))
             thre.append(scfit.GetParameter(2))
+            thrm.append(hd.GetMean())
+            thrr.append(hd.GetRMS())
+                        
             c2.Draw()
             c2.Update()
+            print(f"Pedestal {hd.GetMean()} Noise {hd.GetRMS()}")
             if (debug):
                 v=input()
+                
+            #hd.Draw()
+            #c2.Draw()
+            #c2.Update()
+
+            #if (debug):
+            #    v=input()
+            
+
             histos.append(hs)
         print(thrs)
         print(thre)
+        for i in range(len(thrs)):
+            thr=thrs[i]+5*thre[i]
+            print(f"channel {i} Mean {thrs[i]:.1f} Noise {thre[i]:.1f} Threshold {thr:.1f} Gaussian {thrm[i]:.1f} {thrr[i]:.1f}")
+            hpmean.SetBinContent(i+1,thrs[i])
+            hpnoise.SetBinContent(i+1,thre[i])
         c2.Close()
         del c2
         if (save):
             c1.cd()
             c1.SaveAs(f"results/{fn}_{asic}.pdf")
+            v=input()
+            c1.cd()
+            hpmean.Draw()
+            c1.Draw()
+            c1.Update()
+            
+            np_thrs=np.array(thrs)
+            np_thre=np.array(thre)
+            seuil=np_thrs.max()+5*np_thre.max()
+            print(np_thrs.max(),np_thre.max(),seuil,thi,tha)
+            tl=ROOT.TLine(0,seuil,16,seuil)
+            tl.SetLineColor(2)
+            tl.Draw("SAME")
+            tt=ROOT.TLatex()
+            #tt=ROOT.TText(8,seuil+20,f"T_{{max}} {np_thrs.max():.1f} Noise_{{max}} {np_thre.max():.1f} VTH cut {seuil:.1f}")
+            tt.SetTextAlign(22);
+            tt.SetTextColor(ROOT.kBlue+2);
+            #tt.SetTextFont(33);
+            tt.SetTextSize(0.03);
+            s_lat=f"T_{{max}} {np_thrs.max():.1f} Noise_{{max}} {np_thre.max():.1f} VTH cut {seuil:.1f}";
+            print(s_lat)
+            tt.DrawLatex(8,seuil+20,s_lat)
+            c1.Draw()
+            c1.Update()
+            v=input()
+            hpnoise.Draw()
+            c1.Draw()
+            c1.Update()
+            v=input()
         v=input("Next ASIC?")
         return histos
     def full_threshold(self,c_upload=None):
