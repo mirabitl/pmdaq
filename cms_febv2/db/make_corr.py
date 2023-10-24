@@ -55,7 +55,7 @@ class pedcor:
         thi=d_sc["thmin"]
         tha=d_sc["thmax"]
         fn=f"{analysis}_{state}-v{version}-f{feb}"
-        c1=ROOT.TCanvas()
+        c1=ROOT.TCanvas("SCurves","Scurves",600,900)
         c2=ROOT.TCanvas("Fit")
         icol=1
         histos=[]
@@ -69,7 +69,8 @@ class pedcor:
         hpmean=ROOT.TH1F("hpmean",f"Summary pedestal {fn} {asic} ",16,0.,16.0)
         hpnoise=ROOT.TH1F("hpnoise",f"Summary Noise {fn} {asic} ",16,0.,16.0)
         hpmean.GetYaxis().SetRangeUser(thi,tha)
-
+        c1.Divide(1,3)
+        c1.cd(1)
         for c in d_sc["channels"]:
             ch=c["prc"]
             vals=c["scurve"]
@@ -85,7 +86,7 @@ class pedcor:
                 if (ith-1>0):
                     if (vals[ith-1]-vals[ith]>-10):
                         hd.SetBinContent(ith,vals[ith-1]-vals[ith])
-            c1.cd()
+            c1.cd(1)
             hs.SetLineColor(icol)
 
             if (icol==1):
@@ -131,10 +132,8 @@ class pedcor:
         c2.Close()
         del c2
         if (save):
-            c1.cd()
-            c1.SaveAs(f"results/{fn}_{asic}.pdf")
-            v=input()
-            c1.cd()
+
+            c1.cd(2)
             hpmean.Draw()
             c1.Draw()
             c1.Update()
@@ -151,16 +150,20 @@ class pedcor:
             tt.SetTextAlign(22);
             tt.SetTextColor(ROOT.kBlue+2);
             #tt.SetTextFont(33);
-            tt.SetTextSize(0.03);
+            tt.SetTextSize(0.05);
             s_lat=f"T_{{max}} {np_thrs.max():.1f} Noise_{{max}} {np_thre.max():.1f} VTH cut {seuil:.1f}";
             print(s_lat)
             tt.DrawLatex(8,seuil+20,s_lat)
             c1.Draw()
             c1.Update()
             v=input()
+            c1.cd(3)
             hpnoise.Draw()
             c1.Draw()
             c1.Update()
+
+            c1.cd()
+            c1.SaveAs(f"results/{fn}_{asic}.pdf")
             v=input()
         v=input("Next ASIC?")
         return histos

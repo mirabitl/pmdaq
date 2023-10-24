@@ -71,6 +71,7 @@ void caen::HVCaenInterface::Connect()
   CAENHVRESULT ret;
   int sysHndl;
   int sysType=0;
+  sysType=2; //SY4527
   int link=LINKTYPE_TCPIP;
   int ntry=0;
  tryconnect:

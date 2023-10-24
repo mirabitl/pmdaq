@@ -1,1 +1,5 @@
+#Paho
 g++ -o ../bin/Sy1527Paho.exe -DUNIX -I../include ../src/PahoInterface.cc HVCaenInterface.cxx Sy1527Paho.cc -lcpprest  -lpaho-mqtt3a -lpaho-mqttpp3 -lpthread -lcaenhvwrapper
+
+#Pico
+g++ -o ../bin/Sy1527Pico.exe -DUNIX -I../include ../src/PicoInterface.cc HVCaenInterface.cxx Sy1527Pico.cc -lcpprest  -lpaho-mqtt3a -lpaho-mqttpp3 -lpthread -lcaenhvwrapper
