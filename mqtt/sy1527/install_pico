@@ -1,0 +1,12 @@
+#!/bin/bash
+sudo systemctl disable Sy1527Pico 
+sudo service Sy1527Pico stop
+mkdir -p ../bin
+g++ -o ../bin/Sy1527Pico.exe -DUNIX -I../include ../src/PicoInterface.cc HVCaenInterface.cxx Sy1527Pico.cc -lcpprest  -lpaho-mqtt3a -lpaho-mqttpp3 -lpthread -lcaenhvwrapper
+
+sudo mkdir -p /usr/local/paho/bin
+sudo cp ../bin/Sy1527Pico.exe /usr/local/paho/bin/
+sudo sed -e 's,SERVICENAME,Sy1527Pico,g' ../etc/example.service > Sy1527Pico.service
+sudo cp Sy1527Pico.service /lib/systemd/system/
+sudo systemctl enable Sy1527Pico 
+sudo service Sy1527Pico stop
