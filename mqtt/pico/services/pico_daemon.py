@@ -149,6 +149,21 @@ class pico_monitor:
                             print("Error sending ",metric_c,c[y],file=self.fout)
                             break
                 return
+            if (p[len(p)-1] =="sy1527"):
+                vch=r_m["content"]["channels"]
+                for c in vch:
+                    metric=""
+                    for i in range(len(p)):
+                        metric=metric+p[i]+"."
+                    metric=metric+("ch_%.2d" % c["id"])+"."
+                    for y in ["iset","iout","vset","vout"]:
+                        metric_c=metric+y
+                        try:
+                            self.gsender.send(metric_c,c[y])
+                        except Exception as error:
+                            print("Error sending ",metric_c,c[y],file=self.fout)
+                            break
+                return
             for x in r_m["content"].keys():
                 #print(len(p),x,file=self.fout)
                 if (len(p)>=4 and p[3]=="INFOS"):
