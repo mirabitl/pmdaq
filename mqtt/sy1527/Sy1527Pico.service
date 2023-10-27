@@ -1,9 +1,9 @@
 [Unit]
-Description = Starting WienerPico  service
+Description = Starting Sy1527Pico  service
 After = network.target
 
 [Service]
-ExecStart = /usr/local/paho/bin/WienerPico.exe
+ExecStart = /usr/local/paho/bin/Sy1527Pico.exe
 Restart=always
 RestartSec=5
 

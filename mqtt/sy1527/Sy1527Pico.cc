@@ -1,8 +1,8 @@
 #include "Sy1527Pico.hh"
 #include <unistd.h>
+#include <time.h>
 
-
-Sy1527Pico::Sy1527Pico(std::string id, std::string subid,std::string account,uint32_t first,uint32_t last) : PicoInterface(id, subid, "sy1527"), _hv(0),_first(first),_last(last),_account(account)
+Sy1527Pico::Sy1527Pico(std::string id, std::string subid,std::string account,uint32_t first,uint32_t last) : PicoInterface(id, subid, "sy1527"), _hv(0),_first(first),_last(last),_account(account),_last_connect(0)
 {
   
    if (_hv!=NULL)
@@ -30,12 +30,31 @@ Sy1527Pico::Sy1527Pico(std::string id, std::string subid,std::string account,uin
 }
 void Sy1527Pico::opensocket()
 {
-  if (_hv!=NULL)
+  time_t tnow=time(0);
+  if (_hv!=NULL && (tnow-_last_connect)>30)
     {
+      //_hv->Disconnect();
+      
       delete _hv;
       _hv=NULL;
     }
-  _hv= new caen::HVCaenInterface(_host,_name,_pwd);
+  if (_hv==NULL)
+    {
+      _hv= new caen::HVCaenInterface(_host,_name,_pwd);
+      _last_connect=time(0);
+    }
+}
+void Sy1527Pico::closesocket()
+{
+  time_t tnow=time(0);
+  if (_hv!=NULL && (tnow-_last_connect)>300)
+    {
+      //_hv->Disconnect();
+      
+      delete _hv;
+      _hv=NULL;
+    }
+  
 }
 Sy1527Pico::~Sy1527Pico()
 {
@@ -57,8 +76,12 @@ void Sy1527Pico::registerCommands()
 }
 web::json::value Sy1527Pico::channelStatus(uint32_t channel)
 {
-  auto r= web::json::value::object();
+  
+  auto r=_hv->ChannelInfo(channel/6,channel%6);
   r["id"]=channel;
+  std::cout<<channel<<" gives "<<r<<std::endl;
+  return r;
+  r= web::json::value::object();
   r["status"]=web::json::value::string(U("notset"));
    if (_hv==NULL)
     {
@@ -143,7 +166,9 @@ void Sy1527Pico::on(web::json::value v)
   for (uint32_t i=first;i<=last;i++)
     _hv->SetOn(i);
   ::sleep(2);
+
   this->status(v);
+
  }
 void Sy1527Pico::off(web::json::value v)
 {
@@ -158,7 +183,9 @@ void Sy1527Pico::off(web::json::value v)
   for (uint32_t i=first;i<=last;i++)
     _hv->SetOff(i);
   ::sleep(2);
+
   this->status(v);
+
 }
 void Sy1527Pico::clearalarm(web::json::value v)
 {
@@ -173,6 +200,7 @@ void Sy1527Pico::clearalarm(web::json::value v)
   // for (uint32_t i=first;i<=last;i++)
   //   _hv->setOutputSwitch(i/8,i%8,10);
   ::sleep(2);
+
   this->status(v);
 
 }
@@ -192,7 +220,9 @@ void Sy1527Pico::vset(web::json::value v)
   for (uint32_t i=first;i<=last;i++)
     _hv->SetVoltage(i,v["vset"].as_double());
   ::sleep(2);
+
   this->status(v);
+
 }
 
 void Sy1527Pico::iset(web::json::value v)
@@ -211,6 +241,7 @@ void Sy1527Pico::iset(web::json::value v)
   for (uint32_t i=first;i<=last;i++)
     _hv->SetCurrent(i,v["iset"].as_double());
   ::sleep(2);
+
   this->status(v);
 
 
@@ -232,6 +263,7 @@ if (v.as_object().find("rampup")==v.as_object().end())
   for (uint32_t i=first;i<=last;i++)
     _hv->SetVoltageRampUp(i,v["rampup"].as_double());
   ::sleep(2);
+
   this->status(v);
 
 

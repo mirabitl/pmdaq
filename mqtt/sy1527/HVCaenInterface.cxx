@@ -46,7 +46,7 @@ caen::HVCaenInterface::~HVCaenInterface()
 }
 void caen::HVCaenInterface::Disconnect()
 {
-  if (theHandle_==-1) return;
+  //if (theHandle_==-1) return;
 
   int ret = CAENHV_DeinitSystem(theHandle_);
   //if( ret == CAENHV_OK )
@@ -54,6 +54,8 @@ void caen::HVCaenInterface::Disconnect()
   if( ret != CAENHV_OK )
     {
       printf("CAENHV_DeinitSystem: %s (num. %d)\n\n", CAENHV_GetError(theHandle_), ret);
+      connected_=false;
+      theHandle_=-1;
       return;
     }
   else
@@ -71,7 +73,7 @@ void caen::HVCaenInterface::Connect()
   CAENHVRESULT ret;
   int sysHndl;
   int sysType=0;
-  sysType=2; //SY4527
+  //sysType=2; //SY4527
   int link=LINKTYPE_TCPIP;
   int ntry=0;
  tryconnect:
@@ -488,12 +490,12 @@ web::json::value  caen::HVCaenInterface::ChannelInfo(uint32_t slot,uint32_t chan
   if (isConnected())
     {
       web::json::value rep;
-      rep["name"]=web::json::value::string(U(GetStringValue("Name",slot,channel)));
+      rep["chname"]=web::json::value::string(U(GetStringValue("Name",slot,channel)));
       rep["vset"]=web::json::value::number(GetFloatValue("V0Set",slot,channel));
       rep["iset"]=web::json::value::number(GetFloatValue("I0Set",slot,channel));
-      rep["vmon"]=web::json::value::number(GetFloatValue("VMon",slot,channel));
-      rep["imon"]=web::json::value::number(GetFloatValue("IMon",slot,channel));
-      rep["rup"]=web::json::value::number(GetFloatValue("RUp",slot,channel));
+      rep["vout"]=web::json::value::number(GetFloatValue("VMon",slot,channel));
+      rep["iout"]=web::json::value::number(GetFloatValue("IMon",slot,channel));
+      rep["rampup"]=web::json::value::number(GetFloatValue("RUp",slot,channel));
       rep["status"]=web::json::value::number(GetIntValue("Status",slot,channel));
       return rep;
     }
@@ -505,7 +507,7 @@ web::json::value  caen::HVCaenInterface::ChannelInfo(uint32_t slot,uint32_t chan
       rep["vmon"]=web::json::value::number(-1.0);
       rep["imon"]=web::json::value::number(-1.0);
       rep["rup"]=web::json::value::number(-1.0);
-      rep["status"]=web::json::value::number(9999);
+      rep["status"]=web::json::value::number(0xFF);
       return rep;
 
     }
