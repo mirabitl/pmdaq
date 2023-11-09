@@ -2,12 +2,12 @@
 #include <unistd.h>
 #include <time.h>
 
-Sy1527Pico::Sy1527Pico(std::string id, std::string subid,std::string account,uint32_t first,uint32_t last) : PicoInterface(id, subid, "sy1527"), _hv(0),_first(first),_last(last),_account(account),_last_connect(0)
+Sy1527Pico::Sy1527Pico(std::string id, std::string subid,std::string account,uint32_t first,uint32_t last) : PicoInterface(id, subid, "sy1527"), _hv(0),_first(first),_last(last),_account(account)
 {
   
    if (_hv!=NULL)
     delete _hv;
-  
+   _hv=NULL;
   int ipass = _account.find("/");
   int ipath = _account.find("@");
   std::string Name,Pwd,Host;
@@ -27,21 +27,23 @@ Sy1527Pico::Sy1527Pico(std::string id, std::string subid,std::string account,uin
   _pwd=Pwd;
   unlock();
   registerCommands();
+  _last_connect=time(0);
+
 }
 void Sy1527Pico::opensocket()
 {
   time_t tnow=time(0);
   if (_hv!=NULL && (tnow-_last_connect)>30)
     {
-      //_hv->Disconnect();
-      
       delete _hv;
       _hv=NULL;
+      
     }
   if (_hv==NULL)
     {
       _hv= new caen::HVCaenInterface(_host,_name,_pwd);
       _last_connect=time(0);
+      ::sleep(1);
     }
 }
 void Sy1527Pico::closesocket()

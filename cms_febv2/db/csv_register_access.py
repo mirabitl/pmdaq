@@ -507,6 +507,25 @@ class feb_petiroc_registers:
                     for a in self.headers[1:]:
                         l[a]=value
         self.set_modified()
+    def shift_6b_dac(self,channel,value,asic=None):
+        """ Shift the 6bdac value for one channel of an asic
+            v_6b=v6_b+value
+            if asic is not set , all asics are set
+
+        Args:
+            channel(int): ASIC channel
+            value(int): value of shift 6b dac
+            asic(str):ASIC name (LEFT_BOT...RIGHT_TOP)
+        """
+        cn="6b_dac_ch%d" % channel
+        for l in self.lines:
+            if (l["name"]==cn):
+                if asic!=None:
+                    l[asic]=l[asic]+value
+                else:
+                    for a in self.headers[1:]:
+                        l[a]=l[a]+value
+        self.set_modified()
     def shift_10b_dac(self,dth,asic=None):
         """ Correct the 10bdac value for an asic
             vth_time=vth_time+dth

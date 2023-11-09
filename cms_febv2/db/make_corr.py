@@ -63,6 +63,8 @@ class pedcor:
         thre=[]
         thrm=[]
         thrr=[]
+        v_thmax=[]
+        v_thmin=[]
         all_lines=[]
         scfit=ROOT.TF1("scfit","[0]*TMath::Erfc((x-[1])/[2])",thi+1,tha);
         ROOT.gStyle.SetOptStat(0)
@@ -81,7 +83,13 @@ class pedcor:
             hs=ROOT.TH1F(shs,shs,tha-thi+1,thi,tha)
             diff=[0 for x in range(nval)]
             vmax=max(vals)
+            ithmax=0
+            ithmin=9999
             for ith in range(nval):
+                if (vals[ith]<0.8*vmax and ithmax==0):
+                    ithmax=ith+thi
+                if (vals[ith]<0.2*vmax and ithmin==9999):
+                    ithmin=ith+thi
                 hs.SetBinContent(ith+1,vals[ith])
                 if (ith-1>0):
                     if (vals[ith-1]-vals[ith]>-10):
@@ -106,29 +114,33 @@ class pedcor:
             thre.append(scfit.GetParameter(2))
             thrm.append(hd.GetMean())
             thrr.append(hd.GetRMS())
-                        
+            v_thmax.append(ithmax)
+            v_thmin.append(ithmin)
             c2.Draw()
             c2.Update()
             print(f"Pedestal {hd.GetMean()} Noise {hd.GetRMS()}")
             if (debug):
                 v=input()
                 
-            #hd.Draw()
-            #c2.Draw()
-            #c2.Update()
+            hd.Draw()
+            c2.Draw()
+            c2.Update()
 
-            #if (debug):
-            #    v=input()
+            if (debug):
+                v=input()
             
 
             histos.append(hs)
         print(thrs)
         print(thre)
+        hpmean.Reset()
         for i in range(len(thrs)):
-            thr=thrs[i]+5*thre[i]
-            print(f"channel {i} Mean {thrs[i]:.1f} Noise {thre[i]:.1f} Threshold {thr:.1f} Gaussian {thrm[i]:.1f} {thrr[i]:.1f}")
-            hpmean.SetBinContent(i+1,thrs[i])
-            hpnoise.SetBinContent(i+1,thre[i])
+            if (thrr[i]>(v_thmin[i]-v_thmax[i]+1)):
+                thrr[i]=(v_thmin[i]-v_thmax[i]+1)
+            thr=thrm[i]+5*thrr[i]
+            print(f"channel {i} Mean {thrs[i]:.1f} Noise {thre[i]:.1f} Threshold {thr:.1f} Gaussian {thrm[i]:.1f} {thrr[i]:.1f} {v_thmax[i]:.1f} {v_thmin[i]:.1f} ")
+            hpmean.SetBinContent(i+1,thrm[i])
+            hpnoise.SetBinContent(i+1,thrr[i])
         c2.Close()
         del c2
         if (save):
@@ -138,20 +150,20 @@ class pedcor:
             c1.Draw()
             c1.Update()
             
-            np_thrs=np.array(thrs)
-            np_thre=np.array(thre)
-            seuil=np_thrs.max()+5*np_thre.max()
-            print(np_thrs.max(),np_thre.max(),seuil,thi,tha)
+            np_thrm=np.array(thrm)
+            np_thrr=np.array(thrr)
+            seuil=np_thrm.max()+5*np_thrr.max()
+            print(np_thrm.max(),np_thrr.max(),seuil,thi,tha)
             tl=ROOT.TLine(0,seuil,16,seuil)
             tl.SetLineColor(2)
             tl.Draw("SAME")
             tt=ROOT.TLatex()
-            #tt=ROOT.TText(8,seuil+20,f"T_{{max}} {np_thrs.max():.1f} Noise_{{max}} {np_thre.max():.1f} VTH cut {seuil:.1f}")
+            #tt=ROOT.TText(8,seuil+20,f"T_{{max}} {np_thrm.max():.1f} Noise_{{max}} {np_thrr.max():.1f} VTH cut {seuil:.1f}")
             tt.SetTextAlign(22);
             tt.SetTextColor(ROOT.kBlue+2);
             #tt.SetTextFont(33);
             tt.SetTextSize(0.05);
-            s_lat=f"T_{{max}} {np_thrs.max():.1f} Noise_{{max}} {np_thre.max():.1f} VTH cut {seuil:.1f}";
+            s_lat=f"T_{{max}} {np_thrm.max():.1f} Noise_{{max}} {np_thrr.max():.1f} VTH cut {seuil:.1f}";
             print(s_lat)
             tt.DrawLatex(8,seuil+20,s_lat)
             c1.Draw()
@@ -362,12 +374,15 @@ class timecor:
             c1.SaveAs(f"results/{fn}_{asic}.pdf")
         v=input("Next FPGA?")
         return histos
-    def full_pedestals(self,c_upload=None):
+    def full_pedestals(self,c_upload=None,mapping=None):
         """ Calculate pedestals for all channels and upload TS_OFFSET if required
         Args:
             c_upload(str): None, if set the DB is upload with this comment
         
         """
+        if (mapping!=None):
+            sm=json.load(open(mapping))
+            
         if (self.full_done):
             print("already corrected \n")
             return
@@ -402,7 +417,22 @@ class timecor:
                 self.sdb.setup.febs[0].fpga.set_ts_offset(ch,fpga_chan_offset['RIGHT'][ch],'RIGHT')
             else:
                 print("{:<10} {:<10} {:<10} {:<10}".format(ch,0,0,0))
+        min_del=0
+        for ch in range(16):
+            print("{:<10} {:<10} {:<10} {:<10}".format(ch,fpga_chan_offset['LEFT'][ch],fpga_chan_offset['LEFT'][31-ch],fpga_chan_offset['LEFT'][ch]-fpga_chan_offset['LEFT'][31-ch]))
+            min_del=min_del+fpga_chan_offset['LEFT'][ch]-fpga_chan_offset['LEFT'][31-ch]
+        print(min_del/16.)
 
+        min_del=0
+        for ch in range(16):
+            print("{:<10} {:<10} {:<10} {:<10}".format(ch,fpga_chan_offset['MIDDLE'][ch],fpga_chan_offset['MIDDLE'][31-ch],fpga_chan_offset['MIDDLE'][ch]-fpga_chan_offset['MIDDLE'][31-ch]))
+            min_del=min_del+fpga_chan_offset['MIDDLE'][ch]-fpga_chan_offset['MIDDLE'][31-ch]
+        print(min_del/16.)
+        min_del=0
+        for ch in range(16):
+            print("{:<10} {:<10} {:<10} {:<10}".format(ch,fpga_chan_offset['RIGHT'][ch],fpga_chan_offset['RIGHT'][31-ch],fpga_chan_offset['RIGHT'][ch]-fpga_chan_offset['RIGHT'][31-ch]))
+            min_del=min_del+fpga_chan_offset['RIGHT'][ch]-fpga_chan_offset['RIGHT'][31-ch]
+        print(min_del/16.)
         upload=(c_upload!=None)
         if (upload):
             cm=c_upload

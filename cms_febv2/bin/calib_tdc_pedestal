@@ -79,6 +79,7 @@ def make_time_pedestal(state,version,feb_id,nevt_max=200,c_upload=None):
             res["fpga"]=fpga
             res["channels"]=chan_ts
             print("Uploading FPGA")
+            print(res)
             sdb1=cra.instance()
             sdb1.upload_results(state,version,feb_id,"TIME_PEDESTAL",res,comment=c_upload)
 

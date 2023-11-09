@@ -26,7 +26,7 @@ namespace caen
     virtual float GetVoltageRampUp(uint32_t channel);
     virtual std::string GetName(uint32_t channel);
     virtual uint32_t GetStatus(uint32_t channel);
-    bool isConnected(){ return connected_;}
+    bool isConnected(){ return (connected_);}
     inline int32_t BoardSlot(uint32_t ch){return (ch/6);}
     inline int32_t BoardChannel(uint32_t ch){return ch%6;}
     float GetFloatValue(std::string name, uint32_t slot,uint32_t channel);

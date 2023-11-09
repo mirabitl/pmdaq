@@ -304,6 +304,8 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment="scurve analy
     sdb=cra.instance()
     sdb.download_setup(state,version)
     sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",800)
+    for i in range(16):
+        sdb.setup.febs[0].fpga.set_pair_filtering_en(i,0)
     sdb.setup.version=998
     sdb.to_csv_files()
     print(sdb.setup.febs[0].fpga_version,sdb.setup.febs[0].petiroc_version)

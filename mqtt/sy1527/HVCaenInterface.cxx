@@ -96,7 +96,8 @@ void caen::HVCaenInterface::Connect()
     }
     else
     {
-      fprintf(stderr,"\nCAENHV_InitSystem: %s (num. %d) handle %d \n\n", CAENHV_GetError(sysHndl), ret,sysHndl);    
+      fprintf(stderr,"\nCAENHV_InitSystem: %s (num. %d) handle %d \n\n", CAENHV_GetError(sysHndl), ret,sysHndl);
+      exit(0);
   connected_=false;
   theHandle_=-1;
   ntry++;
@@ -324,7 +325,8 @@ float caen::HVCaenInterface::GetCurrentRead(uint32_t channel)
   //printf("CAENHV_GetChParam: %s (num. %d)\n\n", CAENHV_GetError(theHandle_), ret) ;
     if( ret != CAENHV_OK )
     {
-      printf("\nCAENHV access: %s (num. %x) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
+      printf("\nCAENHV access: %s (num. %x) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_);
+      exit(0);
       //this->Disconnect();
       //::sleep((unsigned int) 2);
       // this->Connect();
@@ -350,7 +352,8 @@ float caen::HVCaenInterface::GetVoltageRead(uint32_t channel)
   //printf("CAENHV_GetChParam: %s (num. %d)\n\n", CAENHV_GetError(theHandle_), ret) ;
     if( ret != CAENHV_OK )
     {
-      printf("\nCAENHV access: %s (num. %x) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
+      printf("\nCAENHV access: %s (num. %x) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_);
+      exit(0);
       // this->Disconnect();
       //::sleep((unsigned int) 2);
       // this->Connect();
@@ -375,7 +378,8 @@ float caen::HVCaenInterface::GetVoltageRampUp(uint32_t channel)
   printf("CAENHV_GetChParam: %s (num. %d)\n\n", CAENHV_GetError(theHandle_), ret) ;
     if( ret != CAENHV_OK )
     {
-      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
+      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_);
+      exit(0);
       this->Disconnect();
       ::sleep((unsigned int) 2);
       this->Connect();
@@ -405,7 +409,7 @@ void caen::HVCaenInterface::SetFloatValue(std::string name,uint32_t slot,uint32_
   if( ret != CAENHV_OK  )
     {
       printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
-      
+      exit(0);
     }
 
 }
@@ -425,7 +429,7 @@ void caen::HVCaenInterface::SetIntValue(std::string name,uint32_t slot,uint32_t 
   if( ret != CAENHV_OK  )
     {
       printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
-      
+      exit(0);
     }
 
 }
@@ -442,7 +446,8 @@ float caen::HVCaenInterface::GetFloatValue(std::string name,uint32_t slot,uint32
   //printf("CAENHV_GetChParam: %s (num. %d)\n %f\n", CAENHV_GetError(theHandle_), ret,param[0]) ;
     if( ret != CAENHV_OK )
     {
-      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
+      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_);
+      exit(0);
     }
 
   return param[0];
@@ -457,7 +462,8 @@ int32_t caen::HVCaenInterface::GetIntValue(std::string name,uint32_t slot,uint32
   //printf("CAENHV_GetChParam: %s (num. %d)\n %d %d %d \n", CAENHV_GetError(theHandle_), ret,param[0],slot,channel) ;
     if( ret != CAENHV_OK )
     {
-      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
+      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_);
+      exit(0);
     }
 
   return param[0];
@@ -479,7 +485,7 @@ std::string caen::HVCaenInterface::GetStringValue(std::string name,uint32_t slot
     if( ret != CAENHV_OK )
     {
       printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
-    
+      exit(0);
     }
 
   return std::string(param[0]);
