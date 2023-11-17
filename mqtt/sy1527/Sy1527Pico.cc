@@ -32,6 +32,7 @@ Sy1527Pico::Sy1527Pico(std::string id, std::string subid,std::string account,uin
 }
 void Sy1527Pico::opensocket()
 {
+  /** A voir
   time_t tnow=time(0);
   if (_hv!=NULL && (tnow-_last_connect)>30)
     {
@@ -39,17 +40,18 @@ void Sy1527Pico::opensocket()
       _hv=NULL;
       
     }
+  **/
   if (_hv==NULL)
     {
       _hv= new caen::HVCaenInterface(_host,_name,_pwd);
       _last_connect=time(0);
-      ::sleep(1);
+      //::sleep(1);
     }
 }
 void Sy1527Pico::closesocket()
 {
   time_t tnow=time(0);
-  if (_hv!=NULL && (tnow-_last_connect)>300)
+  if (_hv!=NULL && (tnow-_last_connect)>15)
     {
       //_hv->Disconnect();
       

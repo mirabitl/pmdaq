@@ -66,8 +66,8 @@ class febv2_setup:
         try:
             self.fc7 = fc7_board(False)
             ### Test
-            self.sdb.setup.febs[0].fpga_version='4.0'
-            self.feb = feb_v2_cycloneV(self.fc7, fpga_fw_ver=self.sdb.setup.febs[0].fpga_version, petiroc_ver=self.sdb.setup.febs[0].petiroc_version, verbose=True)
+            self.sdb.setup.febs[0].fpga_version='4.5'
+            self.feb = feb_v2_cycloneV(self.fc7, fpga_fw_ver=self.sdb.setup.febs[0].fpga_version, petiroc_ver=self.sdb.setup.febs[0].petiroc_version, verbose=False)
 
             self.fc7.init(init_gbt=True,mapping="dome")
             self.feb.boot(app_fw=False)
@@ -209,7 +209,8 @@ class febv2_setup:
         nacq= 0
         ntrig = 0
         configFEBMinidaqLogger(loglevel=logging.WARN)
-
+        logger = logging.getLogger('FEB_minidaq')
+        logger.setLevel(logging.WARN)
         self.feb.enable_tdc(True)
         fout=open("debug.out","w")
 

@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 //#include "stdafx.hh"
+#include <mutex>
+#include <thread>
 
 //static LoggerPtr _logSyx27(Logger::getLogger("PMDAQ_SYX27"));
 #include "cpprest/json.h"
@@ -35,11 +37,17 @@ namespace caen
     void SetFloatValue(std::string name, uint32_t slot,uint32_t channel,float v);
     void SetIntValue(std::string name, uint32_t slot,uint32_t channel,int32_t v);
     web::json::value ChannelInfo(uint32_t slot,uint32_t channel);
+    void ping();
+    void GetSysProp();
   private:
     std::string theHost_,theUser_,thePassword_,theIp_;
     int32_t theID_;
     int32_t theHandle_;
     bool connected_;
+    std::thread g_ping;
+    std::mutex _sem;
+    bool _ping;
+    
   };
 };
 

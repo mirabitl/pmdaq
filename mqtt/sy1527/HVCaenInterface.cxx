@@ -10,7 +10,7 @@
 #include <iostream>
 using namespace caen;
 
-caen::HVCaenInterface::HVCaenInterface(std::string host,std::string user,std::string pwd) :theHost_(host),theUser_(user),thePassword_(pwd)
+caen::HVCaenInterface::HVCaenInterface(std::string host,std::string user,std::string pwd) :theHost_(host),theUser_(user),thePassword_(pwd),_ping(false)
 {
   theHandle_=-1;
 
@@ -37,6 +37,7 @@ caen::HVCaenInterface::HVCaenInterface(std::string host,std::string user,std::st
     }
   theIp_.assign(ip);
   connected_=false;
+  _sem.unlock();
   this->Connect();
 }
 
@@ -46,8 +47,14 @@ caen::HVCaenInterface::~HVCaenInterface()
 }
 void caen::HVCaenInterface::Disconnect()
 {
-  //if (theHandle_==-1) return;
+  //Stop the polling loop
+  
+  if (theHandle_==-1) return;
 
+  _ping = false;
+   g_ping.join();
+
+  
   int ret = CAENHV_DeinitSystem(theHandle_);
   //if( ret == CAENHV_OK )
   //  printf("CAENHV_DeinitSystem: Connection closed (num. %d)\n\n", ret);
@@ -86,6 +93,8 @@ void caen::HVCaenInterface::Connect()
       theHandle_=sysHndl;
       printf("Connection done %d \n",theHandle_);
       connected_=true;
+      _ping=true;
+      g_ping = std::thread(std::bind(&caen::HVCaenInterface::ping, this));
       return;
     }
   else
@@ -105,6 +114,7 @@ void caen::HVCaenInterface::Connect()
   ::sleep(15);
   goto tryconnect;
     }
+  // Start a polling loop to keep connection active
   
 }
 
@@ -120,17 +130,18 @@ void caen::HVCaenInterface::SetOff(uint32_t channel)
  
   uint16_t ChNum=1,ChList[1];
   ChList[0]=BoardChannel(channel);
-
+  _sem.lock();
   CAENHVRESULT ret=CAENHV_SetChParam(theHandle_,BoardSlot(channel),ParName, ChNum, ChList,param);
   //printf("CAENHV_SetChParam: %s (num. %d)\n\n", CAENHV_GetError(theHandle_), ret);
   if( ret != CAENHV_OK )
     {
-       printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
+       printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_);
+       exit(0);
       this->Disconnect();
       ::sleep((unsigned int) 2);
       this->Connect();
     }
-
+  _sem.unlock();
 }
 void caen::HVCaenInterface::SetOn(uint32_t channel)
 {
@@ -144,17 +155,18 @@ void caen::HVCaenInterface::SetOn(uint32_t channel)
   uint16_t slot=channel/6;
   uint16_t ChNum=1,ChList[1];
   ChList[0]=BoardChannel(channel);
-
+  _sem.lock();
   CAENHVRESULT ret=CAENHV_SetChParam(theHandle_,BoardSlot(channel),ParName, ChNum, ChList,param);
   //  printf("CAENHV_SetChParam: %s (num. %d)\n\n", CAENHV_GetError(theHandle_), ret);
   if( ret != CAENHV_OK )
     {
-      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
+      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_);
+      exit(0);
       this->Disconnect();
       ::sleep((unsigned int) 2);
       this->Connect();
     }
-  
+    _sem.unlock();
 }
 void caen::HVCaenInterface::SetCurrent(uint32_t channel,float imax)
 {
@@ -168,17 +180,18 @@ void caen::HVCaenInterface::SetCurrent(uint32_t channel,float imax)
   uint16_t slot=channel/6;
   uint16_t ChNum=1,ChList[1];
   ChList[0]=BoardChannel(channel);
-
+  _sem.lock();
   CAENHVRESULT ret=CAENHV_SetChParam(theHandle_,BoardSlot(channel),ParName, ChNum, ChList,param);
   //printf("CAENHV_SetChParam: %s (num. %d)\n\n", CAENHV_GetError(theHandle_), ret);
   if( ret != CAENHV_OK )
     {
-      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
+      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_);
+      exit(0);
       this->Disconnect();
       ::sleep((unsigned int) 2);
       this->Connect();
     }
-
+  _sem.unlock();
 }
 void caen::HVCaenInterface::SetVoltage(uint32_t channel,float v0)
 {
@@ -193,18 +206,19 @@ void caen::HVCaenInterface::SetVoltage(uint32_t channel,float v0)
   uint16_t ChNum=1,ChList[1];
   ChList[0]=BoardChannel(channel);
 
-
+  _sem.lock();
   //printf("%d %d %d %f \n",channel,slot,ChList[0],v0);
   CAENHVRESULT ret=CAENHV_SetChParam(theHandle_,BoardSlot(channel),ParName, ChNum, ChList,param);
   //printf("CAENHV_SetChParam: %s (num. %d)\n\n", CAENHV_GetError(theHandle_), ret);
   if( ret != CAENHV_OK )
     {
-      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
+      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_);
+      exit(0);
       this->Disconnect();
       ::sleep((unsigned int) 2);
       this->Connect();
     }
-
+  _sem.unlock();
 }
 void caen::HVCaenInterface::SetVoltageRampUp(uint32_t channel,float v0)
 {
@@ -219,18 +233,19 @@ void caen::HVCaenInterface::SetVoltageRampUp(uint32_t channel,float v0)
   uint16_t ChNum=1,ChList[1];
   ChList[0]=BoardChannel(channel);
 
-
+  _sem.lock();
   //printf("%d %d %d %f \n",channel,slot,ChList[0],v0);
   CAENHVRESULT ret=CAENHV_SetChParam(theHandle_,BoardSlot(channel),ParName, ChNum, ChList,param);
   //printf("CAENHV_SetChParam: %s (num. %d)\n\n", CAENHV_GetError(theHandle_), ret);
     if( ret != CAENHV_OK )
     {
-      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
+      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_);
+      exit(0);
       this->Disconnect();
       ::sleep((unsigned int) 2);
       this->Connect();
     }
-
+  _sem.unlock();
 }
 float caen::HVCaenInterface::GetCurrentSet(uint32_t channel)
 {
@@ -244,17 +259,18 @@ float caen::HVCaenInterface::GetCurrentSet(uint32_t channel)
   uint16_t slot=channel/6;
   uint16_t ChNum=1,ChList[1];
   ChList[0]=BoardChannel(channel);
-
+  _sem.lock();
   CAENHVRESULT ret=CAENHV_GetChParam(theHandle_,BoardSlot(channel),ParName, ChNum, ChList,param);
   //printf("CAENHV_GetChParam: %s (num. %d)\n %f\n", CAENHV_GetError(theHandle_), ret,param[0]) ;
     if( ret != CAENHV_OK )
     {
-      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
+      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_);
+      exit(0);
       this->Disconnect();
       ::sleep((unsigned int) 2);
       this->Connect();
     }
-
+  _sem.unlock();
   return param[0];
 }
 std::string caen::HVCaenInterface::GetName(uint32_t channel)
@@ -269,17 +285,18 @@ std::string caen::HVCaenInterface::GetName(uint32_t channel)
   uint16_t slot=channel/6;
   uint16_t ChNum=1,ChList[1];
   ChList[0]=BoardChannel(channel);
-
+  _sem.lock();
   CAENHVRESULT ret=  CAENHV_GetChName(theHandle_,BoardSlot(channel),ChNum, ChList,param); 
   //printf("CAENHV_GetChParam: %s (num. %d)\n %f\n", CAENHV_GetError(theHandle_), ret,param[0]) ;
     if( ret != CAENHV_OK )
     {
-      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
+      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_);
+      exit(0);
       this->Disconnect();
       ::sleep((unsigned int) 2);
       this->Connect();
     }
-
+  _sem.unlock();
   return std::string(param[0]);
 }
 float caen::HVCaenInterface::GetVoltageSet(uint32_t channel)
@@ -294,17 +311,18 @@ float caen::HVCaenInterface::GetVoltageSet(uint32_t channel)
   uint16_t slot=channel/6; 
   uint16_t ChNum=1,ChList[1];
   ChList[0]=BoardChannel(channel);
-  
+  _sem.lock();
   CAENHVRESULT ret=CAENHV_GetChParam(theHandle_,BoardSlot(channel),ParName, ChNum, ChList,param);
   //printf("CAENHV_GetChParam: %s (num. %d)\n %f \n", CAENHV_GetError(theHandle_), ret,param[0]) ;
     if( ret != CAENHV_OK )
     {
-      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
+      printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_);
+      exit(0);
       this->Disconnect();
       ::sleep((unsigned int) 2);
       this->Connect();
     }
-
+  _sem.unlock();
   return param[0];
 }
 float caen::HVCaenInterface::GetCurrentRead(uint32_t channel)
@@ -320,7 +338,7 @@ float caen::HVCaenInterface::GetCurrentRead(uint32_t channel)
   slot=(slot+1)*2;
   uint16_t ChNum=1,ChList[1];
   ChList[0]=BoardChannel(channel);
-
+  _sem.lock();
   CAENHVRESULT ret=CAENHV_GetChParam(theHandle_,BoardSlot(channel),ParName, ChNum, ChList,param);
   //printf("CAENHV_GetChParam: %s (num. %d)\n\n", CAENHV_GetError(theHandle_), ret) ;
     if( ret != CAENHV_OK )
@@ -331,7 +349,7 @@ float caen::HVCaenInterface::GetCurrentRead(uint32_t channel)
       //::sleep((unsigned int) 2);
       // this->Connect();
     }
-
+  _sem.unlock();
   return param[0];
 }
 float caen::HVCaenInterface::GetVoltageRead(uint32_t channel)
@@ -347,7 +365,7 @@ float caen::HVCaenInterface::GetVoltageRead(uint32_t channel)
   uint16_t ChNum=1,ChList[1];
   slot=(slot+1)*2;
   ChList[0]=BoardChannel(channel);
-
+  _sem.lock();
   CAENHVRESULT ret=CAENHV_GetChParam(theHandle_,BoardSlot(channel),ParName, ChNum, ChList,param);
   //printf("CAENHV_GetChParam: %s (num. %d)\n\n", CAENHV_GetError(theHandle_), ret) ;
     if( ret != CAENHV_OK )
@@ -358,7 +376,7 @@ float caen::HVCaenInterface::GetVoltageRead(uint32_t channel)
       //::sleep((unsigned int) 2);
       // this->Connect();
     }
-
+    _sem.unlock();
   return param[0];
 }
 float caen::HVCaenInterface::GetVoltageRampUp(uint32_t channel)
@@ -374,6 +392,7 @@ float caen::HVCaenInterface::GetVoltageRampUp(uint32_t channel)
   uint16_t ChNum=1,ChList[1];
   ChList[0]=BoardChannel(channel);
 
+  _sem.lock();
   CAENHVRESULT ret=CAENHV_GetChParam(theHandle_,BoardSlot(channel),ParName, ChNum, ChList,param);
   printf("CAENHV_GetChParam: %s (num. %d)\n\n", CAENHV_GetError(theHandle_), ret) ;
     if( ret != CAENHV_OK )
@@ -384,7 +403,7 @@ float caen::HVCaenInterface::GetVoltageRampUp(uint32_t channel)
       ::sleep((unsigned int) 2);
       this->Connect();
     }
-
+    _sem.unlock();
   return param[0];
 }
 uint32_t caen::HVCaenInterface::GetStatus(uint32_t channel)
@@ -402,7 +421,7 @@ void caen::HVCaenInterface::SetFloatValue(std::string name,uint32_t slot,uint32_
   uint16_t ChNum=1,ChList[1];
   ChList[0]=channel;
 
-
+  _sem.lock();
   //printf("%d %d %d %f \n",channel,slot,ChList[0],v0);
   CAENHVRESULT ret=CAENHV_SetChParam(theHandle_,slot,name.c_str(), ChNum, ChList,param);
   //printf("CAENHV_SetChParam: %s (num. %d)\n\n", CAENHV_GetError(theHandle_), ret);
@@ -411,7 +430,7 @@ void caen::HVCaenInterface::SetFloatValue(std::string name,uint32_t slot,uint32_
       printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
       exit(0);
     }
-
+  _sem.unlock();
 }
 void caen::HVCaenInterface::SetIntValue(std::string name,uint32_t slot,uint32_t channel,int32_t val)
 {
@@ -422,7 +441,7 @@ void caen::HVCaenInterface::SetIntValue(std::string name,uint32_t slot,uint32_t 
   uint16_t ChNum=1,ChList[1];
   ChList[0]=channel;
 
-
+  _sem.lock();
   //printf("%d %d %d %f \n",channel,slot,ChList[0],v0);
   CAENHVRESULT ret=CAENHV_SetChParam(theHandle_,slot,name.c_str(), ChNum, ChList,param);
   //printf("CAENHV_SetChParam: %s (num. %d)\n\n", CAENHV_GetError(theHandle_), ret);
@@ -431,9 +450,46 @@ void caen::HVCaenInterface::SetIntValue(std::string name,uint32_t slot,uint32_t 
       printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_); 
       exit(0);
     }
-
+  _sem.unlock();
 }
+void caen::HVCaenInterface::ping()
+{
+  printf("On demarre la boucle \n");
+  while (_ping)
+    {
+      //printf("On est dans la boucle \n");
+      _sem.lock();
+      GetSysProp();
+      _sem.unlock();
+      //printf("On dort dans la boucle \n");
+      ::sleep(10);
+    }
+}
+void caen::HVCaenInterface::GetSysProp()
+{
+ 
+  union	{
+    char			cBuff[4096];
+    float			fBuff;
+    unsigned short	ui2Buff;
+    unsigned long	ui4Buff;
+    short			i2Buff;
+    long			i4Buff;
+    unsigned		bBuff;
+  }				app;
+  CAENHVRESULT	ret;
+  int handle = -1;
+  int				i;
+  unsigned short	NrOfProp;
+  char			*p;
+  char			*PropList = (char *)NULL;
 
+  if (theHandle_<0) return;
+  handle = theHandle_;
+
+  ret = CAENHV_GetSysProp(handle,"SwRelease", &app);
+  printf("Software relaease %-17s\n", app.cBuff);
+}
 
 float caen::HVCaenInterface::GetFloatValue(std::string name,uint32_t slot,uint32_t channel)
 {
