@@ -39,6 +39,8 @@ public:
 
   /// DOWNLOADDB Command handler
   void c_downloadDB(http_request m);
+  /// DOWNLOADDB Command handler
+  void c_vthshift(http_request m);
   /// SHM managment
   void clearShm();
   void spy_shm();

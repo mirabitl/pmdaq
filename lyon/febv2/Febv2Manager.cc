@@ -41,6 +41,8 @@ void Febv2Manager::initialise()
 
   this->addCommand("DOWNLOADDB", std::bind(&Febv2Manager::c_downloadDB, this, std::placeholders::_1));
 
+  this->addCommand("VTHSHIFT", std::bind(&Febv2Manager::c_vthshift, this, std::placeholders::_1));
+
   // std::cout<<"Service "<<name<<" started on port "<<port<<std::endl;
 }
 void Febv2Manager::end()
@@ -146,6 +148,20 @@ void Febv2Manager::c_downloadDB(http_request m)
   auto jrep=this->post("DOWNLOADDB",parcmd);
 
   par["DBSTATE"] = json::value::string(U(dbstate));
+  Reply(status_codes::OK, par);
+}
+void Febv2Manager::c_vthshift(http_request m)
+{
+
+  auto par = json::value::object();
+  par["STATUS"] = json::value::string(U("DONE"));
+  uint32_t shift = utils::queryIntValue(m, "shift", 50);
+  PM_INFO(_logFebv2, "VTHSHIFT called "<<shift);
+  auto parcmd = json::value::object();
+  parcmd["shift"] = json::value::number(shift);
+  auto jrep=this->post("SHIFTVTH",parcmd);
+
+  par["SHIFT"] = json::value::number(shift);
   Reply(status_codes::OK, par);
 }
 
