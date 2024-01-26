@@ -2,15 +2,15 @@
 import logging
 import sys
 import time
-
+import make_corr as mc
 
 import numpy as np 
 from matplotlib import pyplot as plt
 
-from minidaq.fc7 import fc7_board
-from minidaq.feb import feb_v2_cycloneV
-from minidaq.tools import bf, configFEBMinidaqLogger, TestError
-import make_corr as mc
+#from minidaq.fc7 import fc7_board
+#from minidaq.feb import feb_v2_cycloneV
+#from minidaq.tools import bf, configFEBMinidaqLogger, TestError
+
 import os
 import json
 
