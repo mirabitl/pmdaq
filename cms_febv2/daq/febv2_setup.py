@@ -66,7 +66,7 @@ class febv2_setup:
         try:
             self.fc7 = fc7_board(False)
             ### Test
-            self.sdb.setup.febs[0].fpga_version='4.5'
+            self.sdb.setup.febs[0].fpga_version='4.6'
             self.feb = feb_v2_cycloneV(self.fc7, fpga_fw_ver=self.sdb.setup.febs[0].fpga_version, petiroc_ver=self.sdb.setup.febs[0].petiroc_version, verbose=False)
 
             self.fc7.init(init_gbt=True,mapping="dome")
