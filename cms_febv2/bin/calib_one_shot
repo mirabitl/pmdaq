@@ -14,7 +14,7 @@ import csv_register_access as cra
 import os
 import json
 
-def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None):
+def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None,two_steps=True):
     f_tdc,f_asic,used_chan =get_mapping(asic_name,feb)
     petiroc_chan,tdc_ch =used_chan[index]
     
@@ -40,32 +40,43 @@ def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None):
     f_tdc.cmd_valid()
     f_tdc.set_counter_time_window(int(1e-3/8.33e-9)) # 1ms
 
-# First round thstep=5
-    thstep=5
-    scurve1=[]
-    for dac10b_val in range(thmin, thmax, thstep):
+    # First round thstep=5
+    ti=thmin
+    ta=thmax
+    to_0=(thmax+thmin)//2
+    if (two_steps):
+        thstep=5
+        scurve1_th=[]
+        scurve1=[]
+        for dac10b_val in range(thmin, thmax, thstep):
 #            for dac10b_val in range(thmax, thmin, -1*thstep):
-        f_asic.set_reg('10b_dac_vth_discri_time', dac10b_val)
-        feb.send_petiroc_conf(asic_name)
-        f_tdc.enable_tdc()
-        f_tdc.start_counter()
-        time.sleep(0.001)
-        f_tdc.enable_tdc(0)
-        counters = f_tdc.get_counter_data_all()
+            f_asic.set_reg('10b_dac_vth_discri_time', dac10b_val)
+            feb.send_petiroc_conf(asic_name)
+            f_tdc.enable_tdc()
+            f_tdc.start_counter()
+            time.sleep(0.001)
+            f_tdc.enable_tdc(0)
+            counters = f_tdc.get_counter_data_all()
                 
-        scurve1.append(counters[tdc_ch])
-        print(f"{dac10b_val} / {2**10}", counters)
-# Now find the transition
-    cmax=max(scurve1)
-    to_0=(thmax-thmin+1)//2
-    for t in range(thmin, thmax, thstep):
-        if (scurve1[t]<0.7*cmax):
-            to_0=t
-            break
-# now repeat scan between to_0-10 and to_0+10
-    ti=max(to_0-10,thmin)
-    ta=min(to_0+10,thmax)
+            scurve1.append(counters[tdc_ch])
+            scurve1_th.append(dac10b_val)
+            print(f"{dac10b_val} / {2**10}", counters)
+            # Now find the transition
+        cmax=max(scurve1)
+        print(scurve1)
+        print(cmax)
+        to_0=(thmax-thmin+1)//2
+        for t in range(len(scurve1)):
+            if (scurve1[t]<0.7*cmax):
+                to_0=scurve1_th[t]
+                break
+        # now repeat scan between to_0-10 and to_0+10
+        ti=max(to_0-10,thmin)
+        ta=min(to_0+10,thmax)
+        
     scurve2=[]
+    scurve2_th=[]
+
     thstep=1
     for dac10b_val in range(ti, ta, thstep):
 #            for dac10b_val in range(thmax, thmin, -1*thstep):
@@ -78,18 +89,26 @@ def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None):
         counters = f_tdc.get_counter_data_all()
                 
         scurve2.append(counters[tdc_ch])
+        scurve2_th.append(dac10b_val)
         print(f"{dac10b_val} / {2**10}", counters)    
 # Now find the transition
     cmax1=max(scurve2)
-    to_1=to_0
-    for t in range(ti, ta, thstep):
-        if (scurve2[t]<0.7*cmax):
-            to_1=t
+    to_1i=to_0
+    for t in range(len(scurve2)):
+        if (scurve2[t]<0.7*cmax1):
+            to_1i=scurve2_th[t]
             break
+    to_1a=to_1i
+    for t in range(len(scurve2)):
+        if (scurve2[t]<0.3*cmax1):
+            to_1a=scurve2_th[t]
+            break
+    to_1=(to_1a+to_1i)//2
     print(f"Seuil raw {to_0}")
     print(f"Scan {ti}-{ta}  {scurve2}")
     print(f"Seuil fin {to_1}")
-    val=input("Next channel? ")    
+    #val=input("Next channel? ")
+    return to_1
 def get_mapping(asic_name,feb):
     try:
 
@@ -339,7 +358,7 @@ def make_pedestal_one_by_one(state,version,feb_id,feb,asic_name,thmin,thmax,thst
 
     except TestError as e:
         print(f"Test failed with message: {e}")
-def make_pedestal_all_channels(state,version,feb_id,feb,asic_name,thmin,thmax,thstep):
+def make_pedestal_all_channels(state,version,feb_id,feb,asic_name,thmin,thmax,thstep,v6=None):
     try:
         used_chan_top = [
             (5  , 0),
@@ -410,7 +429,9 @@ def make_pedestal_all_channels(state,version,feb_id,feb,asic_name,thmin,thmax,th
             en = petiroc_chan not in used_petiroc_chan
             f_asic.set_reg(f"mask_discri_time_ch{petiroc_chan}", en)
             #feb.asic_right_top.set_reg(f"6b_dac_ch{petiroc_chan}", 32)
-
+        if (v6!=None):
+            for o_chan in range(32):
+                f_asic.set_reg(f"6b_dac_ch{o_chan}", v6[o_chan])
         f_tdc.set_tdc_injection_mode('standard')
         for _, tdc_ch in used_chan:
             f_tdc.enable_ch(tdc_ch)
@@ -493,10 +514,51 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment="scurve analy
                 results=make_pedestal_all_channels(state,version,feb_id,feb,an,thi,tha,1)
                 sdb.upload_results(results["state"],results["version"],results["feb"],results["analysis"],results,upload_comment)
             else:
+                _,_,used_chan =get_mapping(an,feb)
                 v6=sdb.setup.febs[0].petiroc.get_6b_dac(an)
+                turn_on=[]
                 for idx in range(16):
-                    pedestal_one_channel(feb,an,idx,thmin,thmax,v6)
-                
+                    to=pedestal_one_channel(feb,an,idx,thi,tha,v6)
+                    turn_on.append(to)
+                print(f" Turn ON {turn_on}")
+                nto=np.array(turn_on)
+                # Target
+                target=round(np.median(nto))
+                print(f"Median target {target}")
+                val=input("Second round ? ")
+                v6_cor=v6
+                turn_on_cor=[]
+                for idx in range(16):
+                    petiroc_chan,tdc_ch =used_chan[idx]
+                    gc=v6[ petiroc_chan]+round((target-turn_on[idx])/3.9)
+                    td=[]
+                    for ig in range(3):
+                        g=gc-1+ig
+                        vc=v6
+                        vc[ petiroc_chan]=g
+                        to=pedestal_one_channel(feb,an,idx,target-10,target+10,vc,two_steps=False)
+                        td.append(to)
+                    print(gc)
+                    print(td)
+                    # find best value
+                    mindist=1000
+                    imin=2
+                    for ig in range(3):
+                        if (abs(td[ig]-target)<mindist):
+                            mindist=abs(td[ig]-target)
+                            imin=ig
+                    turn_on_cor.append(td[imin])
+                    v6_cor[petiroc_chan]=gc-1+imin
+                print(f" Turn ON {turn_on_cor}")
+                ntoc=np.array(turn_on_cor)
+                # Target
+                target1=round(np.median(ntoc))
+                print(f"Median target {target1}")
+                print(v6_cor)
+                    
+
+                results=make_pedestal_all_channels(state,version,feb_id,feb,an,thi,tha,1,v6=v6_cor)
+                val=input("Next ASIC ? ")
     except TestError as e:
         print(f"Test failed with message: {e}")
 
