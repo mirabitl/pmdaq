@@ -60,11 +60,11 @@ def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None,two_steps=True)
                 
             scurve1.append(counters[tdc_ch])
             scurve1_th.append(dac10b_val)
-            print(f"{dac10b_val} / {2**10}", counters)
+            #print(f"{dac10b_val} / {2**10}", counters)
             # Now find the transition
         cmax=max(scurve1)
-        print(scurve1)
-        print(cmax)
+        #print(scurve1)
+        #print(cmax)
         to_0=(thmax-thmin+1)//2
         for t in range(len(scurve1)):
             if (scurve1[t]<0.7*cmax):
@@ -90,7 +90,7 @@ def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None,two_steps=True)
                 
         scurve2.append(counters[tdc_ch])
         scurve2_th.append(dac10b_val)
-        print(f"{dac10b_val} / {2**10}", counters)    
+        #print(f"{dac10b_val} / {2**10}", counters)    
 # Now find the transition
     cmax1=max(scurve2)
     to_1i=to_0
@@ -486,7 +486,7 @@ def make_pedestal_all_channels(state,version,feb_id,feb,asic_name,thmin,thmax,th
         print(f"Test failed with message: {e}")
 
 
-def main(state,version,feb_id,all_channels,gbt_init,upload_comment="scurve analysis"):
+def main(state,version,feb_id,all_channels,gbt_init,upload_comment=None):
     sdb=cra.instance()
     sdb.download_setup(state,version)
     sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",800)
@@ -497,7 +497,7 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment="scurve analy
     print(sdb.setup.febs[0].fpga_version,sdb.setup.febs[0].petiroc_version)
     do_fc7_gbt_init = gbt_init
     configFEBMinidaqLogger(logging.INFO)
-
+    upload=(upload_comment!=None)
     try:
         fc7 = fc7_board(False)
         feb = feb_v2_cycloneV(fc7, fpga_fw_ver=sdb.setup.febs[0].fpga_version, petiroc_ver=sdb.setup.febs[0].petiroc_version, verbose=True)
@@ -525,7 +525,7 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment="scurve analy
                 # Target
                 target=round(np.median(nto))
                 print(f"Median target {target}")
-                val=input("Second round ? ")
+                #val=input("Second round ? ")
                 v6_cor=v6
                 turn_on_cor=[]
                 for idx in range(16):
@@ -538,8 +538,8 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment="scurve analy
                         vc[ petiroc_chan]=g
                         to=pedestal_one_channel(feb,an,idx,target-10,target+10,vc,two_steps=False)
                         td.append(to)
-                    print(gc)
-                    print(td)
+                    #print(gc)
+                    #print(td)
                     # find best value
                     mindist=1000
                     imin=2
@@ -555,10 +555,23 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment="scurve analy
                 target1=round(np.median(ntoc))
                 print(f"Median target {target1}")
                 print(v6_cor)
-                    
-
+                # Upload to DB
+                for  ich in range(len(v6_cor)):
+                   sdb.setup.febs[0].petiroc.set_6b_dac(ich,v6_cor[ich],an.upper())
+                sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",target1,an.upper())
                 results=make_pedestal_all_channels(state,version,feb_id,feb,an,thi,tha,1,v6=v6_cor)
-                val=input("Next ASIC ? ")
+                #val=input("Next ASIC ? ")
+                
+
+        if (upload):
+            cm=upload_comment
+            sdb.upload_changes(cm)
+        else:
+            sdb.setup.version=999
+            sdb.setup.to_csv_files()
+                
+                
+
     except TestError as e:
         print(f"Test failed with message: {e}")
 
@@ -577,6 +590,8 @@ if __name__ == '__main__':
     parser.add_argument('--feb', action='store', type=int,default=None, dest='feb', help='FEB id')
     parser.add_argument('--min', action='store', type=int,default=200, dest='thmin', help='Minimal 10b dac')
     parser.add_argument('--max', action='store', type=int,default=600, dest='thmax', help='Maximal 10b dac')
+    
+    parser.add_argument('--upload', action='store', type=str,default=None, dest='upload', help='Upload comment')
 
     results = parser.parse_args()
     print(results)
@@ -591,7 +606,7 @@ if __name__ == '__main__':
         print("--feb should be specified")
         exit(0)
 
-
+        
     state=results.state
     version=results.version
     feb_id=results.feb
@@ -599,4 +614,7 @@ if __name__ == '__main__':
     thi=results.thmin
     tha=results.thmax
     gbt_init=not results.noinit
-    main(state,version,feb_id,all_channels,gbt_init)
+    cm_up=None
+    if (results.upload!=None):
+        cm_up=results.upload
+    main(state,version,feb_id,all_channels,gbt_init,upload_comment=cm_up)
