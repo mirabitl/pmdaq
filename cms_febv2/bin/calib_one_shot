@@ -14,7 +14,7 @@ import csv_register_access as cra
 import os
 import json
 
-def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None,two_steps=True):
+def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None,two_steps=True,dac6=32):
     f_tdc,f_asic,used_chan =get_mapping(asic_name,feb)
     petiroc_chan,tdc_ch =used_chan[index]
     
@@ -27,12 +27,19 @@ def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None,two_steps=True)
             en=1
         f_asic.set_reg(f"mask_discri_time_ch{o_chan}", en)
     if (v6!=None):
-        for o_chan in range(32):
-            if (o_chan==petiroc_chan):
-                en = v6[o_chan]
-            else:
-                en=1
-            f_asic.set_reg(f"6b_dac_ch{o_chan}", en)
+        p_chans=[]
+        for ic in range(len(used_chan)):
+            p_chans.append(used_chan[ic][0])
+        for ic in range(32):
+            if not (ic in p_chans):
+                v6[ic]=dac6
+            f_asic.set_reg(f"6b_dac_ch{ic}",v6[ic])
+#        for o_chan in range(32):
+#            if (o_chan==petiroc_chan):
+#                en = v6[o_chan]
+#            else:
+#                en=1
+#            f_asic.set_reg(f"6b_dac_ch{o_chan}", en)
                 
     f_tdc.set_tdc_injection_mode('standard')
     f_tdc.enable_ch(tdc_ch)

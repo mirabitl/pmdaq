@@ -130,7 +130,8 @@ def make_pedestal_one_by_one(state,version,feb_id,feb,asic_name,thmin,thmax,thst
                     if (o_chan==petiroc_chan):
                         en = v6[o_chan]
                     else:
-                        en=1
+                        # was 1
+                        en=32
                     f_asic.set_reg(f"6b_dac_ch{o_chan}", en)
                 
             f_tdc.set_tdc_injection_mode('standard')
@@ -330,6 +331,7 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment="scurve analy
             else:
                 v6=sdb.setup.febs[0].petiroc.get_6b_dac(an)
                 results=make_pedestal_one_by_one(state,version,feb_id,feb,an,thi,tha,1,v6)
+                
                 sdb.upload_results(results["state"],results["version"],results["feb"],results["analysis"],results,upload_comment)
     except TestError as e:
         print(f"Test failed with message: {e}")
