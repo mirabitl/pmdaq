@@ -139,8 +139,8 @@ class combRC(pmdaqrc.pmdaqControl):
             while (alive):
                 nalive=False
                 for t in lt:
-                    nalive=nalive or t.isAlive()
-                    logging.debug("%s %d " % (t.getName() ,t.isAlive()))                    
+                    nalive=nalive or t.is_alive()
+                    logging.debug("%s %d " % (t.getName() ,t.is_alive()))                    
                     t.join(1)
                 alive=nalive
                 
@@ -160,8 +160,8 @@ class combRC(pmdaqrc.pmdaqControl):
             while (alive):
                 nalive=False
                 for t in lt:
-                    nalive=nalive or t.isAlive()
-                    logging.debug("%s %d " % (t.getName() ,t.isAlive()))                    
+                    nalive=nalive or t.is_alive()
+                    logging.debug("%s %d " % (t.getName() ,t.is_alive()))                    
                     t.join(1)
                 alive=nalive
 
@@ -226,8 +226,8 @@ class combRC(pmdaqrc.pmdaqControl):
             while (alive):
                 nalive=False
                 for t in lt:
-                    nalive=nalive or t.isAlive()
-                    logging.debug("%s %d " % (t.getName() ,t.isAlive()))                    
+                    nalive=nalive or t.is_alive()
+                    logging.debug("%s %d " % (t.getName() ,t.is_alive()))                    
                     t.join(1)
                 alive=nalive
 
