@@ -888,8 +888,8 @@ void PmrManager::Scurve(int mode, int thmin, int thmax, int step)
     {
       _sc_channel=0xFE;
       // for (int i=0;i<64;i++) mask|=(1<<i);
-      mask = 0xFFFFFFFFFFFFFFFF;
-      this->setAllMasks(mask);
+      //mask = 0xFFFFFFFFFFFFFFFF;
+      //this->setAllMasks(mask);
       this->setCTEST(0);
       this->ScurveStep(mdcc, builder, thmin, thmax, step);
       _running_mode=0;
@@ -1006,7 +1006,8 @@ void PmrManager::GainCurveStep(std::string mdccUrl,std::string builderUrl,int gm
   utils::sendCommand(mdccUrl, "SETCALIBCOUNT", p);
 
   // Set the threshold
-  this->setThresholds(threshold, 512, 512);
+  if (threshold>80)
+    this->setThresholds(threshold, 512, 512);
 
   int grange=(gmax-gmin+1)/step;
   for (int g=0;g<=grange;g++)
@@ -1018,8 +1019,11 @@ void PmrManager::GainCurveStep(std::string mdccUrl,std::string builderUrl,int gm
       this->setGain(gmin+g*step);
 
       ::usleep(100000);
-      this->setThresholds(threshold, 512, 512);
-      ::usleep(100000);
+      if (threshold>80)
+	{
+	this->setThresholds(threshold, 512, 512);
+	::usleep(100000);
+	}
       _running_mode=4+((_sc_channel&0xFF)<<4)+((threshold&0XFFF)<<12)+((g&0XFFF)<<24);
       mqtt_publish("status",build_status());
 
@@ -1124,8 +1128,8 @@ void PmrManager::GainCurve(int mode,int gmin,int gmax,int step,int threshold)
     {
       _sc_channel=0xFE;
 
-      mask=0xFFFFFFFFFFFFFFFF;
-      this->setAllMasks(mask);
+      //mask=0xFFFFFFFFFFFFFFFF;
+      //this->setAllMasks(mask);
       this->setCTEST(0);
       this->GainCurveStep(mdcc,builder,gmin,gmax,step,threshold);
       _running_mode=0;
@@ -1191,11 +1195,11 @@ void PmrManager::c_gaincurve(http_request m)
 
   par["STATUS"]=web::json::value::string(U("DONE"));
 
-  uint32_t first = utils::queryIntValue(m,"first",80);
-  uint32_t last = utils::queryIntValue(m,"last",250);
-  uint32_t step = utils::queryIntValue(m,"step",1);
+  uint32_t first = utils::queryIntValue(m,"first",2);
+  uint32_t last = utils::queryIntValue(m,"last",127);
+  uint32_t step = utils::queryIntValue(m,"step",2);
   uint32_t mode = utils::queryIntValue(m,"channel",255);
-  uint32_t thr = utils::queryIntValue(m,"threshold",255);
+  uint32_t thr = utils::queryIntValue(m,"threshold",0);
   PMF_INFO(_logPmr, " GainCurve called " << mode << " first " << first << " last " << last <<" step "<<step<< " Threshold "<<thr);
   _sc_win = utils::queryIntValue(m, "window", 50000);
   _sc_ntrg = utils::queryIntValue(m, "ntrg", 50);
