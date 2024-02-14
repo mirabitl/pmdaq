@@ -110,6 +110,7 @@ Bit 2 reload calib count
 #define IPDC_CALIB_CTRL 0x8
 #define IPDC_CALIB_COUNT 0xa
 #define IPDC_HARD_RESET 0xC
+#define IPDC_LEMO_MASK 0xA0
 
 
 #define USBDC_TEST 0x0
@@ -157,7 +158,8 @@ uint32_t ipdc::IpdcHandler::triggerBusy(){return this->readRegister(IPDC_TRIGEXT
 
 void ipdc::IpdcHandler::setExternalTrigger(uint32_t nc){this->writeRegister(IPDC_TRIGEXT_CONFIG,nc);}
 uint32_t ipdc::IpdcHandler::externalTrigger(){return this->readRegister(IPDC_TRIGEXT_CONFIG);}
-
+void ipdc::IpdcHandler::setLemoMask(uint32_t nc){this->writeRegister(IPDC_LEMO_MASK,nc);}
+uint32_t ipdc::IpdcHandler::lemoMask(){return this->readRegister(IPDC_LEMO_MASK);}
 void ipdc::IpdcHandler::reloadCalibCount(){
 
   this->maskTrigger();

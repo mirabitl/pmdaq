@@ -58,7 +58,8 @@ namespace ipdc
     
     void setExternalTrigger(uint32_t nc);
     uint32_t externalTrigger();
-  
+    void setLemoMask(uint32_t nc);
+    uint32_t lemoMask();
   private : 
     mdcc::FtdiUsbDriver* _driver;
     std::string _name;
