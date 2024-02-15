@@ -227,8 +227,8 @@ function onMessageArrived(message) {
                 var iDiv = document.createElement('div');
                 iDiv.id = 'sy1527-' + s_sub;
                 iDiv.className = 'sy1527-' + s_sub;
-                iDiv.innerHTML = "<H2> sy1527 system " + s_sub + "</H2>"
-                document.getElementById("sy1527").appendChild(iDiv);
+                iDiv.innerHTML = "<H2> Sy1527 system " + s_sub + "</H2>"
+                document.getElementById("Sy1527").appendChild(iDiv);
                 addSy1527Table(iDiv.className);
             }
 
@@ -1345,13 +1345,13 @@ function addSy1527Rows(div_name, g_obj) {
             let c_vset = document.getElementById(row_name + "-vset");
             c_vset.innerHTML = rch["vset"].toFixed(1);
             let c_iset = document.getElementById(row_name + "-iset");
-            c_iset.innerHTML = (rch["iset"] * 1.E6).toFixed(3);
+            c_iset.innerHTML = (rch["iset"]).toFixed(3);
             let c_vout = document.getElementById(row_name + "-vout");
             c_vout.innerHTML = rch["vout"].toFixed(1);
             let c_iout = document.getElementById(row_name + "-iout");
-            c_iout.innerHTML = (rch["iout"] * 1.E6).toFixed(3);
+            c_iout.innerHTML = (rch["iout"]).toFixed(3);
             let c_status = document.getElementById(row_name + "-status");
-            c_status.innerHTML = rch["status"].split("=")[1];
+            c_status.innerHTML = rch["status"];
 
             let c_ramp = document.getElementById(row_name + "-ramp");
             c_ramp.innerHTML = rch["rampup"].toFixed(1);
@@ -1372,7 +1372,7 @@ function addSy1527Rows(div_name, g_obj) {
         c_vset.innerHTML = rch["vset"].toFixed(3);
         var c_iset = row.insertCell(2);
         c_iset.id = row.id + "-iset";
-        c_iset.innerHTML = (rch["iset"] * 1E6).toFixed(3);
+        c_iset.innerHTML = (rch["iset"]).toFixed(3);
         var c_ramp = row.insertCell(3);
         c_ramp.id = row.id + "-ramp";
         c_ramp.innerHTML = rch["rampup"].toFixed(3);
@@ -1381,10 +1381,10 @@ function addSy1527Rows(div_name, g_obj) {
         c_vout.innerHTML = rch["vout"].toFixed(3);
         var c_iout = row.insertCell(5);
         c_iout.id = row.id + "-iout";
-        c_iout.innerHTML = (rch["iout"] * 1.E6).toFixed(3);
+        c_iout.innerHTML = (rch["iout"]).toFixed(3);
         var c_status = row.insertCell(6);
         c_status.id = row.id + "-status";
-        c_status.innerHTML = rch["status"].split("=")[1];
+        c_status.innerHTML = rch["status"];
         var c_nvset = row.insertCell(7);
         let x_vset = document.createElement("INPUT");
         x_vset.id = row.id + "-nvset";
