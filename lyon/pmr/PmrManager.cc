@@ -256,6 +256,34 @@ void PmrManager::setThresholds(uint16_t b0, uint16_t b1, uint16_t b2, uint32_t i
   this->configureHR2();
   ::usleep(10);
 }
+void PmrManager::shiftThresholds(uint16_t b0, uint16_t b1, uint16_t b2, uint32_t idif)
+{
+
+  PMF_INFO(_logPmr, " Shifting thresholds: " << b0 << "," << b1 << "," << b2<<","<<idif);
+  for (auto it = _hca.asicMap().begin(); it != _hca.asicMap().end(); it++)
+    {
+      if (idif != 0)
+	{
+	  
+	  uint32_t ip1 = (((it->first) >> 32) & 0XFFFFFFFF);
+	  uint32_t ip = (ip1>>24);
+	  if (idif != ip)
+	    continue;
+	  printf("%x %d %d %lu \n",ip1, ip, idif,it->first & 0xFF);
+
+	}
+      uint16_t nb0=b0+ it->second.getB0();
+      uint16_t nb1=b1+ it->second.getB1();
+      uint16_t nb2=b2+ it->second.getB2();
+      it->second.setB0(nb0);
+      it->second.setB1(nb1);
+      it->second.setB2(nb2);
+      // it->second.setHEADER(0x56);
+    }
+  // Now loop on slowcontrol socket
+  this->configureHR2();
+  ::usleep(10);
+}
 void PmrManager::setGain(uint16_t gain)
 {
 
@@ -348,6 +376,25 @@ void PmrManager::c_setthresholds(http_request m)
   uint32_t idif = utils::queryIntValue(m, "PMR", 0);
 
   this->setThresholds(b0, b1, b2, idif);
+  par["THRESHOLD0"] = web::json::value::number(b0);
+  par["THRESHOLD1"] = web::json::value::number(b1);
+  par["THRESHOLD2"] = web::json::value::number(b2);
+  par["DIF"] = web::json::value::number(idif);
+  par["status"] = json::value::string(U("done"));
+  Reply(status_codes::OK, par);
+}
+void PmrManager::c_shiftthresholds(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logPmr, "shift threshold called ");
+  par["STATUS"] = web::json::value::string(U("DONE"));
+
+  uint32_t b0 = utils::queryIntValue(m, "B0", 0);
+  uint32_t b1 = utils::queryIntValue(m, "B1", 0);
+  uint32_t b2 = utils::queryIntValue(m, "B2", 0);
+  uint32_t idif = utils::queryIntValue(m, "PMR", 0);
+
+  this->shiftThresholds(b0, b1, b2, idif);
   par["THRESHOLD0"] = web::json::value::number(b0);
   par["THRESHOLD1"] = web::json::value::number(b1);
   par["THRESHOLD2"] = web::json::value::number(b2);
@@ -664,6 +711,7 @@ void PmrManager::initialise()
 
   this->addCommand("STATUS", std::bind(&PmrManager::c_status, this, std::placeholders::_1));
   this->addCommand("SETTHRESHOLDS", std::bind(&PmrManager::c_setthresholds, this, std::placeholders::_1));
+  this->addCommand("SHIFTTHRESHOLDS", std::bind(&PmrManager::c_shiftthresholds, this, std::placeholders::_1));
   this->addCommand("SETPAGAIN", std::bind(&PmrManager::c_setpagain, this, std::placeholders::_1));
   this->addCommand("SETMASK", std::bind(&PmrManager::c_setmask, this, std::placeholders::_1));
   this->addCommand("SETCHANNELMASK", std::bind(&PmrManager::c_setchannelmask, this, std::placeholders::_1));

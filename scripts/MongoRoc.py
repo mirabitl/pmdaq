@@ -1186,6 +1186,27 @@ class MongoRoc:
             a["slc"]["PWRONFSB1"]=1;a["_id"]=None
             a["slc"]["PWRONFSB2"]=1;a["_id"]=None
 
+    def HR2_ShiftThreshold(self,B0,B1,B2,idif=0,iasic=0):
+        """
+        Set the 3 thresholds of specified  asics, modified asics are tagged for upload
+
+        :param B0: First Threshold
+        :param B1: Second Threshold
+        :param B2: Third Threshold        
+        :param idif: DIF_ID, if 0 all DIFs are changed
+        :param iasic: asic number, if 0 all Asics are changed
+        """
+
+        for a in self.asiclist:
+            if (idif != 0 and a["dif"] != idif):
+                continue
+            if (iasic != 0 and a["num"] != iasic):
+                continue
+
+            a["slc"]["B0"]=a["slc"]["B0"]+B0;a["_id"]=None;
+            a["slc"]["B1"]=a["slc"]["B1"]+B1;a["_id"]=None;
+            a["slc"]["B2"]=a["slc"]["B2"]+B2;a["_id"]=None;
+
  
 
     def HR2_ChangeThreshold(self,B0,B1,B2,idif=0,iasic=0):
