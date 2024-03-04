@@ -135,12 +135,18 @@ class pedcor:
         print(thre)
         hpmean.Reset()
         for i in range(len(thrs)):
+            # Bad gaussian take 0.2-0.8 width
             if (thrr[i]>(v_thmin[i]-v_thmax[i]+1)):
                 thrr[i]=(v_thmin[i]-v_thmax[i]+1)
-            thr=thrm[i]+5*thrr[i]
-            print(f"channel {i} Mean {thrs[i]:.1f} Noise {thre[i]:.1f} Threshold {thr:.1f} Gaussian {thrm[i]:.1f} {thrr[i]:.1f} {v_thmax[i]:.1f} {v_thmin[i]:.1f} ")
-            hpmean.SetBinContent(i+1,thrm[i])
-            hpnoise.SetBinContent(i+1,thrr[i])
+            print(f"channel {i} ++Erf Fit++ {thrs[i]:.1f} Noise {thre[i]:.1f} ++ Gaussian ++ {thrm[i]:.1f} {thrr[i]:.1f} ++ 80 % ++ {v_thmax[i]:.1f} {v_thmin[i]:.1f} ")
+            # Bad fit take the gaussian mean and RMS
+            if (thre[i]>3*thrr[i]):
+                thrs[i]=thrm[i]
+                thre[i]=thrr[i]
+            thr=thrs[i]+5*thre[i]
+
+            hpmean.SetBinContent(i+1,thrs[i])
+            hpnoise.SetBinContent(i+1,thre[i])
         c2.Close()
         del c2
         if (save):
@@ -150,8 +156,8 @@ class pedcor:
             c1.Draw()
             c1.Update()
             
-            np_thrm=np.array(thrm)
-            np_thrr=np.array(thrr)
+            np_thrm=np.array(thrs)
+            np_thrr=np.array(thre)
             seuil=np_thrm.max()+5*np_thrr.max()
             print(np_thrm.max(),np_thrr.max(),seuil,thi,tha)
             tl=ROOT.TLine(0,seuil,16,seuil)

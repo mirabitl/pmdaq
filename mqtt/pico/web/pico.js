@@ -34,7 +34,7 @@ function onConnect() {
     brooksys = []
     zupsys = []
     genesyssys = []
-    wienersys=[]
+    wienersys = []
     gas_list = {}
     topic = pico_location + "/LIST"
     publish_one_message(topic, "{}")
@@ -62,14 +62,16 @@ function onMessageArrived(message) {
     // balance {"location": "pico_dome", "subsystem": "balance_tfe", "devices": ["rp2040", "cpwplus"]}
     if (message.destinationName == (pico_location + "/RUNNING")) {
         id_brooks = jmsg["devices"].findIndex((element) => element === "brooks");
-	id_genesys = jmsg["devices"].findIndex((element) => element === "genesys");
-	id_zup = jmsg["devices"].findIndex((element) => element === "zup");
-	id_bme = jmsg["devices"].findIndex((element) => element === "bme");
-	id_hih = jmsg["devices"].findIndex((element) => element === "hih");
-	id_pico = jmsg["devices"].findIndex((element) => element === "rp2040");
-	id_cpw = jmsg["devices"].findIndex((element) => element === "cpwplus");
-	id_wiener=jmsg["devices"].findIndex((element) => element === "wiener");
-	//alert(id_cpw)
+        id_genesys = jmsg["devices"].findIndex((element) => element === "genesys");
+        id_zup = jmsg["devices"].findIndex((element) => element === "zup");
+        id_bme = jmsg["devices"].findIndex((element) => element === "bme");
+        id_hih = jmsg["devices"].findIndex((element) => element === "hih");
+        id_pico = jmsg["devices"].findIndex((element) => element === "rp2040");
+        id_cpw = jmsg["devices"].findIndex((element) => element === "cpwplus");
+        id_wiener = jmsg["devices"].findIndex((element) => element === "wiener");
+        id_sy1527 = jmsg["devices"].findIndex((element) => element === "sy1527");
+
+        //alert(id_cpw)
         // Create brooks_head object
         if (id_brooks >= 0) {
             var s_sub = jmsg["subsystem"];
@@ -88,11 +90,11 @@ function onMessageArrived(message) {
                 document.getElementById("Brooks").appendChild(iDiv);
                 addGasTable(iDiv.className);
             }
-            
+
             client.subscribe(topic_gas);
             //createListBrooks();
         }
-	// Create genesys_head object
+        // Create genesys_head object
         if (id_genesys >= 0) {
             var s_sub = jmsg["subsystem"];
             genesyssys.push(s_sub);
@@ -104,14 +106,14 @@ function onMessageArrived(message) {
                 iDiv.className = 'genesys-' + s_sub;
                 iDiv.innerHTML = "<H2> Lambda system " + s_sub + "</H2>"
                 document.getElementById("Genesys").appendChild(iDiv);
-		console.log("Add Genesys Table");
+                console.log("Add Genesys Table");
                 addGenesysTable(iDiv.className);
             }
-            
+
             client.subscribe(topic_genesys);
             //createListBrooks();
         }
-	// Create genesys_head object
+        // Create genesys_head object
         if (id_zup >= 0) {
             var s_sub = jmsg["subsystem"];
             zupsys.push(s_sub);
@@ -125,7 +127,7 @@ function onMessageArrived(message) {
                 document.getElementById("Zup").appendChild(iDiv);
                 addGenesysTable(iDiv.className);
             }
-            
+
             client.subscribe(topic_zup);
             //createListBrooks();
         }
@@ -142,7 +144,7 @@ function onMessageArrived(message) {
                 document.getElementById("Status").appendChild(iDiv);
                 addBmeTable(iDiv.className);
             }
-            
+
             client.subscribe(topic_bme);
             //createListBrooks();
         }
@@ -159,11 +161,11 @@ function onMessageArrived(message) {
                 document.getElementById("Status").appendChild(iDiv);
                 addHihTable(iDiv.className);
             }
-            
+
             client.subscribe(topic_hih);
             //createListBrooks();
         }
-	
+
         if (id_pico >= 0) {
             var s_sub = jmsg["subsystem"];
 
@@ -177,7 +179,7 @@ function onMessageArrived(message) {
                 document.getElementById("Status").appendChild(iDiv);
                 addPicoTable(iDiv.className);
             }
-            
+
             client.subscribe(topic_pico);
             //createListBrooks();
         }
@@ -194,17 +196,17 @@ function onMessageArrived(message) {
                 document.getElementById("Status").appendChild(iDiv);
                 addCpwplusTable(iDiv.className);
             }
-            
+
             client.subscribe(topic_cpw);
             //createListBrooks();
         }
 
-	if (id_wiener >= 0) {
+        if (id_wiener >= 0) {
             var s_sub = jmsg["subsystem"];
 
             // Query existing gas
             topic_wiener = pico_location + "/" + s_sub + "/wiener/#"
-            if (document.getElementById('hih-' + s_sub) == null) {
+            if (document.getElementById('wiener-' + s_sub) == null) {
                 var iDiv = document.createElement('div');
                 iDiv.id = 'wiener-' + s_sub;
                 iDiv.className = 'wiener-' + s_sub;
@@ -212,11 +214,27 @@ function onMessageArrived(message) {
                 document.getElementById("Wiener").appendChild(iDiv);
                 addWienerTable(iDiv.className);
             }
-            
+
             client.subscribe(topic_wiener);
             //createListBrooks();
         }
-	
+        if (id_sy1527 >= 0) {
+            var s_sub = jmsg["subsystem"];
+
+            // Query existing gas
+            topic_sy1527 = pico_location + "/" + s_sub + "/sy1527/#"
+            if (document.getElementById('sy1527-' + s_sub) == null) {
+                var iDiv = document.createElement('div');
+                iDiv.id = 'sy1527-' + s_sub;
+                iDiv.className = 'sy1527-' + s_sub;
+                iDiv.innerHTML = "<H2> Sy1527 system " + s_sub + "</H2>"
+                document.getElementById("Sy1527").appendChild(iDiv);
+                addSy1527Table(iDiv.className);
+            }
+
+            client.subscribe(topic_sy1527);
+            //createListBrooks();
+        }
 
 
         console.log(brooksys)
@@ -265,33 +283,37 @@ function onMessageArrived(message) {
     }
     // Genesys
     //Detection and subscribe
-    if (v_t.length==3)
-	if (v_t[2] =="genesys" )
-   	    addGenesysRow("genesys-"+v_t[1],jmsg);
-    if (v_t.length==3)
-	if (v_t[2] =="zup" )
-   	    addGenesysRow("zup-"+v_t[1],jmsg);
+    if (v_t.length == 3)
+        if (v_t[2] == "genesys")
+            addGenesysRow("genesys-" + v_t[1], jmsg);
+    if (v_t.length == 3)
+        if (v_t[2] == "zup")
+            addGenesysRow("zup-" + v_t[1], jmsg);
     // BME
-    if (v_t.length==3)
-	if (v_t[2] =="bme" )
-   	    addBmeRow("bme-"+v_t[1],jmsg);
+    if (v_t.length == 3)
+        if (v_t[2] == "bme")
+            addBmeRow("bme-" + v_t[1], jmsg);
     // HIH
-    if (v_t.length==3)
-	if (v_t[2] =="hih" )
-   	    addHihRow("hih-"+v_t[1],jmsg);
+    if (v_t.length == 3)
+        if (v_t[2] == "hih")
+            addHihRow("hih-" + v_t[1], jmsg);
     // PICO
-     if (v_t.length==3)
-	if (v_t[2] =="rp2040" )
-   	    addPicoRow("pico-"+v_t[1],jmsg);
+    if (v_t.length == 3)
+        if (v_t[2] == "rp2040")
+            addPicoRow("pico-" + v_t[1], jmsg);
     // CPW
-     if (v_t.length==3)
-	if (v_t[2] =="cpwplus" )
-   	    addCpwplusRow("cpwplus-"+v_t[1],jmsg);
+    if (v_t.length == 3)
+        if (v_t[2] == "cpwplus")
+            addCpwplusRow("cpwplus-" + v_t[1], jmsg);
     // WIENER
-     if (v_t.length==3)
-	if (v_t[2] =="wiener" )
-   	    addWienerRows("wiener-"+v_t[1],jmsg);
-    
+    if (v_t.length == 3)
+        if (v_t[2] == "wiener")
+            addWienerRows("wiener-" + v_t[1], jmsg);
+    // SY1527
+    if (v_t.length == 3)
+        if (v_t[2] == "sy1527")
+            addSy1527Rows("sy1527-" + v_t[1], jmsg);
+
 }
 
 function startDisconnect() {
@@ -443,7 +465,7 @@ function addGasTable(div_name) {
         var tr = document.createElement('TR');
         tableBody.appendChild(tr);
 
-        var headers = ["Gas", "Id", "Max l/h", "Flow set (l/h)", "Flow read", "New value (l/h)", " ","view"];
+        var headers = ["Gas", "Id", "Max l/h", "Flow set (l/h)", "Flow read", "New value (l/h)", " ", "view"];
         for (var j = 0; j < headers.length; j++) {
             var td = document.createElement('TD');
             td.width = '75';
@@ -507,15 +529,15 @@ function addGasRow(div_name, g_obj) {
     var btn_view = document.createElement("button");
     btn_view.innerHTML = "VIEW";
     btn_view.onclick = function () {
-        
+
         //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
         var topic_cmd = pico_location + "/" + s_sub + "/CMD"
         var j_msg = {}
         j_msg["device"] = "brooks"
         j_msg["command"] = "VIEW"
-        
+
         console.log(topic_cmd + "|" + JSON.stringify(j_msg));
-	//alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        //alert(topic_cmd + "|" + JSON.stringify(j_msg));
         publish_one_message(topic_cmd, JSON.stringify(j_msg));
     };
     c_btn_view.appendChild(btn_view);
@@ -528,13 +550,13 @@ function addGenesysTable(div_name) {
 
     var myTableDiv = document.getElementById(div_name);
     var req_tab = document.getElementById(div_name + "-table-id");
-    console.log("req_tab "+req_tab)
+    console.log("req_tab " + req_tab)
     if (req_tab != null) return;
     var table = document.createElement('TABLE');
     table.id = div_name + '-table-id';
     table.className = div_name + '-table';
     table.border = '1';
-    var headers = ["V Set", "I Set ", "V read", "I read","Status","V Req.  ", " ","I Req.", " "," "," "," View "];
+    var headers = ["V Set", "I Set ", "V read", "I read", "Status", "V Req.  ", " ", "I Req.", " ", " ", " ", " View "];
 
     var tableBody = document.createElement('TBODY');
     table.appendChild(tableBody);
@@ -542,7 +564,7 @@ function addGenesysTable(div_name) {
         var tr = document.createElement('TR');
         tableBody.appendChild(tr);
 
-       
+
         for (var j = 0; j < headers.length; j++) {
             var td = document.createElement('TD');
             td.width = '75';
@@ -559,21 +581,20 @@ function addGenesysTable(div_name) {
 function addGenesysRow(div_name, g_obj) {
 
     var table = document.getElementById(div_name + '-table-id');
-    var row_name= div_name + "-table-0";
+    var row_name = div_name + "-table-0";
     var req_row = document.getElementById(row_name);
-    if (req_row != null)
-    {
-	var c_vset=document.getElementById(row_name+"-vset");
-	c_vset.innerHTML = g_obj["vset"].toFixed(3);
-	var c_iset=document.getElementById(row_name+"-iset");
-	c_iset.innerHTML = g_obj["iset"].toFixed(3);
-	var c_vout=document.getElementById(row_name+"-vout");
-	c_vout.innerHTML = g_obj["vout"].toFixed(3);
-	var c_iout=document.getElementById(row_name+"-iout");
-	c_iout.innerHTML = g_obj["iout"].toFixed(3);
-	var c_status=document.getElementById(row_name+"-status");
-	c_status.innerHTML = g_obj["status"];
-	return;
+    if (req_row != null) {
+        var c_vset = document.getElementById(row_name + "-vset");
+        c_vset.innerHTML = g_obj["vset"].toFixed(3);
+        var c_iset = document.getElementById(row_name + "-iset");
+        c_iset.innerHTML = g_obj["iset"].toFixed(3);
+        var c_vout = document.getElementById(row_name + "-vout");
+        c_vout.innerHTML = g_obj["vout"].toFixed(3);
+        var c_iout = document.getElementById(row_name + "-iout");
+        c_iout.innerHTML = g_obj["iout"].toFixed(3);
+        var c_status = document.getElementById(row_name + "-status");
+        c_status.innerHTML = g_obj["status"];
+        return;
     }
     var rowCount = table.rows.length;
     var row = table.insertRow(rowCount);
@@ -596,7 +617,7 @@ function addGenesysRow(div_name, g_obj) {
     c_status.innerHTML = g_obj["status"];
     var c_nvset = row.insertCell(5);
     var x_vset = document.createElement("INPUT");
-    x_vset.id = row.id+"-nvset";
+    x_vset.id = row.id + "-nvset";
     x_vset.setAttribute("type", "number");
     c_nvset.appendChild(x_vset);
 
@@ -615,15 +636,15 @@ function addGenesysRow(div_name, g_obj) {
         j_msg["command"] = "SETVOLTAGE";
         j_msg["params"] = {};
         j_msg["params"]["vset"] = parseFloat(v_vset);
-	alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        alert(topic_cmd + "|" + JSON.stringify(j_msg));
         console.log(topic_cmd + "|" + JSON.stringify(j_msg));
         publish_one_message(topic_cmd, JSON.stringify(j_msg));
     };
     c_btn_vset.appendChild(btn_vset);
-    
+
     var c_niset = row.insertCell(7);
     var x_iset = document.createElement("INPUT");
-    x_iset.id = row.id+"-niset";
+    x_iset.id = row.id + "-niset";
     x_iset.setAttribute("type", "number");
     c_niset.appendChild(x_iset);
 
@@ -632,7 +653,7 @@ function addGenesysRow(div_name, g_obj) {
     btn_iset.innerHTML = "Set Max Current";
     btn_iset.onclick = function () {
         var v_iset = document.getElementById(x_iset.id).value;
-        
+
         //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
         topic_cmd = pico_location + "/" + s_sub + "/CMD"
         var j_msg = {}
@@ -640,24 +661,24 @@ function addGenesysRow(div_name, g_obj) {
         j_msg["command"] = "SETCURRENT"
         j_msg["params"] = {}
         j_msg["params"]["iset"] = parseFloat(v_iset)
-	alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        alert(topic_cmd + "|" + JSON.stringify(j_msg));
         console.log(topic_cmd + "|" + JSON.stringify(j_msg));
         publish_one_message(topic_cmd, JSON.stringify(j_msg));
     };
     c_btn_iset.appendChild(btn_iset);
-    
+
     var c_btn_on = row.insertCell(9);
     let btn_on = document.createElement("button");
     btn_on.innerHTML = "ON";
     btn_on.onclick = function () {
-        
+
         //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
         topic_cmd = pico_location + "/" + s_sub + "/CMD"
         var j_msg = {}
         j_msg["device"] = s_mod
         j_msg["command"] = "SETON"
         console.log(topic_cmd + "|" + JSON.stringify(j_msg));
-	alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        alert(topic_cmd + "|" + JSON.stringify(j_msg));
         publish_one_message(topic_cmd, JSON.stringify(j_msg));
     };
     c_btn_on.appendChild(btn_on);
@@ -666,32 +687,32 @@ function addGenesysRow(div_name, g_obj) {
     let btn_off = document.createElement("button");
     btn_off.innerHTML = "OFF";
     btn_off.onclick = function () {
-        
+
         //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
         topic_cmd = pico_location + "/" + s_sub + "/CMD"
         var j_msg = {}
         j_msg["device"] = s_mod
         j_msg["command"] = "SETOFF"
-        
+
         console.log(topic_cmd + "|" + JSON.stringify(j_msg));
-	alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        alert(topic_cmd + "|" + JSON.stringify(j_msg));
         publish_one_message(topic_cmd, JSON.stringify(j_msg));
     };
     c_btn_off.appendChild(btn_off);
-    
+
     var c_btn_view = row.insertCell(11);
     let btn_view = document.createElement("button");
     btn_view.innerHTML = "VIEW";
     btn_view.onclick = function () {
-        
+
         //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
         topic_cmd = pico_location + "/" + s_sub + "/CMD"
         var j_msg = {}
         j_msg["device"] = s_mod
         j_msg["command"] = "VIEW"
-        
+
         console.log(topic_cmd + "|" + JSON.stringify(j_msg));
-	//alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        //alert(topic_cmd + "|" + JSON.stringify(j_msg));
         publish_one_message(topic_cmd, JSON.stringify(j_msg));
     };
     c_btn_view.appendChild(btn_view);
@@ -703,13 +724,13 @@ function addBmeTable(div_name) {
 
     var myTableDiv = document.getElementById(div_name);
     var req_tab = document.getElementById(div_name + "-table-id");
-    console.log("req_tab "+req_tab)
+    console.log("req_tab " + req_tab)
     if (req_tab != null) return;
     var table = document.createElement('TABLE');
     table.id = div_name + '-table-id';
     table.className = div_name + '-table';
     table.border = '1';
-    var headers = ["P (mbar) ", "T (C)", "H (%)"," View "];
+    var headers = ["P (mbar) ", "T (C)", "H (%)", " View "];
 
     var tableBody = document.createElement('TBODY');
     table.appendChild(tableBody);
@@ -717,7 +738,7 @@ function addBmeTable(div_name) {
         var tr = document.createElement('TR');
         tableBody.appendChild(tr);
 
-       
+
         for (var j = 0; j < headers.length; j++) {
             var td = document.createElement('TD');
             td.width = '75';
@@ -736,17 +757,16 @@ function addBmeRow(div_name, g_obj) {
     var s_sub = div_name.split("-")[1];
 
     var table = document.getElementById(div_name + '-table-id');
-    var row_name= div_name + "-table-0";
+    var row_name = div_name + "-table-0";
     var req_row = document.getElementById(row_name);
-    if (req_row != null)
-    {
-	var c_P=document.getElementById(row_name+"-P");
-	c_P.innerHTML = g_obj["P"].toFixed(3);
-	var c_T=document.getElementById(row_name+"-T");
-	c_T.innerHTML = g_obj["T"].toFixed(3);
-	var c_H=document.getElementById(row_name+"-H");
-	c_H.innerHTML = g_obj["H"].toFixed(3);
-	return;
+    if (req_row != null) {
+        var c_P = document.getElementById(row_name + "-P");
+        c_P.innerHTML = g_obj["P"].toFixed(3);
+        var c_T = document.getElementById(row_name + "-T");
+        c_T.innerHTML = g_obj["T"].toFixed(3);
+        var c_H = document.getElementById(row_name + "-H");
+        c_H.innerHTML = g_obj["H"].toFixed(3);
+        return;
     }
     var rowCount = table.rows.length;
     var row = table.insertRow(rowCount);
@@ -761,20 +781,20 @@ function addBmeRow(div_name, g_obj) {
     var c_H = row.insertCell(2);
     c_H.id = row.id + "-H";
     c_H.innerHTML = g_obj["H"].toFixed(3);
-    
+
     var c_btn_view = row.insertCell(3);
     let btn_view = document.createElement("button");
     btn_view.innerHTML = "VIEW";
     btn_view.onclick = function () {
-        
+
         //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
         topic_cmd = pico_location + "/" + s_sub + "/CMD"
         var j_msg = {}
         j_msg["device"] = s_mod
         j_msg["command"] = "VIEW"
-        
+
         console.log(topic_cmd + "|" + JSON.stringify(j_msg));
-	//alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        //alert(topic_cmd + "|" + JSON.stringify(j_msg));
         publish_one_message(topic_cmd, JSON.stringify(j_msg));
     };
     c_btn_view.appendChild(btn_view);
@@ -787,13 +807,13 @@ function addHihTable(div_name) {
 
     var myTableDiv = document.getElementById(div_name);
     var req_tab = document.getElementById(div_name + "-table-id");
-    console.log("req_tab "+req_tab)
+    console.log("req_tab " + req_tab)
     if (req_tab != null) return;
     var table = document.createElement('TABLE');
     table.id = div_name + '-table-id';
     table.className = div_name + '-table';
     table.border = '1';
-    var headers = ["T (C)", "H (%)"," View "];
+    var headers = ["T (C)", "H (%)", " View "];
 
     var tableBody = document.createElement('TBODY');
     table.appendChild(tableBody);
@@ -801,7 +821,7 @@ function addHihTable(div_name) {
         var tr = document.createElement('TR');
         tableBody.appendChild(tr);
 
-       
+
         for (var j = 0; j < headers.length; j++) {
             var td = document.createElement('TD');
             td.width = '75';
@@ -820,15 +840,14 @@ function addHihRow(div_name, g_obj) {
     var s_sub = div_name.split("-")[1];
 
     var table = document.getElementById(div_name + '-table-id');
-    var row_name= div_name + "-table-0";
+    var row_name = div_name + "-table-0";
     var req_row = document.getElementById(row_name);
-    if (req_row != null)
-    {
-	var c_T=document.getElementById(row_name+"-T");
-	c_T.innerHTML = g_obj["T"].toFixed(3);
-	var c_H=document.getElementById(row_name+"-H");
-	c_H.innerHTML = g_obj["H"].toFixed(3);
-	return;
+    if (req_row != null) {
+        var c_T = document.getElementById(row_name + "-T");
+        c_T.innerHTML = g_obj["T"].toFixed(3);
+        var c_H = document.getElementById(row_name + "-H");
+        c_H.innerHTML = g_obj["H"].toFixed(3);
+        return;
     }
     var rowCount = table.rows.length;
     var row = table.insertRow(rowCount);
@@ -840,20 +859,20 @@ function addHihRow(div_name, g_obj) {
     var c_H = row.insertCell(1);
     c_H.id = row.id + "-H";
     c_H.innerHTML = g_obj["H"].toFixed(3);
-    
+
     var c_btn_view = row.insertCell(2);
     let btn_view = document.createElement("button");
     btn_view.innerHTML = "VIEW";
     btn_view.onclick = function () {
-        
+
         //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
         topic_cmd = pico_location + "/" + s_sub + "/CMD"
         var j_msg = {}
         j_msg["device"] = s_mod
         j_msg["command"] = "VIEW"
-        
+
         console.log(topic_cmd + "|" + JSON.stringify(j_msg));
-	//alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        //alert(topic_cmd + "|" + JSON.stringify(j_msg));
         publish_one_message(topic_cmd, JSON.stringify(j_msg));
     };
     c_btn_view.appendChild(btn_view);
@@ -865,13 +884,13 @@ function addHihTable(div_name) {
 
     var myTableDiv = document.getElementById(div_name);
     var req_tab = document.getElementById(div_name + "-table-id");
-    console.log("req_tab "+req_tab)
+    console.log("req_tab " + req_tab)
     if (req_tab != null) return;
     var table = document.createElement('TABLE');
     table.id = div_name + '-table-id';
     table.className = div_name + '-table';
     table.border = '1';
-    var headers = ["T (C)", "H (%)"," View "];
+    var headers = ["T (C)", "H (%)", " View "];
 
     var tableBody = document.createElement('TBODY');
     table.appendChild(tableBody);
@@ -879,7 +898,7 @@ function addHihTable(div_name) {
         var tr = document.createElement('TR');
         tableBody.appendChild(tr);
 
-       
+
         for (var j = 0; j < headers.length; j++) {
             var td = document.createElement('TD');
             td.width = '75';
@@ -898,15 +917,14 @@ function addHihRow(div_name, g_obj) {
     var s_sub = div_name.split("-")[1];
 
     var table = document.getElementById(div_name + '-table-id');
-    var row_name= div_name + "-table-0";
+    var row_name = div_name + "-table-0";
     var req_row = document.getElementById(row_name);
-    if (req_row != null)
-    {
-	var c_T=document.getElementById(row_name+"-T");
-	c_T.innerHTML = g_obj["T"].toFixed(3);
-	var c_H=document.getElementById(row_name+"-H");
-	c_H.innerHTML = g_obj["H"].toFixed(3);
-	return;
+    if (req_row != null) {
+        var c_T = document.getElementById(row_name + "-T");
+        c_T.innerHTML = g_obj["T"].toFixed(3);
+        var c_H = document.getElementById(row_name + "-H");
+        c_H.innerHTML = g_obj["H"].toFixed(3);
+        return;
     }
     var rowCount = table.rows.length;
     var row = table.insertRow(rowCount);
@@ -918,20 +936,20 @@ function addHihRow(div_name, g_obj) {
     var c_H = row.insertCell(1);
     c_H.id = row.id + "-H";
     c_H.innerHTML = g_obj["H"].toFixed(3);
-    
+
     var c_btn_view = row.insertCell(2);
     let btn_view = document.createElement("button");
     btn_view.innerHTML = "VIEW";
     btn_view.onclick = function () {
-        
+
         //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
         topic_cmd = pico_location + "/" + s_sub + "/CMD"
         var j_msg = {}
         j_msg["device"] = s_mod
         j_msg["command"] = "VIEW"
-        
+
         console.log(topic_cmd + "|" + JSON.stringify(j_msg));
-	//alert(topic_cmd + "|" + JSON.stringify(j_msg));
+        //alert(topic_cmd + "|" + JSON.stringify(j_msg));
         publish_one_message(topic_cmd, JSON.stringify(j_msg));
     };
     c_btn_view.appendChild(btn_view);
@@ -944,7 +962,7 @@ function addPicoTable(div_name) {
 
     var myTableDiv = document.getElementById(div_name);
     var req_tab = document.getElementById(div_name + "-table-id");
-    console.log("req_tab "+req_tab)
+    console.log("req_tab " + req_tab)
     if (req_tab != null) return;
     var table = document.createElement('TABLE');
     table.id = div_name + '-table-id';
@@ -958,7 +976,7 @@ function addPicoTable(div_name) {
         var tr = document.createElement('TR');
         tableBody.appendChild(tr);
 
-       
+
         for (var j = 0; j < headers.length; j++) {
             var td = document.createElement('TD');
             td.width = '75';
@@ -977,13 +995,12 @@ function addPicoRow(div_name, g_obj) {
     var s_sub = div_name.split("-")[1];
 
     var table = document.getElementById(div_name + '-table-id');
-    var row_name= div_name + "-table-0";
+    var row_name = div_name + "-table-0";
     var req_row = document.getElementById(row_name);
-    if (req_row != null)
-    {
-	var c_T=document.getElementById(row_name+"-T");
-	c_T.innerHTML = g_obj["T"].toFixed(3);
-	return;
+    if (req_row != null) {
+        var c_T = document.getElementById(row_name + "-T");
+        c_T.innerHTML = g_obj["T"].toFixed(3);
+        return;
     }
     var rowCount = table.rows.length;
     var row = table.insertRow(rowCount);
@@ -992,8 +1009,8 @@ function addPicoRow(div_name, g_obj) {
     var c_T = row.insertCell(0);
     c_T.id = row.id + "-T";
     c_T.innerHTML = g_obj["T"].toFixed(3);
-    
-    
+
+
 
 
 }
@@ -1001,7 +1018,7 @@ function addCpwplusTable(div_name) {
 
     var myTableDiv = document.getElementById(div_name);
     var req_tab = document.getElementById(div_name + "-table-id");
-    console.log("req_tab "+req_tab)
+    console.log("req_tab " + req_tab)
     if (req_tab != null) return;
     var table = document.createElement('TABLE');
     table.id = div_name + '-table-id';
@@ -1015,7 +1032,7 @@ function addCpwplusTable(div_name) {
         var tr = document.createElement('TR');
         tableBody.appendChild(tr);
 
-       
+
         for (var j = 0; j < headers.length; j++) {
             var td = document.createElement('TD');
             td.width = '75';
@@ -1034,13 +1051,12 @@ function addCpwplusRow(div_name, g_obj) {
     var s_sub = div_name.split("-")[1];
 
     var table = document.getElementById(div_name + '-table-id');
-    var row_name= div_name + "-table-0";
+    var row_name = div_name + "-table-0";
     var req_row = document.getElementById(row_name);
-    if (req_row != null)
-    {
-	var c_T=document.getElementById(row_name+"-weight");
-	c_T.innerHTML = g_obj["net"].toFixed(3);
-	return;
+    if (req_row != null) {
+        var c_T = document.getElementById(row_name + "-weight");
+        c_T.innerHTML = g_obj["net"].toFixed(3);
+        return;
     }
     var rowCount = table.rows.length;
     var row = table.insertRow(rowCount);
@@ -1049,8 +1065,8 @@ function addCpwplusRow(div_name, g_obj) {
     var c_T = row.insertCell(0);
     c_T.id = row.id + "-weight";
     c_T.innerHTML = g_obj["net"].toFixed(3);
-    
-    
+
+
 
 
 }
@@ -1058,13 +1074,13 @@ function addWienerTable(div_name) {
 
     var myTableDiv = document.getElementById(div_name);
     var req_tab = document.getElementById(div_name + "-table-id");
-    console.log("req_tab "+req_tab)
+    console.log("req_tab " + req_tab)
     if (req_tab != null) return;
     var table = document.createElement('TABLE');
     table.id = div_name + '-table-id';
     table.className = div_name + '-table';
     table.border = '1';
-    var headers = ["Channel","V Set (V)", "I Set (uA)","Ramp Up", "V read (V)", "I read (uA)","Status","V Req. (V)  ", " ","I Req. (uA)", " ","Ramp req.  ", " "," "," "," View "];
+    var headers = ["Channel", "V Set (V)", "I Set (uA)", "Ramp Up", "V read (V)", "I read (uA)", "Status", "V Req. (V)  ", " ", "I Req. (uA)", " ", "Ramp req.  ", " ", " ", " ", " View "];
 
     var tableBody = document.createElement('TBODY');
     table.appendChild(tableBody);
@@ -1072,7 +1088,7 @@ function addWienerTable(div_name) {
         var tr = document.createElement('TR');
         tableBody.appendChild(tr);
 
-       
+
         for (var j = 0; j < headers.length; j++) {
             var td = document.createElement('TD');
             td.width = '75';
@@ -1089,70 +1105,68 @@ function addWienerTable(div_name) {
 function addWienerRows(div_name, g_obj) {
 
     var table = document.getElementById(div_name + '-table-id');
-    for ( rch of g_obj["channels"])
-    {
-	let ch=rch["id"];
-	let row_name= div_name + "-table-"+ch;
-	console.log(ch+" gives "+row_name);
-	let req_row = document.getElementById(row_name);
-	if (req_row != null)
-	{
-	    let c_vset=document.getElementById(row_name+"-vset");
-	    c_vset.innerHTML = rch["vset"].toFixed(1);
-	    let c_iset=document.getElementById(row_name+"-iset");
-	    c_iset.innerHTML = (rch["iset"]*1.E6).toFixed(3);
-	    let c_vout=document.getElementById(row_name+"-vout");
-	    c_vout.innerHTML = rch["vout"].toFixed(1);
-	    let c_iout=document.getElementById(row_name+"-iout");
-	    c_iout.innerHTML = (rch["iout"]*1.E6).toFixed(3);
-	    let c_status=document.getElementById(row_name+"-status");
-	    c_status.innerHTML = rch["status"].split("=")[1];
+    for (rch of g_obj["channels"]) {
+        let ch = rch["id"];
+        let row_name = div_name + "-table-" + ch;
+        console.log(ch + " gives " + row_name);
+        let req_row = document.getElementById(row_name);
+        if (req_row != null) {
+            let c_vset = document.getElementById(row_name + "-vset");
+            c_vset.innerHTML = rch["vset"].toFixed(1);
+            let c_iset = document.getElementById(row_name + "-iset");
+            c_iset.innerHTML = (rch["iset"] * 1.E6).toFixed(3);
+            let c_vout = document.getElementById(row_name + "-vout");
+            c_vout.innerHTML = rch["vout"].toFixed(1);
+            let c_iout = document.getElementById(row_name + "-iout");
+            c_iout.innerHTML = (rch["iout"] * 1.E6).toFixed(3);
+            let c_status = document.getElementById(row_name + "-status");
+            c_status.innerHTML = rch["status"].split("=")[1];
 
-	    let c_ramp=document.getElementById(row_name+"-ramp");
-	    c_ramp.innerHTML = rch["rampup"].toFixed(1);
-	    
-	    console.log("Process "+ch+" "+(rch["iout"]*1.E6))
-	    continue;
-	}
-	var rowCount = table.rows.length;
-	var row = table.insertRow(rowCount);
-	row.id = div_name + "-table-"+ch;
+            let c_ramp = document.getElementById(row_name + "-ramp");
+            c_ramp.innerHTML = rch["rampup"].toFixed(1);
 
-	var c_channel = row.insertCell(0);
-	c_channel.id = row.id + "-channel";
-	c_channel.innerHTML = rch["id"];
+            console.log("Process " + ch + " " + (rch["iout"] * 1.E6))
+            continue;
+        }
+        var rowCount = table.rows.length;
+        var row = table.insertRow(rowCount);
+        row.id = div_name + "-table-" + ch;
 
-	var c_vset = row.insertCell(1);
-	c_vset.id = row.id + "-vset";
-	c_vset.innerHTML = rch["vset"].toFixed(3);
-	var c_iset = row.insertCell(2);
-	c_iset.id = row.id + "-iset";
-	c_iset.innerHTML = (rch["iset"]*1E6).toFixed(3);
-	var c_ramp = row.insertCell(3);
-	c_ramp.id = row.id + "-ramp";
-	c_ramp.innerHTML = rch["rampup"].toFixed(3);
-	var c_vout = row.insertCell(4);
-	c_vout.id = row.id + "-vout";
-	c_vout.innerHTML = rch["vout"].toFixed(3);
-	var c_iout = row.insertCell(5);
-	c_iout.id = row.id + "-iout";
-	c_iout.innerHTML = (rch["iout"]*1.E6).toFixed(3);
-	var c_status = row.insertCell(6);
-	c_status.id = row.id + "-status";
-	c_status.innerHTML = rch["status"].split("=")[1];
-	var c_nvset = row.insertCell(7);
-	let x_vset = document.createElement("INPUT");
-	x_vset.id = row.id+"-nvset";
-	x_vset.setAttribute("type", "number");
-	c_nvset.appendChild(x_vset);
+        var c_channel = row.insertCell(0);
+        c_channel.id = row.id + "-channel";
+        c_channel.innerHTML = rch["id"];
 
-	var s_mod = div_name.split("-")[0];
-	var s_sub = div_name.split("-")[1];
+        var c_vset = row.insertCell(1);
+        c_vset.id = row.id + "-vset";
+        c_vset.innerHTML = rch["vset"].toFixed(3);
+        var c_iset = row.insertCell(2);
+        c_iset.id = row.id + "-iset";
+        c_iset.innerHTML = (rch["iset"] * 1E6).toFixed(3);
+        var c_ramp = row.insertCell(3);
+        c_ramp.id = row.id + "-ramp";
+        c_ramp.innerHTML = rch["rampup"].toFixed(3);
+        var c_vout = row.insertCell(4);
+        c_vout.id = row.id + "-vout";
+        c_vout.innerHTML = rch["vout"].toFixed(3);
+        var c_iout = row.insertCell(5);
+        c_iout.id = row.id + "-iout";
+        c_iout.innerHTML = (rch["iout"] * 1.E6).toFixed(3);
+        var c_status = row.insertCell(6);
+        c_status.id = row.id + "-status";
+        c_status.innerHTML = rch["status"].split("=")[1];
+        var c_nvset = row.insertCell(7);
+        let x_vset = document.createElement("INPUT");
+        x_vset.id = row.id + "-nvset";
+        x_vset.setAttribute("type", "number");
+        c_nvset.appendChild(x_vset);
 
-	var c_btn_vset = row.insertCell(8);
-	let btn_vset = document.createElement("button");
-	btn_vset.innerHTML = "Set Voltage";
-	btn_vset.onclick = function () {
+        var s_mod = div_name.split("-")[0];
+        var s_sub = div_name.split("-")[1];
+
+        var c_btn_vset = row.insertCell(8);
+        let btn_vset = document.createElement("button");
+        btn_vset.innerHTML = "Set Voltage";
+        btn_vset.onclick = function () {
             var v_vset = document.getElementById(x_vset.id).value;
 
             topic_cmd = pico_location + "/" + s_sub + "/CMD";
@@ -1160,128 +1174,359 @@ function addWienerRows(div_name, g_obj) {
             j_msg["device"] = s_mod;
             j_msg["command"] = "VSET";
             j_msg["params"] = {};
-	    j_msg["params"]["first"] =ch;
-	    j_msg["params"]["last"] =ch;
+            j_msg["params"]["first"] = ch;
+            j_msg["params"]["last"] = ch;
             j_msg["params"]["vset"] = parseFloat(v_vset);
-	    alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            alert(topic_cmd + "|" + JSON.stringify(j_msg));
             console.log(topic_cmd + "|" + JSON.stringify(j_msg));
             publish_one_message(topic_cmd, JSON.stringify(j_msg));
-	};
-	c_btn_vset.appendChild(btn_vset);
-	
-	var c_niset = row.insertCell(9);
-	let x_iset = document.createElement("INPUT");
-	x_iset.id = row.id+"-niset";
-	x_iset.setAttribute("type", "number");
-	c_niset.appendChild(x_iset);
+        };
+        c_btn_vset.appendChild(btn_vset);
 
-	var c_btn_iset = row.insertCell(10);
-	let btn_iset = document.createElement("button");
-	btn_iset.innerHTML = "Set Max Current";
-	btn_iset.onclick = function () {
+        var c_niset = row.insertCell(9);
+        let x_iset = document.createElement("INPUT");
+        x_iset.id = row.id + "-niset";
+        x_iset.setAttribute("type", "number");
+        c_niset.appendChild(x_iset);
+
+        var c_btn_iset = row.insertCell(10);
+        let btn_iset = document.createElement("button");
+        btn_iset.innerHTML = "Set Max Current";
+        btn_iset.onclick = function () {
             var v_iset = document.getElementById(x_iset.id).value;
-            
+
             //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
             topic_cmd = pico_location + "/" + s_sub + "/CMD"
             var j_msg = {}
             j_msg["device"] = s_mod
             j_msg["command"] = "ISET"
             j_msg["params"] = {}
-	    j_msg["params"]["first"] =ch;
-	    j_msg["params"]["last"] =ch;
-            j_msg["params"]["iset"] = parseFloat(v_iset)*1E-6
-	    alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            j_msg["params"]["first"] = ch;
+            j_msg["params"]["last"] = ch;
+            j_msg["params"]["iset"] = parseFloat(v_iset) * 1E-6
+            alert(topic_cmd + "|" + JSON.stringify(j_msg));
             console.log(topic_cmd + "|" + JSON.stringify(j_msg));
             publish_one_message(topic_cmd, JSON.stringify(j_msg));
-	};
-	c_btn_iset.appendChild(btn_iset);
-	
-	var c_nramp = row.insertCell(11);
-	let x_ramp = document.createElement("INPUT");
-	x_ramp.id = row.id+"-nramp";
-	x_ramp.setAttribute("type", "number");
-	c_nramp.appendChild(x_ramp);
+        };
+        c_btn_iset.appendChild(btn_iset);
 
-	var c_btn_ramp = row.insertCell(12);
-	let btn_ramp = document.createElement("button");
-	btn_ramp.innerHTML = "Set Ramp";
-	btn_ramp.onclick = function () {
+        var c_nramp = row.insertCell(11);
+        let x_ramp = document.createElement("INPUT");
+        x_ramp.id = row.id + "-nramp";
+        x_ramp.setAttribute("type", "number");
+        c_nramp.appendChild(x_ramp);
+
+        var c_btn_ramp = row.insertCell(12);
+        let btn_ramp = document.createElement("button");
+        btn_ramp.innerHTML = "Set Ramp";
+        btn_ramp.onclick = function () {
             var v_ramp = document.getElementById(x_ramp.id).value;
-            
+
             //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
             topic_cmd = pico_location + "/" + s_sub + "/CMD"
             var j_msg = {}
             j_msg["device"] = s_mod
             j_msg["command"] = "RAMPUP"
             j_msg["params"] = {}
-	    j_msg["params"]["first"] =ch;
-	    j_msg["params"]["last"] =ch;
+            j_msg["params"]["first"] = ch;
+            j_msg["params"]["last"] = ch;
             j_msg["params"]["rampup"] = parseFloat(v_ramp)
-	    alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            alert(topic_cmd + "|" + JSON.stringify(j_msg));
             console.log(topic_cmd + "|" + JSON.stringify(j_msg));
             publish_one_message(topic_cmd, JSON.stringify(j_msg));
-	};
-	c_btn_ramp.appendChild(btn_ramp);
-	
-	var c_btn_on = row.insertCell(13);
-	let btn_on = document.createElement("button");
-	btn_on.innerHTML = "ON";
-	btn_on.onclick = function () {
-            
+        };
+        c_btn_ramp.appendChild(btn_ramp);
+
+        var c_btn_on = row.insertCell(13);
+        let btn_on = document.createElement("button");
+        btn_on.innerHTML = "ON";
+        btn_on.onclick = function () {
+
             //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
             topic_cmd = pico_location + "/" + s_sub + "/CMD"
             var j_msg = {}
             j_msg["device"] = s_mod
             j_msg["command"] = "ON";
-	    j_msg["params"] = {}
-	    j_msg["params"]["first"] =ch;
-	    j_msg["params"]["last"] =ch;
+            j_msg["params"] = {}
+            j_msg["params"]["first"] = ch;
+            j_msg["params"]["last"] = ch;
 
             console.log(topic_cmd + "|" + JSON.stringify(j_msg));
-	    alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            alert(topic_cmd + "|" + JSON.stringify(j_msg));
             publish_one_message(topic_cmd, JSON.stringify(j_msg));
-	};
-	c_btn_on.appendChild(btn_on);
+        };
+        c_btn_on.appendChild(btn_on);
 
-	var c_btn_off = row.insertCell(14);
-	let btn_off = document.createElement("button");
-	btn_off.innerHTML = "OFF";
-	btn_off.onclick = function () {
-            
+        var c_btn_off = row.insertCell(14);
+        let btn_off = document.createElement("button");
+        btn_off.innerHTML = "OFF";
+        btn_off.onclick = function () {
+
             //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
             topic_cmd = pico_location + "/" + s_sub + "/CMD"
             var j_msg = {}
             j_msg["device"] = s_mod
             j_msg["command"] = "OFF"
-	    j_msg["params"] = {}
-	    j_msg["params"]["first"] =ch;
-	    j_msg["params"]["last"] =ch;
-            
+            j_msg["params"] = {}
+            j_msg["params"]["first"] = ch;
+            j_msg["params"]["last"] = ch;
+
             console.log(topic_cmd + "|" + JSON.stringify(j_msg));
-	    alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            alert(topic_cmd + "|" + JSON.stringify(j_msg));
             publish_one_message(topic_cmd, JSON.stringify(j_msg));
-	};
-	c_btn_off.appendChild(btn_off);
-	
-	var c_btn_view = row.insertCell(15);
-	let btn_view = document.createElement("button");
-	btn_view.innerHTML = "VIEW";
-	btn_view.onclick = function () {
-            
+        };
+        c_btn_off.appendChild(btn_off);
+
+        var c_btn_view = row.insertCell(15);
+        let btn_view = document.createElement("button");
+        btn_view.innerHTML = "VIEW";
+        btn_view.onclick = function () {
+
             //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
             topic_cmd = pico_location + "/" + s_sub + "/CMD"
             var j_msg = {}
             j_msg["device"] = s_mod
             j_msg["command"] = "STATUS"
             j_msg["params"] = {}
-	    j_msg["params"]["first"] =ch;
-	    j_msg["params"]["last"] =ch;
+            j_msg["params"]["first"] = ch;
+            j_msg["params"]["last"] = ch;
 
             console.log(topic_cmd + "|" + JSON.stringify(j_msg));
-	    //alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            //alert(topic_cmd + "|" + JSON.stringify(j_msg));
             publish_one_message(topic_cmd, JSON.stringify(j_msg));
-	};
-	c_btn_view.appendChild(btn_view);
+        };
+        c_btn_view.appendChild(btn_view);
+
+    }
+
+}
+
+function addSy1527Table(div_name) {
+
+    var myTableDiv = document.getElementById(div_name);
+    var req_tab = document.getElementById(div_name + "-table-id");
+    console.log("req_tab " + req_tab)
+    if (req_tab != null) return;
+    var table = document.createElement('TABLE');
+    table.id = div_name + '-table-id';
+    table.className = div_name + '-table';
+    table.border = '1';
+    var headers = ["Channel", "V Set (V)", "I Set (uA)", "Ramp Up", "V read (V)", "I read (uA)", "Status", "V Req. (V)  ", " ", "I Req. (uA)", " ", "Ramp req.  ", " ", " ", " ", " View "];
+
+    var tableBody = document.createElement('TBODY');
+    table.appendChild(tableBody);
+    for (var i = 0; i < 1; i++) {
+        var tr = document.createElement('TR');
+        tableBody.appendChild(tr);
+
+
+        for (var j = 0; j < headers.length; j++) {
+            var td = document.createElement('TD');
+            td.width = '75';
+            td.appendChild(document.createTextNode(headers[j]));
+            tr.appendChild(td);
+        }
+
+    }
+
+    myTableDiv.appendChild(table);
+    //alert("Sy1527 table "+div_name+" "+headers.length);
+}
+
+function addSy1527Rows(div_name, g_obj) {
+
+    var table = document.getElementById(div_name + '-table-id');
+    for (rch of g_obj["channels"]) {
+        let ch = rch["id"];
+        let row_name = div_name + "-table-" + ch;
+        console.log(ch + " gives " + row_name);
+        let req_row = document.getElementById(row_name);
+        if (req_row != null) {
+            let c_vset = document.getElementById(row_name + "-vset");
+            c_vset.innerHTML = rch["vset"].toFixed(1);
+            let c_iset = document.getElementById(row_name + "-iset");
+            c_iset.innerHTML = (rch["iset"]).toFixed(3);
+            let c_vout = document.getElementById(row_name + "-vout");
+            c_vout.innerHTML = rch["vout"].toFixed(1);
+            let c_iout = document.getElementById(row_name + "-iout");
+            c_iout.innerHTML = (rch["iout"]).toFixed(3);
+            let c_status = document.getElementById(row_name + "-status");
+            c_status.innerHTML = rch["status"];
+
+            let c_ramp = document.getElementById(row_name + "-ramp");
+            c_ramp.innerHTML = rch["rampup"].toFixed(1);
+
+            console.log("Process " + ch + " " + (rch["iout"] * 1.E6))
+            continue;
+        }
+        var rowCount = table.rows.length;
+        var row = table.insertRow(rowCount);
+        row.id = div_name + "-table-" + ch;
+
+        var c_channel = row.insertCell(0);
+        c_channel.id = row.id + "-channel";
+        c_channel.innerHTML = rch["id"];
+
+        var c_vset = row.insertCell(1);
+        c_vset.id = row.id + "-vset";
+        c_vset.innerHTML = rch["vset"].toFixed(3);
+        var c_iset = row.insertCell(2);
+        c_iset.id = row.id + "-iset";
+        c_iset.innerHTML = (rch["iset"]).toFixed(3);
+        var c_ramp = row.insertCell(3);
+        c_ramp.id = row.id + "-ramp";
+        c_ramp.innerHTML = rch["rampup"].toFixed(3);
+        var c_vout = row.insertCell(4);
+        c_vout.id = row.id + "-vout";
+        c_vout.innerHTML = rch["vout"].toFixed(3);
+        var c_iout = row.insertCell(5);
+        c_iout.id = row.id + "-iout";
+        c_iout.innerHTML = (rch["iout"]).toFixed(3);
+        var c_status = row.insertCell(6);
+        c_status.id = row.id + "-status";
+        c_status.innerHTML = rch["status"];
+        var c_nvset = row.insertCell(7);
+        let x_vset = document.createElement("INPUT");
+        x_vset.id = row.id + "-nvset";
+        x_vset.setAttribute("type", "number");
+        c_nvset.appendChild(x_vset);
+
+        var s_mod = div_name.split("-")[0];
+        var s_sub = div_name.split("-")[1];
+
+        var c_btn_vset = row.insertCell(8);
+        let btn_vset = document.createElement("button");
+        btn_vset.innerHTML = "Set Voltage";
+        btn_vset.onclick = function () {
+            var v_vset = document.getElementById(x_vset.id).value;
+
+            topic_cmd = pico_location + "/" + s_sub + "/CMD";
+            var j_msg = {};
+            j_msg["device"] = s_mod;
+            j_msg["command"] = "VSET";
+            j_msg["params"] = {};
+            j_msg["params"]["first"] = ch;
+            j_msg["params"]["last"] = ch;
+            j_msg["params"]["vset"] = parseFloat(v_vset);
+            alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+            publish_one_message(topic_cmd, JSON.stringify(j_msg));
+        };
+        c_btn_vset.appendChild(btn_vset);
+
+        var c_niset = row.insertCell(9);
+        let x_iset = document.createElement("INPUT");
+        x_iset.id = row.id + "-niset";
+        x_iset.setAttribute("type", "number");
+        c_niset.appendChild(x_iset);
+
+        var c_btn_iset = row.insertCell(10);
+        let btn_iset = document.createElement("button");
+        btn_iset.innerHTML = "Set Max Current";
+        btn_iset.onclick = function () {
+            var v_iset = document.getElementById(x_iset.id).value;
+
+            //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
+            topic_cmd = pico_location + "/" + s_sub + "/CMD"
+            var j_msg = {}
+            j_msg["device"] = s_mod
+            j_msg["command"] = "ISET"
+            j_msg["params"] = {}
+            j_msg["params"]["first"] = ch;
+            j_msg["params"]["last"] = ch;
+            j_msg["params"]["iset"] = parseFloat(v_iset) * 1E-6
+            alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+            publish_one_message(topic_cmd, JSON.stringify(j_msg));
+        };
+        c_btn_iset.appendChild(btn_iset);
+
+        var c_nramp = row.insertCell(11);
+        let x_ramp = document.createElement("INPUT");
+        x_ramp.id = row.id + "-nramp";
+        x_ramp.setAttribute("type", "number");
+        c_nramp.appendChild(x_ramp);
+
+        var c_btn_ramp = row.insertCell(12);
+        let btn_ramp = document.createElement("button");
+        btn_ramp.innerHTML = "Set Ramp";
+        btn_ramp.onclick = function () {
+            var v_ramp = document.getElementById(x_ramp.id).value;
+
+            //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
+            topic_cmd = pico_location + "/" + s_sub + "/CMD"
+            var j_msg = {}
+            j_msg["device"] = s_mod
+            j_msg["command"] = "RAMPUP"
+            j_msg["params"] = {}
+            j_msg["params"]["first"] = ch;
+            j_msg["params"]["last"] = ch;
+            j_msg["params"]["rampup"] = parseFloat(v_ramp)
+            alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+            publish_one_message(topic_cmd, JSON.stringify(j_msg));
+        };
+        c_btn_ramp.appendChild(btn_ramp);
+
+        var c_btn_on = row.insertCell(13);
+        let btn_on = document.createElement("button");
+        btn_on.innerHTML = "ON";
+        btn_on.onclick = function () {
+
+            //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
+            topic_cmd = pico_location + "/" + s_sub + "/CMD"
+            var j_msg = {}
+            j_msg["device"] = s_mod
+            j_msg["command"] = "ON";
+            j_msg["params"] = {}
+            j_msg["params"]["first"] = ch;
+            j_msg["params"]["last"] = ch;
+
+            console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+            alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            publish_one_message(topic_cmd, JSON.stringify(j_msg));
+        };
+        c_btn_on.appendChild(btn_on);
+
+        var c_btn_off = row.insertCell(14);
+        let btn_off = document.createElement("button");
+        btn_off.innerHTML = "OFF";
+        btn_off.onclick = function () {
+
+            //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
+            topic_cmd = pico_location + "/" + s_sub + "/CMD"
+            var j_msg = {}
+            j_msg["device"] = s_mod
+            j_msg["command"] = "OFF"
+            j_msg["params"] = {}
+            j_msg["params"]["first"] = ch;
+            j_msg["params"]["last"] = ch;
+
+            console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+            alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            publish_one_message(topic_cmd, JSON.stringify(j_msg));
+        };
+        c_btn_off.appendChild(btn_off);
+
+        var c_btn_view = row.insertCell(15);
+        let btn_view = document.createElement("button");
+        btn_view.innerHTML = "VIEW";
+        btn_view.onclick = function () {
+
+            //alert("Gas " + g_obj["gas_type"] + "\n setting " + document.getElementById(y.id).value + "l/h range " + g_obj["gas_flow_range"] + "/  " + percent + "% \n for ID " + g_obj["device_id"]);
+            topic_cmd = pico_location + "/" + s_sub + "/CMD"
+            var j_msg = {}
+            j_msg["device"] = s_mod
+            j_msg["command"] = "STATUS"
+            j_msg["params"] = {}
+            j_msg["params"]["first"] = ch;
+            j_msg["params"]["last"] = ch;
+
+            console.log(topic_cmd + "|" + JSON.stringify(j_msg));
+            //alert(topic_cmd + "|" + JSON.stringify(j_msg));
+            publish_one_message(topic_cmd, JSON.stringify(j_msg));
+        };
+        c_btn_view.appendChild(btn_view);
 
     }
 

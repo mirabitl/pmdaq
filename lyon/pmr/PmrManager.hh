@@ -102,6 +102,7 @@ public:
   void c_setchannelmask(http_request m);
   void c_setmask(http_request m);
   void c_setthresholds(http_request m);
+  void c_shiftthresholds(http_request m);
   void c_setpagain(http_request m);
   void c_external(http_request m);
   /**
@@ -112,6 +113,7 @@ public:
      @param idif The dif ID
   */
   void setThresholds(uint16_t b0, uint16_t b1, uint16_t b2, uint32_t idif = 0);
+  void shiftThresholds(uint16_t b0, uint16_t b1, uint16_t b2, uint32_t idif = 0);
   void setGain(uint16_t gain);
   void setMask(uint32_t level, uint64_t mask);
   void setChannelMask(uint16_t level, uint16_t channel, uint16_t val);

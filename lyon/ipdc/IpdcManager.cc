@@ -147,6 +147,21 @@ void IpdcManager::c_setcalibcount(http_request m)
   Reply(status_codes::OK,par);  
 } 
 
+void IpdcManager::c_lemo_mask(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logIpdc," LEMO MASK called ");
+  if (_ipdc==NULL)
+    {par["STATUS"]=web::json::value::string(U("NO Ipdc created"));
+      Reply(status_codes::OK,par);  return;}
+  uint32_t nc=utils::queryIntValue(m,"value",0);
+  _ipdc->setLemoMask(nc);
+
+  par["STATUS"]=web::json::value::string(U("DONE"));
+  par["MASK"]=web::json::value::number(nc);
+  Reply(status_codes::OK,par);  
+} 
+
 void IpdcManager::c_reset(http_request m)
 {
   auto par = json::value::object();
@@ -417,7 +432,8 @@ void IpdcManager::initialise()
 
   this->addCommand("SETEXTERNAL",std::bind(&IpdcManager::c_setexternaltrigger,this,std::placeholders::_1));
   this->addCommand("ENABLE",std::bind(&IpdcManager::c_enable,this,std::placeholders::_1));
- 
+  this->addCommand("LEMOMASK",std::bind(&IpdcManager::c_lemo_mask,this,std::placeholders::_1));
+
   
 }
 

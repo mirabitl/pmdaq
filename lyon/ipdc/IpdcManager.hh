@@ -44,6 +44,7 @@ class IpdcManager : public fsmw
     void c_setregister(http_request m);
     void c_getregister(http_request m);
     void c_setexternaltrigger(http_request m);
+    void c_lemo_mask(http_request m);
   private:
     ipdc::IpdcHandler* _ipdc;
 };
