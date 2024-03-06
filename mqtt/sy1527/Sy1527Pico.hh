@@ -10,7 +10,7 @@ public:
   web::json::value channelStatus(uint32_t channel);
   web::json::value rangeStatus(int32_t first,int32_t last);
   web::json::value validStatus();
-  std::vector<uint32_t> ch_list(web::json::value v);
+  void ch_list(web::json::value v);
   void opensocket();
   void closesocket();
   virtual void status(web::json::value v);
@@ -29,4 +29,5 @@ private:
   std::string _account,_host,_name,_pwd;
   std::vector<uint32_t> _valid;
   time_t _last_connect;
+  std::vector<uint32_t> _ch_list;
 };

@@ -184,8 +184,9 @@ void Sy1527Pico::status(web::json::value v)
  
 }
 
-std::vector<uint32_t> Sy1527Pico::ch_list(web::json::value v)
+void Sy1527Pico::ch_list(web::json::value v)
 {
+  _ch_list.clear();
    uint32_t first = 47;
  uint32_t last =0;
  if (v.as_object().find("first")!=v.as_object().end())
@@ -194,21 +195,22 @@ std::vector<uint32_t> Sy1527Pico::ch_list(web::json::value v)
    last=v["last"].as_integer();
  if (last>=first)
    {
-     std::vector<uint32_t> v;
-     for (int i=first;i<=last;i++) v.push_back(i);
-     return v;
+    
+     for (int i=first;i<=last;i++) _ch_list.push_back(i);
+     return;
    }
  else
-   return _valid;
+   for (int i=0;i<_valid.size();i++) _ch_list.push_back(_valid[i]);
+ return;
 }
 
 void Sy1527Pico::on(web::json::value v)
 {
 
    this->opensocket();
-   std::vector<uint32_t> vc=ch_list(v);
-   for (uint32_t i=0;i<=vc.size();i++)
-     _hv->SetOn(vc[i]);
+   ch_list(v);
+   for (uint32_t i=0;i<_ch_list.size();i++)
+     _hv->SetOn(_ch_list[i]);
    ::sleep(2);
 
   this->status(v);
@@ -218,9 +220,9 @@ void Sy1527Pico::off(web::json::value v)
 {
   this->opensocket();
   //
-  std::vector<uint32_t> vc=ch_list(v);
-  for (uint32_t i=0;i<=vc.size();i++)
-    _hv->SetOff(vc[i]);
+  ch_list(v);
+  for (uint32_t i=0;i<_ch_list.size();i++)
+    _hv->SetOff(_ch_list[i]);
   ::sleep(2);
 
   this->status(v);
@@ -239,9 +241,9 @@ void Sy1527Pico::vset(web::json::value v)
   this->opensocket();
   if (v.as_object().find("vset")==v.as_object().end())
     return;
-  std::vector<uint32_t> vc=ch_list(v);
-  for (uint32_t i=0;i<=vc.size();i++)
-    _hv->SetVoltage(vc[i],v["vset"].as_double());
+  ch_list(v);
+  for (uint32_t i=0;i<_ch_list.size();i++)
+    _hv->SetVoltage(_ch_list[i],v["vset"].as_double());
   ::sleep(2);
   
   this->status(v);
@@ -253,9 +255,9 @@ void Sy1527Pico::iset(web::json::value v)
   this->opensocket();
   if (v.as_object().find("iset")==v.as_object().end())
     return;
-  std::vector<uint32_t> vc=ch_list(v);
-  for (uint32_t i=0;i<=vc.size();i++)
-    _hv->SetCurrent(vc[i],v["iset"].as_double());
+  ch_list(v);
+  for (uint32_t i=0;i<_ch_list.size();i++)
+    _hv->SetCurrent(_ch_list[i],v["iset"].as_double());
   ::sleep(2);
   
   this->status(v);
@@ -268,9 +270,9 @@ void Sy1527Pico::rampup(web::json::value v)
   this->opensocket();
   if (v.as_object().find("rampup")==v.as_object().end())
     return;
-  std::vector<uint32_t> vc=ch_list(v);
-  for (uint32_t i=0;i<=vc.size();i++)
-    _hv->SetVoltageRampUp(vc[i],v["rampup"].as_double());
+  ch_list(v);
+  for (uint32_t i=0;i<_ch_list.size();i++)
+    _hv->SetVoltageRampUp(_ch_list[i],v["rampup"].as_double());
   ::sleep(2);
 
   this->status(v);
