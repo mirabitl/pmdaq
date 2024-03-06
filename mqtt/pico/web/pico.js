@@ -1311,7 +1311,7 @@ function addSy1527Table(div_name) {
     table.id = div_name + '-table-id';
     table.className = div_name + '-table';
     table.border = '1';
-    var headers = ["Channel", "V Set (V)", "I Set (uA)", "Ramp Up", "V read (V)", "I read (uA)", "Status", "V Req. (V)  ", " ", "I Req. (uA)", " ", "Ramp req.  ", " ", " ", " ", " View "];
+    var headers = ["Name","Channel", "V Set (V)", "I Set (uA)", "Ramp Up", "V read (V)", "I read (uA)", "Status", "V Req. (V)  ", " ", "I Req. (uA)", " ", "Ramp req.  ", " ", " ", " ", " View "];
 
     var tableBody = document.createElement('TBODY');
     table.appendChild(tableBody);
@@ -1338,6 +1338,7 @@ function addSy1527Rows(div_name, g_obj) {
     var table = document.getElementById(div_name + '-table-id');
     for (rch of g_obj["channels"]) {
         let ch = rch["id"];
+	let ch_name = rch["chname"];
         let row_name = div_name + "-table-" + ch;
         console.log(ch + " gives " + row_name);
         let req_row = document.getElementById(row_name);
@@ -1352,6 +1353,8 @@ function addSy1527Rows(div_name, g_obj) {
             c_iout.innerHTML = (rch["iout"]).toFixed(3);
             let c_status = document.getElementById(row_name + "-status");
             c_status.innerHTML = rch["status"];
+            let c_name = document.getElementById(row_name + "-name");
+            c_name.innerHTML = rch["name"];
 
             let c_ramp = document.getElementById(row_name + "-ramp");
             c_ramp.innerHTML = rch["rampup"].toFixed(1);
@@ -1363,29 +1366,33 @@ function addSy1527Rows(div_name, g_obj) {
         var row = table.insertRow(rowCount);
         row.id = div_name + "-table-" + ch;
 
-        var c_channel = row.insertCell(0);
+	var c_name = row.insertCell(0);
+        c_name.id = row.id + "-name";
+        c_name.innerHTML = rch["chname"];
+
+        var c_channel = row.insertCell(1);
         c_channel.id = row.id + "-channel";
         c_channel.innerHTML = rch["id"];
 
-        var c_vset = row.insertCell(1);
+        var c_vset = row.insertCell(2);
         c_vset.id = row.id + "-vset";
         c_vset.innerHTML = rch["vset"].toFixed(3);
-        var c_iset = row.insertCell(2);
+        var c_iset = row.insertCell(3);
         c_iset.id = row.id + "-iset";
         c_iset.innerHTML = (rch["iset"]).toFixed(3);
-        var c_ramp = row.insertCell(3);
+        var c_ramp = row.insertCell(4);
         c_ramp.id = row.id + "-ramp";
         c_ramp.innerHTML = rch["rampup"].toFixed(3);
-        var c_vout = row.insertCell(4);
+        var c_vout = row.insertCell(5);
         c_vout.id = row.id + "-vout";
         c_vout.innerHTML = rch["vout"].toFixed(3);
-        var c_iout = row.insertCell(5);
+        var c_iout = row.insertCell(6);
         c_iout.id = row.id + "-iout";
         c_iout.innerHTML = (rch["iout"]).toFixed(3);
-        var c_status = row.insertCell(6);
+        var c_status = row.insertCell(7);
         c_status.id = row.id + "-status";
         c_status.innerHTML = rch["status"];
-        var c_nvset = row.insertCell(7);
+        var c_nvset = row.insertCell(8);
         let x_vset = document.createElement("INPUT");
         x_vset.id = row.id + "-nvset";
         x_vset.setAttribute("type", "number");
@@ -1394,7 +1401,7 @@ function addSy1527Rows(div_name, g_obj) {
         var s_mod = div_name.split("-")[0];
         var s_sub = div_name.split("-")[1];
 
-        var c_btn_vset = row.insertCell(8);
+        var c_btn_vset = row.insertCell(9);
         let btn_vset = document.createElement("button");
         btn_vset.innerHTML = "Set Voltage";
         btn_vset.onclick = function () {
@@ -1414,13 +1421,13 @@ function addSy1527Rows(div_name, g_obj) {
         };
         c_btn_vset.appendChild(btn_vset);
 
-        var c_niset = row.insertCell(9);
+        var c_niset = row.insertCell(10);
         let x_iset = document.createElement("INPUT");
         x_iset.id = row.id + "-niset";
         x_iset.setAttribute("type", "number");
         c_niset.appendChild(x_iset);
 
-        var c_btn_iset = row.insertCell(10);
+        var c_btn_iset = row.insertCell(11);
         let btn_iset = document.createElement("button");
         btn_iset.innerHTML = "Set Max Current";
         btn_iset.onclick = function () {
@@ -1434,20 +1441,20 @@ function addSy1527Rows(div_name, g_obj) {
             j_msg["params"] = {}
             j_msg["params"]["first"] = ch;
             j_msg["params"]["last"] = ch;
-            j_msg["params"]["iset"] = parseFloat(v_iset) * 1E-6
+            j_msg["params"]["iset"] = parseFloat(v_iset)
             alert(topic_cmd + "|" + JSON.stringify(j_msg));
             console.log(topic_cmd + "|" + JSON.stringify(j_msg));
             publish_one_message(topic_cmd, JSON.stringify(j_msg));
         };
         c_btn_iset.appendChild(btn_iset);
 
-        var c_nramp = row.insertCell(11);
+        var c_nramp = row.insertCell(12);
         let x_ramp = document.createElement("INPUT");
         x_ramp.id = row.id + "-nramp";
         x_ramp.setAttribute("type", "number");
         c_nramp.appendChild(x_ramp);
 
-        var c_btn_ramp = row.insertCell(12);
+        var c_btn_ramp = row.insertCell(13);
         let btn_ramp = document.createElement("button");
         btn_ramp.innerHTML = "Set Ramp";
         btn_ramp.onclick = function () {
@@ -1468,7 +1475,7 @@ function addSy1527Rows(div_name, g_obj) {
         };
         c_btn_ramp.appendChild(btn_ramp);
 
-        var c_btn_on = row.insertCell(13);
+        var c_btn_on = row.insertCell(14);
         let btn_on = document.createElement("button");
         btn_on.innerHTML = "ON";
         btn_on.onclick = function () {
@@ -1488,7 +1495,7 @@ function addSy1527Rows(div_name, g_obj) {
         };
         c_btn_on.appendChild(btn_on);
 
-        var c_btn_off = row.insertCell(14);
+        var c_btn_off = row.insertCell(15);
         let btn_off = document.createElement("button");
         btn_off.innerHTML = "OFF";
         btn_off.onclick = function () {
@@ -1508,7 +1515,7 @@ function addSy1527Rows(div_name, g_obj) {
         };
         c_btn_off.appendChild(btn_off);
 
-        var c_btn_view = row.insertCell(15);
+        var c_btn_view = row.insertCell(16);
         let btn_view = document.createElement("button");
         btn_view.innerHTML = "VIEW";
         btn_view.onclick = function () {
