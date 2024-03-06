@@ -539,29 +539,30 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment=None):
                     petiroc_chan,tdc_ch =used_chan[idx]
                     gc=v6[ petiroc_chan]+round((target-turn_on[idx])/3.9)
                     td=[]
-                    for ig in range(3):
-                        g=gc-1+ig
+                    for ig in range(5):
+                        g=gc-2+ig
                         vc=v6
                         vc[ petiroc_chan]=g
-                        to=pedestal_one_channel(feb,an,idx,target-10,target+10,vc,two_steps=False)
+                        to=pedestal_one_channel(feb,an,idx,target-15,target+15,vc,two_steps=False)
                         td.append(to)
                     #print(gc)
                     #print(td)
                     # find best value
                     mindist=1000
                     imin=2
-                    for ig in range(3):
+                    for ig in range(5):
                         if (abs(td[ig]-target)<mindist):
                             mindist=abs(td[ig]-target)
                             imin=ig
                     turn_on_cor.append(td[imin])
-                    v6_cor[petiroc_chan]=gc-1+imin
+                    v6_cor[petiroc_chan]=gc-2+imin
                 print(f" Turn ON {turn_on_cor}")
                 ntoc=np.array(turn_on_cor)
                 # Target
                 target1=round(np.median(ntoc))
                 print(f"Median target {target1}")
                 print(v6_cor)
+                #v_stop=input()
                 # Upload to DB
                 for  ich in range(len(v6_cor)):
                    sdb.setup.febs[0].petiroc.set_6b_dac(ich,v6_cor[ich],an.upper())
@@ -569,9 +570,10 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment=None):
                 results=make_pedestal_all_channels(state,version,feb_id,feb,an,thi,tha,1,v6=v6_cor)
                 #val=input("Next ASIC ? ")
                 
-
+        
         if (upload):
             cm=upload_comment
+            sdb.setup.version=version
             sdb.upload_changes(cm)
         else:
             sdb.setup.version=999
