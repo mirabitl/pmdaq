@@ -37,6 +37,16 @@ class pedcor:
         """
         for a in self.scurves.keys():
             self.draw_scurves(self.scurves[a],save,debug)
+    def draw_asic(self,asic="MIDDLE_TOP",title=None):
+        """ Draw all Scurves of the test in ROOT TCanvas
+
+        Args:
+            save(bool): Save PDF (False by default)
+            debug(bool): Draw Scurves one by one (False by default)
+        """
+        for a in self.scurves.keys():
+            self.draw_one_asic(self.scurves[a],a_name=asic,title=title)
+
     def draw_scurves(self,d_sc,save,debug):
         """ Draw all Scurves of one asic in ROOT format
 
@@ -268,6 +278,74 @@ class pedcor:
             #print(f"sdb.correct_6bdac({ch},{round(cor)},{self.asic})")
         
         return res
+    def draw_one_asic(self,d_sc,a_name,title):
+        """ Draw all Scurves of one asic in ROOT format
+
+        Args:
+            d_sc:JSON object stored in the febv2_test collection
+            a_name: Asic name
+        Returns:
+            A list of ROOT.TH1F histos containing the SCURVES
+        """
+        asic=d_sc["asic"]
+        if (asic!=a_name):
+            return []
+
+        analysis=d_sc["analysis"]
+        state=d_sc["state"]
+        version=d_sc["version"]
+        feb=d_sc["feb"]
+        thi=d_sc["thmin"]
+        tha=d_sc["thmax"]
+        fn=f"{analysis}_{state}-v{version}-f{feb}"
+        c2=ROOT.TCanvas("Scurves")
+        icol=1
+        histos=[]
+        ROOT.gStyle.SetOptStat(0)
+        c2.Clear()
+        c2.Divide(1,1)
+        c2.cd(1)
+        vm=-1
+        for c in d_sc["channels"]:
+            ch=c["prc"]
+            vals=c["scurve"]
+            nval=len(vals)        
+            vmax=max(vals)
+            if (vmax>vm):
+                vm=vmax
+        for c in d_sc["channels"]:
+            ch=c["prc"]
+            vals=c["scurve"]
+            nval=len(vals)
+            shs="%s_%s_scurve-c%d" % (fn,asic,ch)
+            hs=ROOT.TH1F(shs,shs,tha-thi+1,thi,tha)
+            diff=[0 for x in range(nval)]
+            vmax=max(vals)
+            ithmax=0
+            ithmin=9999
+            for ith in range(nval):
+                hs.SetBinContent(ith+1,vals[ith])
+            c2.cd(1)
+            hs.SetLineColor(icol)
+
+            if (icol==1):
+                if (title!=None):
+                    hs.SetTitle(title)
+                hs.GetYaxis().SetRangeUser(0,vm*1.07)
+                hs.Draw()
+            else:
+                hs.Draw("SAME")
+            icol=icol+1
+            c2.Draw()
+            c2.Update()
+            histos.append(hs)
+        c2.cd()
+        c2.Draw()
+        c2.Update()
+
+        c2.SaveAs(f"results/{fn}_{asic}.bmp")
+        v=input()
+        return histos
 
 class timecor:
     """

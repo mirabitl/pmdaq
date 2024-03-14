@@ -22,6 +22,8 @@ def  main(r):
     if (r.pedestal):
         s.full_threshold(r.upload)
         return
+    if (r.asic):
+        s.draw_asic(asic=r.asic,title=r.title)
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
@@ -38,6 +40,9 @@ if __name__ == '__main__':
     parser.add_argument('--analysis', action='store', type=str,default=None, dest='analysis', help='Analysis (SCURVE_1,SCURVE_A)')
     parser.add_argument('--upload', action='store', type=str,default=None, dest='upload', help='upload comment for the new version')
     parser.add_argument('--debug', dest='debug', default=False, action='store_true',help="Step by step display")
+    parser.add_argument('--asic', action='store', type=str,default=None, dest='asic', help='draw all scurves of an asic')
+    parser.add_argument('--title', action='store', type=str,default=None, dest='title', help='title of asic plots')
+
     results = parser.parse_args()
     print(results)
 
