@@ -111,6 +111,7 @@ class MongoMqtt:
         """
         List all the run informations stored
         """
+        print("Dans Items",topic)
         path_elem=topic.split("/")
         if (len(path_elem)<3):
             print("Too short topic ",topic)
@@ -123,7 +124,12 @@ class MongoMqtt:
         res = self.db.MQTT_ITEMS.find({"topic": {'$regex': topic}, "ctime": {'$gt': mintime}}, {
                                       "_id": 0}).limit(depth).sort("ctime", pymongo.DESCENDING)
         for x in res:
-            #print(device,x)
+            #print(device,x,x["message"].keys())
+            #str=f' '
+            #for k in x["message"].keys():
+            #     str=str+f'{x["message"][k]},'
+            #str=str+f'{x["ctime"]}'
+            #print(str)
             sti = time.strftime('%Y-%m-%d %H:%M:%S',
                                 time.localtime(x["ctime"]))
             m = x["message"]
@@ -134,6 +140,11 @@ class MongoMqtt:
             if (device == "rp2040"):
                 if  ( "T" in m.keys() ): 
                     print("%s Pico Board T=%.2f C " % (sti,  m["T"]))
+                else:
+                    print(sti,x["topic"],m)
+            if (device == "cpwplus"):
+                if  ( "net" in m.keys() ): 
+                    print("%s  Masse=%.2f Kg " % (sti,  m["net"]))
                 else:
                     print(sti,x["topic"],m)
             if (device == "brooks"):
@@ -184,7 +195,72 @@ class MongoMqtt:
         res = self.db.MQTT_ITEMS.find({"topic": {'$regex': topics}}, {"_id": 0}).limit(lim).sort("ctime", pymongo.DESCENDING)
         for x in res:
             print(x)
-            
+
+    def dumpcsv(self,topic,depth=5000,from_time=0,file_name="/tmp/mgslow.csv"):
+        """
+        dump full message
+        """
+        writer=None
+        path_elem=topic.split("/")
+        last_ctime=0
+        last_err=0
+        if (len(path_elem)<3):
+            print("Too short topic ",topic)
+            return
+        fname="_".join(path_elem)+".csv"
+        fout=open(fname, 'w')
+        device = path_elem[2].split("_")[0]
+        print(path_elem,device)
+
+        writer = csv.writer(fout, delimiter="|")
+        mintime = 0
+        if (from_time > 0):
+            mintime = time.time()-from_time
+
+        res = self.db.MQTT_ITEMS.find({"topic": {'$regex': topic}, "ctime": {'$gt': mintime}}, {
+                                      "_id": 0}).limit(depth).sort("ctime", pymongo.DESCENDING)
+        headers=['Date']
+        itype='flat'
+        for y in res:
+            #print(y)
+            x=y["message"]
+                    #print(device,x,x["message"].keys())
+            if (len(headers)==1):
+                for k in x.keys():
+                    if isinstance(x[k],list):
+                        if isinstance(x[k][0],dict):
+                            for l in x[k][0].keys():
+                                headers.append(l)
+                        itype='array'
+                    else:
+                        headers.append(k)
+                headers.append('ctime')
+                writer.writerow(headers)
+
+            values=[]
+            sti = time.strftime('%Y-%m-%d %H:%M:%S',
+                                time.localtime(y["ctime"]))
+            if (itype=='flat'):
+                values.append(sti)
+            for k in x.keys():
+                if isinstance(x[k],list):
+                    for j in range(len(x[k])):
+                        val=[]
+                        val.append(sti)
+                        for l in x[k][j].keys():
+                            if (isinstance(x[k][j][l],float)):
+                                val.append(round(x[k][j][l],3))
+                            else:
+                                val.append(x[k][j][l])
+                        val.append(round(y['ctime'],2))
+                        writer.writerow(val)
+                else:
+                    values.append(x[k])
+            if (itype=='flat'):
+                values.append(round(y['ctime'],1))
+                writer.writerow(values)
+        fout.close()
+
     def csv(self,topic,depth=50000,from_time=0,file_name="/tmp/mgslow.csv"):
         """
         List all the run informations stored
@@ -225,6 +301,7 @@ class MongoMqtt:
 
         res = self.db.MQTT_ITEMS.find({"topic": {'$regex': topic}, "ctime": {'$gt': mintime}}, {
                                       "_id": 0}).limit(depth).sort("ctime", pymongo.ASCENDING)
+
         for y in res:
 
             x=y["message"]
