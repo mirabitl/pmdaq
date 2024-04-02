@@ -77,7 +77,7 @@ if (results.items):
     if (results.depth != None):
        ldepth=results.depth
        #print(comment)
-
+    print(results.path)
     _wdd.items(results.path,depth=ldepth,from_time=lsince)
     exit(0)
 if (results.csv):

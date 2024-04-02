@@ -1354,7 +1354,7 @@ function addSy1527Rows(div_name, g_obj) {
             let c_status = document.getElementById(row_name + "-status");
             c_status.innerHTML = rch["status"];
             let c_name = document.getElementById(row_name + "-name");
-            c_name.innerHTML = rch["name"];
+            c_name.innerHTML = rch["chname"];
 
             let c_ramp = document.getElementById(row_name + "-ramp");
             c_ramp.innerHTML = rch["rampup"].toFixed(1);
