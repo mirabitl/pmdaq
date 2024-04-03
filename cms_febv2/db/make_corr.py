@@ -192,6 +192,7 @@ class pedcor:
 
             c1.cd()
             c1.SaveAs(f"results/{fn}_{asic}.pdf")
+            c1.SaveAs(f"results/{fn}_{asic}.bmp")
             v=input()
         v=input("Next ASIC?")
         return histos
@@ -342,7 +343,7 @@ class pedcor:
         c2.cd()
         c2.Draw()
         c2.Update()
-
+        v=input()
         c2.SaveAs(f"results/{fn}_{asic}.bmp")
         v=input()
         return histos
@@ -456,6 +457,7 @@ class timecor:
         if (save):
             c1.cd()
             c1.SaveAs(f"results/{fn}_{asic}.pdf")
+            c1.SaveAs(f"results/{fn}_{asic}.bmp")
         v=input("Next FPGA?")
         return histos
     def full_pedestals(self,c_upload=None,mapping=None):

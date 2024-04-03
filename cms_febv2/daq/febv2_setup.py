@@ -49,6 +49,8 @@ class febv2_setup:
         self.running = False
         self.dummy=False
         self.writer=None
+        self.last_paccomp=None
+        self.last_delay_reset_trigger=None
     def init(self):
         """
         Initialise the setup. 
@@ -83,7 +85,33 @@ class febv2_setup:
         """
         self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
         self.sdb.setup.febs[0].petiroc.shift_10b_dac(shift)
+        if (self.last_paccomp!=None):
+            self.sdb.setup.febs[0].petiroc.set_parameter("pa_ccomp",self.last_paccomp&0XF,asic=None)
+        if (self.last_delay_reset_trigger!=None):
+            self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",self.last_delay_trigger&0XF,asic=None)
+
         self.sdb.to_csv_files()
+    def change_paccomp(self,value):
+        """ Change the PETIROC PACCOMP
+            The PETIROC parameters to be used are modified but not load (configure needed)
+        Args:
+            value (int): PACCOMP to all asics
+        """
+        self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
+        self.sdb.setup.febs[0].petiroc.set_parameter("pa_ccomp",value&0XF,asic=None)
+        self.last_paccomp=value
+        self.sdb.to_csv_files()
+    def change_delay_reset_trigger(self,value):
+        """ Change the PETIROC delay_reset_trigger value
+            The PETIROC parameters to be used are modified but not load (configure needed)
+        Args:
+            value (int): DELAY_RESET_TRIGGER VALUE
+        """
+        self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
+        self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",value&0XF,asic=None)
+        self.last_delay_reset_trigger=value
+        self.sdb.to_csv_files()
+    
     def change_db(self,state_name,version):
         """ Download and store a new DB version
             The FPGA/PETIROC parameters to be used are stored but not load (configure needed)

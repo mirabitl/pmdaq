@@ -256,6 +256,7 @@ def make_pedestal_all_channels(state,version,feb_id,feb,asic_name,thmin,thmax,th
 
         scurves = [ [] for _ in range(32) ]
         for dac10b_val in range(thmin, thmax, thstep):
+        #for dac10b_val in range(thmax, thmin, -1*thstep):
             f_asic.set_reg('10b_dac_vth_discri_time', dac10b_val)
             feb.send_petiroc_conf(asic_name)
             f_tdc.enable_tdc()

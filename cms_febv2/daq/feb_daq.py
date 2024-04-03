@@ -209,6 +209,40 @@ class wddService(ServiceBase):
             status["STATUS"]="FAILED"
             yield json.dumps(status)
        
+    @srpc(Integer16, _returns=Iterable(String))
+    def DELAY_RESET(value):
+        """ calls febv2_fsm change_delay_reset method
+
+        Args:
+            value (int): DELAY_RESET_TRIGGER value
+        """
+        global _wdd
+        if (_wdd!=None):
+            _wdd.change_delay_reset_trigger(value)
+            status={}
+            status["DELAY_RESET_TRIGGER"]=value
+            yield json.dumps(status)
+        else:
+            status={}
+            status["STATUS"]="FAILED"
+            yield json.dumps(status)
+    @srpc(Integer16, _returns=Iterable(String))
+    def PACCOMP(value):
+        """ calls febv2_fsm change_paccomp method
+
+        Args:
+            value (int): PACCOMP value
+        """
+        global _wdd
+        if (_wdd!=None):
+            _wdd.change_paccomp(value)
+            status={}
+            status["PACCOMP"]=value
+            yield json.dumps(status)
+        else:
+            status={}
+            status["STATUS"]="FAILED"
+            yield json.dumps(status)
         
             
 if __name__=='__main__':

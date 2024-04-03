@@ -269,6 +269,22 @@ class febv2_fsm:
         """
         self.setup.change_vth_shift(shift)
 
+    def change_paccomp(self,value):
+        """ interface to change_paccomp in febv2_setup
+
+        Args:
+            value (int): VTH_TIME threhold shiftPA_CCOMP value
+        """
+        self.setup.change_paccomp(value)
+
+    def change_delay_reset_trigger(self,value):
+        """ interface to change_dealy_reset_trigger in febv2_setup
+
+        Args:
+            value (int): DELAY_RESET_TRIGGER value
+        """
+        self.setup.change_delay_reset_trigger(value)
+
     def veto(self):
         """ Obsolete """
         return False

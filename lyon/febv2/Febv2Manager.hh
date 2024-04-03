@@ -41,6 +41,8 @@ public:
   void c_downloadDB(http_request m);
   /// DOWNLOADDB Command handler
   void c_vthshift(http_request m);
+  void c_paccomp(http_request m);
+  void c_delay_reset(http_request m);
   /// SHM managment
   void clearShm();
   void spy_shm();
