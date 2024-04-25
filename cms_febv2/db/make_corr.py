@@ -345,6 +345,7 @@ class pedcor:
         c2.Update()
         v=input()
         c2.SaveAs(f"results/{fn}_{asic}.bmp")
+        c2.SaveAs(f"results/{fn}_{asic}.pdf")
         v=input()
         return histos
 

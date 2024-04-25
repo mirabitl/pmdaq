@@ -529,7 +529,23 @@ class combRC(pmdaqrc.pmdaqControl):
         else:
             print(url+"/EXIT will be called")
             sac.executeRequest(url+"/EXIT")
-
+    # FEBV2 specific
+    def febv2_start(self):
+        r={}
+        m={}
+        if ("lyon_febv2" in self.session.apps):
+            for x in self.session.apps["lyon_febv2"]:
+                s = json.loads(x.sendTransition("START", m))
+                r["lyon_febv2_%d" % x.instance] = s
+            return json.dumps(r)
+    def febv2_stop(self):
+        r={}
+        m={}
+        if ("lyon_febv2" in self.session.apps):
+            for x in self.session.apps["lyon_febv2"]:
+                s = json.loads(x.sendTransition("STOP", m))
+                r["lyon_febv2_%d" % x.instance] = s
+            return json.dumps(r)
     # FEBV1 specific
 
     def set6BDac(self, dac):

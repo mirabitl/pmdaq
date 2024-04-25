@@ -68,10 +68,12 @@ class febv2_setup:
         try:
             self.fc7 = fc7_board(False)
             ### Test
-            self.sdb.setup.febs[0].fpga_version='4.7'
+            self.sdb.setup.febs[0].fpga_version='4.8'
             self.feb = feb_v2_cycloneV(self.fc7, fpga_fw_ver=self.sdb.setup.febs[0].fpga_version, petiroc_ver=self.sdb.setup.febs[0].petiroc_version, verbose=False)
-
-            self.fc7.init(init_gbt=True,mapping="dome")
+            fmc_mapping="dome"
+            if "mapping" in self.params["config"]:
+                fmc_mapping=self.params["config"]["mapping"]
+            self.fc7.init(init_gbt=True,mapping=fmc_mapping)
             self.feb.boot(app_fw=False)
 
         except TestError as e:
@@ -253,7 +255,7 @@ class febv2_setup:
             #    s4_duration=5, 
             #    enable_force_s2=True)
             
-            self.fc7.configure_resync_external(5100) 
+            self.fc7.configure_resync_external(2) 
             #self.fc7.configure_resync_after_bc0(500) 
             self.fc7.reset_bc0_id()
 
@@ -312,6 +314,8 @@ class febv2_setup:
                     nb_frame32=nb_frame32_1
 
                 try:
+                    message= "Nb frames to be block read {}".format(nb_frame32)
+                    logging.info(message)
                     nb_frame32 = min(4096+2048, nb_frame32)
                     #print("frames :%d %d\n"% (nb_frame32//8,nb_frame32))
                     #sys.stdout.flush()
@@ -339,14 +343,14 @@ class febv2_setup:
                 if not self.dummy:
                     self.writer.writeEvent()
            
-            if (nacq % 100 == 0):
-                message= "Info : Event {} (acquisition number {}) have read {} words = {} potential TDC frames.".format(self.writer.eventNumber(), nacq, nbt/(self.params["trigger"]["n_bc0"]-1), nbt/(self.params["trigger"]["n_bc0"]-1)/8)
+            if (nacq % 1 == 0):
+                message= "Info : Event {} (acquisition number {}) have read {} words = {} potential TDC frames.".format(self.writer.eventNumber(), nacq, nbt, nbt/8)
                 logging.info(message)
 
                 #with open("/data/trigger_count.txt", "w") as trig_output:
                 #    trig_output.write(str(self.writer.eventNumber()))             
             self.fc7.stop_acquisition()
-            #time.sleep(0.005)
+            time.sleep(0.005)
         logging.info("Thread %d: finishing", self.run)
     def stop(self):
         """ Stop the run
