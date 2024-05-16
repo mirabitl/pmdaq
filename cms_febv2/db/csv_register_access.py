@@ -407,11 +407,11 @@ class feb_petiroc_registers:
                 if l["name"] in hexl:
                     for cn in self.headers[1:]:
                         if (cl[cn]):
-                            cl[cn]='{0:#x}'.format(cl[cn])
+                            cl[cn]='{0:#x}'.format(int(cl[cn]))
                 if l["name"] in binl:
                     for cn in self.headers[1:]:
                         if (cl[cn]):
-                            cl[cn]='{0:#b}'.format(cl[cn])
+                            cl[cn]='{0:#b}'.format(int(cl[cn]))
                 writer.writerow(cl)
     
     def write_csv_file(self,fn,direc="/dev/shm/feb_csv"):

@@ -228,7 +228,7 @@ nc2;1;1;1;1;1;1
 nc3;0;0;0;0;0;0
 nc4;0;0;0;0;0;0
 choice_trigger_out;0;0;0;0;0;0
-delay_reset_trigger;0xF;0xF;0xF;0xF;0xF;0xF
+delay_reset_trigger;0x4;0x4;0x4;0x4;0x4;0x4
 nc5;0;0;0;0;0;0
 nc6;0;0;0;0;0;0
 nc7;0;0;0;0;0;0

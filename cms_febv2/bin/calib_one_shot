@@ -78,14 +78,14 @@ def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None,two_steps=True,
                 to_0=scurve1_th[t]
                 break
         # now repeat scan between to_0-10 and to_0+10
-        ti=max(to_0-10,thmin)
-        ta=min(to_0+10,thmax)
+        ti=round(max(to_0-10,thmin))
+        ta=round(min(to_0+10,thmax))
         
     scurve2=[]
     scurve2_th=[]
 
     thstep=1
-    for dac10b_val in range(ti, ta, thstep):
+    for dac10b_val in range(int(ti), int(ta), thstep):
 #            for dac10b_val in range(thmax, thmin, -1*thstep):
         f_asic.set_reg('10b_dac_vth_discri_time', dac10b_val)
         feb.send_petiroc_conf(asic_name)
@@ -563,7 +563,7 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment=None):
                 print(f" Turn ON {turn_on_cor}")
                 ntoc=np.array(turn_on_cor)
                 # Target
-                target1=round(np.median(ntoc))
+                target1=int(round(np.median(ntoc)))
                 print(f"Median target {target1}")
                 print(v6_cor)
                 #v_stop=input()
