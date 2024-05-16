@@ -49,6 +49,8 @@ class febv2_setup:
         self.running = False
         self.dummy=False
         self.writer=None
+        self.last_paccomp=None
+        self.last_delay_reset_trigger=None
     def init(self):
         """
         Initialise the setup. 
@@ -66,10 +68,12 @@ class febv2_setup:
         try:
             self.fc7 = fc7_board(False)
             ### Test
-            self.sdb.setup.febs[0].fpga_version='4.6'
+            self.sdb.setup.febs[0].fpga_version='4.8'
             self.feb = feb_v2_cycloneV(self.fc7, fpga_fw_ver=self.sdb.setup.febs[0].fpga_version, petiroc_ver=self.sdb.setup.febs[0].petiroc_version, verbose=False)
-
-            self.fc7.init(init_gbt=True,mapping="dome")
+            fmc_mapping="dome"
+            if "mapping" in self.params["config"]:
+                fmc_mapping=self.params["config"]["mapping"]
+            self.fc7.init(init_gbt=True,mapping=fmc_mapping)
             self.feb.boot(app_fw=False)
 
         except TestError as e:
@@ -83,7 +87,33 @@ class febv2_setup:
         """
         self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
         self.sdb.setup.febs[0].petiroc.shift_10b_dac(shift)
+        if (self.last_paccomp!=None):
+            self.sdb.setup.febs[0].petiroc.set_parameter("pa_ccomp",self.last_paccomp&0XF,asic=None)
+        if (self.last_delay_reset_trigger!=None):
+            self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",self.last_delay_trigger&0XF,asic=None)
+
         self.sdb.to_csv_files()
+    def change_paccomp(self,value):
+        """ Change the PETIROC PACCOMP
+            The PETIROC parameters to be used are modified but not load (configure needed)
+        Args:
+            value (int): PACCOMP to all asics
+        """
+        self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
+        self.sdb.setup.febs[0].petiroc.set_parameter("pa_ccomp",value&0XF,asic=None)
+        self.last_paccomp=value
+        self.sdb.to_csv_files()
+    def change_delay_reset_trigger(self,value):
+        """ Change the PETIROC delay_reset_trigger value
+            The PETIROC parameters to be used are modified but not load (configure needed)
+        Args:
+            value (int): DELAY_RESET_TRIGGER VALUE
+        """
+        self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
+        self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",value&0XF,asic=None)
+        self.last_delay_reset_trigger=value
+        self.sdb.to_csv_files()
+    
     def change_db(self,state_name,version):
         """ Download and store a new DB version
             The FPGA/PETIROC parameters to be used are stored but not load (configure needed)
@@ -225,7 +255,7 @@ class febv2_setup:
             #    s4_duration=5, 
             #    enable_force_s2=True)
             
-            self.fc7.configure_resync_external(5100) 
+            self.fc7.configure_resync_external(2) 
             #self.fc7.configure_resync_after_bc0(500) 
             self.fc7.reset_bc0_id()
 
@@ -284,6 +314,8 @@ class febv2_setup:
                     nb_frame32=nb_frame32_1
 
                 try:
+                    message= "Nb frames to be block read {}".format(nb_frame32)
+                    logging.info(message)
                     nb_frame32 = min(4096+2048, nb_frame32)
                     #print("frames :%d %d\n"% (nb_frame32//8,nb_frame32))
                     #sys.stdout.flush()
@@ -311,14 +343,14 @@ class febv2_setup:
                 if not self.dummy:
                     self.writer.writeEvent()
            
-            if (nacq % 100 == 0):
-                message= "Info : Event {} (acquisition number {}) have read {} words = {} potential TDC frames.".format(self.writer.eventNumber(), nacq, nbt/(self.params["trigger"]["n_bc0"]-1), nbt/(self.params["trigger"]["n_bc0"]-1)/8)
+            if (nacq % 1 == 0):
+                message= "Info : Event {} (acquisition number {}) have read {} words = {} potential TDC frames.".format(self.writer.eventNumber(), nacq, nbt, nbt/8)
                 logging.info(message)
 
                 #with open("/data/trigger_count.txt", "w") as trig_output:
                 #    trig_output.write(str(self.writer.eventNumber()))             
             self.fc7.stop_acquisition()
-            #time.sleep(0.005)
+            time.sleep(0.005)
         logging.info("Thread %d: finishing", self.run)
     def stop(self):
         """ Stop the run

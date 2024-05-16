@@ -43,6 +43,9 @@ void Febv2Manager::initialise()
 
   this->addCommand("VTHSHIFT", std::bind(&Febv2Manager::c_vthshift, this, std::placeholders::_1));
 
+  this->addCommand("PACCOMP", std::bind(&Febv2Manager::c_paccomp, this, std::placeholders::_1));
+  this->addCommand("DELAY_RESET", std::bind(&Febv2Manager::c_delay_reset, this, std::placeholders::_1));
+
   // std::cout<<"Service "<<name<<" started on port "<<port<<std::endl;
 }
 void Febv2Manager::end()
@@ -162,6 +165,36 @@ void Febv2Manager::c_vthshift(http_request m)
   auto jrep=this->post("SHIFTVTH",parcmd);
 
   par["SHIFT"] = json::value::number(shift);
+  Reply(status_codes::OK, par);
+}
+void Febv2Manager::c_paccomp(http_request m)
+{
+
+  auto par = json::value::object();
+  par["STATUS"] = json::value::string(U("DONE"));
+  uint32_t paccomp = utils::queryIntValue(m, "value", 15);
+  PM_INFO(_logFebv2, "PACCOMP called "<<paccomp);
+  auto parcmd = json::value::object();
+  parcmd["value"] = json::value::number(paccomp);
+  auto jrep=this->post("PACCOMP",parcmd);
+
+  par["PACCOMP"] = json::value::number(paccomp);
+  Reply(status_codes::OK, par);
+}
+
+
+void Febv2Manager::c_delay_reset(http_request m)
+{
+
+  auto par = json::value::object();
+  par["STATUS"] = json::value::string(U("DONE"));
+  uint32_t delay_reset = utils::queryIntValue(m, "value", 15);
+  PM_INFO(_logFebv2, "DELAY_RESET called "<<delay_reset);
+  auto parcmd = json::value::object();
+  parcmd["value"] = json::value::number(delay_reset);
+  auto jrep=this->post("DELAY_RESET",parcmd);
+
+  par["DELAY_RESET"] = json::value::number(delay_reset);
   Reply(status_codes::OK, par);
 }
 

@@ -2,9 +2,9 @@
 #include <unistd.h>
 #include <time.h>
 
-Sy1527Pico::Sy1527Pico(std::string id, std::string subid,std::string account,uint32_t first,uint32_t last) : PicoInterface(id, subid, "sy1527"), _hv(0),_first(first),_last(last),_account(account)
+Sy1527Pico::Sy1527Pico(std::string id, std::string subid,std::string account,std::vector<uint32_t> validc) : PicoInterface(id, subid, "sy1527"), _hv(0),_account(account)
 {
-  
+  _valid=validc;
    if (_hv!=NULL)
     delete _hv;
    _hv=NULL;
@@ -102,7 +102,7 @@ web::json::value Sy1527Pico::channelStatus(uint32_t channel)
    r["status"]=web::json::value::number(_hv->GetStatus(channel));
    r["chname"]=web::json::value::string(U(_hv->GetName(channel)));
    r["id"]=web::json::value::number(channel);
-
+   std::cout<<r<<std::endl;
    return r;
 }
 web::json::value Sy1527Pico::rangeStatus(int32_t first,int32_t last)
@@ -130,6 +130,30 @@ web::json::value Sy1527Pico::rangeStatus(int32_t first,int32_t last)
   return r;
 }
 
+web::json::value Sy1527Pico::validStatus()
+{
+
+  auto r= web::json::value::object();
+  r["name"]=web::json::value::string(U(this->process()));
+
+  web::json::value c_array;uint32_t nc=0;
+
+  if (_hv==NULL)
+  {
+    return r;
+  }
+  
+  for (uint32_t i=0;i<_valid.size();i++)
+    {
+      //PMF_INFO(_logSy1527,"Calling ChannelStatus "<<i);
+      c_array[nc++]=this->channelStatus(_valid[i]);
+      //PMF_INFO(_logSy1527,"Status from "<<nc-1<<" "<<c_array[nc-1]);
+      //std::cout <<v<<std::endl;
+    }
+  //PMF_INFO(_logSy1527,"End ");
+  r["channels"]=c_array;
+  return r;
+}
 void Sy1527Pico::status(web::json::value v)
 {
 
@@ -144,32 +168,50 @@ void Sy1527Pico::status(web::json::value v)
     return;
   }
  //
- uint32_t first = _first;
- uint32_t last =_last;
+ uint32_t first = 47;
+ uint32_t last =0;
  if (v.as_object().find("first")!=v.as_object().end())
    first=v["first"].as_integer();
  if (v.as_object().find("last")!=v.as_object().end())
    last=v["last"].as_integer();
- std::cout<<"querying status "<<first<<" to "<< last<<std::endl;
- publish("",this->rangeStatus(first,last).serialize());
-
+ if (last>=first)
+   {
+     std::cout<<"querying status "<<first<<" to "<< last<<std::endl;
+     publish("",this->rangeStatus(first,last).serialize());
+   }
+ else
+   publish("",this->validStatus().serialize());
+ 
 }
 
+void Sy1527Pico::ch_list(web::json::value v)
+{
+  _ch_list.clear();
+   uint32_t first = 47;
+ uint32_t last =0;
+ if (v.as_object().find("first")!=v.as_object().end())
+   first=v["first"].as_integer();
+ if (v.as_object().find("last")!=v.as_object().end())
+   last=v["last"].as_integer();
+ if (last>=first)
+   {
+    
+     for (int i=first;i<=last;i++) _ch_list.push_back(i);
+     return;
+   }
+ else
+   for (int i=0;i<_valid.size();i++) _ch_list.push_back(_valid[i]);
+ return;
+}
 
 void Sy1527Pico::on(web::json::value v)
 {
 
    this->opensocket();
- uint32_t first = _first;
- uint32_t last =_last;
- if (v.as_object().find("first")!=v.as_object().end())
-   first=v["first"].as_integer();
- if (v.as_object().find("last")!=v.as_object().end())
-   last=v["last"].as_integer();
-  // 
-  for (uint32_t i=first;i<=last;i++)
-    _hv->SetOn(i);
-  ::sleep(2);
+   ch_list(v);
+   for (uint32_t i=0;i<_ch_list.size();i++)
+     _hv->SetOn(_ch_list[i]);
+   ::sleep(2);
 
   this->status(v);
 
@@ -177,15 +219,10 @@ void Sy1527Pico::on(web::json::value v)
 void Sy1527Pico::off(web::json::value v)
 {
   this->opensocket();
-  uint32_t first = _first;
- uint32_t last =_last;
- if (v.as_object().find("first")!=v.as_object().end())
-   first=v["first"].as_integer();
- if (v.as_object().find("last")!=v.as_object().end())
-   last=v["last"].as_integer();
-  // 
-  for (uint32_t i=first;i<=last;i++)
-    _hv->SetOff(i);
+  //
+  ch_list(v);
+  for (uint32_t i=0;i<_ch_list.size();i++)
+    _hv->SetOff(_ch_list[i]);
   ::sleep(2);
 
   this->status(v);
@@ -194,15 +231,6 @@ void Sy1527Pico::off(web::json::value v)
 void Sy1527Pico::clearalarm(web::json::value v)
 {
   this->opensocket();
-   uint32_t first = _first;
-   uint32_t last =_last;
-   if (v.as_object().find("first")!=v.as_object().end())
-     first=v["first"].as_integer();
-   if (v.as_object().find("last")!=v.as_object().end())
-     last=v["last"].as_integer();
-   // 
-  // for (uint32_t i=first;i<=last;i++)
-  //   _hv->setOutputSwitch(i/8,i%8,10);
   ::sleep(2);
 
   this->status(v);
@@ -213,18 +241,11 @@ void Sy1527Pico::vset(web::json::value v)
   this->opensocket();
   if (v.as_object().find("vset")==v.as_object().end())
     return;
-  uint32_t first = _first;
-  uint32_t last =_last;
-  
-  if (v.as_object().find("first")!=v.as_object().end())
-    first=v["first"].as_integer();
-  if (v.as_object().find("last")!=v.as_object().end())
-    last=v["last"].as_integer();
-  // 
-  for (uint32_t i=first;i<=last;i++)
-    _hv->SetVoltage(i,v["vset"].as_double());
+  ch_list(v);
+  for (uint32_t i=0;i<_ch_list.size();i++)
+    _hv->SetVoltage(_ch_list[i],v["vset"].as_double());
   ::sleep(2);
-
+  
   this->status(v);
 
 }
@@ -232,20 +253,13 @@ void Sy1527Pico::vset(web::json::value v)
 void Sy1527Pico::iset(web::json::value v)
 {
   this->opensocket();
- if (v.as_object().find("iset")==v.as_object().end())
+  if (v.as_object().find("iset")==v.as_object().end())
     return;
-  uint32_t first = _first;
-  uint32_t last =_last;
-  
-  if (v.as_object().find("first")!=v.as_object().end())
-    first=v["first"].as_integer();
-  if (v.as_object().find("last")!=v.as_object().end())
-    last=v["last"].as_integer();
-  // 
-  for (uint32_t i=first;i<=last;i++)
-    _hv->SetCurrent(i,v["iset"].as_double());
+  ch_list(v);
+  for (uint32_t i=0;i<_ch_list.size();i++)
+    _hv->SetCurrent(_ch_list[i],v["iset"].as_double());
   ::sleep(2);
-
+  
   this->status(v);
 
 
@@ -254,18 +268,11 @@ void Sy1527Pico::iset(web::json::value v)
 void Sy1527Pico::rampup(web::json::value v)
 {
   this->opensocket();
-if (v.as_object().find("rampup")==v.as_object().end())
+  if (v.as_object().find("rampup")==v.as_object().end())
     return;
-  uint32_t first = _first;
-  uint32_t last =_last;
-  
-  if (v.as_object().find("first")!=v.as_object().end())
-    first=v["first"].as_integer();
-  if (v.as_object().find("last")!=v.as_object().end())
-    last=v["last"].as_integer();
-  // 
-  for (uint32_t i=first;i<=last;i++)
-    _hv->SetVoltageRampUp(i,v["rampup"].as_double());
+  ch_list(v);
+  for (uint32_t i=0;i<_ch_list.size();i++)
+    _hv->SetVoltageRampUp(_ch_list[i],v["rampup"].as_double());
   ::sleep(2);
 
   this->status(v);
@@ -318,10 +325,11 @@ int main()
   auto subid = output["subid"].as_string();
   std::cout << "ID " << id<<"/"<<subid<<"/sy1527 " << " broker " << host << " : " << port << "\n";
 
-  uint32_t first = 0;
-  uint32_t last = 47;
+  uint32_t first = 47;
+  uint32_t last = 0;
   uint32_t period=30;
   std::string ipaddress("");
+  std::vector<uint32_t> valid_channels;
   if (output.as_object().find("sy1527") != output.as_object().end())
   {
     auto wdef = output["sy1527"];
@@ -338,13 +346,31 @@ int main()
       std::cout << "No account  for sy1527 \n";
       exit(0);
     }
+
+    if (last>=first)
+      {
+	for (int i=first;i<=last;i++)
+	  {valid_channels.push_back(i);
+	    std::cout<<valid_channels[i-first]<<std::endl;}
+ 
+      }
+    else
+      if (wdef.as_object().find("list") != wdef.as_object().end())
+      {
+	auto chlist=wdef["list"].as_array();
+	for (int i=0;i<chlist.size();i++)
+	  {valid_channels.push_back(chlist[i].as_integer());
+	    std::cout<<valid_channels[i]<<std::endl;}
+
+      }
+    
   }
   else
   {
     std::cout << "No description for sy1527 \n";
     exit(0);
   }
-  Sy1527Pico m(id,subid, ipaddress, first, last);
+  Sy1527Pico m(id,subid, ipaddress,valid_channels);
   std::cout << "Now connecting \n"
             << std::flush;
   m.Connect(host, port);

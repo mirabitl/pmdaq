@@ -81,7 +81,7 @@ if (results.csv):
        ldepth=results.depth
        #print(comment)
 
-    _wdd.csv(results.path,depth=ldepth,from_time=lsince,file_name=results.fout)
+    _wdd.dumpcsv(results.path,depth=ldepth,from_time=lsince,file_name=results.fout)
     exit(0)
 
 exit(0)

@@ -116,7 +116,11 @@ class pico_monitor:
         r_m={}
         r_m["ctime"]=time.time()
         r_m["timestamp"]=message.timestamp
-        r_m["content"]=json.loads(str(message.payload.decode("utf-8")));
+        try:
+            r_m["content"]=json.loads(str(message.payload.decode("utf-8")));
+        except:
+            print("Cannot parse ",str(message.payload.decode("utf-8")));
+            return
         self.rcv_msg[message.topic].append(r_m)
         if (len( self.rcv_msg[message.topic])>1000):
             self.rcv_msg[message.topic].pop(0)
@@ -125,7 +129,11 @@ class pico_monitor:
         if (self.msi!=None):
             #self.msi.store(p[0],p[1], r_m["ctime"], r_m["content"])
             sm=p[0]+p[1]+json.dumps(r_m)
-            self.msi.store(message.topic,r_m["timestamp"],r_m["ctime"],r_m["content"])
+            try:
+                self.msi.store(message.topic,r_m["timestamp"],r_m["ctime"],r_m["content"])
+            except:
+                print("Cannot store")
+                return
             logging.debug(sm)
         else:
             if (False):

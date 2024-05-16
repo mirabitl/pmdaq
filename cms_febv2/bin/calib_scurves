@@ -256,6 +256,7 @@ def make_pedestal_all_channels(state,version,feb_id,feb,asic_name,thmin,thmax,th
 
         scurves = [ [] for _ in range(32) ]
         for dac10b_val in range(thmin, thmax, thstep):
+        #for dac10b_val in range(thmax, thmin, -1*thstep):
             f_asic.set_reg('10b_dac_vth_discri_time', dac10b_val)
             feb.send_petiroc_conf(asic_name)
             f_tdc.enable_tdc()
@@ -325,6 +326,7 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment="scurve analy
 
         for an in asicl:
             print(an)
+            feb.load_config_from_csv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (state,998,feb_id))
             if (all_channels):
                 results=make_pedestal_all_channels(state,version,feb_id,feb,an,thi,tha,1)
                 sdb.upload_results(results["state"],results["version"],results["feb"],results["analysis"],results,upload_comment)

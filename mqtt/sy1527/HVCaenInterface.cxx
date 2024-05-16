@@ -288,6 +288,8 @@ std::string caen::HVCaenInterface::GetName(uint32_t channel)
   _sem.lock();
   CAENHVRESULT ret=  CAENHV_GetChName(theHandle_,BoardSlot(channel),ChNum, ChList,param); 
   //printf("CAENHV_GetChParam: %s (num. %d)\n %f\n", CAENHV_GetError(theHandle_), ret,param[0]) ;
+  if (ret == -3)
+    return "NO_BOARD";
     if( ret != CAENHV_OK )
     {
       printf("\nCAENHV access: %s (num. %d) handle %d \n\n", CAENHV_GetError(theHandle_), ret,theHandle_);
