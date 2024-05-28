@@ -85,7 +85,12 @@ x"0040"        TDC_calib1_register                Todo
 x"0041"        TDC_calib2_register                Todo
 x"0100"        version        RO        x"14060100" ;20-FRM-PT-06-001_00
  */
-
+/*LEMO Mask
+Bit 0 SOS
+Bit 1 EOS
+Bit 2 Trigext
+Bit 3 SPS spill
+*/ 
 typedef std::pair<uint32_t,unsigned char*> ptrBuf;
 typedef std::function<void (uint64_t,uint16_t,char*)> MPIFunctor;
 

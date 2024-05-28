@@ -295,6 +295,14 @@ class febv2_setup:
                 if (nwait%1000==999):
                     print(nwait)
                 nwait+=1
+                if (nwait>5E4):
+                    message= "Resetting BC0 and restart DAQ after number {}, event {}.".format(nacq, self.writer.eventNumber())
+                    logging.error(message)
+                    self.fc7.stop_acquisition()
+                    time.sleep(10)
+                    self.fc7.reset_bc0_id()
+                    self.fc7.start_acquisition()
+                    nwait=0
                 time.sleep(0.001)
             if not self.running:
                 break
