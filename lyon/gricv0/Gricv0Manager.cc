@@ -54,6 +54,7 @@ void Gricv0Manager::initialise()
   this->addCommand("LASTABCID",std::bind(&Gricv0Manager::c_lastabcid,this,std::placeholders::_1));
   this->addCommand("LASTGTC",std::bind(&Gricv0Manager::c_lastgtc,this,std::placeholders::_1));
   this->addCommand("SETTHRESHOLDS",std::bind(&Gricv0Manager::c_setthresholds,this,std::placeholders::_1));
+  this->addCommand("SHIFTTHRESHOLDS",std::bind(&Gricv0Manager::c_shiftthresholds,this,std::placeholders::_1));
   this->addCommand("SETPAGAIN",std::bind(&Gricv0Manager::c_setpagain,this,std::placeholders::_1));
   this->addCommand("SETMASK",std::bind(&Gricv0Manager::c_setmask,this,std::placeholders::_1));
   this->addCommand("SETCHANNELMASK",std::bind(&Gricv0Manager::c_setchannelmask,this,std::placeholders::_1));
@@ -284,6 +285,25 @@ void Gricv0Manager::c_setthresholds(http_request m)
   par["THRESHOLD0"]=web::json::value::number(b0);
   par["THRESHOLD1"]=web::json::value::number(b1);
   par["THRESHOLD2"]=web::json::value::number(b2);
+  Reply(status_codes::OK,par);
+}
+void Gricv0Manager::c_shiftthresholds(http_request m)
+{
+    auto par = json::value::object();
+
+  PMF_INFO(_logGricv0,"Set6bdac called ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
+
+  
+  uint32_t b0=utils::queryIntValue(m,"B0",0);
+  uint32_t b1=utils::queryIntValue(m,"B1",0);
+  uint32_t b2=utils::queryIntValue(m,"B2",0);
+  uint32_t idif=utils::queryIntValue(m,"DIF",0);
+  
+  this->shiftThresholds(b0,b1,b2,idif);
+  par["SHIFTTHRESHOLD0"]=web::json::value::number(b0);
+  par["SHIFTTHRESHOLD1"]=web::json::value::number(b1);
+  par["SHIFTTHRESHOLD2"]=web::json::value::number(b2);
   Reply(status_codes::OK,par);
 }
 void Gricv0Manager::c_pulse(http_request m)
@@ -573,6 +593,28 @@ void Gricv0Manager::setThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t i
   ::usleep(10000);
 
 }
+void Gricv0Manager::shiftThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t idif)
+{
+
+  PMF_INFO(_logGricv0," shifting thresholds: "<<b0<<","<<b1<<","<<b2);
+  for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
+    {
+      if (idif!=0)
+	{
+	  uint32_t ip=(((it->first)>>32&0XFFFFFFFF)>>16)&0xFFFF;
+	  printf("%lx %x %x \n",(it->first>>32),ip,idif);
+	  if (idif!=ip) continue;
+	}
+      it->second.setB0( it->second.getB0()+b0);
+      it->second.setB1(it->second.getB1()+b1);
+      it->second.setB2(it->second.getB2()+b2);
+      //it->second.setHEADER(0x56);
+    }
+  // Now loop on slowcontrol socket
+  this->configureHR2();
+  ::usleep(10000);
+
+}
 void Gricv0Manager::setAllMasks(uint64_t mask)
 {
   PMF_INFO(_logGricv0," Changing Mask: "<<std::hex<<mask<<std::dec);
@@ -761,7 +803,8 @@ void Gricv0Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,in
 
       usleep(1000);
       //this->setThresholds(thmax-vth*step,512,512);
-
+      if (_sc_gmin!=0)
+	this->setGain(_sc_gmin);
       uint32_t threshold = thmax - vth * step;
       // this->setThresholds(thmax-vth*step,512,512);
       if (_sc_level == 0)
@@ -1130,6 +1173,7 @@ void Gricv0Manager::c_scurve(http_request m)
   _sc_win = utils::queryIntValue(m, "window", 50000);
   _sc_ntrg = utils::queryIntValue(m, "ntrg", 50);
   _sc_level = utils::queryIntValue(m, "level", 0);
+  _sc_gmin = utils::queryIntValue(m, "gain", 0);
   
   PMF_INFO(_logGricv0, " SCurve called  mode: " << _sc_mode << " TH_Min " << _sc_thmin << " TH_Max " << _sc_thmax <<" Step "<<_sc_step <<" Level "<<_sc_level);
   

@@ -21,6 +21,7 @@ public:
   void c_status(http_request m);
   void c_reset(http_request m);
   void c_setthresholds(http_request m);
+  void c_shiftthresholds(http_request m);
   void c_setpagain(http_request m);
   void c_setmask(http_request m);
   void c_setchannelmask(http_request m);
@@ -32,6 +33,7 @@ public:
   void configureHR2();
   void configure(http_request m);
   void setThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t idif=0);
+  void shiftThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t idif=0);
   void setGain(uint16_t gain);
   void setAllMasks(uint64_t mask);
   void setCTEST(uint64_t mask);
