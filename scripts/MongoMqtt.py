@@ -133,10 +133,26 @@ class MongoMqtt:
             sti = time.strftime('%Y-%m-%d %H:%M:%S',
                                 time.localtime(x["ctime"]))
             m = x["message"]
+            #print(m)
             ltop=x["topic"].split("/")
             if (len(ltop)==4 and ltop[3]=="INFOS"):
                 continue
             #print(sti, m)
+            if (device=="wiener") :
+                print(sti)
+                for y in x["message"]["channels"]:
+                    if (not isinstance(y["status"],str)):
+                        print(y)
+                        continue
+                    sstat=y["status"].split("=")[1]
+
+                    #print("ch%.3d %12.2f %12.2f %12.2f %s" %(y["id"],y["vset"],y["vout"],y["iout"]*1E6,sstat[:len(sstat)-1]))
+                    print("ch%.3d %8.2f %8.2f %8.2f %8.2f %8.2f %s" %(y["id"],y["vset"],y["iset"]*1E6,y["rampup"],y["vout"],y["iout"]*1E6,sstat[:len(sstat)-1]))
+            if (device=="sy1527"):
+                print(sti)
+                #print(m)
+                for y in m["channels"]:
+                    print("%12s %8.2f %8.2f %8.2f %8.2f %8.2f %d" %(y["chname"],y["vset"],y["iset"],y["rampup"],y["vout"],y["iout"],y["status"]))                
             if (device == "rp2040"):
                 if  ( "T" in m.keys() ): 
                     print("%s Pico Board T=%.2f C " % (sti,  m["T"]))
