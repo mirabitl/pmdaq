@@ -45,8 +45,8 @@ x"000C"        Rstdet_register        RW        reset detecteur
 bit 0 : reset envoye aux FE
 x"000D"        WindowConfig <file:///Users/combaret/Downloads/tiddlywiki_5.1.14.html#WindowConfig>_register        RW        configuration de type de fenetre generee
 bit 0 : strat of spill, end of spill
-bit 1 : start of spill et duree programmable
-bit 2 : duree et delai programmable
+bit 1 : start of spill et duree programmable spillon
+bit 2 : duree et delai programmable spillon /spilloff
 bit 3 : calibration avec spillon/spilloff interne declenché par calib_reg(1),
 bit 4 : compteur interne mais seulement sur start_of_spill et duree programmable
 bit 5 : compteur interne avec debut comptage sur finbusy
@@ -65,8 +65,10 @@ x"0019"        busy9Nb_register        RO        number of busy on ch 9
 x"001A"        busy10Nb_register        RO        number of busy on ch 10
 x"001B"        busy11Nb_register        RO        number of busy on ch 11
 x"001C"        busy12Nb_register        RO        number of busy on ch 12
+x"001D"        Clock Enable
 x"0020"        Enable_busy_on_trigger_register        RW        genere un busy quand on recoit un trigger
 x"0021"        debounceBusy_register        RW        duree du ebounce des busy (minimum busy length)
+x"0022"        Trigext Nb
 x"0030"        TDC_Ctrl_register                Todo
 x"0031"        TDC_CoarseCount_register                Todo
 x"0032"        TDC_time1_register                Todo
@@ -83,7 +85,7 @@ x"003c"        TDC_time6_register                Todo
 x"003d"        TDC_clkcnt6_register                Todo
 x"0040"        TDC_calib1_register                Todo
 x"0041"        TDC_calib2_register                Todo
-x"0100"        version        RO        x"14060100" ;20-FRM-PT-06-001_00
+x"0100"        version        RO        x"14060100" ;20-FRM-PT-06-001_06
  */
 /*LEMO Mask
 Bit 0 SOS
