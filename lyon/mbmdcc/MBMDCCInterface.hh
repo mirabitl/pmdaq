@@ -87,11 +87,19 @@ x"0040"        TDC_calib1_register                Todo
 x"0041"        TDC_calib2_register                Todo
 x"0100"        version        RO        x"14060100" ;20-FRM-PT-06-001_06
  */
-/*LEMO Mask
+/*
+
+LEMO Enable  Mask 0xA0
 Bit 0 SOS
 Bit 1 EOS
 Bit 2 Trigext
 Bit 3 SPS spill
+
+0x200 FEB Trig ctrl envoiye sur pair 5 HDMI 10
+Bit 0 Trigext PM
+Bit 1 Trigger interne avec trigdelay et triglength depuis la fenetre
+
+0x60  Utilise uniquement pour MBMDCC en DCC
 */ 
 typedef std::pair<uint32_t,unsigned char*> ptrBuf;
 typedef std::function<void (uint64_t,uint16_t,char*)> MPIFunctor;
@@ -134,11 +142,11 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
 		     TDC_T5=0x3A,TDC_CNT5=0x3B,
 		     TDC_T6=0x3C,TDC_CNT6=0x3D,
 		     TDC_CAL1=0x40,TDC_CAL2=0x41,
-		     BUSY_0=0x50,
+		     BUSY_0=0x50, // counter busy
 		     RESET_FSM=0x60,
-		     SPS_SPILL_DURATION=0x70,
-		     SPS_SPILL_CTRL=0x71,
-		     LEMO_MASK=0xA0,
+		     SPS_SPILL_DURATION=0x70, // Duree du spill SPS
+		     SPS_SPILL_CTRL=0x71, // Bit 0 Enable SPS fill as Not Busy
+		     LEMO_MASK=0xA0, // Enable Mask des lemo pour eviter les parasites par defaut 0X0 tout est masque
 		     RESYNC_MASK=0x200,
 		     VERSION=0x100};
 		     
