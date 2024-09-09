@@ -10,11 +10,11 @@ import prettyjson as pj
 
 
 def IP2Int(ip):
-    """
+    """!
     convert IP adress string to int
 
-    :param IP: the IP address
-    :return: the encoded integer 
+    @param IP: the IP address
+    @return: the encoded integer 
     """
     o = list(map(int, ip.split('.')))
     res = (16777216 * o[3]) + (65536 * o[2]) + (256 * o[1]) + o[0]
@@ -22,23 +22,23 @@ def IP2Int(ip):
 
 
 class MongoRoc:
-    """
+    """!
     Main class to access the Mongo DB
     """
 
     def __init__(self, host,port,dbname,username,pwd):
-        """
+        """!
         connect Mongodb database 
 
-        :param host: Hostanme of the PC running the mongo DB
+        @param host: Hostanme of the PC running the mongo DB
 
-        :param port: Port to access the base
+        @param port: Port to access the base
 
-        :param dbname: Data base name
+        @param dbname: Data base name
 
-        :param username: Remote access user
+        @param username: Remote access user
 
-        :param pwd: Remote access password
+        @param pwd: Remote access password
 
         """
 
@@ -66,10 +66,10 @@ class MongoRoc:
         self.asiclist = []
         self.bson_id=[] 
     def createNewState(self,name):
-        """
+        """!
         Create a new state , version is set to 1
 
-        :param name: Name of the state
+        @param name: Name of the state
 
         """
         self.state["name"]=name
@@ -77,6 +77,12 @@ class MongoRoc:
         self.state["asics"]=[]
 
     def updateStateInfo(self,statename,vers,tag,vtag):
+        """!
+        Update the state entries with an additional or modified tag
+
+        @param tag Tag name 
+        @param vtag Tag value 
+        """
         filter = { 'name': statename,'version':vers}
  
         # Values to be updated.
@@ -87,14 +93,14 @@ class MongoRoc:
         print(filter,newvalues)
         self.db.states.update_one(filter, newvalues)
     def addFEB(self,ipname,nasic,asictype="PR2"):
-        """
+        """!
         Add a FEBV1 with asics
 
-        :param  ipname: IP address of the FEBV1
+        @param  ipname: IP address of the FEBV1
 
-        :param nasic: Number of PETIROC asics connected
+        @param nasic: Number of PETIROC asics connected
 
-        :param asictype: "PR2" for PETIROC2A , "PR2B" for PETIROC2B
+        @param asictype: "PR2" for PETIROC2A , "PR2B" for PETIROC2B 
         """
         febid=IP2Int(ipname)
         for i in range(nasic):
@@ -108,15 +114,18 @@ class MongoRoc:
             self.asiclist.append(asic)
             
     def addDIF(self,difid,nasic,address="USB"):
-        """
-        Add a DIF with asics
-        
-        :param  address: IP address of the GRIC or USB for SDHCAL ones
+        """!
+        Add a DIF or GRIC with asics
+        @param  address: IP address of the GRIC or "USB" for SDHCAL ones
  
-        :param nasic: Number of HARDROC2 asics connected
+        @param nasic: Number of HARDROC2 asics connected
         
-        :param difid: unused for GRIC, DIF id for SDHCAL
+        @param difid: unused for GRIC, DIF id for SDHCAL
         
+        
+        The difid of GRIC is construct from the IP address: 
+        0xnetwork<<8|0xordi , 192.168.100.24 => 0x6418 (100*256+24) 
+
         """
 
         if (address != "USB"):
@@ -136,12 +145,12 @@ class MongoRoc:
             self.asiclist.append(asic)
 
     def addLIROCBoard(self,difid,nasic):
-        """
+        """!
         Add a LIROC board with asics
         
-        :param nasic: Number of LIROC asics connected
+        @param nasic: Number of LIROC asics connected
         
-        :param difid: LIROC board USB id
+        @param difid: LIROC board USB id
         
         """
 
@@ -159,10 +168,10 @@ class MongoRoc:
 
     
     def uploadFromFile(self,fname):
-        """
+        """!
         Upload a state in DB from a JSON file
 
-        :param fname: File name
+        @param fname: File name
         """
         f=open(fname)
         sf=json.loads(f.read())
@@ -181,10 +190,10 @@ class MongoRoc:
         print(resstate)
         
     def uploadNewState(self,comment="NEW"):
-        """
+        """!
         Create a new state in the DB with data stored in object memory
 
-        :param comment: A comment on the state
+        @param comment: A comment on the state
 
         """
         # First append modified ASICS
@@ -201,16 +210,16 @@ class MongoRoc:
         resstate=self.db.states.insert_one(self.state)
         print(resstate)
     def uploadFromOracle(self,asiclist,statename,version,comment="NEW"):
-        """
+        """!
         Migration method to update an ASIC list created with OracleAccess class to the DB
 
-        :param asiclist: List of asics created with OracleAccess
+        @param asiclist: List of asics created with OracleAccess
 
-        :param statename: Name of the state
+        @param statename: Name of the state
 
-        :param version: version of the state
+        @param version: version of the state
 
-        :param comment: A comment on the state
+        @param comment: A comment on the state
 
         """
         self.state["name"]=statename
@@ -232,10 +241,10 @@ class MongoRoc:
         resstate=self.db.states.insert_one(self.state)
         print(resstate)
     def uploadConfig(self,name,fname,comment,version=1):
-        """
+        """!
         jobcontrol configuration upload
 
-        :obsolete: Use MongoJob instead
+        @warning Obsolete Use MongoJob instead
         """
         s={}
         s["content"]=json.loads(open(fname).read())
@@ -246,7 +255,7 @@ class MongoRoc:
         resconf=self.db.configurations.insert_one(s)
         print(resconf)
     def states(self):
-        """
+        """!
         List all states in the DB
         """
         cl=[]
@@ -262,10 +271,10 @@ class MongoRoc:
                 cl.append((x["name"],x['version'],"None"))
         return cl
     def configurations(self):
-        """
+        """!
         List all jobcontrol configurations in the db 
 
-        :obsolete: Use MongoJob instead
+        @warning Obsolete Use MongoJob instead
         """
         res=self.db.configurations.find({})
         for x in res:
@@ -273,13 +282,13 @@ class MongoRoc:
                 print(time.ctime(x["time"]),x["version"],x["name"],x["comment"])
 
     def downloadConfig(self,cname,version):
-        """
+        """!
         Download a jobcontrol configuration to /dev/shm/mgjob/ directory
         
-        :param cname: Configuration name
-        :param version: Configuration version
+        @param cname: Configuration name
+        @param version: Configuration version
          
-        :obsolete: Use MongoJob instead
+        @warning Obsolete Use MongoJob instead
         """
         print("Downloading %s version %d" % (cname,version))
         res=self.db.configurations.find({'name':cname,'version':version})
@@ -295,12 +304,12 @@ class MongoRoc:
             return slc
         
     def download(self,statename,version,toFileOnly=False):
-        """
+        """!
         Download a state configuration to /dev/shm/mgroc/ directory and load it in the MongoRoc object
         
-        :param statename: State name
-        :param version: State version
-        :param toFileOnly: if True and /dev/shm/mgroc/statename_version.json already exists, it exits
+        @param statename: State name
+        @param version: State version
+        @param toFileOnly: if True and /dev/shm/mgroc/statename_version.json already exists, it exits
         """        
         os.system("mkdir -p /dev/shm/mgroc")
         fname="/dev/shm/mgroc/%s_%s.json" % (statename,version)
@@ -347,12 +356,12 @@ class MongoRoc:
             f.close()
             return slc
     def initPR2(self, num,version="PR2"):
-        """
+        """!
         PETIROC 2  initialisation, it creates a default dictionary representation of a PETIROC2
 
-        :param num: Asic number
-        :param version: Asic type (PR2 or PR2B)
-        :return: the dictionary
+        @param num: Asic number
+        @param version: Asic type (PR2 or PR2B)
+        @return: the dictionary
         """
 	#print("***** init HR2")
         _jasic={}
@@ -449,12 +458,12 @@ class MongoRoc:
 
 
     def uploadChanges(self,statename,comment):
-        """
+        """!
         Upload a new version of the state
         it finds the last version of the state and upload a new one with incremented version number
 
-        :param statename: Name of the state
-        :param comment: A comment on the changes
+        @param statename: Name of the state
+        @param comment: A compulsory comment on the changes
         """
         # Find last version
         res=self.db.states.find({'name':statename})
@@ -485,12 +494,12 @@ class MongoRoc:
         
 
     def addAsic(self, dif_num, header,version="PR2"):
-        """
+        """!
         Add a new PETIROC2 to the asic list
 
-        :param dif_num: DIF ID (ipaddr in integer >>16)
-        :param header: ASIC number
-        :param version: PR2 for 2A , PR2B for 2B
+        @param dif_num: DIF ID (ipaddr in integer >>16)
+        @param header: ASIC number
+        @param version: PR2 for 2A , PR2B for 2B
         """
         print("force ASIC")
 
@@ -500,12 +509,12 @@ class MongoRoc:
 
  
     def PR2_ChangeLatch(self, Latch, idif=0, iasic=0):
-        """
-        Change the Latch mode of specified  asics, modified asics are tagged for upload
+        """!
+        On Petiroc, Change the Latch mode of specified  asics, modified asics are tagged for upload
         
-        :param Latch: Latch value (1/0)
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param Latch: Latch value (1/0)
+        @param idif: DIF_ID (integer IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
         """
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
@@ -519,12 +528,12 @@ class MongoRoc:
                 print(e.getMessage())
 
     def PR2_ChangeVthTime(self, VthTime, idif=0, iasic=0):
-        """
-        Change the VTHTIME threshold of specified  asics, modified asics are tagged for upload
+        """!
+        On Petiroc, Change the VTHTIME threshold of specified  asics, modified asics are tagged for upload
         
-        :param VthTime: Threshold of time discriminators
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param VthTime: Threshold of time discriminators
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
         """
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
@@ -539,12 +548,12 @@ class MongoRoc:
 
 
     def PR2_ChangeDacDelay(self, delay, idif=0, iasic=0):
-        """
-        Change the DAC delay of specified  asics, modified asics are tagged for upload
+        """!
+        On Petiroc, Change the DAC delay of specified  asics, modified asics are tagged for upload
         
-        :param delay: Dac delay
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param delay: Dac delay
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
         """        
        
         for a in self.asiclist:
@@ -559,11 +568,11 @@ class MongoRoc:
                 print(e.getMessage())
 
     def PR2_ChangeAllEnabled(self, idif=0, iasic=0):
-        """
-        Change all the ENable signals of PETIROC asic
+        """!
+        On Petiroc, Change all the ENable signals to 1 of PETIROC asic
 
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
         """
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
@@ -599,13 +608,13 @@ class MongoRoc:
                 print(e.getMessage())
 
     def PR2_ChangeInputDac(self, idif, iasic, ich, dac):
-        """
-        Change the InputDAC valu of specified  asics, modified asics are tagged for upload
+        """!
+        On Petiroc, Change the InputDAC valu of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ich: The channel number
-        :param dac: The DAC value
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ich: The channel number
+        @param dac: The InputDac value
         """
         
 
@@ -620,13 +629,13 @@ class MongoRoc:
             except Exception as e:
                 print(e)
     def PR2_Change6BDac(self, idif, iasic, ich, dac):
-        """
-        Change the 6BDAC valu of specified  asics, modified asics are tagged for upload
+        """!
+        On Petiroc, Change the 6BDAC valu of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ich: The channel number
-        :param dac: The DAC value
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ich: The channel number
+        @param dac: The 6BDAC value
         """
         
 
@@ -641,12 +650,12 @@ class MongoRoc:
             except Exception as e:
                 print(e)
     def PR2_Correct6BDac(self, idif, iasic, cor):
-        """
-        Correct the 6BDAC value of specified  asics, modified asics are tagged for upload
+        """!
+        On Petiroc, Additive Correction of the 6BDAC value of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param cor:  A 32 channels array of corrections to be applied on the 6BDAC values of all channels
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param cor:  A 32 channels array of additive corrections to be applied on the 6BDAC values of all channels
         """
        
         for a in self.asiclist:
@@ -679,14 +688,15 @@ class MongoRoc:
 
 
     def PR2_ChangeMask(self, idif, iasic, ich, mask):
-        """
+        """!
         Change PETIROC2 MASKDISCRITIME parameter for one channel
 
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ich: The channel number
-        :param mask: the channel mask
-        :warning: 1 = inactive, 0=active
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ich: The channel number
+        @param mask: the channel mask value
+
+        @warning: 1 = inactive, 0=active
         """
 
         for a in self.asiclist:
@@ -700,14 +710,14 @@ class MongoRoc:
             except Exception as e:
                 print(e)
     def PR2_ChangeInputDacCommand(self, idif, iasic, ich, active):
-        """
-        Change PETIROC2 MASKDISCRITIME parameter for one channel
+        """!
+        Change PETIROC2 InputDacCommand parameter for one channel
 
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ich: The channel number
-        :param active: the channel mask
-        :warning: 1 = active, 0=inactive
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ich: The channel number
+        @param active: the channel InputDacCommand
+        @warning: 1 = active, 0=inactive
         """
 
         for a in self.asiclist:
@@ -722,15 +732,16 @@ class MongoRoc:
                 print(e)
                 
     def PR2_SetCCOMP(self, v0,v1,v2,v3, idif=0, iasic=0):
-        """
+        """!
         Change the CCOMP value of specified  asics, modified asics are tagged for upload
         
-        :param v0: CCOMP 0 value
-        :param v1: CCOMP 1 value
-        :param v2: CCOMP 2 value
-        :param v3: CCOMP 3 value
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param v0: CCOMP 0 value (0/1)
+        @param v1: CCOMP 1 value (0/1)
+        @param v2: CCOMP 2 value (0/1)
+        @param v3: CCOMP 3 value (0/1)
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+
         """        
        
         for a in self.asiclist:
@@ -749,15 +760,15 @@ class MongoRoc:
 
 
     def PR2_SetCfValue(self, v0,v1,v2,v3, idif=0, iasic=0):
-        """
-        Change the CCOMP value of specified  asics, modified asics are tagged for upload
+        """!
+        Change the Cf values of specified  asics, modified asics are tagged for upload
         
-        :param v0: CCOMP 0 value
-        :param v1: CCOMP 1 value
-        :param v2: CCOMP 2 value
-        :param v3: CCOMP 3 value
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param v0: Cf0_1p25pF  value
+        @param v1: Cf1_2p5pF  value
+        @param v2: Cf2_200fF  value
+        @param v3: Cf3_100fF  value
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
         """        
        
         for a in self.asiclist:
@@ -775,13 +786,13 @@ class MongoRoc:
                 print(e.getMessage())
                 
     def PR2_ChangeParam(self,pname,pval,idif=0, iasic=0):
-        """
-        Change all the ENable signals of PETIROC asic
+        """!
+        Change parameter value specified by name for PETIROC asic
 
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param pname: parameter name
-        :param pval: paramter value
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param pname: parameter name
+        @param pval: paramter value
         """
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
@@ -798,12 +809,11 @@ class MongoRoc:
 
 # LIROC access
     def initLIROC(self,gain=0):
-        """
-   
-        LIROC initialisation, it creates a default dictionary representation of a LIROC
+        """!
+        LIROC initialisation, it creates a default dictionary representation of a LIROC ASIC
 
-        :param gain: Channel gain
-        :return: the dictionary
+        @param gain: dc_pa default value
+        @return: the dictionary
         """
 
 	#print("***** init HR2")
@@ -852,13 +862,13 @@ class MongoRoc:
         return _kasic
 
     def LIROC_ChangeParam(self,pname,pval,idif=0, iasic=0):
-        """
-        Change all the ENable signals of PETIROC asic
+        """!
+        Change parameter value of a specified name for LIROC asic
 
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param pname: parameter name
-        :param pval: paramter value
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param pname: parameter name
+        @param pval: paramter value
         """
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
@@ -920,13 +930,13 @@ class MongoRoc:
             a["slc"]["PA_gain"]=g;a["_id"]=None;
 
     def LIROC_setDC_pa(self,idif,iasic,ipad,vnew):
-        """
+        """!
         Set the gain of one pad  of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ipad: Channel number
-        :param vnew: new gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ipad: Channel number
+        @param vnew: new gain
 
         """
   
@@ -941,13 +951,13 @@ class MongoRoc:
             print(idif,iasic,ipad,a["slc"]["DC_pa"][ipad])
             
     def LIROC_setDAC_local(self,idif,iasic,ipad,vnew):
-        """
+        """!
         Set the gain of one pad  of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ipad: Channel number
-        :param vnew: new gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ipad: Channel number
+        @param vnew: new gain
 
         """
   
@@ -962,13 +972,13 @@ class MongoRoc:
             print(idif,iasic,ipad,a["slc"]["DAC_local"][ipad])
 
     def LIROC_shiftDAC_local(self,idif,iasic,delta):
-        """
+        """!
         Set the gain of one pad  of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ipad: Channel number
-        :param vnew: new gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ipad: Channel number
+        @param vnew: new gain
 
         """
   
@@ -984,13 +994,13 @@ class MongoRoc:
             
 
     def LIROC_setCtest(self,idif,iasic,ipad,vnew):
-        """
+        """!
         Set the gain of one pad  of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ipad: Channel number
-        :param vnew: new gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ipad: Channel number
+        @param vnew: new gain
 
         """
   
@@ -1005,13 +1015,13 @@ class MongoRoc:
             print(idif,iasic,ipad,a["slc"]["Ctest"][ipad])
             
     def LIROC_setMask(self,idif,iasic,ipad,vnew):
-        """
+        """!
         Set the gain of one pad  of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ipad: Channel number
-        :param vnew: new gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ipad: Channel number
+        @param vnew: new gain
 
         """
   
@@ -1029,13 +1039,13 @@ class MongoRoc:
 
 # HR2 access
     def initHR2(self,num,gain=128):
-        """
+        """!
    
         HARDROC 2  initialisation, it creates a default dictionary representation of a HARDROC
 
-        :param num: Asic number
-        :param gain: Channel gain
-        :return: the dictionary
+        @param num: Asic number
+        @param gain: Channel gain
+        @return: the dictionary
         """
 
 	#print("***** init HR2")
@@ -1141,7 +1151,7 @@ class MongoRoc:
 
 
     def HR2_unsetPowerPulsing(self):
-        """
+        """!
         Unset Power pulsing on all ASICs
         """
         for a in self.asiclist: 
@@ -1165,7 +1175,7 @@ class MongoRoc:
 
 
     def HR2_setPowerPulsing(self):
-        """
+        """!
         set Power pulsing on all ASICs
         """
         for a in self.asiclist: 
@@ -1187,14 +1197,14 @@ class MongoRoc:
             a["slc"]["PWRONFSB2"]=1;a["_id"]=None
 
     def HR2_ShiftThreshold(self,B0,B1,B2,idif=0,iasic=0):
-        """
+        """!
         Set the 3 thresholds of specified  asics, modified asics are tagged for upload
 
-        :param B0: First Threshold
-        :param B1: Second Threshold
-        :param B2: Third Threshold        
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param B0: First Threshold
+        @param B1: Second Threshold
+        @param B2: Third Threshold        
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
         """
 
         for a in self.asiclist:
@@ -1210,14 +1220,14 @@ class MongoRoc:
  
 
     def HR2_ChangeThreshold(self,B0,B1,B2,idif=0,iasic=0):
-        """
+        """!
         Set the 3 thresholds of specified  asics, modified asics are tagged for upload
 
-        :param B0: First Threshold
-        :param B1: Second Threshold
-        :param B2: Third Threshold        
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param B0: First Threshold
+        @param B1: Second Threshold
+        @param B2: Third Threshold        
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
         """
 
         for a in self.asiclist:
@@ -1231,13 +1241,13 @@ class MongoRoc:
             a["slc"]["B2"]=B2;a["_id"]=None;
 
     def HR2_ChangeGain(self,idif,iasic,ipad,scale):
-        """
+        """!
         Scale the gain of one pad  of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ipad: Channel number
-        :param scale: ratio Gain_new/Gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ipad: Channel number
+        @param scale: ratio Gain_new/Gain
 
         """
       
@@ -1253,13 +1263,13 @@ class MongoRoc:
             print(idif,iasic,ipad,a["slc"]["PAGAIN"][ipad])
 
     def HR2_SetGain(self,idif,iasic,ipad,vnew):
-        """
+        """!
         Set the gain of one pad  of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ipad: Channel number
-        :param vnew: new gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ipad: Channel number
+        @param vnew: new gain
 
         """
   
@@ -1275,12 +1285,12 @@ class MongoRoc:
    
 
     def HR2_SetAsicGain(self,idif,iasic,vnew):
-        """
+        """!
         Set the gain of all pads  of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param vnew: new gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param vnew: new gain
 
         """
         for a in self.asiclist:
@@ -1297,12 +1307,12 @@ class MongoRoc:
 
                 
     def HR2_SetAsicPAGain(self,idif,iasic,vnew):
-        """
+        """!
         Set the gain of all pads  of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param vnew: new gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param vnew: new gain
 
         """
         for a in self.asiclist:
@@ -1319,13 +1329,13 @@ class MongoRoc:
 
                 
     def HR2_RescaleGain(self,gain0,gain1,idif=0,iasic=0):
-        """
+        """!
          Rescale the gain of all pads with scale=gain1/gain0  of specified  asics, modified asics are tagged for upload
         
-        :param gain0: initial gain
-        :param gain1: new gain
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param gain0: initial gain
+        @param gain1: new gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
 
         """
 
@@ -1342,7 +1352,7 @@ class MongoRoc:
             a["_id"]=None
 
     def HR2_slowShaper(self):
-        """
+        """!
         Slow down the shaper , Set SW100 F and K to 1
         """
         for a in self.asiclist:
@@ -1364,7 +1374,7 @@ class MongoRoc:
             a["_id"]=None
             
     def HR2_verySlowShaper(self):
-        """
+        """!
         Slow down the shaper , Set SW100 F and K to 1
         """
         for a in self.asiclist:
@@ -1386,7 +1396,7 @@ class MongoRoc:
             a["_id"]=None
             
     def HR2_sdhcalLike(self):
-        """
+        """!
         Slow down the shaper , Set SW100 F and K to 1
         """
         for a in self.asiclist:
@@ -1413,13 +1423,13 @@ class MongoRoc:
             a["_id"]=None
 
     def HR2_ChangeCTest(self,channel,ctest,idif=0,iasic=0):
-        """
+        """!
          Change the CTEST value of one channel  of specified  asics, modified asics are tagged for upload
         
-        :param channel: Pad tested
-        :param ctest: CTEST value
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param channel: Pad tested
+        @param ctest: CTEST value
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
 
         """
 
@@ -1434,12 +1444,12 @@ class MongoRoc:
 
             
     def HR2_SetMask(self,list,idif=0,iasic=0):
-        """
+        """!
         Mask the channels specified in the list  for specified  asics, modified asics are tagged for upload
         
-        :param list: List of channels to be masked
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param list: List of channels to be masked
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
 
         """
         m=0xFFFFFFFFFFFFFFFF
@@ -1449,12 +1459,12 @@ class MongoRoc:
         self.HR2_ChangeMask(sm,sm,sm,idif,iasic)
         
     def HR2_SetNewMask(self,list,idif=0,iasic=0):
-        """
+        """!
         Mask the channels specified in the list  for specified  asics, modified asics are tagged for upload
         
-        :param list: List of channels to be masked
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param list: List of channels to be masked
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
 
         """
 
@@ -1470,14 +1480,14 @@ class MongoRoc:
             a["_id"]=None
 
     def HR2_ChangeMask(self,M0,M1,M2,idif=0,iasic=0):
-        """
+        """!
         Set the 3 masks  for specified  asics, modified asics are tagged for upload
         
-        :param M0: Hexadecimal string of threshold 0 mask
-        :param M1: Hexadecimal string of threshold 1 mask
-        :param M2: Hexadecimal string of threshold 2 mask
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param M0: Hexadecimal string of threshold 0 mask
+        @param M1: Hexadecimal string of threshold 1 mask
+        @param M2: Hexadecimal string of threshold 2 mask
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
 
         """
         print(M0,M1,M2,idif,iasic)
@@ -1496,14 +1506,14 @@ class MongoRoc:
             a["_id"]=None
 
     def HR2_setChannelMask(self,idif,iasic,ipad,ival):
-        """
+        """!
         Set the 3 masks  for specified  asics, modified asics are tagged for upload
         
 
-        :param idif: DIF_ID
-        :param iasic: asic number
-        :param ipad: pad from 0
-        :param ival: 0 Off 1 On
+        @param idif: DIF_ID
+        @param iasic: asic number
+        @param ipad: pad from 0
+        @param ival: 0 Off 1 On
 
         """
         for a in self.asiclist:
@@ -1518,13 +1528,13 @@ class MongoRoc:
             a["_id"]=None
 
     def HR2_setEnable(self,enable,idif=0,iasic=0):
-        """
+        """!
         Set the ENABLE tag for specified  asics, modified asics are tagged for upload
         
         
-        :param enable: Enable value (1/0)
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param enable: Enable value (1/0)
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
 
         """
         for a in self.asiclist:
@@ -1538,10 +1548,10 @@ class MongoRoc:
 
       
 def instance():
-    """
+    """!
     Create a MongoRoc Object
 
-    :return: The MongoRoc Object
+    @return: The MongoRoc Object
     """
     # create the default access
     login=os.getenv("MGDBLOGIN","NONE")
