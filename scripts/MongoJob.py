@@ -11,11 +11,11 @@ import time
 
 
 def IP2Int(ip):
-    """
+    """!
     convert IP adress string to int
 
-    :param IP: the IP address
-    :return: the encoded integer 
+    @param IP: the IP address
+    @return: the encoded integer 
     """
     o = list(map(int, ip.split('.')))
     res = (16777216 * o[3]) + (65536 * o[2]) + (256 * o[1]) + o[0]
@@ -23,23 +23,19 @@ def IP2Int(ip):
 
 
 class MongoJob:
-    """
+    """!
     Main class to access the Mongo DB 
     """
 
     def __init__(self, host,port,dbname,username,pwd):
-        """
+        """!
         connect Mongodb database 
 
-        :param host: Hostanme of the PC running the mongo DB
-
-        :param port: Port to access the base
-
-        :param dbname: Data base name
-
-        :param username: Remote access user
-
-        :param pwd: Remote access password
+        @param host: Hostanme of the PC running the mongo DB
+        @param port: Port to access the base
+        @param dbname: Data base name
+        @param username: Remote access user
+        @param pwd: Remote access password
 
         """
         if (pymongo.version_tuple[0]<4):
@@ -52,18 +48,18 @@ class MongoJob:
 
 
     def reset(self):
-        """
+        """!
         Reset connection to download another configuration
         """
         self.bson_id=[] 
     def uploadConfig(self,name,fname,comment,version=1):
-        """
+        """!
         jobcontrol configuration upload
 
-        :param name: Name of the configuration
-        :param fname: File name to upload
-        :param comment: A comment on the configuration
-        :param version: The version of the configuration
+        @param name: Name of the configuration
+        @param fname: File name to upload
+        @param comment: A comment on the configuration
+        @param version: The version of the configuration
         """
         s={}
         s["content"]=json.loads(open(fname).read())
@@ -75,14 +71,14 @@ class MongoJob:
         print(resconf)
 
     def uploadCalibration(self,setup,run,ctype,results,comment="not set"):
-        """
+        """!
         Calibration results upload
 
-        :param setup: Name of the experimental setup ($DAQSETUP)
-        :param run: Run analyzed
-        :param ctype: SCURVE or GAIN ...
-        :param results: dictionnary
-        :param comment: un commentaire
+        @param setup: Name of the experimental setup ($DAQSETUP)
+        @param run: Run analyzed
+        @param ctype: SCURVE or GAIN ...
+        @param results: dictionnary
+        @param comment: un commentaire
         """
         s={}
         name="%s_%d" % (setup,run)
@@ -108,7 +104,7 @@ class MongoJob:
         print(resconf)
 
     def calibrations(self):
-        """
+        """!
         List all the calibrations stored
         """
         cl=[]
@@ -121,7 +117,7 @@ class MongoJob:
 
 
     def configurations(self):
-        """
+        """!
         List all the configurations stored
         """
         cl=[]
@@ -137,6 +133,14 @@ class MongoJob:
                 cl.append((x["name"],x['version'],x['comment']))
         return cl
     def updateRun(self,run,loc,tag,vtag):
+        """!
+        Update the run entries with an additional or modified tag
+
+        @param run the run number
+        @param loc the experiment name
+        @param tag Tag name 
+        @param vtag Tag value 
+        """
         filter = { 'run': run,'location':loc }
  
         # Values to be updated.
@@ -148,6 +152,14 @@ class MongoJob:
         self.db.runs.update_one(filter, newvalues)
 
     def updateConfigurationInfo(self,cname,version,tag,vtag):
+        """!
+        Update the configuration entries with an additional or modified tag
+
+        @param cname the configuration name
+        @param version the version number
+        @param tag Tag name 
+        @param vtag Tag value 
+        """
         filter = {'name':cname,'version':version}
  
         # Values to be updated.
@@ -159,7 +171,7 @@ class MongoJob:
         self.db.configurations.update_one(filter, newvalues)
         
     def runs(self):
-        """
+        """!
         List all the run informations stored
         """
         res=self.db.runs.find({})
@@ -176,8 +188,13 @@ class MongoJob:
                         print(x["location"],x["run"],x["comment"])
                 #print(x["time"],x["location"],x["run"],x["comment"])
     def runInfo(self,run,loc,printout=True):
-        """
-        Eun info on a given run
+        """!
+        Get the info on a given run
+
+        @param run the run number
+        @param loc the experiment name
+        @param printout a bool to trigger the printing
+        @return the db object stored
         """
         res=self.db.runs.find({"run":run,"location":loc})
         for x in res:
@@ -190,13 +207,15 @@ class MongoJob:
         return None
 
     def setFsmInfo(self,name,version,location,job=None,daq=None):
-        """
+        """!
         fsm info insertion
-        :param name: Configuration name
-        :param version: Configuration version
-        :param location: Setup name
-        :param job: job state name or none
-        :param daq: daq state name or none
+
+        @param name: Configuration name
+        @param version: Configuration version
+        @param location: Setup name
+        @param job: job state name or none
+        @param daq: daq state name or none
+        @deprecated
         """
         s=self.fsmInfo(name,version,location)
         if (s == None):
@@ -217,11 +236,13 @@ class MongoJob:
         print(resconf)
 
     def fsmInfo(self,name,version,location):
-        """
+        """!
         Get FSM's information for a given configuration and setup
-        :param name: Configuration name
-        :param version: Configuration version
-        :param location: Setup name
+        @param name: Configuration name
+        @param version: Configuration version
+        @param location: Setup name
+        @return the db object
+        @deprecated
         """
         res=self.db.fsm.find({"name":name,"version":version,"location":location})
         last={}
@@ -236,7 +257,7 @@ class MongoJob:
             return None
 
     def fsms(self):
-        """
+        """!
         Get FSM's informations dump
         """
         res=self.db.fsm.find({})
@@ -244,12 +265,12 @@ class MongoJob:
             print(x["name"],x["version"],x["location"],time.ctime(x["time"]),x["job"],x["daq"])
 
     def downloadConfig(self,cname,version,toFileOnly=False):
-        """
+        """!
         Download a jobcontrol configuration to /dev/shm/mgjob/ directory
         
-        :param cname: Configuration name
-        :param version: Configuration version
-        :param toFileOnly:if True and /dev/shm/mgjob/cname_version.json exists, then it exits
+        @param cname: Configuration name
+        @param version: Configuration version
+        @param toFileOnly:if True and /dev/shm/mgjob/cname_version.json exists, then it exits
         """
         os.system("mkdir -p /dev/shm/mgjob")
         fname="/dev/shm/mgjob/%s_%s.json" % (cname,version)
@@ -271,12 +292,12 @@ class MongoJob:
             f.close()
             return slc
     def downloadCalibration(self,cname,version,toFileOnly=False):
-        """
+        """!
         Download a calibration to /dev/shm/mgjob/ directory
         
-        :param cname: calibration name
-        :param version: calibration version
-        :param toFileOnly:if True and /dev/shm/mgjob/cname_version.json exists, then it exits
+        @param cname: calibration name
+        @param version: calibration version
+        @param toFileOnly:if True and /dev/shm/mgjob/cname_version.json exists, then it exits
         """
         os.system("mkdir -p /dev/shm/mgjob")
         fname="/dev/shm/mgjob/calib_%s_%d.json" % (cname,version)
@@ -296,12 +317,12 @@ class MongoJob:
             return slc
        
     def getRun(self,location,comment="Not set"):
-        """
+        """!
         Get a new run number for a given setup
 
-        :param location: Setup Name
-        :param comment: Comment on the run
-        :return: a dictionnary corresponding to the base insertion {run,location,time,comment}
+        @param location: Setup Name
+        @param comment: Comment on the run
+        @return: a dictionnary corresponding to the base insertion {run,location,time,comment}
         """
         res=self.db.runs.find({'location':location})
         runod={}
@@ -328,12 +349,12 @@ class MongoJob:
  
      
 def instance():
-    """
+    """!
     Create a MongoJob Object
     
     The ENV varaible MGDBLOGIN=user/pwd@host:port@dbname mut be set
 
-    :return: The MongoJob Object
+    @return: The MongoJob Object
     """
     # create the default access
     login=os.getenv("MGDBLOGIN","NONE")

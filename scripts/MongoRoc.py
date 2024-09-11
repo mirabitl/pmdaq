@@ -244,7 +244,7 @@ class MongoRoc:
         """!
         jobcontrol configuration upload
 
-        @warning Obsolete Use MongoJob instead
+        @deprecated Obsolete Use MongoJob instead
         """
         s={}
         s["content"]=json.loads(open(fname).read())
@@ -274,7 +274,7 @@ class MongoRoc:
         """!
         List all jobcontrol configurations in the db 
 
-        @warning Obsolete Use MongoJob instead
+        @deprecated Obsolete Use MongoJob instead
         """
         res=self.db.configurations.find({})
         for x in res:
@@ -288,7 +288,7 @@ class MongoRoc:
         @param cname: Configuration name
         @param version: Configuration version
          
-        @warning Obsolete Use MongoJob instead
+        @deprecated Obsolete Use MongoJob instead
         """
         print("Downloading %s version %d" % (cname,version))
         res=self.db.configurations.find({'name':cname,'version':version})
@@ -865,7 +865,7 @@ class MongoRoc:
         """!
         Change parameter value of a specified name for LIROC asic
 
-        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param idif: DIF_ID 
         @param iasic: asic number, if 0 all Asics are changed
         @param pname: parameter name
         @param pval: paramter value
@@ -883,6 +883,13 @@ class MongoRoc:
                 print(e.getMessage())
 
     def LIROC_setForced_ValEvt(self,forced,idif=0,iasic=0):
+        """!
+        Force the valevt signal on LIROC
+
+        @param idif  DIF_ID 
+        @param iasic asic number, if 0 all Asics are changed
+        @param forced 0 or 1 
+        """
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
                 continue
@@ -896,6 +903,13 @@ class MongoRoc:
                 a["slc"]["EN_differential"]=1;a["_id"]=None;
                 
     def LIROC_setDAC_threshold(self,thr,idif=0,iasic=0):
+        """!
+        Change the DAC_threshold on LIROC
+
+        @param idif  DIF_ID 
+        @param iasic asic number, if 0 all Asics are changed
+        @param thr the new DAC_threshold
+        """
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
                 continue
@@ -904,6 +918,13 @@ class MongoRoc:
 
             a["slc"]["DAC_threshold"]=thr;a["_id"]=None;
     def LIROC_setEN_pre_emphasis(self,pe,idif=0,iasic=0):
+        """!
+        Change the EN_pre_emphasis on LIROC
+
+        @param idif  DIF_ID 
+        @param iasic asic number, if 0 all Asics are changed
+        @param pe(3 bits) the new EN_pre_emphasis
+        """
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
                 continue
@@ -912,6 +933,13 @@ class MongoRoc:
 
             a["slc"]["EN_pre_emphasis"]=pe&7;a["_id"]=None;
     def LIROC_setHysteresys(self,pe,idif=0,iasic=0):
+        """!
+        Change the Hysteresys on LIROC
+
+        @param idif  DIF_ID 
+        @param iasic asic number, if 0 all Asics are changed
+        @param pe(0 or1 ) the new Hysteresys
+        """
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
                 continue
@@ -921,6 +949,13 @@ class MongoRoc:
             a["slc"]["Hysteresys"]=pe&1;a["_id"]=None;
             
     def LIROC_setPA_gain(self,g,idif=0,iasic=0):
+        """!
+        Change the PA_gain on LIROC
+
+        @param idif  DIF_ID 
+        @param iasic asic number, if 0 all Asics are changed
+        @param g the new PA_gain
+        """
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
                 continue
@@ -931,12 +966,12 @@ class MongoRoc:
 
     def LIROC_setDC_pa(self,idif,iasic,ipad,vnew):
         """!
-        Set the gain of one pad  of specified  asics, modified asics are tagged for upload
+        Set the DC_pa of one pad  of specified  asics, modified asics are tagged for upload
         
         @param idif: DIF_ID, if 0 all DIFs are changed
         @param iasic: asic number, if 0 all Asics are changed
         @param ipad: Channel number
-        @param vnew: new gain
+        @param vnew: new DC_pa
 
         """
   
@@ -952,12 +987,12 @@ class MongoRoc:
             
     def LIROC_setDAC_local(self,idif,iasic,ipad,vnew):
         """!
-        Set the gain of one pad  of specified  asics, modified asics are tagged for upload
+        Set the DAC_local of one pad  of specified  asics, modified asics are tagged for upload
         
         @param idif: DIF_ID, if 0 all DIFs are changed
         @param iasic: asic number, if 0 all Asics are changed
         @param ipad: Channel number
-        @param vnew: new gain
+        @param vnew: new DAC_local
 
         """
   
@@ -973,12 +1008,11 @@ class MongoRoc:
 
     def LIROC_shiftDAC_local(self,idif,iasic,delta):
         """!
-        Set the gain of one pad  of specified  asics, modified asics are tagged for upload
+        Shift the DAC_local of all pads from an array of specified  asics, modified asics are tagged for upload
         
         @param idif: DIF_ID, if 0 all DIFs are changed
         @param iasic: asic number, if 0 all Asics are changed
-        @param ipad: Channel number
-        @param vnew: new gain
+        @param delta: array of 64 additive value to DAC_local
 
         """
   
@@ -995,12 +1029,12 @@ class MongoRoc:
 
     def LIROC_setCtest(self,idif,iasic,ipad,vnew):
         """!
-        Set the gain of one pad  of specified  asics, modified asics are tagged for upload
+        Set the Ctest of one pad  of specified  asics, modified asics are tagged for upload
         
         @param idif: DIF_ID, if 0 all DIFs are changed
         @param iasic: asic number, if 0 all Asics are changed
         @param ipad: Channel number
-        @param vnew: new gain
+        @param vnew: new Ctest
 
         """
   
@@ -1016,12 +1050,12 @@ class MongoRoc:
             
     def LIROC_setMask(self,idif,iasic,ipad,vnew):
         """!
-        Set the gain of one pad  of specified  asics, modified asics are tagged for upload
+        Set the Mask of one pad  of specified  asics, modified asics are tagged for upload
         
         @param idif: DIF_ID, if 0 all DIFs are changed
         @param iasic: asic number, if 0 all Asics are changed
         @param ipad: Channel number
-        @param vnew: new gain
+        @param vnew: new Mask
 
         """
   
@@ -1044,7 +1078,7 @@ class MongoRoc:
         HARDROC 2  initialisation, it creates a default dictionary representation of a HARDROC
 
         @param num: Asic number
-        @param gain: Channel gain
+        @param gain: Initial channel gain
         @return: the dictionary
         """
 
@@ -1198,11 +1232,11 @@ class MongoRoc:
 
     def HR2_ShiftThreshold(self,B0,B1,B2,idif=0,iasic=0):
         """!
-        Set the 3 thresholds of specified  asics, modified asics are tagged for upload
+        Shift the 3 thresholds of specified  asics, modified asics are tagged for upload
 
-        @param B0: First Threshold
-        @param B1: Second Threshold
-        @param B2: Third Threshold        
+        @param B0: Shift of First Threshold
+        @param B1: Shift of Second Threshold
+        @param B2: Shift of Third Threshold        
         @param idif: DIF_ID, if 0 all DIFs are changed
         @param iasic: asic number, if 0 all Asics are changed
         """
@@ -1308,11 +1342,11 @@ class MongoRoc:
                 
     def HR2_SetAsicPAGain(self,idif,iasic,vnew):
         """!
-        Set the gain of all pads  of specified  asics, modified asics are tagged for upload
+        Set the gain of all pads from a vector  of specified  asics, modified asics are tagged for upload
         
         @param idif: DIF_ID, if 0 all DIFs are changed
         @param iasic: asic number, if 0 all Asics are changed
-        @param vnew: new gain
+        @param vnew: vector of new gains
 
         """
         for a in self.asiclist:
@@ -1397,6 +1431,7 @@ class MongoRoc:
             
     def HR2_sdhcalLike(self):
         """!
+        SDHCAL settings for all ASICs
         Slow down the shaper , Set SW100 F and K to 1
         """
         for a in self.asiclist:
@@ -1460,7 +1495,7 @@ class MongoRoc:
         
     def HR2_SetNewMask(self,list,idif=0,iasic=0):
         """!
-        Mask the channels specified in the list  for specified  asics, modified asics are tagged for upload
+        Set mask to 0 for all channels of the list  for specified  asics, modified asics are tagged for upload
         
         @param list: List of channels to be masked
         @param idif: DIF_ID, if 0 all DIFs are changed
@@ -1529,7 +1564,7 @@ class MongoRoc:
 
     def HR2_setEnable(self,enable,idif=0,iasic=0):
         """!
-        Set the ENABLE tag for specified  asics, modified asics are tagged for upload
+        Set the ENABLE tag (for ASIC) for specified  asics, modified asics are tagged for upload
         
         
         @param enable: Enable value (1/0)

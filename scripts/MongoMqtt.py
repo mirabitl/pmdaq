@@ -9,23 +9,23 @@ import time
 import csv
 
 class MongoMqtt:
-    """
+    """!
     Main class to access the Mongo DB 
     """
 
     def __init__(self, host, port, dbname, username, pwd):
-        """
+        """!
         connect Mongodb database 
 
-        :param host: Hostanme of the PC running the mongo DB
+        @param host: Hostanme of the PC running the mongo DB
 
-        :param port: Port to access the base
+        @param port: Port to access the base
 
-        :param dbname: Data base name
+        @param dbname: Data base name
 
-        :param username: Remote access user
+        @param username: Remote access user
 
-        :param pwd: Remote access password
+        @param pwd: Remote access password
 
         """
 
@@ -39,12 +39,20 @@ class MongoMqtt:
             self.db = self.connection[dbname]
 
     def reset(self):
-        """
+        """!
         Reset connection to download another configuration
         """
         self.bson_id = []
 
     def store(self, topic, tims, cti, message):
+        """!
+        Store a status message in MQTT_ITEMS
+
+        @param topic the message topic
+        @param tims Time Stamp
+        @param cti The ctime since epoch
+        @param message The JSON message
+        """
         mondoc = {}
         mondoc["topic"] = topic
         mondoc["timestamp"] = tims
@@ -55,6 +63,12 @@ class MongoMqtt:
         #print(res)
 
     def store_info(self, topic, r):
+        """!
+        Store an info message in MQTT_INFOS
+
+        @param topic the message topic
+        @param r The python object containing tags: timestamp,ctime,message and type
+        """
         mondoc = {}
         mondoc["topic"] = topic
         mondoc["timestamp"] = r["timestamp"]
@@ -66,6 +80,16 @@ class MongoMqtt:
         #print(res)
 
     def check_infos(self,session,i_type="INFOS",subsystem=None,device=None,from_time=0):
+        """!
+        Query entries in MQTT_INFO collections
+
+        @param session the top MQTT name (Leval 0)
+        @param subsystem Level 1 name
+        @param device Level 2 name
+        @param from_time depth since now in seconds
+
+        @return array of results
+        """
         topic=session
         if (subsystem!=None):
             topic=topic+"/"+subsystem
@@ -92,8 +116,12 @@ class MongoMqtt:
 
         #return None
     def infos(self, topic, depth=50000, from_time=0):
-        """
-        List all the run informations stored
+        """!
+        List and printout all the MQTT_INFOS informations stored
+        
+        @param depth Maximum number of entries scanned
+        @param from_time depth since now in seconds
+
         """
        
         mintime = 0
@@ -108,9 +136,15 @@ class MongoMqtt:
                                 time.localtime(x["ctime"]))
             #m = x["message"]
     def items(self, topic, depth=50000, from_time=0):
+        """!   
+        List and printout all the MQTT_ITEMS status stored
+
+        @param topic the message topic
+        @param depth Maximum number of entries scanned
+        @param from_time depth since now in seconds
+
         """
-        List all the run informations stored
-        """
+        
         print("Dans Items",topic)
         path_elem=topic.split("/")
         if (len(path_elem)<3):
@@ -213,9 +247,15 @@ class MongoMqtt:
         for x in res:
             print(x)
 
-    def dumpcsv(self,topic,depth=5000,from_time=0,file_name="/tmp/mgslow.csv"):
-        """
-        dump full message
+    def dumpcsv(self,topic,depth=5000,from_time=0):
+        """!   
+        List and write in a csv file all the MQTT_ITEMS status stored
+
+        @param topic the message topic
+        @param depth Maximum number of entries scanned
+        @param from_time depth since now in seconds
+
+        @deprecated Use cvs instead
         """
         writer=None
         path_elem=topic.split("/")
@@ -278,10 +318,17 @@ class MongoMqtt:
                 writer.writerow(values)
         fout.close()
 
-    def csv(self,topic,depth=50000,from_time=0,file_name="/tmp/mgslow.csv"):
+    def csv(self,topic,depth=50000,from_time=0):
+        """!   
+        List and write in a csv file all the MQTT_ITEMS status stored
+
+        @param topic the message topic
+        @param depth Maximum number of entries scanned
+        @param from_time depth since now in seconds
+
+        @warning Only bme,hih,rp2040 and genesys ae supported yet
         """
-        List all the run informations stored
-        """
+       
    
         writer=None
         path_elem=topic.split("/")
@@ -348,12 +395,12 @@ class MongoMqtt:
         fout.close()
 
 def instance():
-    """
+    """!
     Create a MongoJob Object
 
     The ENV varaible MGDBMON=user/pwd@host:port@dbname mut be set
 
-    :return: The MongoJob Object
+    @return: The MongoJob Object
     """
     # create the default access
     login = os.getenv("MGDBMON", "NONE")
