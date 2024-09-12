@@ -40,6 +40,8 @@ class MongoRoc:
 
         @param pwd: Remote access password
 
+        @remark
+        The constructor is called via a singleton creation with the function instance()
         """
 
         if (pymongo.version_tuple[0]<4):

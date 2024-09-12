@@ -12,29 +12,33 @@ import MongoAsic as mga
 
 
 class MongoHR2(mga.MongoRoc):
-    """
-    Main class to access the Mongo DB
+    """!
+    Main class to access the Asic HardRoc 2 in Mongo DB
+
+    It inherits from MongoAsic.MongoRoc
     """
 
     def __init__(self, host,port,dbname,username,pwd):
-        """
+        """!
         connect Mongodb database 
 
-        :param host: Hostanme of the PC running the mongo DB
+        @param host: Hostanme of the PC running the mongo DB
 
-        :param port: Port to access the base
+        @param port: Port to access the base
 
-        :param dbname: Data base name
+        @param dbname: Data base name
 
-        :param username: Remote access user
+        @param username: Remote access user
 
-        :param pwd: Remote access password
+        @param pwd: Remote access password
 
+        @remark The constructor is called via a singleton creation with the function instance()
+        
         """
         super().__init__(host,port,dbname,username,pwd)  
         self.state["type"]="HARDROC2"  
     def reset(self):
-        """
+        """!
         Reset connection to download another state
         """
         self.state = {}
@@ -42,14 +46,14 @@ class MongoHR2(mga.MongoRoc):
         self.bson_id=[] 
 
     def addBoard(self,difid,nasic,address="USB"):
-        """
+        """!
         Add a DIF with asics
         
-        :param  address: IP address of the GRIC or USB for SDHCAL ones
+        @param  address: IP address of the GRIC or USB for SDHCAL ones
  
-        :param nasic: Number of HARDROC2 asics connected
+        @param nasic: Number of HARDROC2 asics connected
         
-        :param difid: unused for GRIC, DIF id for SDHCAL
+        @param difid: unused for GRIC, DIF id for SDHCAL
         
         """
 
@@ -74,13 +78,12 @@ class MongoHR2(mga.MongoRoc):
  
 # HR2 access
     def initHR2(self,num,gain=128):
-        """
-   
+        """!
         HARDROC 2  initialisation, it creates a default dictionary representation of a HARDROC
 
-        :param num: Asic number
-        :param gain: Channel gain
-        :return: the dictionary
+        @param num: Asic number
+        @param gain: Channel gain
+        @return: the dictionary
         """
 
 	#print("***** init HR2")
@@ -186,7 +189,7 @@ class MongoHR2(mga.MongoRoc):
 
 
     def unsetPowerPulsing(self):
-        """
+        """!
         Unset Power pulsing on all ASICs
         """
         for a in self.asiclist: 
@@ -210,7 +213,7 @@ class MongoHR2(mga.MongoRoc):
 
 
     def setPowerPulsing(self):
-        """
+        """!
         set Power pulsing on all ASICs
         """
         for a in self.asiclist: 
@@ -234,14 +237,14 @@ class MongoHR2(mga.MongoRoc):
  
 
     def changeThreshold(self,B0,B1,B2,idif=0,iasic=0):
-        """
+        """!
         Set the 3 thresholds of specified  asics, modified asics are tagged for upload
 
-        :param B0: First Threshold
-        :param B1: Second Threshold
-        :param B2: Third Threshold        
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param B0: First Threshold
+        @param B1: Second Threshold
+        @param B2: Third Threshold        
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
         """
 
         for a in self.asiclist:
@@ -255,13 +258,13 @@ class MongoHR2(mga.MongoRoc):
             a["slc"]["B2"]=B2;a["_id"]=None;
 
     def changeGain(self,idif,iasic,ipad,scale):
-        """
+        """!
         Scale the gain of one pad  of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ipad: Channel number
-        :param scale: ratio Gain_new/Gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ipad: Channel number
+        @param scale: ratio Gain_new/Gain
 
         """
       
@@ -277,13 +280,13 @@ class MongoHR2(mga.MongoRoc):
             print(idif,iasic,ipad,a["slc"]["PAGAIN"][ipad])
 
     def setPadGain(self,idif,iasic,ipad,gnew):
-        """
+        """!
         Set the gain of one pad  of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ipad: Channel number
-        :param vnew: new gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ipad: Channel number
+        @param gnew: new gain
 
         """
   
@@ -299,12 +302,12 @@ class MongoHR2(mga.MongoRoc):
    
 
     def setAsicGain(self,idif,iasic,gnew):
-        """
+        """!
         Set the gain of all pads  of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param gnew: new gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param gnew: new gain
 
         """
         for a in self.asiclist:
@@ -321,12 +324,12 @@ class MongoHR2(mga.MongoRoc):
 
                 
     def setAsicPAGain(self,idif,iasic,vnew):
-        """
+        """!
         Set the gain of all pads  of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param vnew: vector of new gains
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param vnew: vector of new gains
 
         """
         for a in self.asiclist:
@@ -343,13 +346,13 @@ class MongoHR2(mga.MongoRoc):
 
                 
     def rescaleGain(self,gain0,gain1,idif=0,iasic=0):
-        """
+        """!
          Rescale the gain of all pads with scale=gain1/gain0  of specified  asics, modified asics are tagged for upload
         
-        :param gain0: initial gain
-        :param gain1: new gain
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param gain0: initial gain
+        @param gain1: new gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
 
         """
 
@@ -366,7 +369,7 @@ class MongoHR2(mga.MongoRoc):
             a["_id"]=None
 
     def slowShaper(self):
-        """
+        """!
         Slow down the shaper , Set SW100 F and K to 1
         """
         for a in self.asiclist:
@@ -388,7 +391,7 @@ class MongoHR2(mga.MongoRoc):
             a["_id"]=None
             
     def verySlowShaper(self):
-        """
+        """!
         Slow down the shaper , Set SW100 F and K to 1
         """
         for a in self.asiclist:
@@ -410,8 +413,9 @@ class MongoHR2(mga.MongoRoc):
             a["_id"]=None
             
     def sdhcalLike(self):
-        """
+        """!
         Slow down the shaper , Set SW100 F and K to 1
+        SDHCAL default settings
         """
         for a in self.asiclist:
             
@@ -437,13 +441,13 @@ class MongoHR2(mga.MongoRoc):
             a["_id"]=None
 
     def changeCTest(self,channel,ctest,idif=0,iasic=0):
-        """
+        """!
          Change the CTEST value of one channel  of specified  asics, modified asics are tagged for upload
         
-        :param channel: Pad tested
-        :param ctest: CTEST value
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param channel: Pad tested
+        @param ctest: CTEST value
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
 
         """
 
@@ -458,12 +462,12 @@ class MongoHR2(mga.MongoRoc):
 
             
     def setMask(self,list,idif=0,iasic=0):
-        """
+        """!
         Mask the channels specified in the list  for specified  asics, modified asics are tagged for upload
         
-        :param list: List of channels to be masked
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param list: List of channels to be masked
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
 
         """
         m=0xFFFFFFFFFFFFFFFF
@@ -473,12 +477,12 @@ class MongoHR2(mga.MongoRoc):
         self.changeMask(sm,sm,sm,idif,iasic)
         
     def setNewMask(self,list,idif=0,iasic=0):
-        """
-        Mask the channels specified in the list  for specified  asics, modified asics are tagged for upload
+        """!
+        Clear the Mask of the channels specified in the list  for specified  asics, modified asics are tagged for upload
         
-        :param list: List of channels to be masked
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param list: List of channels to be masked
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
 
         """
 
@@ -494,14 +498,14 @@ class MongoHR2(mga.MongoRoc):
             a["_id"]=None
 
     def changeMask(self,M0,M1,M2,idif=0,iasic=0):
-        """
+        """!
         Set the 3 masks  for specified  asics, modified asics are tagged for upload
         
-        :param M0: Hexadecimal string of threshold 0 mask
-        :param M1: Hexadecimal string of threshold 1 mask
-        :param M2: Hexadecimal string of threshold 2 mask
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param M0: Hexadecimal string of threshold 0 mask
+        @param M1: Hexadecimal string of threshold 1 mask
+        @param M2: Hexadecimal string of threshold 2 mask
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
 
         """
         print(M0,M1,M2,idif,iasic)
@@ -520,14 +524,14 @@ class MongoHR2(mga.MongoRoc):
             a["_id"]=None
 
     def setChannelMask(self,idif,iasic,ipad,ival):
-        """
-        Set the 3 masks  for specified  asics, modified asics are tagged for upload
+        """!
+        Set the 3 masks to thesame value for a pad and for specified  asics, modified asics are tagged for upload
         
 
-        :param idif: DIF_ID
-        :param iasic: asic number
-        :param ipad: pad from 0
-        :param ival: 0 Off 1 On
+        @param idif: DIF_ID
+        @param iasic: asic number
+        @param ipad: pad from 0
+        @param ival: 0 Off 1 On
 
         """
         for a in self.asiclist:
@@ -542,13 +546,13 @@ class MongoHR2(mga.MongoRoc):
             a["_id"]=None
 
     def setEnable(self,enable,idif=0,iasic=0):
-        """
+        """!
         Set the ENABLE tag for specified  asics, modified asics are tagged for upload
         
         
-        :param enable: Enable value (1/0)
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param enable: Enable value (1/0)
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
 
         """
         for a in self.asiclist:
@@ -562,10 +566,10 @@ class MongoHR2(mga.MongoRoc):
 
       
 def HR2Instance():
-    """
+    """!
     Create a MongoHR2 Object
 
-    :return: The MongoHR2 Object
+    @return: The MongoHR2 Object
     """
     # create the default access
     login=os.getenv("MGDBLOGIN","NONE")
