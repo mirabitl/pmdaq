@@ -38,7 +38,7 @@ def download_a_state(name,version):
     return s.setup
 def set_pair_filtering_re31(fp):
     """!
-    Set pair filtering (iRPC RE3.1) for one feb_fpga_+registers object
+    Set The pair filtering (iRPC RE3.1) for one feb_fpga_+registers object
 
     @param fp the fpga register object
 
@@ -238,17 +238,18 @@ def enable_mute_fsm(fp,threshold=3,mute=4,decrement=11):
     fp.set_parameter("DATA_PATH_CTRL.RETRIG_MITIG_MUTEROC_TIME.STEP_120MHz",mute,fpga=None)
     fp.set_parameter("DATA_PATH_CTRL.RETRIG_MITIG_DECREMENT_TIME.STEP_120MHz",decrement,fpga=None)
 
-def enable_pair_filtering(fp):
+def enable_pair_filtering(fp,active=1):
     """!
     Enable pair filtering  for one feb_fpga_+registers object
 
     @param fp the fpga register object
+    @param active 1 or 0 to disable (by default 1)
 
     """
     for i in range(16):
-        fp.set_pair_filtering_en(i,1,"LEFT")
-        fp.set_pair_filtering_en(i,1,"MIDDLE")
-        fp.set_pair_filtering_en(i,1,"RIGHT")
+        fp.set_pair_filtering_en(i,active,"LEFT")
+        fp.set_pair_filtering_en(i,active,"MIDDLE")
+        fp.set_pair_filtering_en(i,active,"RIGHT")
 
 
 def shift_re31_strips_0_1(p,dac_shift=-2):
@@ -280,6 +281,12 @@ def set_asymetric_threshold(p,d_shift=3):
 
 
 def modify_petiroc(name,version):
+    """!
+    Example on how to modify a state at Petiroc level
+    @param state Name of the state
+    @param version version number
+    @return the modified setup
+    """
     s=cra.instance()
     s.download_setup(name,version)
     p=s.setup.febs[0].petiroc
@@ -290,7 +297,16 @@ def modify_petiroc(name,version):
     p.set_parameter("pa_ccomp",0b0111,"LEFT_TOP")
     s.upload_changes("PETIROC params modified")
     return s.setup
-def modify_petiroc_from_file(name,version,csvfile):
+def update_petiroc_from_file(name,version,csvfile):
+    """!
+    Example on how to change the petiroc values from a csvfile
+
+    @param state Name of the state
+    @param version version number
+    @param csvfile to replace petiroc parameters
+
+    @return The modified setup
+    """
     s=cra.instance()
     s.download_setup(name,version)
     p=s.setup.febs[0].petiroc
@@ -299,6 +315,12 @@ def modify_petiroc_from_file(name,version,csvfile):
     return s.setup
 
 def modify_fpga(name,version):
+    """!
+    Example on how to modify a state at FPGA level
+    @param state Name of the state
+    @param version version number
+    @return the modified setup
+    """
     s=cra.instance()
     s.download_setup(name,version)
     pf=s.setup.febs[0].fpga
@@ -309,6 +331,9 @@ def modify_fpga(name,version):
     return s.setup
 
 def ls_setups():
+    """!
+    Example on setup list
+    """
     s=cra.instance()
     s.list_setups()
     s.download_setup("TEST_SOFT",6)

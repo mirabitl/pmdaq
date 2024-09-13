@@ -30,10 +30,10 @@ if (sockport != None):
     # socks.wrapmodule(urllib2)
 def executeRequest(url):
     """
-    Acces to an url
+    Access to an url
     
-   :param surl: The url
-   :return: url answer
+   @param surl: The url
+   @return: url answer as a text
    """
     try:
         r = requests.get(url)
@@ -66,14 +66,13 @@ def executeRequest(url):
 
 def executeCMD(host,port,path,params):
     """
-        Access to the CoMmanDs of a zdaq::baseApplication
+        Access to a command or a transition of a pmdaq service
         
-        :param host: Host name
-        :param port: Application port
-        :param prefix: Prefix of the application , ie, http:://host:port/prefix/.....
-        :param cmd: Command name
-        :param params: CGI additional parameters
-        :return: url answer
+        @param host: Host name
+        @param port: Application port
+        @param path: The complete PATH of the service session/pluggin/instance/command
+        @param params: CGI additional parameters
+        @return: url answer as text
     """
 
     if (params!=None ):
