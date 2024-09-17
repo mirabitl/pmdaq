@@ -12,7 +12,7 @@ import logging
 import threading
 
 def pmrTransitionWorker(app,transition,res):
-    """thread pmr scan worker function"""
+    """!thread pmr Transition worker function"""
     t = threading.currentThread()
     s = json.loads(app.sendTransition(transition, {}))
     res = s
@@ -24,6 +24,10 @@ logging.basicConfig(level=logging.INFO,
 
 class combRC(pmdaqrc.pmdaqControl):
     def __init__(self, config):
+        """! Inherits from a pmdaqControl
+        It additionnally adds an acces to the MongoDB handling the runs collection
+        @param config The configuration file
+        """
         super().__init__(config)
         self.reset = 0
         self.comment = "Not yet set"
@@ -41,6 +45,24 @@ class combRC(pmdaqrc.pmdaqControl):
     # Initialising implementation
 
     def daq_initialising(self):
+        """! 
+        Initialisation for all boards
+
+        @verbatim
+        In this order if found in the configuration
+        -------------------------------------------    
+        GPIO =  CONFIGURE VMEON VMEOFF VMEONN
+        SDCC= OPEN INITIALISE CONFIGURE STOP CCCRESET DIFRESET
+        MDCC/IPDC/MBMDCC =INITIALISE
+        EVB_BUILDER =CONFIGURE
+        FEBV1 = RESETTDC INITIALISE
+        FEBV2 = CREATEFEB INITIALISE
+        PMR = Threaded: SCAN INITIALISE
+        LIBOARD = SCAN INITIALISE
+        GRICV0/GRICV1 =  INITIALISE
+        DIF = SCAN INITIALISE
+        @endverbatim
+        """
         m = {}
         r = {}
         # old DIF Fw
@@ -197,6 +219,20 @@ class combRC(pmdaqrc.pmdaqControl):
         self.storeState()
 
     def daq_configuring(self):
+        """! 
+        Configuration for all boards
+
+        @verbatim
+        In this order if found in the configuration
+        -------------------------------------------    
+        FEBV1 = CONFIGURE
+        FEBV2 = CONFIGURE
+        PMR = Threaded: CONFIGURE
+        LIBOARD/GRICV0/GRICV1 =  CONFIGURE
+        SDCC=  CCCRESET DIFRESET
+        DIF = CONFIGURE
+        @endverbatim
+        """
         m = {}
         r = {}
         if ("lyon_febv1" in self.session.apps):
@@ -258,6 +294,21 @@ class combRC(pmdaqrc.pmdaqControl):
         self.storeState()
 
     def daq_stopping(self):
+        """! 
+        Stopping run and boards
+
+        @verbatim
+        In this order if found in the configuration
+        -------------------------------------------    
+        FEBV1 = STOP
+        FEBV2 = STOP
+        PMR =  STOP
+        LIBOARD/GRICV0/GRICV1 =  STOP
+        SDCC =  STOP
+        DIF = STOP
+        EVB_BUILDER = STOP 
+        @endverbatim
+        """
         m = {}
         r = {}
 
@@ -307,6 +358,19 @@ class combRC(pmdaqrc.pmdaqControl):
         self.storeState()
 
     def daq_destroying(self):
+        """! 
+       destroying transition 
+
+        @verbatim
+        In this order if found in the configuration
+        -------------------------------------------    
+        FEBV1 = DESTROY
+        FEBV2 = DESTROY
+        PMR =  DESTROY
+        LIBOARD/GRICV0/GRICV1/DIF =  DESTROY
+        MBMDCC =  DESTROY
+        @endverbatim
+        """
         m = {}
         r = {}
         if ("lyon_febv1" in self.session.apps):
