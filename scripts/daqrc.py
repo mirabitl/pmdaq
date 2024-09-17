@@ -11,6 +11,19 @@ from transitions import Machine, State
 
 class daqControl:
     def __init__(self, config_file):
+        """!
+        Abstract class instantiating a sessionAccess and a Transitions state Machine 
+        
+        STATES='CREATED', 'INITIALISED', 'CONFIGURED', 'RUNNING'
+        TRANSITIONS='initialise  callback daq_initialising
+                     'configure' callback daq_configuring
+                     'start'     callback daq_starting
+                     'stop'      callback daq_stoping
+                     'destroy'   callback daq_destroying
+
+        ALl the callbacks are defined in the inheriting classess 
+ 
+        """
         self.config_file = config_file
         # parse config file
         #print(self.config_file)
@@ -34,10 +47,19 @@ class daqControl:
         self.stored_state = self.getStoredState()
 
     def fsmStatus(self):
+        """! Print the FSM status
+        @deprecated
+        """
         x = self.stored_state
         # print(" FSM Status:",x["name"],x["version"],x["location"],time.ctime(x["time"]),x["job"],x["daq"])
 
     def getStoredState(self):
+        """!
+        Get the session state from the PNS/SESSION/LIST
+
+        If not known set it to CREATED and updates PNS/SESSION
+        @return state name
+        """
         pl = self.session.pns_session_list(req_session=self.session.name())
         #print(pl)
         if ("REGISTERED" in pl):
@@ -54,6 +76,9 @@ class daqControl:
         return "CREATED"
 
     def storeState(self):
+        """!
+        Update the session state in PNS/SESSION list
+        """
         # register to PNS/SESSION
         print("Storing state ",self.state)
         pl=self.session.pns_session_update(self.state)
@@ -63,12 +88,26 @@ class daqControl:
         return
 
     def isConfigured(self):
+        """! 
+        Get the stored state
+        It can be redefined in inheriting class
+        @return Allways true
+        """
         self.getStoredState()
         return True
     
     def updateInfo(self,printout,vverbose):
-        self.session.Print(versbose)
+        """! Print out session infos
+        """
+        self.session.Print(vverbose)
     def processCommand(self,cmd,appname,param):
+        """!
+        proxy for sessionAccess command
+        @param cmd Command Name 
+        @param appname Plugin name
+        @param CGI parameters of the command
+        @return String answer of the command
+        """
         r=self.session.commands(cmd,appname,param)
         return json.dumps(r)
   

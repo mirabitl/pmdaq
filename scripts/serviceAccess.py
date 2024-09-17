@@ -161,6 +161,13 @@ def executeCMD(host,port,path,params):
 
         
 def strip_pns_string(pns_string):
+    """!
+    Analyse answer of PNS  to return an object of information on the service
+
+    @param pns_string PNS answer
+    @return Directory {'host':host, 'port':port,'path':path,'session':session,'name':name,'instance':instance,'state':state}
+
+    """
     state=pns_string.split("?")[1]
     v=pns_string.split("?")[0].split(":")
     host=v[0];
@@ -177,10 +184,17 @@ def strip_pns_string(pns_string):
     return o
 
 def create_access(pns_string):
+     """! Create a service access from a PNS LIST answer
+     @param pns_string PNS answer
+     @ return A service access
+     """
      o=strip_pns_string(pns_string)
      return serviceAccess(o.host,o.port,o.session,o.name,o.instance)
     
 def pns_info_command():
+    """!
+    Print out informations of all REGISTERED services 
+    """
     pns_host=os.getenv("PNS_NAME","NONE")
     if (pns_host == "NONE"):
         print("The ENV varaible PNS_NAME mut be set")
@@ -201,8 +215,21 @@ def pns_info_command():
 
 class serviceAccess:
     def __init__(self, vhost, vport,vsession,vname,vinstance):
-        """
-        Handle all application definition and p  arameters , It controls the acquisition via the FDAQ application and the Slow control via the FSLOW application
+        """!
+        @brief Handle all fsmw instance application definition, parameters and methods
+
+        It handles the state and the path of the fsmw and
+        it has also  a list of
+            -services
+            -commands
+            -transitions
+            -allowed transitions
+
+        @param vhost(str) Host name
+        @param vport(int) Hots port
+        @param vsession(str) Session name
+        @param vname(str) Plugin name
+        @param vinstance(int) Instance number 
         """
         self.host = vhost
         self.port = vport
@@ -221,6 +248,8 @@ class serviceAccess:
         if (self.state !="VOID" and self.state!="DEAD"):
             self.services_request()
     def pns_request(self,cmd="LIST",par=None):
+        """! Find the current state of the service from a PNS/LIST request
+        """
         pns_host=os.getenv("PNS_NAME","NONE")
         if (pns_host == "NONE"):
             print("The ENV varaible PNS_NAME mut be set")
@@ -242,6 +271,9 @@ class serviceAccess:
                     if (o.path==self.path):
                         self.state=o.state
     def services_request(self):
+        """!
+        Fill state, commands transitions and parameter with INFO and PARAMS commands
+        """
         r_services=executeCMD(self.host,self.port,"/SERVICES",{})
         #print(r_services)
         if (type(r_services) is bytes):
@@ -295,6 +327,10 @@ class serviceAccess:
         self.params=jpar
         #print(params)
     def create(self,param_s=None):
+        """!
+        Call the REGISTER command to the pmdaq daemon to create the plugin's services
+        @param param_s Additional parameters if any 
+        """
         if (self.state=='VOID' or self.state=='DEAD'):
             par={}
             par["session"]=self.session
@@ -316,6 +352,11 @@ class serviceAccess:
             if (self.state !="VOID"):
                 self.services_request()
     def remove(self,par=None):
+        """!
+        Call the REMOVE command to the pmdaq daemon to remove the plugin's services
+        @param par Additional parameters if any 
+
+        """
         if (self.state!='VOID'):
             par={}
             par["session"]=self.session
@@ -333,6 +374,9 @@ class serviceAccess:
             print("Removed state is %s \n" % self.state)
 
     def getInfo(self):
+        """!
+        Reload all informations from PNS and from the plugin INFO as well
+        """
         self.pns_request()
         self.services=[]
         self.commands=[]
@@ -343,15 +387,29 @@ class serviceAccess:
             self.services_request()
 
     def allInfos(self):
+        """!
+        Store in a dictionnary state,parameters and services name
+        @return The dictionnary
+        """
         jdict={}
         jdict['state']=self.state
         jdict['params']=self.params
         jdict['services']=self.services
         return jdict
     def isBaseApplication(self):
+        """!
+        Check the service is a fsmw
+        @return Existence of PARAMS command (Should be true) 
+        """
         return "PARAMS" in self.commands
 
     def sendCommand(self, name, content):
+        """!
+        Send a command to the plugin service
+        @param name Command(service) Name
+        @param content CGI parameters of the command
+        @return The string answer 
+        """
         self.getInfo()
         isValid = name in self.commands
         if (not isValid):
@@ -361,6 +419,12 @@ class serviceAccess:
             rep=rep.decode("utf-8")
         return rep
     def sendTransition(self, name, content):
+        """!
+        Send a transition to the plugin service. The transition is checked to be in the ALLOWED list before beeing sent
+        @param name Transition(service) Name
+        @param content CGI parameters of the command
+        @return The string answer  or a FAILED message
+        """
         self.getInfo()
         #print "Send Transition",self.procInfos
         isValid = False
@@ -379,6 +443,11 @@ class serviceAccess:
         return rep
 
     def printInfos(self, vverb):
+        """!
+        Print out of all service informations
+        @param vverb verbose printout tag
+        @return Non if vverb true or a dictionnary of all informations
+        """
         if (vverb):
             print("FSM is %s on %s,  Service %s"  % (self.state, self.url, self.path))
             # print COMMAND and TRANSITION
