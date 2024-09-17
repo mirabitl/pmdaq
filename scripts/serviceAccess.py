@@ -231,19 +231,32 @@ class serviceAccess:
         @param vname(str) Plugin name
         @param vinstance(int) Instance number 
         """
+        ## Host name
         self.host = vhost
+        ## Host port
         self.port = vport
+        ## Session name
         self.session = vsession
+        ## plugin name
         self.name = vname
+        ## Instance number
         self.instance = vinstance
+        ## PMDAQ URL
         self.url = "http://%s:%d" % (vhost, vport)
+        ## State 
         self.state="VOID"
+        ## Services path
         self.path="/%s/%s/%d/" % (vsession,vname,vinstance)
         self.pns_request()
+        ## List of services
         self.services=[]
+        ##List of commands
         self.commands=[]
+        ## List of allowed transitions
         self.allowed=[]
+        ## List of Transitions
         self.transitions=[]
+        ## Parameters
         self.params=None
         if (self.state !="VOID" and self.state!="DEAD"):
             self.services_request()

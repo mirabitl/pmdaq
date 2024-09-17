@@ -24,13 +24,16 @@ class daqControl:
         ALl the callbacks are defined in the inheriting classess 
  
         """
+        ## Configuration file
         self.config_file = config_file
         # parse config file
         #print(self.config_file)
+        ## session.sessionAccess 
         self.session = session.create_session(config_file)
         # DB access
         # DAQ PART
         self.daq_answer = None
+        ## DAQ Finite State Machine (transitions.Machine)
         self.daqfsm = Machine(model=self, states=[
                               'CREATED', 'INITIALISED', 'CONFIGURED', 'RUNNING', 'CONFIGURED'], initial='CREATED')
         self.daqfsm.add_transition(
@@ -43,7 +46,7 @@ class daqControl:
             'stop', 'RUNNING', 'CONFIGURED', after='daq_stopping', conditions='isConfigured')
         self.daqfsm.add_transition(
             'destroy', 'CONFIGURED', 'CREATED', after='daq_destroying', conditions='isConfigured')
-
+        ## FSM state
         self.stored_state = self.getStoredState()
 
     def fsmStatus(self):

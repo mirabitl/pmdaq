@@ -20,8 +20,8 @@ parser = argparse.ArgumentParser()
 
 # configure all the actions
 grp_action = parser.add_mutually_exclusive_group()
-grp_action.add_argument('--upload-config',action='store_true',help=' Upload new config with --name=NAME --file=FILE and optional --comment=xxx and --version=num')
-grp_action.add_argument('--configurations', action='store_true',help='List all the available configurations')
+grp_action.add_argument('--upload-config',action='store_true',help='Obsolete use mgjob Upload new config with --name=NAME --file=FILE and optional --comment=xxx and --version=num')
+grp_action.add_argument('--configurations', action='store_true',help='Obsolete use mgjob List all the available configurations')
 grp_action.add_argument('--states', action='store_true',help='List all the available states')
 grp_action.add_argument('--download', action='store_true',
                         help='download the state specified in --state=state or --name=config name --version=version')
@@ -46,6 +46,8 @@ lcgi = {}
 r_cmd = None
 
 if (results.upload_config):
+    print("Obsolete Use mgjob instead")
+    exit(0)
     r_cmd = 'upload_config'
     version=1
     comment="No comment given"
@@ -88,6 +90,8 @@ if (results.states):
     _wdd.states()
     exit(0)
 if (results.configurations):
+    print("Obsolete Use mgjob instead")
+    exit(0)
     r_cmd = 'configurations'
     _wdd.configurations()
     exit(0)

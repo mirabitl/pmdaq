@@ -126,6 +126,7 @@ class pmdaqControl(daqrc.daqControl):
         @param par CGI parameters
         @return processCommand answer
         """
+        ## Trigger board  name
         self.pn=None
         if ("lyon_mbmdcc" in self.session.apps):
             self.pn="lyon_mbmdcc"

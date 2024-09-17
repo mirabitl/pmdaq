@@ -45,8 +45,11 @@ class sessionAccess:
         Handle all application of the session. The applictaion are stored in a map of pluggin names each entry conatining a list of serviceAccess to each instance of the plugin
         @param vsession The session dictionnary
         """
+        ## Name of the session
         self.session = vsession
+        ## Directory of applications
         self.apps={}
+        ## Name of the PNS host
         self.pns_host=os.getenv("PNS_NAME","NONE")
         if (self.pns_host == "NONE"):
             print("The ENV varaible PNS_NAME mut be set")

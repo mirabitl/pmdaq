@@ -29,12 +29,19 @@ class combRC(pmdaqrc.pmdaqControl):
         @param config The configuration file
         """
         super().__init__(config)
-        self.reset = 0
+        ##reset time
+        self.reset = 0 
+        ## Comment for a run
         self.comment = "Not yet set"
+        ## Setup name
         self.location = "UNKNOWN"
+        ## MDCC plugin name
         self.md_name = "lyon_mdcc"
+        ## MongoDB MongoJob instance
         self.db = mg.instance()
+        ## Current state
         self.state = self.getStoredState()
+        ## List of pmdaq url
         self.pm_hosts=[]
         j_sess=json.loads(open(config).read())
         for x in j_sess["apps"]:
@@ -412,7 +419,28 @@ class combRC(pmdaqrc.pmdaqControl):
         self.storeState()
 
     def daq_starting(self):
+        """! 
+        starting transition 
 
+        It first connect to MongoDB and get a run number for the session location
+        defined in $DAQSETUP
+
+
+        @verbatim
+        In this order if found in the configuration
+        -------------------------------------------    
+        EVB_BUIDER = START with 'run' parameter
+        FEBV1 = START
+        FEBV2 = START
+        PMR =  START
+        LIBOARD/GRICV0/GRICV1/DIF =  START
+        MDCC = RESET (counters) ECALRESUME
+        IPDC = INITIALISE
+        MBMDCC =  RESET (counters) 
+        DIF = START
+        SDCC = START
+        @endverbatim
+        """
         if (self.location == "UNKNOWN"):
             self.location = os.getenv("DAQSETUP", "UNKNOWN")
 
@@ -482,6 +510,11 @@ class combRC(pmdaqrc.pmdaqControl):
         self.storeState()
 
     def SourceStatus(self, verbose=False):
+        """!
+        Print out of data source status
+        @param verbose if True only printout False return a JSON string of the sources status
+        @return JSON string of the sources status 
+        """
         rep = {}
         for k, v in self.session.apps.items():
             if (k != "lyon_febv2"):
@@ -586,6 +619,11 @@ class combRC(pmdaqrc.pmdaqControl):
                     print("\t \t", x)
     # RESTART
     def restart(self,url=None):
+        """!
+        Send an EXIT command to all pmdaq daemon 
+        @param url If not None send EXIT only to this url
+        @warning It is a real restarting of the whole DAQ
+        """
         if (url==None):
             for x in self.pm_hosts:
                 print(x+"/EXIT will be called")
@@ -595,6 +633,10 @@ class combRC(pmdaqrc.pmdaqControl):
             sac.executeRequest(url+"/EXIT")
     # FEBV2 specific
     def febv2_start(self):
+        """!
+        FEBV2 only start a run (No event builder/MDCC)
+        @deprecated Not used anywhere
+        """
         r={}
         m={}
         if ("lyon_febv2" in self.session.apps):
@@ -603,6 +645,10 @@ class combRC(pmdaqrc.pmdaqControl):
                 r["lyon_febv2_%d" % x.instance] = s
             return json.dumps(r)
     def febv2_stop(self):
+        """!
+        FEBV2 only stop a run (No event builder/MDCC)
+        @deprecated Not used anywhere
+        """
         r={}
         m={}
         if ("lyon_febv2" in self.session.apps):
@@ -613,40 +659,82 @@ class combRC(pmdaqrc.pmdaqControl):
     # FEBV1 specific
 
     def set6BDac(self, dac):
+        """!
+        FEBV1 only SET6BDAC
+        @param value DAC6B value for all ASICs
+        @return processCommand answer
+        """
         param = {}
         param["value"] = dac
         return self.processCommand("SET6BDAC", "lyon_febv1", param)
 
     def cal6BDac(self, mask, shift):
+        """!
+        FEBV1 only CAL6BDAC
+        @param shift DAC6B shift for all ASICs
+        @param mask Channel mask
+        @return processCommand answer
+        """
         param = {}
         param["shift"] = shift
         param["mask"] = int(mask, 16)
         return self.processCommand("CAL6BDAC", "lyon_febv1", param)
 
     def setVthTime(self, Threshold):
+        """!
+        FEBV1 only SETVTHTIME
+        @param value DAC10B VTH
+        @return processCommand answer
+        """
         param = {}
         param["value"] = Threshold
         return self.processCommand("SETVTHTIME", "lyon_febv1", param)
 
     def setTdcMode(self, mode):
+        """!
+        FEBV1 only SETMODE
+        @param value 0/1 TDC mode
+        @return processCommand answer
+        """
         param = {}
         param["value"] = mode
         return self.processCommand("SETMODE", "lyon_febv1", param)
 
     def setTdcDelays(self, active, dead):
+        """!
+        FEBV1 only SETDELAY/DURATION
+        @param active Dealy active value
+        @param dead Delay length  value
+        @return dictionnary
+        """
         param = {}
         param["value"] = active
         r = {}
         r["active"] = json.loads(self.processCommand(
             "SETDELAY", "lyon_febv1", param))
-
+        param["value"] = active
+        r = {}
+        r["dead"] = json.loads(self.processCommand(
+            "SETDURATION", "lyon_febv1", param))
     def setTdcMask(self, channelmask, asicmask):
+        """!
+        FEBV1 only SETMASK
+        @param channelmask 32 bits mask
+        @param asicmask 1/2/3 ASIC mask
+        @return processCommand answer
+        """
         param = {}
         param["value"] = channelmask
         param["asic"] = asicmask
         return self.processCommand("SETMASK", "lyon_febv1", param)
 
     def tdcLUTCalib(self, instance, channel):
+        """!
+        FEBV1 only LUT calibration
+        @param channel TDC channel to scan
+        @param instance FEBV1Manager Instance
+        @return dictionnary answer
+        """
         if (not "lyon_febv1" in self.session.apps):
             return '{"answer":"NOlyon_febv1","status":"FAILED"}'
         if (len(self.session.apps["lyon_febv1"]) <= instance):
@@ -663,6 +751,12 @@ class combRC(pmdaqrc.pmdaqControl):
         return json.dumps(r)
 
     def tdcLUTDump(self, instance, channel):
+        """!
+        FEBV1 only Dump Look up Table
+        @param channel TDC channel to scan
+        @param instance FEBV1Manager Instance
+        @return dictionnary answer
+        """
         if (not "lyon_febv1" in self.session.apps):
             return '{"answer":"NOlyon_febv1","status":"FAILED"}'
         if (len(self.session.apps["lyon_febv1"]) <= instance):
@@ -676,6 +770,13 @@ class combRC(pmdaqrc.pmdaqControl):
         return json.dumps(r)
 
     def tdcLUTMask(self, instance, mask, feb):
+        """!
+        FEBV1 only SET6BDSet LUT Mask
+        @param instance FEBV1Manager Instance
+        @param TDC channel mask
+        @param feb Feb Id
+        @return dictionnary answer
+        """
         if (not "lyon_febv1" in self.session.apps):
             return '{"answer":"NOlyon_febv1","status":"FAILED"}'
         if (len(self.session.apps["lyon_febv1"]) <= instance):
@@ -691,6 +792,9 @@ class combRC(pmdaqrc.pmdaqControl):
         return json.dumps(r)
 
     def febScurve(self, ntrg, ncon, ncoff, thmin, thmax, step):
+        """! Scurve FEBV1 in run control
+        @deprecated Obsolete, use SCURVE command instead
+        """
         r = {}
         self.mdcc_Pause()
         self.mdcc_setSpillOn(ncon,)
@@ -746,6 +850,9 @@ class combRC(pmdaqrc.pmdaqControl):
         return json.dumps(r)
 
     def runScurve(self, run, ch, spillon, spilloff, beg, las, step=2, asic=255, Comment="PR2 Calibration", Location="UNKNOWN", nevmax=50):
+        """! Scurve FEBV1 in run control
+        @deprecated Obsolete, use SCURVE command instead
+        """
         oldfirmware = [3, 4, 5, 6, 7, 8, 9, 10, 11,
                        12, 20, 21, 22, 23, 24, 26, 28, 30]
         firmware = [0, 2, 4, 6, 7, 8, 10, 12,
@@ -790,6 +897,11 @@ class combRC(pmdaqrc.pmdaqControl):
 # DIF Specific
 
     def setControlRegister(self, ctrlreg):
+        """! 
+        DIF only Set the control register
+        @param ctrlreg Control register value
+        @return processCommand answer
+        """
         param = {}
         param["value"] = int(ctrlreg, 16)
         return self.processCommand("CTRLREG", "lyon_dif", param)
