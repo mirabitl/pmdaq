@@ -217,19 +217,71 @@ class MdccManager : public fsmw
      * @param m http request
      */
     void c_calibon(http_request m);
-    /**
+     /**
      * @brief call back of CALIBOFF command
      *     
      * @param m http request
      */
     void c_caliboff(http_request m);
+    /**
+     * @brief call back of RESETTDC command
+     * 
+     * \b value (0/1) is required    
+     * @param m http request
+     */
     void c_resettdc(http_request m);
+
+    /**
+     * @brief call back of SETCALIBREGISTER command
+     * \b value (0/2/4) is required
+     * @param m http request
+     */
     void c_setcalibregister(http_request m);
+
+    /**
+     * @brief call back of SETSPILLREGISTER command
+     *     
+     * \b value (WindowConfig) is needed
+     * @param m http request
+     */
     void c_setspillregister(http_request m);
+    /**
+     * @brief call back of SETHARDRESET command
+     *     
+     * \b value (0/1) is required
+     * 
+     * @param m http request
+     */
     void c_sethardreset(http_request m);
+     /**
+     * @brief call back of SETTRIGEXT command
+     * 
+     * \b delay and \b busy values are required
+     *     
+     * @param m http request
+     */
     void c_settrigext(http_request m);
+    /**
+     * @brief call back of SETREGISTER command
+     *     
+     * \b address and \b value are required
+     * @param m http request
+     */
     void c_setregister(http_request m);
+    /**
+     * @brief call back of GETREGISTER command
+     *     
+     * \b address is required
+     * @param m http request
+     */
     void c_getregister(http_request m);
+    /**
+     * @brief call back of SETEXTERNAL command
+     * 
+     * \b value (0/1) is required
+     *     
+     * @param m http request
+     */
     void c_setexternaltrigger(http_request m);
   private:
     /// @brief Pointer to the mdcc::MdccHandler
