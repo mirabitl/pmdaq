@@ -1,5 +1,14 @@
 #pragma once
-
+/**
+ * @file MBMDCCInterface.hh
+ * @author Laurent Mirabito
+ * @brief 
+ * @version 1.0
+ * @date 2024-09-19
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 
 //#include <netlink/socket.h>
 //#include <netlink/socket_group.h>
@@ -105,6 +114,73 @@ typedef std::pair<uint32_t,unsigned char*> ptrBuf;
 typedef std::function<void (uint64_t,uint16_t,char*)> MPIFunctor;
 
 static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
+/**
+ * @brief Name space for MBMDCC board
+ * 
+ * The firmware registers are defined here:
+ * 
+ *------------------------------------
+ *|Register Address | Name | Content  |
+ *|----------------:|:----:|----------|
+ *|0000 | test_reg | Read Write register to test the access (default 1234)| 
+ *|0001 | ID_reg | Id of the board| 
+ *|0002 | software_veto_reg | Bit 0 : generates a software busy| 
+ *|0003 | spill_counter_reg | Number of spill| 
+ *|0004 | Counters_reset_reg | Bit 0 reset trigger register| 
+ *|0005 | spillon_reg | Length in 40 MHz clock of the window| 
+ *|0006 | spilloff_reg | Delay in 40 MHz clock of the next window | 
+ *|0008 | Calib_reg | bit 0 : not used | 
+ *|   | | bit 1 :  Switch to calibration mode with windows count is decremented |
+ *|   | | bit 2 : reload calib counter with nb_window |
+ *|000A | nb_windows_reg | Number of window for the calibration acquisition| 
+ *|000C | Rstdet_reg |send RESET on HDMI to front-end | 
+ *|000D | WindowConfig_reg | -- bit 0 : start of spill to end of spill  |
+ *|     | | -- bit 1 : start of spill and SpillOn length |
+ *|     | | -- bit 2 : Internal counter|
+ *|     | | -- bit 3 : calibration with SpillOn/Off controled by calib  |
+ *|     | | -- bit 4 : SOS and internal count (obsolete usage) |
+ *|     | | -- bit 5 : Internal count start on End Busy (obsolete usage) |
+ *|     | | -- bit 6 : Internal count start on End Busy + SpillOff  (obsolete usage) |
+ *|000E | TrigExtDelay_reg | delay to send the trigext | 
+ *|000F | TrigExtLength_reg | Length of trig ext pulse| 
+ *|0010 | trigextConfig_reg | Configuration of external trigger|  
+ *|   | | bit 0 :Trig ext masked if board busy|
+ *|   | | bit 1 :Trig ext stopped if busy arrives |
+ *|0011 | trigextcounter_reg | External trigger count| 
+ *|001D | clk_enable_reg | Bit Mask of enabled clock per HDMI (default 0x3FF)| 
+ *|0020 | minBusy_reg | Minimal busy time| 
+ *|0021 | channel_enable_reg | Bit mask of enabled HDMI channels| 
+ *|0030 | TDC_Ctrl_reg | Unused (to do) | 
+ *|0031 | TDC_CoarseCount_reg | Unused (to do) | 
+ *|0032 | TDC_time1_reg | Unused (to do)| 
+ *|0033 | TDC_clkcnt1_reg | Unused (to do)| 
+ *|0034 | TDC_time2_reg | Unused (to do)| 
+ *|0035 | TDC_clkcnt2_reg | Unused (to do)| 
+ *|0036 | TDC_time3_reg | Unused (to do)| 
+ *|0037 | TDC_clkcnt3_reg | Unused (to do)| 
+ *|0038 | TDC_time4_reg | Unused (to do)| 
+ *|0039 | TDC_clkcnt4_reg | Unused (to do) | 
+ *|003a | TDC_time5_reg | Unused (to do)| 
+ *|003b | TDC_clkcnt5_reg | Unused (to do)| 
+ *|003c | TDC_time6_reg | Unused (to do)| 
+ *|003d | TDC_clkcnt6_reg | Unused (to do)| 
+ *|0040 | TDC_calib1_reg | Unused (to do)| 
+ *|0041 | TDC_calib2_reg | Unused (to do)| 
+ *|0050-5B | busy0/B_counter_reg | From 0 to 11 busy counters| 
+ *|0070 | sps_spill_duration_reg | Length in clocks of SPS spill| 
+ *|0071 | sps_spill_control_reg |  Bit 0 Enable SPS fill as Not Busy| 
+ *|00A0  | LemoMask_reg | -- bit 0 : Start of spill  |
+ *|      | | -- bit 1 :End of Spill |
+ *|      | | -- bit 2 : External Trigger|
+ *|      | | -- bit 3 : SPS Spill |
+ *|
+ *|0100 | version | Firmware version| 
+ *|0200 | feb_trg_ctrl_reg | -- bit 0 : Normal external trigger sent |
+ *|     | | --bit 1 :Trigger generated from the start of window|
+ *|0201 | feb_trg_duration_reg | Length of FC7 trigger pulse| 
+ *|0202 | feb_trg_delay_reg |  Delay of the FC7 trigger pulse| 
+ * 
+ */
   namespace mbmdcc
   {
     class board;
