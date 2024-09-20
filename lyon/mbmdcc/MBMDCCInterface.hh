@@ -202,30 +202,88 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
      */
     class Message {
     public:
-      enum Fmt {HEADER=0,LEN=1,TRANS=3,CMD=4,PAYLOAD=6};
-      enum  command { WRITEREG=1,READREG=2,SLC=4,DATA=8,ACKNOWLEDGE=16,ERROR=32};
-      enum Register {TEST=0x0,
+    /**
+     * @brief Message format byte index
+     * 
+     */
+      enum Fmt {
+        //! header should be '('
+        HEADER=0,
+        //! Total message length
+        LEN=1,
+        //! Transaction number
+        TRANS=3,
+        //! Command code
+        CMD=4,
+        //! Payload
+        PAYLOAD=6};
+      /**
+       * @brief Message command code
+       * 
+       */
+      enum  command {
+        //! Write request 
+        WRITEREG=1,
+        //! read request
+        READREG=2,
+        //! Slow control
+        SLC=4,
+        //! Data
+        DATA=8,
+        //! acknowledge of a command
+        ACKNOWLEDGE=16,
+        //! error
+        ERROR=32};
+      /**
+       * @brief Firmware registers access
+       * 
+       */
+      enum Register {
+        //! Test register
+         TEST=0x0,
+         //!Board Id
 		     ID=0x1,
+         //! Veto mask
 		     MASK=0x2,
+         //! Number of Spill
 		     SPILL_CNT=0x3,
+         //!  Bit 0 reset counters register
 		     ACQ_CTRL=0x4,
+         //! Windows ON length
 		     SPILL_ON=0x5,
+         //! Windows OFF length
 		     SPILL_OFF=0x6,
+         //! Calib control register
 		     CALIB_CTRL=0x8,
+         //! Calibration number of windows
 		     CALIB_NWIN=0xA,
+         //! Hard Reset of Front end Rstdet 
 		     RESET_FE=0xC,
+         //! window configuration
 		     WIN_CTRL=0xD,
+         //! Delay to send extrnal trigger
 		     TRG_EXT_DELAY=0xE,
+         //! trigger Pulse length
 		     TRG_EXT_LEN=0xF,
+         //! Configuration of external trigger
 		     TRG_EXT_CONFIG=0x10,
+         //! Counter of external trigger
 		     TRG_EXT_COUNT=0x11,
+         //! Bit Mask of enabled clock per HDMI (default 0x3FF) 
 		     CLK_ENABLE=0x1D,
+         //! Minimal busy time 
 		     MIN_BUSY_LENGTH=0x20,
+         //! Bit mask of enabled HDMI channels 
 		     CHANNEL_ENABLE=0x21,
+         //! obsolote
 		     TRG_EXT_NB=0x22,
+         //! obsolote
 		     EN_BUSY_TRG=0x20,
+         //! obsolote
 		     DEBOUNCE_BUSY=0x21,
+         //! To be implemented
 		     TDC_CTRL=0x30,
+         //! To be implemented
 		     TDC_COARSE=0x31,
 		     TDC_T1=0x32,TDC_CNT1=0x33,
 		     TDC_T2=0x34,TDC_CNT2=0x35,
@@ -234,12 +292,19 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
 		     TDC_T5=0x3A,TDC_CNT5=0x3B,
 		     TDC_T6=0x3C,TDC_CNT6=0x3D,
 		     TDC_CAL1=0x40,TDC_CAL2=0x41,
-		     BUSY_0=0x50, // counter busy
+         //! First counter of busy
+		     BUSY_0=0x50, 
+         //! Unused 
 		     RESET_FSM=0x60,
-		     SPS_SPILL_DURATION=0x70, // Duree du spill SPS
-		     SPS_SPILL_CTRL=0x71, // Bit 0 Enable SPS fill as Not Busy
-		     LEMO_MASK=0xA0, // Enable Mask des lemo pour eviter les parasites par defaut 0X0 tout est masque
+         //! Duree du spill SPS
+		     SPS_SPILL_DURATION=0x70, 
+         //! Bit 0 Enable SPS fill as Not Busy
+		     SPS_SPILL_CTRL=0x71, 
+         //! Enable Mask des lemo pour eviter les parasites par defaut 0X0 tout est masque
+		     LEMO_MASK=0xA0, 
+         //! FEBV2 control register
 		     RESYNC_MASK=0x200,
+         //! Firmware version
 		     VERSION=0x100};
 		     
       /**
@@ -293,18 +358,45 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
     /**
      * @brief Implementation of mpi::MessageHandler
      * 
+     * It implements processMessage and removeSocket
+     * 
+     * procesMessage reads the socket and propagate the fragment to any handler registered
+     * 
      */
     class messageHandler : public mpi::MessageHandler
     {
     public:
+    /**
+     * @brief Construct a new messageHandler object
+     * 
+     */
       messageHandler();
+      /**
+       * @brief read the socket and update _sockMap then call registered handlers
+       * 
+       * @param socket NL socket pointer
+       */
       virtual void processMessage(NL::Socket* socket);
+      /**
+       * @brief Remove _sockMap entry for this socket
+       * 
+       * 
+       * @param socket  NL socket pointer
+       */
       virtual void removeSocket(NL::Socket* socket);
+      /**
+       * @brief Add an entry in _handlers
+       * 
+       * @param id Socket Id (IP<<32|Port)
+       * @param f MPIFunctor (id,len,cbuf*)
+       */
       void addHandler(uint64_t id,MPIFunctor f);
       uint64_t Id(NL::Socket* socket);
       
     private:
+      //! map of socket id, ptrBuf ie size+buffer
       std::map<uint64_t, ptrBuf> _sockMap;
+      //! map of socket Id + handler functor
       std::map<uint64_t,MPIFunctor> _handlers;
       uint64_t _npacket;
       std::mutex _sem;

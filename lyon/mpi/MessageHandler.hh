@@ -3,7 +3,17 @@
 #include <netlink/socket_group.h>
 #include <string>
 #include "stdafx.hh"
+/**
+ * @brief pair of size, pointer
+ * 
+ */
 typedef std::pair<uint32_t,unsigned char*> ptrBuf;
+/**
+ * @brief function with parameters
+ * 
+ * IP address| port, len,buffer
+ * 
+ */
 typedef std::function<void (uint64_t,uint16_t,char*)> MPIFunctor;
 
 namespace mpi {
