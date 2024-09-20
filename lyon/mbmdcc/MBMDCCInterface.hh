@@ -117,6 +117,8 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
 /**
  * @brief Name space for MBMDCC board
  * 
+ * # Hardware
+ * ## Latest Firmware Registers
  * The firmware registers are defined here:
  * 
  *------------------------------------
@@ -173,17 +175,31 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
  *|      | | -- bit 1 :End of Spill |
  *|      | | -- bit 2 : External Trigger|
  *|      | | -- bit 3 : SPS Spill |
- *|
  *|0100 | version | Firmware version| 
  *|0200 | feb_trg_ctrl_reg | -- bit 0 : Normal external trigger sent |
  *|     | | --bit 1 :Trigger generated from the start of window|
  *|0201 | feb_trg_duration_reg | Length of FC7 trigger pulse| 
  *|0202 | feb_trg_delay_reg |  Delay of the FC7 trigger pulse| 
  * 
+ * ## Bus
+ * 
+ * The communication is done via an TCP/IP socket to an address and port defined on the board
+ * IP 192.168.100.205 Port 10002
+ * 
+ * # Software
+ * 
+ * The socket communication is based on NL::Socket (netlink C++ socket https://sourceforge.net/projects/netlinksockets/)
+ * 
+ *  
+ * 
  */
   namespace mbmdcc
   {
     class board;
+    /**
+     * @brief Structure of Wiznet message
+     * 
+     */
     class Message {
     public:
       enum Fmt {HEADER=0,LEN=1,TRANS=3,CMD=4,PAYLOAD=6};
@@ -226,13 +242,47 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
 		     RESYNC_MASK=0x200,
 		     VERSION=0x100};
 		     
-
+      /**
+       * @brief Construct a new Message object
+       * 
+       */
       Message(): _address(0),_length(2) {;}
+      /**
+       * @brief Get the address of the message (IP<<32|Port)
+       * 
+       * @return uint64_t Message address 
+       */
       inline uint64_t address(){return _address;}
+      /**
+       * @brief Message length
+       * 
+       * @return uint16_t Length
+       */
       inline uint16_t length(){return _length;}
+      /**
+       * @brief Pointer to the buffer
+       * 
+       * @return uint8_t* message buffer
+       */
       inline uint8_t* ptr(){return _buf;}
+      /**
+       * @brief Set the Length of the message
+       * 
+       * @param l Message length
+       */
       inline void setLength(uint16_t l){_length=l;}
+      /**
+       * @brief Set the Address of the message
+       * 
+       * @param a Message address  (IP<<32|Port)
+       */
       inline void setAddress(uint64_t a){_address=a;}
+      /**
+       * @brief Set the Address of the message  (IP<<32|Port)
+       * 
+       * @param address IP address
+       * @param port socket port 
+       */
       inline void setAddress(std::string address,uint16_t port){_address=( (uint64_t) utils::convertIP(address)<<32)|port;}
     private:
       uint64_t _address;
@@ -240,7 +290,10 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
       uint8_t _buf[MAX_BUFFER_LEN];
     
     };
-
+    /**
+     * @brief Implementation of mpi::MessageHandler
+     * 
+     */
     class messageHandler : public mpi::MessageHandler
     {
     public:
@@ -257,71 +310,10 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
       std::mutex _sem;
     };
 
-    /*
-    class messageHandler 
-    {
-    public:
-      messageHandler();
-      virtual void processMessage(NL::Socket* socket);
-      virtual void removeSocket(NL::Socket* socket);
-      void addHandler(uint64_t id,MPIFunctor f);
-      uint64_t Id(NL::Socket* socket);
-    private:
-      std::map<uint64_t, ptrBuf> _sockMap;
-      std::map<uint64_t,MPIFunctor> _handlers;
-      uint64_t _npacket;
-      std::mutex _sem;
-    };
-
-    class OnAccept: public NL::SocketGroupCmd 
-    {
-      
-    public:
-      OnAccept(messageHandler* msh);
-      void exec(NL::Socket* socket, NL::SocketGroup* group, void* reference) ;
-    private:
-      messageHandler* _msh;
-    };
-
-
-    class OnRead: public NL::SocketGroupCmd 
-    {
-    public:
-      OnRead(messageHandler* msh);
-      void exec(NL::Socket* socket, NL::SocketGroup* group, void* reference);
-    public:
-      unsigned char _readBuffer[0x80000];
-    private:
-      messageHandler* _msh;
-    };
-
-
-    class OnDisconnect: public NL::SocketGroupCmd 
-    {
-    public:
-      OnDisconnect(messageHandler* msh);
-      void exec(NL::Socket* socket, NL::SocketGroup* group, void* reference);
-      bool disconnected(){return _disconnect;}
-    private:
-      messageHandler* _msh;
-      bool _disconnect;
-    };
-
-
-
-    class OnClientDisconnect: public NL::SocketGroupCmd 
-    {
-    public:
-      OnClientDisconnect();
-      void exec(NL::Socket* socket, NL::SocketGroup* group, void* reference);
-      bool disconnected(){return _disconnect;}
-    private:
-      bool _disconnect;
-    };
-
-    */
-    /// Gere les connections aux socket et le select
     
+    /**
+     * 
+     */
     class Interface 
     {
     public:
