@@ -362,6 +362,8 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
      * 
      * procesMessage reads the socket and propagate the fragment to any handler registered
      * 
+     * It handles a map of MPIFunctor that is called by the processMessage method for each buffer fragment 
+     * 
      */
     class messageHandler : public mpi::MessageHandler
     {
@@ -391,6 +393,12 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
        * @param f MPIFunctor (id,len,cbuf*)
        */
       void addHandler(uint64_t id,MPIFunctor f);
+      /**
+       * @brief Return the Id (IP<<32|Port) of the NL::socket
+       * 
+       * @param socket NL::socket pointer
+       * @return uint64_t Id of the socket
+       */
       uint64_t Id(NL::Socket* socket);
       
     private:
@@ -402,18 +410,50 @@ static LoggerPtr _logMbmdcc(Logger::getLogger("PMDAQ_MBMDCC"));
       std::mutex _sem;
     };
 
-    
     /**
+     * @brief Main class to handle Wiznet sockets
+     * 
+     * It initialize the NL packet and handles:
+     * - a NL::SocketGroup
+     * - a mbmdcc::messageHandler
+     * - an mpi::OnRead, mpi::onAccept and a mpi::OnDisconnect object
+     * - an mbmdcc:board object
+     * 
+     * It starts (method listen) the listenning thread on the sockets opened by the mbmdcc::board object
      * 
      */
     class Interface 
     {
     public:
       enum PORT { REGISTER=10002};
+      /**
+       * @brief Construct a new Interface object
+       * 
+       * It initiate NL and creates a mbmdcc::messageHandler
+       */
       Interface();
+      /**
+       * @brief Destroy the Interface object
+       * 
+       */
       ~Interface(){;}
+      /**
+       * @brief It creates a NL::SocketGroup  and creates/register OnAccept, OnRead and OnDisconnect object. 
+       * 
+       */
       void initialise();
+      /**
+       * @brief Creates an mbmdcc::board object
+       * 
+       * It creates the board object, adds to the SocketGroup the socket created in the board and registers the handler associated (mbmdcc::registerHandler) to the messageHandler
+       * 
+       * @param address IP address of the board (port is 10002)
+       */
       void addDevice(std::string address);
+      /**
+       * @brief Start the listening thread of the NL::SocketGroup
+       * 
+       */
       void listen();
 
       inline std::map<std::string,mbmdcc::board*>& boards(){ return _boards;}
