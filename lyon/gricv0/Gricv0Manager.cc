@@ -1044,6 +1044,7 @@ void Gricv0Manager::GainCurveStep(std::string mdcc,std::string builder,int gmin,
       ph["nextevent"]=web::json::value::number(firstEvent+1);
       utils::sendCommand(builder,"SETHEADER",ph);
       printf("SETHEADER executed\n");
+      PMF_INFO(_logGricv0, "RUN HEADER " << ph);
       utils::sendCommand(mdcc,"RELOADCALIB",json::value::null());
       for (auto x:_mpi->boards())
 	{
@@ -1106,8 +1107,23 @@ void Gricv0Manager::GainCurve(int mode,int gmin,int gmax,int step,int threshold)
   //std::string builder=utils::findUrl(session(),"lyon_evb",0);
   std::string builder=utils::findUrl(session(),"evb_builder",0);
 
-  if (mdcc.compare("")==0) return;
+
+   if (mdcc.compare("") == 0)
+    {
+      mdcc = utils::findUrl(session(), "lyon_mbmdcc", 0);
+      if (mdcc.compare("") == 0)
+	{
+	  mdcc = utils::findUrl(session(), "lyon_ipdc", 0);
+	  if (mdcc.compare("") == 0)
+	    {
+	      PMF_ERROR(_logGricv0,"No MDCC/MBMDCC/IPDC available, exiting Scurve");
+
+	      return;
+	    }
+	}
+    }
   if (builder.compare("")==0) return;
+  
 
   uint64_t mask=0;
   _sc_channel=mode;
