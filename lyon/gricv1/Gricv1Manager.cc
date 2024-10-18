@@ -971,7 +971,7 @@ void Gricv1Manager::c_scurve(http_request m)
 void Gricv1Manager::GainCurveStep(std::string mdcc,std::string builder,int gmin,int gmax,int step,int threshold)
 {
 
-  int ncon=2000,ncoff=100,ntrg=20;
+  int ncon=15000,ncoff=1000,ntrg=30;
   utils::sendCommand(mdcc,"PAUSE",json::value::null());
   web::json::value p;
   p["nclock"]=ncon;  utils::sendCommand(mdcc,"SPILLON",p);

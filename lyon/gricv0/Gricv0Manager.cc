@@ -998,7 +998,7 @@ void Gricv0Manager::Scurve(int mode,int thmin,int thmax,int step)
 void Gricv0Manager::GainCurveStep(std::string mdcc,std::string builder,int gmin,int gmax,int step,int threshold)
 {
 
-  int ncon=2000,ncoff=100,ntrg=20;
+  int ncon=15000,ncoff=1000,ntrg=30;
   utils::sendCommand(mdcc,"PAUSE",json::value::null());
   web::json::value p;
   p["nclock"]=ncon;  utils::sendCommand(mdcc,"SPILLON",p);
@@ -1041,7 +1041,8 @@ void Gricv0Manager::GainCurveStep(std::string mdcc,std::string builder,int gmin,
       h[0]=3;h[1]=json::value::number(gmin+g*step);
       web::json::value ph;
       ph["header"]=h;
-      ph["nextevent"]=web::json::value::number(firstEvent+1);
+      //ph["nextevent"]=web::json::value::number(firstEvent+1);
+      ph["nextevent"]=web::json::value::number(2);
       utils::sendCommand(builder,"SETHEADER",ph);
       printf("SETHEADER executed\n");
       PMF_INFO(_logGricv0, "RUN HEADER " << ph);
