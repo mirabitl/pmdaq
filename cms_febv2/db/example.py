@@ -20,7 +20,9 @@ def create_a_state(name,febid,comment="un state avec les valuers par defaut"):
     s.create_setup(name)
     
     f1=cra.febv2_registers(febid)
-    f1.load_defaults()
+    #f1.load_defaults()
+    f1.load_defaults(fna="/usr/local/cms_febv2/etc/default_fpga.csv",fnp="/usr/local/cms_febv2/etc/default_petiroc.csv")
+
     s.setup.add_febv2(f1)
     s.upload_changes(comment)
     return s.setup

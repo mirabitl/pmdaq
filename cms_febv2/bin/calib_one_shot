@@ -78,8 +78,8 @@ def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None,two_steps=True,
                 to_0=scurve1_th[t]
                 break
         # now repeat scan between to_0-10 and to_0+10
-        ti=round(max(to_0-10,thmin))
-        ta=round(min(to_0+10,thmax))
+        ti=round(max(to_0-15,thmin))
+        ta=round(min(to_0+15,thmax))
         
     scurve2=[]
     scurve2_th=[]
@@ -546,7 +546,12 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment=None):
                     for ig in range(5):
                         g=gc-2+ig
                         vc=v6
-                        vc[ petiroc_chan]=g
+                        if (g<=1):
+                            g=1
+                        if (g>=63):
+                            g=63
+                        vc[ petiroc_chan]=int(g)
+                        
                         to=pedestal_one_channel(feb,an,idx,target-15,target+15,vc,two_steps=False)
                         td.append(to)
                     #print(gc)
@@ -559,7 +564,12 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment=None):
                             mindist=abs(td[ig]-target)
                             imin=ig
                     turn_on_cor.append(td[imin])
-                    v6_cor[petiroc_chan]=gc-2+imin
+                    newdac=int(gc-2+imin)
+                    if (newdac<1):
+                        newdac=1
+                    if (newdac>63):
+                        newdac=63
+                    v6_cor[petiroc_chan]=newdac
                 print(f" Turn ON {turn_on_cor}")
                 ntoc=np.array(turn_on_cor)
                 # Target
