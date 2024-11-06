@@ -45,6 +45,7 @@ void Gricv1Manager::initialise()
   this->addCommand("RESET",std::bind(&Gricv1Manager::c_reset,this,std::placeholders::_1));
   
   this->addCommand("SETTHRESHOLDS",std::bind(&Gricv1Manager::c_setthresholds,this,std::placeholders::_1));
+  this->addCommand("SHIFTTHRESHOLDS",std::bind(&Gricv1Manager::c_shiftthresholds,this,std::placeholders::_1));
   this->addCommand("SCURVE",std::bind(&Gricv1Manager::c_scurve,this,std::placeholders::_1));
   this->addCommand("SETPAGAIN",std::bind(&Gricv1Manager::c_setpagain,this,std::placeholders::_1));
   this->addCommand("SETMASK",std::bind(&Gricv1Manager::c_setmask,this,std::placeholders::_1));
@@ -200,6 +201,24 @@ void Gricv1Manager::c_setthresholds(http_request m)
   par["THRESHOLD0"]=web::json::value::number(b0);
   par["THRESHOLD1"]=web::json::value::number(b1);
   par["THRESHOLD2"]=web::json::value::number(b2);
+  Reply(status_codes::OK,par);
+}
+void Gricv1Manager::c_shiftthresholds(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logGricv1,"Shifting threshold ");
+  par["STATUS"]=web::json::value::string(U("DONE"));
+
+  
+  uint32_t b0=utils::queryIntValue(m,"B0",0);
+  uint32_t b1=utils::queryIntValue(m,"B1",0);
+  uint32_t b2=utils::queryIntValue(m,"B2",0);
+  uint32_t idif=utils::queryIntValue(m,"DIF",0);
+  
+  this->shiftThresholds(b0,b1,b2,idif);
+  par["SHIFTTHRESHOLD0"]=web::json::value::number(b0);
+  par["SHIFTTHRESHOLD1"]=web::json::value::number(b1);
+  par["SHIFTTHRESHOLD2"]=web::json::value::number(b2);
   Reply(status_codes::OK,par);
 }
 void Gricv1Manager::c_readreg(http_request m)
@@ -536,6 +555,30 @@ void Gricv1Manager::setThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t i
       it->second.setB0(b0);
       it->second.setB1(b1);
       it->second.setB2(b2);
+      //it->second.setHEADER(0x56);
+      it->second.dumpBinary();
+    }
+  // Now loop on slowcontrol socket
+  this->configureHR2();
+  ::usleep(1);
+
+}
+void Gricv1Manager::shiftThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t idif)
+{
+
+  PMF_INFO(_logGricv1," Shifting thresholds: "<<b0<<","<<b1<<","<<b2);
+  for (auto it=_hca->asicMap().begin();it!=_hca->asicMap().end();it++)
+    {
+      if (idif!=0)
+	{
+	  uint32_t ip=(((it->first)>>32&0XFFFFFFFF)>>16)&0xFFFF;
+	  //printf("%lx %x %x \n",(it->first>>32),ip,idif);
+	  if (idif!=ip) continue;
+	}
+      it->second.setB0( it->second.getB0()+b0);
+      it->second.setB1(it->second.getB1()+b1);
+      it->second.setB2(it->second.getB2()+b2);
+
       //it->second.setHEADER(0x56);
       it->second.dumpBinary();
     }
@@ -928,7 +971,7 @@ void Gricv1Manager::c_scurve(http_request m)
 void Gricv1Manager::GainCurveStep(std::string mdcc,std::string builder,int gmin,int gmax,int step,int threshold)
 {
 
-  int ncon=2000,ncoff=100,ntrg=20;
+  int ncon=15000,ncoff=1000,ntrg=30;
   utils::sendCommand(mdcc,"PAUSE",json::value::null());
   web::json::value p;
   p["nclock"]=ncon;  utils::sendCommand(mdcc,"SPILLON",p);

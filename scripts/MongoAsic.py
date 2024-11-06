@@ -10,11 +10,11 @@ from termcolor import colored
 
 
 def IP2Int(ip):
-    """
+    """!
     convert IP adress string to int
 
-    :param IP: the IP address
-    :return: the encoded integer 
+    @param IP: the IP address
+    @return: the encoded integer 
     """
     o = list(map(int, ip.split('.')))
     res = (16777216 * o[3]) + (65536 * o[2]) + (256 * o[1]) + o[0]
@@ -22,24 +22,26 @@ def IP2Int(ip):
 
 
 class MongoRoc:
-    """
-    Main class to access the Mongo DB
+    """!
+    Main class to access any asics in the Mongo DB
     """
 
     def __init__(self, host,port,dbname,username,pwd):
-        """
+        """!
         connect Mongodb database 
 
-        :param host: Hostanme of the PC running the mongo DB
+        @param host: Hostanme of the PC running the mongo DB
 
-        :param port: Port to access the base
+        @param port: Port to access the base
 
-        :param dbname: Data base name
+        @param dbname: Data base name
 
-        :param username: Remote access user
+        @param username: Remote access user
 
-        :param pwd: Remote access password
+        @param pwd: Remote access password
 
+        @remark
+        The constructor is called via a singleton creation with the function instance()
         """
 
         if (pymongo.version_tuple[0]<4):
@@ -59,17 +61,17 @@ class MongoRoc:
         self.bson_id=[]
 
     def reset(self):
-        """
+        """!
         Reset connection to download another state
         """
         self.state = {}
         self.asiclist = []
         self.bson_id=[] 
     def createNewState(self,name):
-        """
+        """!
         Create a new state , version is set to 1
 
-        :param name: Name of the state
+        @param name: Name of the state
 
         """
         self.state["name"]=name
@@ -77,6 +79,12 @@ class MongoRoc:
         self.state["asics"]=[]
 
     def updateStateInfo(self,statename,vers,tag,vtag):
+        """!
+        Update the state entries with an additional or modified tag
+
+        @param tag Tag name 
+        @param vtag Tag value 
+        """
         filter = { 'name': statename,'version':vers}
  
         # Values to be updated.
@@ -89,10 +97,10 @@ class MongoRoc:
     
     
     def uploadFromFile(self,fname):
-        """
+        """!
         Upload a state in DB from a JSON file
 
-        :param fname: File name
+        @param fname: File name
         """
         f=open(fname)
         sf=json.loads(f.read())
@@ -111,10 +119,10 @@ class MongoRoc:
         print(resstate)
         
     def uploadNewState(self,comment="NEW"):
-        """
+        """!
         Create a new state in the DB with data stored in object memory
 
-        :param comment: A comment on the state
+        @param comment: A comment on the state
 
         """
         # First append modified ASICS
@@ -131,16 +139,18 @@ class MongoRoc:
         resstate=self.db.states.insert_one(self.state)
         print(resstate)
     def uploadFromOracle(self,asiclist,statename,version,comment="NEW"):
-        """
+        """!
         Migration method to update an ASIC list created with OracleAccess class to the DB
 
-        :param asiclist: List of asics created with OracleAccess
+        @param asiclist: List of asics created with OracleAccess
 
-        :param statename: Name of the state
+        @param statename: Name of the state
 
-        :param version: version of the state
+        @param version: version of the state
 
-        :param comment: A comment on the state
+        @param comment: A comment on the state
+
+        @deprecated No Oracle access anymore
 
         """
         self.state["name"]=statename
@@ -163,8 +173,9 @@ class MongoRoc:
         print(resstate)
     
     def states(self):
-        """
+        """!
         List all states in the DB
+        @return list of triplet (name,version,comment)
         """
         cl=[]
         res=self.db.states.find({})
@@ -181,8 +192,8 @@ class MongoRoc:
         return cl
     
     def stateInfo(self,sname,svers):
-        """
-        List all states in the DB
+        """!
+        List and print out states in the DB
         """
         res=self.db.states.find({"name":sname,"version":svers})
         for x in res:
@@ -203,12 +214,12 @@ class MongoRoc:
         return 
         
     def download(self,statename,version,toFileOnly=False):
-        """
+        """!
         Download a state configuration to /dev/shm/mgroc/ directory and load it in the MongoRoc object
         
-        :param statename: State name
-        :param version: State version
-        :param toFileOnly: if True and /dev/shm/mgroc/statename_version.json already exists, it exits
+        @param statename: State name
+        @param version: State version
+        @param toFileOnly: if True and /dev/shm/mgroc/statename_version.json already exists, it exits
         """        
         os.system("mkdir -p /dev/shm/mgroc")
         fname="/dev/shm/mgroc/%s_%s.json" % (statename,version)
@@ -256,13 +267,14 @@ class MongoRoc:
             return slc
 
     def asicInfo(self,statename,version,difnum,asicnum,param="all"):
-        """
-        Download a state configuration to /dev/shm/mgroc/ directory and load it in the MongoRoc object
+        """!
+        Download a state and printout specified asic with specified parameters
         
-        :param statename: State name
-        :param version: State version
-        :param difnum: Dif number
-        :param asicnum: Asic number
+        @param statename: State name
+        @param version: State version
+        @param difnum: Dif number if 0, all DIF/Boards
+        @param asicnum: Asic number if 0,all ASICS
+        @param param The parameter name or "all" or "dif-only"
         """        
         res=self.db.states.find({'name':statename,'version':version})
         for x in res:
@@ -304,12 +316,12 @@ class MongoRoc:
             return 
     
     def uploadChanges(self,statename,comment):
-        """
+        """!
         Upload a new version of the state
         it finds the last version of the state and upload a new one with incremented version number
 
-        :param statename: Name of the state
-        :param comment: A comment on the changes
+        @param statename: Name of the state
+        @param comment: A comment on the changes
         """
         # Find last version
         res=self.db.states.find({'name':statename})
@@ -339,13 +351,13 @@ class MongoRoc:
         print(resstate,self.state["version"],self.state["name"])
         
     def changeParam(self,pname,pval,idif=0, iasic=0):
-        """
-        Change all the ENable signals of PETIROC asic
+        """!
+        Change the value of parameter on the specified asic
 
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param pname: parameter name
-        :param pval: paramter value
+        @param idif: DIF_ID , if 0 all boards are changer
+        @param iasic: asic number, if 0 all Asics are changed
+        @param pname: parameter name
+        @param pval: paramter value
         """
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
@@ -361,10 +373,10 @@ class MongoRoc:
     
     
 def instance():
-    """
+    """!
     Create a MongoRoc Object
 
-    :return: The MongoRoc Object
+    @return: The MongoRoc Object
     """
     # create the default access
     login=os.getenv("MGDBLOGIN","NONE")

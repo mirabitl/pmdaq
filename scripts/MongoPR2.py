@@ -14,37 +14,41 @@ import MongoAsic as mga
 
 class MongoPR2(mga.MongoRoc):
     """
-    Main class to access the Mongo DB
+    Main class to access PETIROC asics in MongoDB
+    It inherits from MongoAsic.MongoRoc
+
     """
 
     def __init__(self, host,port,dbname,username,pwd):
-        """
+        """!
         connect Mongodb database 
 
-        :param host: Hostanme of the PC running the mongo DB
+        @param host: Hostanme of the PC running the mongo DB
 
-        :param port: Port to access the base
+        @param port: Port to access the base
 
-        :param dbname: Data base name
+        @param dbname: Data base name
 
-        :param username: Remote access user
+        @param username: Remote access user
 
-        :param pwd: Remote access password
+        @param pwd: Remote access password
 
+        @remark
+        The constructor is called via a singleton creation with the function instance()
         """
 
         super().__init__(host,port,dbname,username,pwd)    
         self.state["type"]="PETIROC"  
 
     def addBoard(self,ipname,nasic,asictype="PR2"):
-        """
+        """!
         Add a FEBV1 with asics
 
-        :param  ipname: IP address of the FEBV1
+        @param  ipname: IP address of the FEBV1
 
-        :param nasic: Number of PETIROC asics connected
+        @param nasic: Number of PETIROC asics connected
 
-        :param asictype: "PR2" for PETIROC2A , "PR2B" for PETIROC2B
+        @param asictype: "PR2" for PETIROC2A , "PR2B" for PETIROC2B
         """
         febid=mga.IP2Int(ipname)
         for i in range(nasic):
@@ -62,12 +66,12 @@ class MongoPR2(mga.MongoRoc):
    
   
     def initPR2(self, num,version="PR2"):
-        """
+        """!
         PETIROC 2  initialisation, it creates a default dictionary representation of a PETIROC2
 
-        :param num: Asic number
-        :param version: Asic type (PR2 or PR2B)
-        :return: the dictionary
+        @param num: Asic number
+        @param version: Asic type (PR2 or PR2B)
+        @return: the dictionary
         """
 	#print("***** init HR2")
         _jasic={}
@@ -166,12 +170,12 @@ class MongoPR2(mga.MongoRoc):
         
 
     def addAsic(self, dif_num, header,version="PR2"):
-        """
+        """!
         Add a new PETIROC2 to the asic list
 
-        :param dif_num: DIF ID (ipaddr in integer >>16)
-        :param header: ASIC number
-        :param version: PR2 for 2A , PR2B for 2B
+        @param dif_num: DIF ID (ipaddr in integer >>16)
+        @param header: ASIC number
+        @param version: PR2 for 2A , PR2B for 2B
         """
         print("force ASIC")
 
@@ -181,12 +185,12 @@ class MongoPR2(mga.MongoRoc):
 
  
     def changeLatch(self, Latch, idif=0, iasic=0):
-        """
+        """!
         Change the Latch mode of specified  asics, modified asics are tagged for upload
         
-        :param Latch: Latch value (1/0)
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param Latch: Latch value (1/0)
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
         """
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
@@ -200,12 +204,12 @@ class MongoPR2(mga.MongoRoc):
                 print(e.getMessage())
 
     def changeVthTime(self, VthTime, idif=0, iasic=0):
-        """
+        """!
         Change the VTHTIME threshold of specified  asics, modified asics are tagged for upload
         
-        :param VthTime: Threshold of time discriminators
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param VthTime: Threshold of time discriminators
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
         """
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
@@ -220,12 +224,12 @@ class MongoPR2(mga.MongoRoc):
 
 
     def changeDacDelay(self, delay, idif=0, iasic=0):
-        """
+        """!
         Change the DAC delay of specified  asics, modified asics are tagged for upload
         
-        :param delay: Dac delay
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param delay: Dac delay
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
         """        
        
         for a in self.asiclist:
@@ -240,11 +244,11 @@ class MongoPR2(mga.MongoRoc):
                 print(e.getMessage())
 
     def changeAllEnabled(self, idif=0, iasic=0):
-        """
+        """!
         Change all the ENable signals of PETIROC asic
 
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
         """
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
@@ -280,13 +284,13 @@ class MongoPR2(mga.MongoRoc):
                 print(e.getMessage())
 
     def changeInputDac(self, idif, iasic, ich, dac):
-        """
+        """!
         Change the InputDAC valu of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ich: The channel number
-        :param dac: The DAC value
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ich: The channel number
+        @param dac: The DAC value
         """
         
 
@@ -301,13 +305,13 @@ class MongoPR2(mga.MongoRoc):
             except Exception as e:
                 print(e)
     def change6BDac(self, idif, iasic, ich, dac):
-        """
+        """!
         Change the 6BDAC valu of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ich: The channel number
-        :param dac: The DAC value
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ich: The channel number
+        @param dac: The DAC value
         """
         
 
@@ -322,12 +326,12 @@ class MongoPR2(mga.MongoRoc):
             except Exception as e:
                 print(e)
     def correct6BDac(self, idif, iasic, cor):
-        """
+        """!
         Correct the 6BDAC value of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param cor:  A 32 channels array of corrections to be applied on the 6BDAC values of all channels
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param cor:  A 32 channels array of additive corrections to be applied on the 6BDAC values of all channels
         """
        
         for a in self.asiclist:
@@ -352,13 +356,13 @@ class MongoPR2(mga.MongoRoc):
 
 
     def changeMask(self, idif, iasic, ich, mask):
-        """
+        """!
         Change PETIROC2 MASKDISCRITIME parameter for one channel
 
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ich: The channel number
-        :param mask: the channel mask
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ich: The channel number
+        @param mask: the channel mask
         :warning: 1 = inactive, 0=active
         """
 
@@ -373,13 +377,13 @@ class MongoPR2(mga.MongoRoc):
             except Exception as e:
                 print(e)
     def changeInputDacCommand(self, idif, iasic, ich, active):
-        """
+        """!
         Change PETIROC2 MASKDISCRITIME parameter for one channel
 
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ich: The channel number
-        :param active: the channel mask
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ich: The channel number
+        @param active: the channel mask
         :warning: 1 = active, 0=inactive
         """
 
@@ -395,15 +399,15 @@ class MongoPR2(mga.MongoRoc):
                 print(e)
                 
     def setCCOMP(self, v0,v1,v2,v3, idif=0, iasic=0):
-        """
+        """!
         Change the CCOMP value of specified  asics, modified asics are tagged for upload
         
-        :param v0: CCOMP 0 value
-        :param v1: CCOMP 1 value
-        :param v2: CCOMP 2 value
-        :param v3: CCOMP 3 value
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
+        @param v0: CCOMP 0 value
+        @param v1: CCOMP 1 value
+        @param v2: CCOMP 2 value
+        @param v3: CCOMP 3 value
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
         """        
        
         for a in self.asiclist:
@@ -422,17 +426,17 @@ class MongoPR2(mga.MongoRoc):
 
 
     def setCfValue(self, v0,v1,v2,v3, idif=0, iasic=0):
-        """
-        Change the CCOMP value of specified  asics, modified asics are tagged for upload
+        """!
+        Change the Cf values of specified  asics, modified asics are tagged for upload
         
-        :param v0: CCOMP 0 value
-        :param v1: CCOMP 1 value
-        :param v2: CCOMP 2 value
-        :param v3: CCOMP 3 value
-        :param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        """        
-       
+        @param v0: Cf0_1p25pF  value
+        @param v1: Cf1_2p5pF  value
+        @param v2: Cf2_200fF  value
+        @param v3: Cf3_100fF  value
+        @param idif: DIF_ID (IP>>16), if 0 all FEBs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        """  
+               
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
                 continue
@@ -450,10 +454,10 @@ class MongoPR2(mga.MongoRoc):
 
 
 def PR2Instance():
-    """
+    """!
     Create a MongoRoc Object
 
-    :return: The MongoRoc Object
+    @return: The MongoRoc Object
     """
     # create the default access
     login=os.getenv("MGDBLOGIN","NONE")

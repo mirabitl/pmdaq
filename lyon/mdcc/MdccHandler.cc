@@ -42,8 +42,8 @@
 
 	when x"0001" => USB_data_out 	<= ID_register;
 		when x"0002" => USB_data_out 	<= software_veto_register;
-		when x"0003" => USB_data_out 	<= spillNb_register;
-		when x"0004" => USB_data_out 	<= Control_register;
+		when x"0003" => USB_data_out 	<= spillNb_register; Nombre de spill 
+		when x"0004" => USB_data_out 	<= Control_register; 
 		when x"0005" => USB_data_out 	<= spillon_register;
 		when x"0006" => USB_data_out 	<= spilloff_register;
 		when x"0007" => USB_data_out 	<= beam_register;

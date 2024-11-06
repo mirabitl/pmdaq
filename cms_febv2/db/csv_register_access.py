@@ -1,17 +1,19 @@
-""" Defines the FEBV2 description classes and tools to access them."""
-##
-# @file csv_register_access.py
-#
-# @brief Defines the MongoDb classes and tools to store and access FEBV2 parameters.
-#
-# @section database objects 
-# Defines the classes to handle FEBV2 collections data.
-# - feb_fpga_registers 
-# - feb_petiroc_registers
-# - febv2_registers
-# - febv2_setup
-# @section Access and tools
-# - mgdb_feb
+"""
+ Defines the FEBV2 description classes and tools to access them.
+
+@file csv_register_access.py
+
+@brief Defines the MongoDb classes and tools to store and access FEBV2 parameters.
+
+@section database objects 
+Defines the classes to handle FEBV2 collections data.
+ - feb_fpga_registers 
+ - feb_petiroc_registers
+ - febv2_registers
+ - febv2_setup
+@section Access and tools
+ - mgdb_feb
+"""
 import json
 import pprint
 import csv
@@ -23,7 +25,8 @@ import json
 import time
 from bson.objectid import ObjectId
 class feb_fpga_registers:
-    """The FEBV2 FPGA registers handler class.
+    """
+    @brief The FEBV2 FPGA registers handler class.
     Gives all tools to handle the csv string, to store or load it in file or db and to
     modify its parameters
     """
@@ -1113,7 +1116,7 @@ def instance():
     Create an instance of the mgdb_feb Object
 
     Returns:
-        The MongoRoc Object
+        The mgdb_feb Object
     """
     # create the default access
     login=os.getenv("MGDBLOGIN","NONE")

@@ -13,24 +13,27 @@ import MongoAsic as mga
 
 
 class MongoLiroc(mga.MongoRoc):
-    """
-    Main class to access the Mongo DB
+    """!
+    Main class to access LIROC asic in the Mongo DB
+    It inherits from MongoAsic.MongoRoc
     """
 
     def __init__(self, host,port,dbname,username,pwd):
-        """
+        """!
         connect Mongodb database 
 
-        :param host: Hostanme of the PC running the mongo DB
+        @param host: Hostanme of the PC running the mongo DB
 
-        :param port: Port to access the base
+        @param port: Port to access the base
 
-        :param dbname: Data base name
+        @param dbname: Data base name
 
-        :param username: Remote access user
+        @param username: Remote access user
 
-        :param pwd: Remote access password
+        @param pwd: Remote access password
 
+        @remark
+        The constructor is called via a singleton creation with the function instance()
         """
 
         super().__init__(host,port,dbname,username,pwd)    
@@ -38,12 +41,12 @@ class MongoLiroc(mga.MongoRoc):
 
 
     def addLBoard(self,difid,nasic):
-        """
+        """!
         Add a LIROC board with asics
         
-        :param nasic: Number of LIROC asics connected
+        @param nasic: Number of LIROC asics connected
         
-        :param difid: LIROC board USB id
+        @param difid: LIROC board USB id
         
         """
 
@@ -66,12 +69,12 @@ class MongoLiroc(mga.MongoRoc):
   
 # LIROC access
     def initLIROC(self,gain=0):
-        """
+        """!
    
         LIROC initialisation, it creates a default dictionary representation of a LIROC
 
-        :param gain: Channel gain
-        :return: the dictionary
+        @param gain: Channel gain
+        @return: the dictionary
         """
 
 	#print("***** init HR2")
@@ -120,6 +123,13 @@ class MongoLiroc(mga.MongoRoc):
         return _kasic
 
     def setForced_ValEvt(self,forced,idif=0,iasic=0):
+        """!
+        Force the valevt signal on LIROC
+
+        @param idif  DIF_ID 
+        @param iasic asic number, if 0 all Asics are changed
+        @param forced 0 or 1 
+        """
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
                 continue
@@ -133,6 +143,13 @@ class MongoLiroc(mga.MongoRoc):
                 a["slc"]["EN_differential"]=1;a["_id"]=None;
                 
     def setDAC_threshold(self,thr):
+        """!
+        Change the Hysteresys on LIROC
+
+        @param idif  DIF_ID 
+        @param iasic asic number, if 0 all Asics are changed
+        @param pe(0 or1 ) the new Hysteresys
+        """
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
                 continue
@@ -142,6 +159,13 @@ class MongoLiroc(mga.MongoRoc):
             a["slc"]["DAC_threshold"]=thr;a["_id"]=None;
             
     def setPA_gain(self,g):
+        """!
+        Change the PA_gain on LIROC
+
+        @param idif  DIF_ID 
+        @param iasic asic number, if 0 all Asics are changed
+        @param g the new PA_gain
+        """
         for a in self.asiclist:
             if (idif != 0 and a["dif"] != idif):
                 continue
@@ -151,13 +175,13 @@ class MongoLiroc(mga.MongoRoc):
             a["slc"]["PA_gain"]=g;a["_id"]=None;
 
     def setDC_pa(self,idif,iasic,ipad,vnew):
-        """
-        Set the gain of one pad  of specified  asics, modified asics are tagged for upload
+        """!
+        Set the DC_pa of one pad  of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ipad: Channel number
-        :param vnew: new gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ipad: Channel number
+        @param vnew: new DC_pa
 
         """
   
@@ -172,13 +196,13 @@ class MongoLiroc(mga.MongoRoc):
             print(idif,iasic,ipad,a["slc"]["DC_pa"][ipad])
             
     def setDAC_local(self,idif,iasic,ipad,vnew):
-        """
-        Set the gain of one pad  of specified  asics, modified asics are tagged for upload
+        """!
+        Set the DAC_local of one pad  of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ipad: Channel number
-        :param vnew: new gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ipad: Channel number
+        @param vnew: new DAC_local
 
         """
   
@@ -193,14 +217,12 @@ class MongoLiroc(mga.MongoRoc):
             print(idif,iasic,ipad,a["slc"]["DAC_local"][ipad])
 
     def shiftDAC_local(self,idif,iasic,delta):
-        """
-        Set the gain of one pad  of specified  asics, modified asics are tagged for upload
+        """!
+        Shift the DAC_local of all pads from an array of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ipad: Channel number
-        :param vnew: new gain
-
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param delta: array of 64 additive value to DAC_local
         """
   
         for a in self.asiclist:
@@ -215,13 +237,13 @@ class MongoLiroc(mga.MongoRoc):
             
 
     def setCtest(self,idif,iasic,ipad,vnew):
-        """
-        Set the gain of one pad  of specified  asics, modified asics are tagged for upload
+        """!
+        Set the Ctest of one pad  of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ipad: Channel number
-        :param vnew: new gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ipad: Channel number
+        @param vnew: new Ctest
 
         """
   
@@ -236,13 +258,13 @@ class MongoLiroc(mga.MongoRoc):
             print(idif,iasic,ipad,a["slc"]["Ctest"][ipad])
             
     def setMask(self,idif,iasic,ipad,vnew):
-        """
-        Set the gain of one pad  of specified  asics, modified asics are tagged for upload
+        """!
+        Set the Mask of one pad  of specified  asics, modified asics are tagged for upload
         
-        :param idif: DIF_ID, if 0 all DIFs are changed
-        :param iasic: asic number, if 0 all Asics are changed
-        :param ipad: Channel number
-        :param vnew: new gain
+        @param idif: DIF_ID, if 0 all DIFs are changed
+        @param iasic: asic number, if 0 all Asics are changed
+        @param ipad: Channel number
+        @param vnew: new Mask
 
         """
   
@@ -255,14 +277,45 @@ class MongoLiroc(mga.MongoRoc):
             a["slc"]["Mask"][ipad]=vnew
             a["_id"]=None
             print(idif,iasic,ipad,a["slc"]["Mask"][ipad])
-            
+
+    def setEN_pre_emphasis(self,pe,idif=0,iasic=0):
+        """!
+        Change the EN_pre_emphasis on LIROC
+
+        @param idif  DIF_ID 
+        @param iasic asic number, if 0 all Asics are changed
+        @param pe(3 bits) the new EN_pre_emphasis
+        """
+        for a in self.asiclist:
+            if (idif != 0 and a["dif"] != idif):
+                continue
+            if (iasic != 0 and a["num"] != iasic):
+                continue
+
+            a["slc"]["EN_pre_emphasis"]=pe&7;a["_id"]=None;
+    
+    def setHysteresys(self,pe,idif=0,iasic=0):
+        """!
+        Change the Hysteresys on LIROC
+
+        @param idif  DIF_ID 
+        @param iasic asic number, if 0 all Asics are changed
+        @param pe(0 or1 ) the new Hysteresys
+        """
+        for a in self.asiclist:
+            if (idif != 0 and a["dif"] != idif):
+                continue
+            if (iasic != 0 and a["num"] != iasic):
+                continue
+
+            a["slc"]["Hysteresys"]=pe&1;a["_id"]=None;        
    
       
 def LirocInstance():
-    """
+    """!
     Create a MongoRLiroc Object
 
-    :return: The MongoLiRoc Object
+    @return: The MongoLiRoc Object
     """
     # create the default access
     login=os.getenv("MGDBLOGIN","NONE")

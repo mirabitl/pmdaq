@@ -16,6 +16,11 @@ import six
 import serviceAccess as sac
 
 def create_session(config):
+    """!
+    Parse the configuration files, build the corresponding serviceAccess and REGISTER all plugins if needed
+    @param config The configuration file
+    @return The sessionAccess object built with the configuration dictionnary
+    """
     j_sess=json.loads(open(config).read())
     #print(j_sess)
     vsession=j_sess['session']
@@ -36,11 +41,15 @@ def create_session(config):
             
 class sessionAccess:
     def __init__(self,vsession):
+        """!
+        Handle all application of the session. The applictaion are stored in a map of pluggin names each entry conatining a list of serviceAccess to each instance of the plugin
+        @param vsession The session dictionnary
         """
-        Handle all application definition and p  arameters , It controls the acquisition via the FDAQ application and the Slow control via the FSLOW application
-        """
+        ## Name of the session
         self.session = vsession
+        ## Directory of applications
         self.apps={}
+        ## Name of the PNS host
         self.pns_host=os.getenv("PNS_NAME","NONE")
         if (self.pns_host == "NONE"):
             print("The ENV varaible PNS_NAME mut be set")
@@ -62,17 +71,30 @@ class sessionAccess:
                         self.apps[o.name]=[]
                         self.apps[o.name].append(sac.serviceAccess(o.host,o.port,o.session,o.name,o.instance))
     def name(self):
+        """! getter of session name"""
         return self.session
     def pns_list(self,req_session="NONE"):
+        """! Call PNS/LIST for a session name
+        @param req_session Session name
+        @return Python object built from PNS/LIST answer
+        """
         par={}
         par["session"]=req_session
         #print(par)
         pl=json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/LIST",par))
         return pl
     def pns_session_list(self,req_session="NONE"):
+        """! Call PNS/SESSION/LIST for a session name
+        @param req_session Session name
+        @return Python object built from PNS/SESSION/LIST answer
+        """
         pl=json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/SESSION/LIST",{"session":req_session}))
         return pl
     def pns_session_update(self,new_state):
+        """!  Update PNS/SESSION state 
+        @param new_state New value of the state
+        @return Python object built from PNS/SESSION/UPDATE answer
+        """
         par={}
         par["session"]=self.session
         par["state"]=new_state
@@ -80,12 +102,22 @@ class sessionAccess:
         pl=json.loads(sac.executeCMD(self.pns_host,8888,"/PNS/SESSION/UPDATE",par))
         return pl
     def Print(self,verbose=False):
+        """! Print out of all serviceAccess
+        """
         for name,app in six.iteritems(self.apps):
             print(self.session,"===> ",name)
             for y in app:
                 y.printInfos(verbose)
                 
     def remove(self,obj_name=None):
+        """! Call the REMOVE command for all services
+        @param obj_name if not None remove only plugins with this name
+
+        It first removes all plugins but the evb_builder
+        It then removes the evb_builder plugins
+        Then it purges the PNS, tag the PNS/SESSION as DEAD and purge the PNS/SESSION
+
+        """
         # First skip event builder (ZMQ issue)
         for name,app in six.iteritems(self.apps):
             print(self.session,"===> ",name)
@@ -112,6 +144,12 @@ class sessionAccess:
         sac.executeCMD(self.pns_host,8888,"/PNS/SESSION/UPDATE",{"session":self.name(),"state":"DEAD"})
         sac.executeCMD(self.pns_host,8888,"/PNS/SESSION/PURGE",{})
     def commands(self,cmd,obj_name,params=None):
+        """! Send a command to a plugin group
+        @param cmd Command name
+        @param obj_name The plugin name
+        @param params The CGI parameters
+        @return Python object of the answer
+        """
         rep={}
         for name,app in six.iteritems(self.apps):
             if (obj_name!=None and obj_name!=name):
@@ -122,6 +160,12 @@ class sessionAccess:
         # clear PNS
         return rep
     def transitions(self,cmd,obj_name,params=None):
+        """! Send a transition to a plugin group
+        @param cmd Transition name
+        @param obj_name The plugin name
+        @param params The CGI parameters
+        @return Python object of the answer
+        """
         rep={}
         for name,app in six.iteritems(self.apps):
             if (obj_name!=None and obj_name!=name):

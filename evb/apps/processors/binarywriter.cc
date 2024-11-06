@@ -30,7 +30,7 @@ void binarywriter::start(uint32_t run)
   char dateStr [64];
             
   time_t tm= time(NULL);
-  strftime(dateStr,20,"SMM_%d%m%y_%H%M%S",localtime(&tm));
+  strftime(dateStr,20,"SMM_%y%m%d_%H%M%S",localtime(&tm));
   filename<<_directory<<"/"<<dateStr<<"_B"<<instance<<"_R"<<run<<".dat";
   _fdOut= ::open(filename.str().c_str(),O_CREAT| O_RDWR | O_NONBLOCK,S_IRWXU);
   if (_fdOut<0)
