@@ -516,7 +516,7 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment=None):
 
         feb.load_config_from_csv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (state,998,feb_id))
         asicl=["left_top","left_bot","middle_top","middle_bot","right_top","right_bot"]
-
+        #asicl=["middle_bot"]
         for an in asicl:
             print(an)
             feb.load_config_from_csv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (state,998,feb_id))
@@ -536,6 +536,21 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment=None):
                 # Target
                 target=round(np.median(nto))
                 print(f"Median target {target}")
+                ## Check minimal gain value
+                too_low=False
+                too_high=False
+                vexp=[]
+                for idx in range(16):
+                    petiroc_chan,tdc_ch =used_chan[idx]
+                    gc=v6[ petiroc_chan]+round((target-turn_on[idx])/3.9)
+                    vexp.append(gc)
+                    too_low=too_low or (gc<3)
+                    too_high=too_high or (gc>61)
+                if (too_low):
+                    target=target+10
+                if (too_high):
+                    target=target-10
+                print(f"Median target final {target} dac6b {vexp}")
                 #val=input("Second round ? ")
                 v6_cor=v6
                 turn_on_cor=[]
