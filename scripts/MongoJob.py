@@ -200,6 +200,24 @@ class MongoJob:
             #    print(x["time"],x["location"],x["run"],x["comment"])
             rlist.append(x)
         return rlist
+    
+    def list_runs(self):
+        """!
+        List all the run informations stored in a directory
+        dict[run]=[list of run info for different experiment(location)]
+
+        @return The run indexed directory 
+        """
+        lr={}
+        res=self.db.runs.find({})
+        for x in res:
+            #print(x)
+            nr=x["run"]
+            if not nr in lr.keys():
+                lr[nr]=[]
+            
+            lr[nr].append(x)
+        return lr
 
     def runInfo(self,run,loc,printout=True):
         """!
