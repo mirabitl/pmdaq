@@ -218,7 +218,7 @@ class MongoMqtt:
             mintime = time.time()-from_time
 
         res = self.db.MQTT_ITEMS.find({"topic": {'$regex': topic}, "ctime": {'$gt': mintime}}, {
-                                      "_id": 0}).limit(depth).sort("ctime", pymongo.DESCENDING)
+                                      "_id": 0}).limit(depth)#.sort("ctime", pymongo.DESCENDING)
         headers=['Date']
         itype='flat'
         for y in res:

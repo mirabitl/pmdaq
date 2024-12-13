@@ -187,6 +187,20 @@ class MongoJob:
                     if ("run" in x):
                         print(x["location"],x["run"],x["comment"])
                 #print(x["time"],x["location"],x["run"],x["comment"])
+    def getRunInfo(self,run):
+        """!
+        Get the info on a given run number
+
+        @param run the run number
+        @return a list of db object with this run number
+        """
+        rlist=[]
+        res=self.db.runs.find({"run":run})
+        for x in res:
+            #    print(x["time"],x["location"],x["run"],x["comment"])
+            rlist.append(x)
+        return rlist
+
     def runInfo(self,run,loc,printout=True):
         """!
         Get the info on a given run
