@@ -663,156 +663,414 @@ public:
   }
 #endif
 
-uint16_t getB2()
+  /**
+   * @brief Get En_pp_bandgap
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getEN_PP_BANDGAP() { return getBit(537); }
+  /**
+   * @brief Set En_pp_bandgap
+   * 
+   * @param on Value
+   */
+  void setEN_PP_BANDGAP(bool on) { setBitState(537, on); }
+
+  /**
+   * @brief Get On/off bg
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getON_OFF_BG() { return getBit(538); }
+  /**
+   * @brief Set On/off bg
+   * 
+   * @param on Value
+   */
+  void setON_OFF_BG(bool on) { setBitState(538, on); }
+
+/**
+   * @brief Get En_pp_dac
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getEN_PP_DAC() { return getBit(539); }
+  /**
+   * @brief Set En_pp_dac
+   * 
+   * @param on Value
+   */
+  void setEN_PP_DAC(bool on) { setBitState(539, on); }
+
+  /**
+   * @brief Get On/off dac
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getON_OFF_DAC() { return getBit(540); }
+  /**
+   * @brief Set On/off DAC
+   * 
+   * @param on Value
+   */
+  void setON_OFF_DAC(bool on) { setBitState(540, on); }
+
+  /**
+   * @brief Get BB0 value
+   * 
+   * @return uint16_t BB0
+   */
+  uint16_t getBB0()
   {
     uint16_t r = 0;
     for (int i = 0; i < 10; i++)
-      if (getBit(838 + i))
+      if (getBit(541 + i))
         r |= (1 << i);
     return r;
   }
-  void setB2(uint16_t val)
+  /**
+   * @brief set BB0 value
+   * 
+   * @param val BB0 to be set
+   */
+  void setBB0(uint16_t val)
   {
     uint16_t r = val & 0x3FF;
     for (int i = 0; i < 10; i++)
-      setBitState(838 + i, r & (1 << i));
+      setBitState(541 + i, r & (1 << i));
   }
 
-  uint16_t getB1()
+  /**
+   * @brief Get BB1 value
+   * 
+   * @return uint16_t BB1
+   */
+  uint16_t getBB1()
   {
     uint16_t r = 0;
     for (int i = 0; i < 10; i++)
-      if (getBit(828 + i))
+      if (getBit(551 + i))
         r |= (1 << i);
     return r;
   }
-  void setB1(uint16_t val)
+  /**
+   * @brief set BB1 value
+   * 
+   * @param val BB1 to be set
+   */
+  void setBB1(uint16_t val)
   {
     uint16_t r = val & 0x3FF;
     for (int i = 0; i < 10; i++)
-      setBitState(828 + i, r & (1 << i));
+      setBitState(551 + i, r & (1 << i));
   }
-  uint16_t getB0()
-  {
-    uint16_t r = 0;
-    for (int i = 0; i < 10; i++)
-      if (getBit(818 + i))
-        r |= (1 << i);
-    return r;
-  }
-  void setB0(uint16_t val)
-  {
-    uint16_t r = val & 0x3FF;
-    for (int i = 0; i < 10; i++)
-      setBitState(818 + i, r & (1 << i));
-  }
-  bool getSEL1() { return getBit(604); }
-  void setSEL1(bool on) { setBitState(604, on); }
-  bool getCMDB2FSB1() { return getBit(596); }
-  void setCMDB2FSB1(bool on) { setBitState(596, on); }
-  bool getOTABGSW() { return getBit(850); }
-  void setOTABGSW(bool on) { setBitState(850, on); }
-  bool getSW50F0() { return getBit(611); }
-  void setSW50F0(bool on) { setBitState(611, on); }
-  bool getENOCDOUT2B() { return getBit(870); }
-  void setENOCDOUT2B(bool on) { setBitState(870, on); }
-  bool getSW50K0() { return getBit(608); }
-  void setSW50K0(bool on) { setBitState(608, on); }
-  bool getSMALLDAC() { return getBit(848); }
-  void setSMALLDAC(bool on) { setBitState(848, on); }
-  bool getSELENDREADOUT() { return getBit(865); }
-  void setSELENDREADOUT(bool on) { setBitState(865, on); }
-  bool getCMDB3FSB1() { return getBit(595); }
-  void setCMDB3FSB1(bool on) { setBitState(595, on); }
-  bool getPWRONBUFF() { return getBit(584); }
-  void setPWRONBUFF(bool on) { setBitState(584, on); }
-  bool getENOCDOUT1B() { return getBit(871); }
-  void setENOCDOUT1B(bool on) { setBitState(871, on); }
-  bool getSW50K2() { return getBit(591); }
-  void setSW50K2(bool on) { setBitState(591, on); }
-  bool getCMDB2SS() { return getBit(578); }
-  void setCMDB2SS(bool on) { setBitState(578, on); }
-  bool getTRIG1B() { return getBit(852); }
-  void setTRIG1B(bool on) { setBitState(852, on); }
-  bool getCMDB1SS() { return getBit(579); }
-  void setCMDB1SS(bool on) { setBitState(579, on); }
-  bool getPWRONPA() { return getBit(576); }
-  void setPWRONPA(bool on) { setBitState(576, on); }
-  bool getPWRONSS() { return getBit(585); }
-  void setPWRONSS(bool on) { setBitState(585, on); }
-  bool getRAZCHNINTVAL() { return getBit(857); }
-  void setRAZCHNINTVAL(bool on) { setBitState(857, on); }
-  bool getSW100K1() { return getBit(600); }
-  void setSW100K1(bool on) { setBitState(600, on); }
-  bool getCLKMUX() { return getBit(860); }
-  void setCLKMUX(bool on) { setBitState(860, on); }
-  bool getSW50F1() { return getBit(602); }
-  void setSW50F1(bool on) { setBitState(602, on); }
-  bool getPWRONFSB0() { return getBit(605); }
-  void setPWRONFSB0(bool on) { setBitState(605, on); }
-  bool getENOCTRANSMITON2B() { return getBit(868); }
-  void setENOCTRANSMITON2B(bool on) { setBitState(868, on); }
-  bool getENOCCHIPSATB() { return getBit(867); }
-  void setENOCCHIPSATB(bool on) { setBitState(867, on); }
-  bool getCMDB3SS() { return getBit(577); }
-  void setCMDB3SS(bool on) { setBitState(577, on); }
-  bool getDISCRI1() { return getBit(616); }
-  void setDISCRI1(bool on) { setBitState(616, on); }
-  bool getSW50F2() { return getBit(594); }
-  void setSW50F2(bool on) { setBitState(594, on); }
-  bool getSW100K0() { return getBit(609); }
-  void setSW100K0(bool on) { setBitState(609, on); }
-  bool getCMDB3FSB2() { return getBit(587); }
-  void setCMDB3FSB2(bool on) { setBitState(587, on); }
-  bool getSCON() { return getBit(859); }
-  void setSCON(bool on) { setBitState(859, on); }
-  bool getTRIG2B() { return getBit(851); }
-  void setTRIG2B(bool on) { setBitState(851, on); }
-  bool getSW100K2() { return getBit(592); }
-  void setSW100K2(bool on) { setBitState(592, on); }
-  bool getSW100F1() { return getBit(601); }
-  void setSW100F1(bool on) { setBitState(601, on); }
-  bool getTRIGEXTVAL() { return getBit(856); }
-  void setTRIGEXTVAL(bool on) { setBitState(856, on); }
-  bool getPWRONFSB2() { return getBit(606); }
-  void setPWRONFSB2(bool on) { setBitState(606, on); }
-  bool getRS_OR_DISCRI() { return getBit(617); }
-  void setRS_OR_DISCRI(bool on) { setBitState(617, on); }
-  bool getTRIG0B() { return getBit(853); }
-  void setTRIG0B(bool on) { setBitState(853, on); }
-  bool getPWRONFSB1() { return getBit(607); }
-  void setPWRONFSB1(bool on) { setBitState(607, on); }
-  bool getSW100F2() { return getBit(593); }
-  void setSW100F2(bool on) { setBitState(593, on); }
-  bool getPWRONW() { return getBit(586); }
-  void setPWRONW(bool on) { setBitState(586, on); }
-  bool getRAZCHNEXTVAL() { return getBit(858); }
-  void setRAZCHNEXTVAL(bool on) { setBitState(858, on); }
-  bool getDISCRI2() { return getBit(615); }
-  void setDISCRI2(bool on) { setBitState(615, on); }
-  bool getSELSTARTREADOUT() { return getBit(866); }
-  void setSELSTARTREADOUT(bool on) { setBitState(866, on); }
-  bool getSW50K1() { return getBit(599); }
-  void setSW50K1(bool on) { setBitState(599, on); }
-  bool getCMDB1FSB1() { return getBit(597); }
-  void setCMDB1FSB1(bool on) { setBitState(597, on); }
-  bool getENTRIGOUT() { return getBit(854); }
-  void setENTRIGOUT(bool on) { setBitState(854, on); }
-  bool getCMDB0SS() { return getBit(580); }
-  void setCMDB0SS(bool on) { setBitState(580, on); }
-  bool getSW100F0() { return getBit(610); }
-  void setSW100F0(bool on) { setBitState(610, on); }
-  bool getCMDB1FSB2() { return getBit(589); }
-  void setCMDB1FSB2(bool on) { setBitState(589, on); }
-  bool getOTAQ_PWRADC() { return getBit(613); }
-  void setOTAQ_PWRADC(bool on) { setBitState(613, on); }
-  bool getCMDB0FSB1() { return getBit(598); }
-  void setCMDB0FSB1(bool on) { setBitState(598, on); }
-  bool getDISCROROR() { return getBit(855); }
-  void setDISCROROR(bool on) { setBitState(855, on); }
-  bool getDISCRI0() { return getBit(614); }
-  void setDISCRI0(bool on) { setBitState(614, on); }
 
+  /**
+   * @brief Get BB2 value
+   * 
+   * @return uint16_t BB2
+   */
+  uint16_t getBB2()
+  {
+    uint16_t r = 0;
+    for (int i = 0; i < 10; i++)
+      if (getBit(561 + i))
+        r |= (1 << i);
+    return r;
+  }
+  /**
+   * @brief set BB2 value
+   * 
+   * @param val BB2 to be set
+   */
+  void setBB2(uint16_t val)
+  {
+    uint16_t r = val & 0x3FF;
+    for (int i = 0; i < 10; i++)
+      setBitState(561 + i, r & (1 << i));
+  }
+
+  /**
+   * @brief Get trig2b (nor64_2)
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getTRIG2B() { return getBit(571); }
+  /**
+   * @brief Set trig2b (nor64_2)
+   * 
+   * @param on value
+   */
+  void setTRIG2B(bool on) { setBitState(571, on); }
+
+  /**
+   * @brief Get trig1b (nor64_1)
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getTRIG1B() { return getBit(572); }
+  /**
+   * @brief Set trig1b (nor64_2)
+   * 
+   * @param on value
+   */
+  void setTRIG1B(bool on) { setBitState(572, on); }
+
+  /**
+   * @brief Get trig0b (nor64_0)
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getTRIG0B() { return getBit(573); }
+  /**
+   * @brief Set trig0b (nor64_0)
+   * 
+   * @param on value
+   */
+  void setTRIG0B(bool on) { setBitState(573, on); }
+
+
+  /**
+   * @brief Get EN_trig_out
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getEN_TRIG_OUT() { return getBit(574); }
+  /**
+   * @brief Set EN_trig_out
+   * 
+   * @param on value
+   */
+  void setEN_TRIG_OUT(bool on) { setBitState(574, on); }
+  
+  
+  /**
+   * @brief Get disc_or_or
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getDISC_OR_OR() { return getBit(575); }
+  /**
+   * @brief Set disc_or_or
+   * 
+   * @param on value
+   */
+  void setDISC_OR_OR(bool on) { setBitState(575, on); }
+  
+  /**
+   * @brief Get trig_ext validation
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getTRIG_EXT_VALIDATION() { return getBit(576); }
+  /**
+   * @brief Set trig_ext validation
+   * 
+   * @param on value
+   */
+  void setTRIG_EXT_VALIDATION(bool on) { setBitState(576, on); }
+  
+  /**
+   * @brief Get raz_chn_int validation
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getRAZ_CHN_INT() { return getBit(577); }
+  /**
+   * @brief Set raz_chn_int validation
+   * 
+   * @param on value
+   */
+  void setRAZ_CHN_INT(bool on) { setBitState(577, on); }
+  
+  /**
+   * @brief Get raz_chn_ext validation
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getRAZ_CHN_EXT() { return getBit(578); }
+  /**
+   * @brief Set raz_chn_ext validation
+   * 
+   * @param on value
+   */
+  void setRAZ_CHN_EXT(bool on) { setBitState(578, on); }
+
+  /**
+   * @brief Get Sc_on 5MHz and 40MHz (+lvds_on5 and
+lvds_on40)
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getSC_ON_5MHZ() { return getBit(579); }
+  /**
+   * @brief Set Sc_on 5MHz and 40MHz (+lvds_on5 and
+lvds_on40)
+   * 
+   * @param on value
+   */
+  void setSC_ON_5MHZ(bool on) { setBitState(579, on); }
+  
+  
+  /**
+   * @brief Get Ck_mux: choice between sroand sro_pod, ck5
+and ck5_pod, ck40 and ck40_pod
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getCK_MUX() { return getBit(580); }
+  /**
+   * @brief Set Ck_mux: choice between sroand sro_pod, ck5
+and ck5_pod, ck40 and ck40_pod
+   * 
+   * @param on value
+   */
+  void setCK_MUX(bool on) { setBitState(580, on); }
+  
+  /**
+   * @brief Get Sel_raz1 (raz_chn width)
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getSEL_RAZ1() { return getBit(581); }
+  /**
+   * @brief Set Sel_raz1 (raz_chn width)
+   * 
+   * @param on value
+   */
+  void setSEL_RAZ1(bool on) { setBitState(581, on); }
+  
+
+  /**
+   * @brief Get Sel_raz0 (mux raz_chn width)
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getSEL_RAZ0() { return getBit(582); }
+  /**
+   * @brief Set Sel_raz0 (mux raz_chn width)
+   * 
+   * @param on value
+   */
+  void setSEL_RAZ0(bool on) { setBitState(582, on); }
+
+  /**
+   * @brief Get Sel endreadout 1 or 2
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getSEL_ENDREADOUT() { return getBit(585); }
+  /**
+   * @brief Set Sel endreadout 1 or 2
+   * 
+   * @param on value
+   */
+  void setSEL_ENDREADOUT(bool on) { setBitState(585, on); }
+  
+  /**
+   * @brief Get Sel startreadout 1 or 2
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getSEL_STARTREADOUT() { return getBit(586); }
+  /**
+   * @brief Set Sel startreadout 1 or 2
+   * 
+   * @param on value
+   */
+  void setSEL_STARTREADOUT(bool on) { setBitState(586, on); }
+  
+  /**
+   * @brief Get EN_OC chipsatb
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getEN_OC_CHIPSATB() { return getBit(587); }
+  /**
+   * @brief Set EN_OC chipsatb
+   * 
+   * @param on value
+   */
+  void setEN_OC_CHIPSATB(bool on) { setBitState(587, on); }
+  
+  
+  /**
+   * @brief Get EN_OC transmiton2b
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getEN_OC_TRANSMITON2B() { return getBit(588); }
+  /**
+   * @brief Set EN_OC transmiton2b
+   * 
+   * @param on value
+   */
+  void setEN_OC_TRANSMITON2B(bool on) { setBitState(588, on); }
+
+  /**
+   * @brief Get EN_OC transmiton1b
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getEN_OC_TRANSMITON1B() { return getBit(589); }
+  /**
+   * @brief Set EN_OC transmiton1b
+   * 
+   * @param on value
+   */
+  void setEN_OC_TRANSMITON1B(bool on) { setBitState(589, on); }
+
+  /**
+   * @brief Get EN_OC dout2b
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getEN_OC_DOUT2B() { return getBit(590); }
+  /**
+   * @brief Set EN_OC dout2b
+   * 
+   * @param on value
+   */
+  void setEN_OC_DOUT2B(bool on) { setBitState(590, on); }
+
+
+  /**
+   * @brief Get EN_OC dout1b
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getEN_OC_DOUT1B() { return getBit(591); }
+  /**
+   * @brief Set EN_OC dout1b
+   * 
+   * @param on value
+   */
+  void setEN_OC_DOUT1B(bool on) { setBitState(591, on); }
+
+ 
   bool isEnabled()
   {
     return enabled;
