@@ -309,94 +309,7 @@ public:
   uint8_t *ucPtr() { return (uint8_t *)_l; }
   // Now real access to register function
 
-  uint16_t getB2()
-  {
-    uint16_t r = 0;
-    for (int i = 0; i < 10; i++)
-      if (getBit(838 + i))
-        r |= (1 << i);
-    return r;
-  }
-  void setB2(uint16_t val)
-  {
-    uint16_t r = val & 0x3FF;
-    for (int i = 0; i < 10; i++)
-      setBitState(838 + i, r & (1 << i));
-  }
-
-  uint16_t getB1()
-  {
-    uint16_t r = 0;
-    for (int i = 0; i < 10; i++)
-      if (getBit(828 + i))
-        r |= (1 << i);
-    return r;
-  }
-  void setB1(uint16_t val)
-  {
-    uint16_t r = val & 0x3FF;
-    for (int i = 0; i < 10; i++)
-      setBitState(828 + i, r & (1 << i));
-  }
-  uint16_t getB0()
-  {
-    uint16_t r = 0;
-    for (int i = 0; i < 10; i++)
-      if (getBit(818 + i))
-        r |= (1 << i);
-    return r;
-  }
-  void setB0(uint16_t val)
-  {
-    uint16_t r = val & 0x3FF;
-    for (int i = 0; i < 10; i++)
-      setBitState(818 + i, r & (1 << i));
-  }
-  uint8_t getHEADER() { return getByte(810); }
-#define HEADER_INVERTED
-#ifndef HEADER_INVERTED
-  void setHEADER(uint8_t val) { setByte(810, val, 8); }
-#else
-  void setHEADER(uint16_t val)
-  {
-    uint16_t r = val & 0xFF;
-    for (int i = 0; i < 8; i++)
-      setBitState(817 - i, r & (1 << i));
-  }
-#endif
-  uint64_t getMASK(uint8_t level)
-  {
-    uint64_t mask = 0;
-    for (int i = 0; i < 64; i++)
-    {
-      if (getBit(618 + i * 3 + level) == 1)
-        mask |= (1 << i);
-    }
-    return mask;
-  }
-  void setMASK(uint8_t level, uint64_t mask)
-  {
-    for (int i = 0; i < 64; i++)
-    {
-      setBitState(618 + i * 3 + level, ((mask >> i) & 1) != 0);
-    }
-  }
-  bool getMASKChannel(uint8_t level, int ch)
-  {
-    return getBit(618 + (ch & 63) * 3 + level);
-  }
-  void setMASKChannel(uint8_t level, int ch, bool on)
-  {
-    int i = ch & 63;
-    setBitState(618 + i * 3 + level, on);
-  }
-
-  uint8_t getSWSSC() { return getByte(581) & 0x7; }
-  void setSWSSC(uint8_t val) { setByte(581, val & 0x7, 3); }
-
-  uint8_t getPAGAIN(int ch) { return getByte(64 + 8 * ch); }
-  void setPAGAIN(int ch, uint8_t val) { setByte(64 + 8 * ch, val, 8); }
-
+   
 // Micro-Roc from bit 0
   /**
    * @brief CTEST status for one channel
@@ -547,14 +460,252 @@ public:
     for (int i = 0; i < 2; i++)
       setBitState(73-i, r & (1 << i));
   }
-  bool getSEL0() { return getBit(603); }
-  void setSEL0(bool on) { setBitState(603, on); }
-  bool getCMDB2FSB2() { return getBit(588); }
-  void setCMDB2FSB2(bool on) { setBitState(588, on); }
-  bool getCMDB0FSB2() { return getBit(590); }
-  void setCMDB0FSB2(bool on) { setBitState(590, on); }
-  bool getENOCTRANSMITON1B() { return getBit(869); }
-  void setENOCTRANSMITON1B(bool on) { setBitState(869, on); }
+
+  /**
+   * @brief Get the DAC 4bits for one channel
+   * 
+   * @param channel number
+   * @return uint8_t DAC4bits value
+   */
+  uint8_t getDAC4BITS(uint8_t channel)
+  {
+    uint16_t r = 0;
+    for (int i = 0; i < 4; i++)
+      if (getBit(74 +channel*4+i))
+        r |= (1 << i);
+    return r;
+  }
+  /**
+   * @brief Set the DAC 4bits for one channel
+   * 
+   * @param channel number
+   * @param val value (<16) to be set
+   */
+  void setDAC4BITS(uint8_t channel,uint8_t val)
+  {
+    uint16_t r = val & 0xF;
+    for (int i = 0; i < 4; i++)
+      setBitState(74 + channel*4+i, r & (1 << i));
+  }
+
+  /**
+   * @brief Get On/off dac_4bit for pp (+pwr_on_a) 
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getON_OFF_4BITS() { return getBit(330); }
+  /**
+   * @brief Set On/off dac_4bit for pp (+pwr_on_a) 
+   * 
+   * @param on Value to be set
+   */
+  void setON_OFF_4BITS(bool on) { setBitState(330, on); }
+
+  /**
+   * @brief Get en_otaq 
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getEN_OTAQ() { return getBit(331); }
+  /**
+   * @brief Set en_otaq 
+   * 
+   * @param on Value
+   */
+  void setEN_OTAQ(bool on) { setBitState(331, on); }
+
+  /**
+   * @brief Get On/off otaQ for pp (+pwr_on_adc) 
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getON_OFF_OTAQ() { return getBit(332); }
+  /**
+   * @brief Set On/off otaQ for pp (+pwr_on_adc) 
+   * 
+   * @param on Value
+   */
+  void setON_OFF_OTAQ(bool on) { setBitState(332, on); }
+
+  /**
+   * @brief Get on/off discri0 for pp (+pwr_on_a) 
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getON_OFF_DISCRI0() { return getBit(333); }
+  /**
+   * @brief Set on/off discri0 for pp (+pwr_on_a) 
+   * 
+   * @param on Value
+   */
+  void setON_OFF_DISCRI0(bool on) { setBitState(333, on); }
+
+  /**
+   * @brief Get on/off discri2 for pp (+pwr_on_a) 
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getON_OFF_DISCRI2() { return getBit(334); }
+  /**
+   * @brief Set on/off discri2 for pp (+pwr_on_a) 
+   * 
+   * @param on Value
+   */
+  void setON_OFF_DISCRI2(bool on) { setBitState(334, on); }
+
+  /**
+   * @brief Get on/off discri1 for pp (+pwr_on_a) 
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getON_OFF_DISCRI1() { return getBit(335); }
+  /**
+   * @brief Set on/off discri1 for pp (+pwr_on_a) 
+   * 
+   * @param on Value
+   */
+  void setON_OFF_DISCRI0(bool on) { setBitState(335, on); }
+
+  /**
+   * @brief Get q2_sc_bias=d_mask=rs_or_discri 
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool getRS_OR_DISCRI() { return getBit(336); }
+  /**
+   * @brief Set q2_sc_bias=d_mask=rs_or_discri 
+   * 
+   * @param on Value
+   */
+  void setRS_OR_DISCRI(bool on) { setBitState(336, on); }
+
+  /**
+   * @brief Get 64bit uint representing the mask value for one level
+   * 
+   * @param level 0/1/2
+   * @return uint64_t  The mask
+   */
+  uint64_t getMASK(uint8_t level)
+  {
+    uint64_t mask = 0;
+    for (int i = 0; i < 64; i++)
+    {
+      if (getBit(618 + i * 3 + level) == 1)
+        mask |= (1 << i);
+    }
+    return mask;
+  }
+  /**
+   * @brief Set in one go the mask for 64 channel
+   * 
+   * @param level 0/1/2
+   * @param mask 64 bits mask pattern
+   */
+  void setMASK(uint8_t level, uint64_t mask)
+  {
+    for (int i = 0; i < 64; i++)
+    {
+      setBitState(337 + i * 3 + level, ((mask >> i) & 1) != 0);
+    }
+  }
+  /**
+   * @brief Get the mask bit one one channel
+   * 
+   * @param level Threshold level 0/1/2
+   * @param ch channel
+   * @return true 
+   * @return false 
+   */
+  bool getMASKChannel(uint8_t level, int ch)
+  {
+    return getBit(337 + (ch & 63) * 3 + level);
+  }
+  /**
+   * @brief Set the mask bit one one channel
+   * 
+   * @param level Threshold level 0/1/2
+   * @param ch channel
+   * @param on Value
+   */
+  void setMASKChannel(uint8_t level, int ch, bool on)
+  {
+    int i = ch & 63;
+    setBitState(337 + i * 3 + level, on);
+  }
+
+/**
+ * @brief Get header value
+ * 
+ * @return uint8_t 8-bit header
+ */
+  uint8_t getHEADER() { return getByte(529); }
+#undef HEADER_INVERTED
+#ifndef HEADER_INVERTED
+  /**
+   * @brief Set header value
+   * 
+   * @param val 8-bit asic number
+   */
+  void setHEADER(uint8_t val) { setByte(529, val, 8); }
+#else
+  void setHEADER(uint16_t val)
+  {
+    uint16_t r = val & 0xFF;
+    for (int i = 0; i < 8; i++)
+      setBitState(529 - i, r & (1 << i));
+  }
+#endif
+
+uint16_t getB2()
+  {
+    uint16_t r = 0;
+    for (int i = 0; i < 10; i++)
+      if (getBit(838 + i))
+        r |= (1 << i);
+    return r;
+  }
+  void setB2(uint16_t val)
+  {
+    uint16_t r = val & 0x3FF;
+    for (int i = 0; i < 10; i++)
+      setBitState(838 + i, r & (1 << i));
+  }
+
+  uint16_t getB1()
+  {
+    uint16_t r = 0;
+    for (int i = 0; i < 10; i++)
+      if (getBit(828 + i))
+        r |= (1 << i);
+    return r;
+  }
+  void setB1(uint16_t val)
+  {
+    uint16_t r = val & 0x3FF;
+    for (int i = 0; i < 10; i++)
+      setBitState(828 + i, r & (1 << i));
+  }
+  uint16_t getB0()
+  {
+    uint16_t r = 0;
+    for (int i = 0; i < 10; i++)
+      if (getBit(818 + i))
+        r |= (1 << i);
+    return r;
+  }
+  void setB0(uint16_t val)
+  {
+    uint16_t r = val & 0x3FF;
+    for (int i = 0; i < 10; i++)
+      setBitState(818 + i, r & (1 << i));
+  }
   bool getSEL1() { return getBit(604); }
   void setSEL1(bool on) { setBitState(604, on); }
   bool getCMDB2FSB1() { return getBit(596); }
