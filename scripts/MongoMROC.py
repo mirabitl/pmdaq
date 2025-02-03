@@ -89,84 +89,43 @@ class MongoMROC(mga.MongoRoc):
         _jasic={}
         _jasic["ENABLED"]=1
         _jasic["HEADER"]=num
-        _jasic["QSCSROUTSC"]=1
-        _jasic["ENOCDOUT1B"]=1
-        _jasic["ENOCDOUT2B"]=0
-        _jasic["ENOCTRANSMITON1B"]=1
-        _jasic["ENOCTRANSMITON2B"]=0
-        _jasic["ENOCCHIPSATB"]=1
-        _jasic["SELENDREADOUT"]=1
-        _jasic["SELSTARTREADOUT"]=1
-        _jasic["CLKMUX"]=1
-        _jasic["SCON"]=0
-        _jasic["RAZCHNEXTVAL"]=0
-        _jasic["RAZCHNINTVAL"]=1
-        _jasic["TRIGEXTVAL"]=0
-        _jasic["DISCROROR"]=1
-        _jasic["ENTRIGOUT"]=1
-        _jasic["TRIG0B"]=1
-        _jasic["TRIG1B"]=0
-        _jasic["TRIG2B"]=0
-        _jasic["OTABGSW"]=0
-        _jasic["DACSW"]=0
-        _jasic["SMALLDAC"]=0
-
+        _jasic["ON_OFF_PA"]=0
+        _jasic["EN_GBST"]=1
+        _jasic["ON_OFF_SH_HG"]=0
+        _jasic["ON_OFF_SH_LG"]=0
+        _jasic["ON_OFF_WIDLAR"]=0
+        _jasic["Valid_SH_HG"]=0
+        _jasic["ON_OFF_4BITS"]=0
+        _jasic["EN_OTAQ"]=0
+        _jasic["ON_OFF_OTAQ"]=0
+        _jasic["ON_OFF_DISCRI0"]=0
+        _jasic["ON_OFF_DISCRI2"]=0
+        _jasic["ON_OFF_DISCRI1"]=0
         _jasic["RS_OR_DISCRI"]=1
-        _jasic["DISCRI1"]=0
-        _jasic["DISCRI2"]=0
-        _jasic["DISCRI0"]=0
-        _jasic["OTAQ_PWRADC"]=0
-        _jasic["EN_OTAQ"]=1
-        _jasic["SW50F0"]=1
-        _jasic["SW100F0"]=1
-        _jasic["SW100K0"]=1
-        _jasic["SW50K0"]=1
-        _jasic["PWRONFSB1"]=0
-        _jasic["PWRONFSB2"]=0
-        _jasic["PWRONFSB0"]=0
-        _jasic["SEL1"]=0
-        _jasic["SEL0"]=1
-        _jasic["SW50F1"]=1
-        _jasic["SW100F1"]=1
-        _jasic["SW100K1"]=1
-        _jasic["SW50K1"]=1
-        _jasic["CMDB0FSB1"]=1
-        _jasic["CMDB1FSB1"]=1
-        _jasic["CMDB2FSB1"]=0
-        _jasic["CMDB3FSB1"]=1
-        _jasic["SW50F2"]=1
-        _jasic["SW100F2"]=1
-        _jasic["SW100K2"]=1
-        _jasic["SW50K2"]=1
-        _jasic["CMDB0FSB2"]=1
-        _jasic["CMDB1FSB2"]=1
-        _jasic["CMDB2FSB2"]=0
-        _jasic["CMDB3FSB2"]=1
-        _jasic["PWRONW"]=0
-        _jasic["PWRONSS"]=0
-        _jasic["PWRONBUFF"]=0
-        _jasic["SWSSC"]=7
-        _jasic["CMDB0SS"]=0
-        _jasic["CMDB1SS"]=0
-        _jasic["CMDB2SS"]=0
-        _jasic["CMDB3SS"]=0
-        _jasic["PWRONPA"]=0
-        # Unset power pulsing
-        _jasic["CLKMUX"]=1
-        _jasic["SCON"]=1
-        _jasic["OTAQ_PWRADC"]=1
-        _jasic["PWRONW"]=1
-        _jasic["PWRONSS"]=0
-        _jasic["PWRONBUFF"]=1
-        _jasic["PWRONPA"]=1
-        _jasic["DISCRI0"]=1
-        _jasic["DISCRI1"]=1
-        _jasic["DISCRI2"]=1
-        _jasic["OTABGSW"]=1
-        _jasic["DACSW"]=1
-        _jasic["PWRONFSB0"]=1
-        _jasic["PWRONFSB1"]=1
-        _jasic["PWRONFSB2"]=1
+
+        _jasic["EN_PP_BANDGAP"]=1
+        _jasic["ON_OFF_BG"]=0
+        _jasic["EN_PP_DAC"]=1
+        _jasic["ON_OFF_DAC"]=0
+        _jasic["TRIG2B"]=1
+        _jasic["TRIG1B"]=1
+        _jasic["TRIG0B"]=1
+        _jasic["EN_TRIG_OUT"]=1
+        _jasic["DISC_OR_OR"]=1
+        _jasic["TRIG_EXT_VALIDATION"]=1
+        _jasic["RAZ_CHN_INT"]=1
+        _jasic["RAZ_CHN_EXT"]=0
+        _jasic["SC_ON_5MHZ"]=0
+        _jasic["CK_MUX"]=1
+        _jasic["SEL_RAZ1"]=1
+        _jasic["SEL_RAZ0"]=1
+        _jasic["SEL_ENDREADOUT"]=1
+        _jasic["SEL_STARTREADOUT"]=1
+        _jasic["EN_OC_CHIPSATB"]=1
+        _jasic["EN_OC_TRANSMITON2B"]=1
+        _jasic["EN_OC_TRANSMITON1B"]=1
+        _jasic["EN_OC_DOUT2B"]=1
+        _jasic["EN_OC_DOUT1B"]=1
 
         # Non-bool values
         dv=[]
@@ -185,58 +144,10 @@ class MongoMROC(mga.MongoRoc):
         _jasic["BB2"]=250
         _jasic["BB1"]=250
         _jasic["BB0"]=250
-        _jasic["SW_LG"]=1
-        _jasic["SW_HG"]=1
+        _jasic["SW_LG"]=2
+        _jasic["SW_HG"]=2
         return _jasic
 
-
-    def unsetPowerPulsing(self):
-        """!
-        Unset Power pulsing on all ASICs
-        """
-        for a in self.asiclist: 
-
-            a["slc"]["CLKMUX"]=1;a["_id"]=None
-            a["slc"]["SCON"]=1;a["_id"]=None
-            a["slc"]["OTAQ_PWRADC"]=1;a["_id"]=None
-            a["slc"]["PWRONW"]=1;a["_id"]=None
-            a["slc"]["PWRONSS"]=1;a["_id"]=None
-            a["slc"]["PWRONBUFF"]=1;a["_id"]=None
-            a["slc"]["PWRONPA"]=1;a["_id"]=None
-            a["slc"]["DISCRI0"]=1;a["_id"]=None
-            a["slc"]["DISCRI1"]=1;a["_id"]=None
-            a["slc"]["DISCRI2"]=1;a["_id"]=None
-            a["slc"]["OTABGSW"]=1;a["_id"]=None
-            a["slc"]["DACSW"]=1;a["_id"]=None
-            a["slc"]["PWRONFSB0"]=1;a["_id"]=None
-            a["slc"]["PWRONFSB1"]=1;a["_id"]=None
-            a["slc"]["PWRONFSB2"]=1;a["_id"]=None
-
-
-
-    def setPowerPulsing(self):
-        """!
-        set Power pulsing on all ASICs
-        """
-        for a in self.asiclist: 
-
-            a["slc"]["CLKMUX"]=0;a["_id"]=None
-            a["slc"]["SCON"]=0;a["_id"]=None
-            a["slc"]["OTAQ_PWRADC"]=0;a["_id"]=None
-            a["slc"]["PWRONW"]=0;a["_id"]=None
-            a["slc"]["PWRONSS"]=0;a["_id"]=None
-            a["slc"]["PWRONBUFF"]=0;a["_id"]=None
-            a["slc"]["PWRONPA"]=0;a["_id"]=None
-            a["slc"]["DISCRI0"]=0;a["_id"]=None
-            a["slc"]["DISCRI1"]=1;a["_id"]=None
-            a["slc"]["DISCRI2"]=1;a["_id"]=None
-            a["slc"]["OTABGSW"]=0;a["_id"]=None
-            a["slc"]["DACSW"]=0;a["_id"]=None
-            a["slc"]["PWRONFSB0"]=0;a["_id"]=None
-            a["slc"]["PWRONFSB1"]=1;a["_id"]=None
-            a["slc"]["PWRONFSB2"]=1;a["_id"]=None
-
- 
 
     def changeThreshold(self,BB0,BB1,BB2,idif=0,iasic=0):
         """!
