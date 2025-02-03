@@ -12,14 +12,14 @@
 #include "stdafx.hh"
 using namespace std;
 using namespace web;
-class MGROCSlow
+class MROCSlow
 {
 public:
-  MGROCSlow()
+  MROCSlow()
   {
     memset(_l, 0, 28 * sizeof(uint32_t));
   }
-  ~MGROCSlow() { ; }
+  ~MROCSlow() { ; }
   bool getBit(uint32_t *l, int b) { return (l[b / 32] >> (b % 32)) & 1; }
   void setBit(uint32_t *l, int b) { l[b / 32] |= (1 << (b % 32)); };
   void clearBit(uint32_t *l, int b) { l[b / 32] &= ~(1 << (b % 32)); };
