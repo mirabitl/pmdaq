@@ -202,7 +202,7 @@ private:
     public:
       socketProcessor(std::string,uint32_t port);
       int16_t check_buffer(uint8_t* b,uint32_t maxidx);
-      uint32_t send_message(wizcc::Message* wmsg,bool no_reply=false);
+      int32_t send_message(wizcc::Message* wmsg,bool no_reply=false);
       void process_acknowledge(uint8_t* buffer,int len);
       void wait_reply(wizcc::Message* m);
       virtual void process_buffer(uint64_t id, uint16_t l,char* b);

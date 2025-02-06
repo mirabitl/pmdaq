@@ -49,7 +49,7 @@ void wizcc::socketProcessor::clear()
     }
 
 }
-uint32_t wizcc::socketProcessor::send_message(wizcc::Message* m,bool noreply)
+int32_t wizcc::socketProcessor::send_message(wizcc::Message* m,bool noreply)
 {
   
   // Send the Buffer
@@ -73,7 +73,7 @@ uint32_t wizcc::socketProcessor::send_message(wizcc::Message* m,bool noreply)
   }
   //printf("Buffer sent %d bytes at Address %lx on port %ld \n",m->length(),(m->address()>>32)&0xFFFFFFF,m->address()&0XFFFF);
 
-  return 0;
+  return -1;
 
 }
 
@@ -205,8 +205,11 @@ void wizcc::socketProcessor::process_buffer(uint64_t id, uint16_t l,char* bb)
      int16_t tag = check_buffer(_buf,_idx);
      if (tag>0)
        {
-	 this->process_acknowledge(_buf,_idx);
-	 bool ok=process_message();
+	 bool ok=true;
+	 if (_buf[wizcc::Message::Fmt::CMD]!=wizcc::Message::command::ACKNOWLEDGE)
+	   this->process_acknowledge(_buf,_idx);
+	 else
+	   ok=process_message();
 	 if (tag<_idx)
 	   {
 	     memcpy(_b,&_buf[tag],_idx-tag);
