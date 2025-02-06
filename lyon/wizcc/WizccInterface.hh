@@ -1,6 +1,7 @@
 #pragma once
 
-#include "MessageHandler.hh"
+#include <netlink/socket.h>
+#include <netlink/socket_group.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -11,7 +12,6 @@
 #include "stdafx.hh"
 #include "utils.hh"
 #define MAX_BUFFER_LEN 0x4000
-#include "pmSender.hh"
 #define C3I_VERSION 145
 #define MBSIZE 0x40000
 static LoggerPtr _logWizcc(Logger::getLogger("PMDAQ_WIZCC"));
@@ -26,11 +26,12 @@ typedef std::pair<uint32_t,unsigned char*> ptrBuf;
  * IP address| port, len,buffer
  * 
  */
-typedef std::function<void (uint64_t,uint16_t,char*)> wizccFunctor;
+//typedef std::function<void (uint64_t,uint16_t,char*)> wizccFunctor;
 
   namespace wizcc
   {
     class board;
+    class socketProcessor;
     //Message
     class Message {
     public:
@@ -92,7 +93,7 @@ public:
  * 
  * @param directroy for storage 
  */
-  bufferHandler(std::string directory);
+  bufferHandler(std::string directory="/tmp/");
   /**
    * @brief method called when data are to be read on the socket
    * 
@@ -104,15 +105,15 @@ public:
    */
   void exec(NL::Socket* socket, NL::SocketGroup* group, void* reference);
   uint64_t socket_id(NL::Socket* socket);
-  void process_buffer(NL::Socket* socket);
+  void build_process_buffer(NL::Socket* socket);
   void remove_socket(NL::Socket* socket);
-  void add_handler(uint64_t id,wizccFunctor f);
+  void add_handler(uint64_t id,socketProcessor* f);
 public:
   unsigned char _readBuffer[0x80000];
 private:
   std::string _storeDir;
   std::map<uint64_t, ptrBuf> _sockMap;
-  std::map<uint64_t,wizccFunctor> _handlers;
+  std::map<uint64_t,socketProcessor*> _handlers;
   uint64_t _npacket;
   std::mutex _sem;
 };
@@ -173,7 +174,7 @@ private:
       Controller();
       ~Controller(){;}
       void initialise();
-      void addDevice(std::string address);
+      void add_board(wizcc::board* b);
       void listen();
       void terminate();
       inline std::map<std::string,wizcc::board*>& boards(){ return _boards;}
@@ -201,8 +202,8 @@ private:
     public:
       socketProcessor(std::string,uint32_t port);
       int16_t check_buffer(uint8_t* b,uint32_t maxidx);
-      uint32_t send_message(wizcc::Message* wmsg);
-      void process_acknowledge(char* buffer,int len);
+      uint32_t send_message(wizcc::Message* wmsg,bool no_reply=false);
+      void process_acknowledge(uint8_t* buffer,int len);
       void wait_reply(wizcc::Message* m);
       virtual void process_buffer(uint64_t id, uint16_t l,char* b);
       void purge_buffer();

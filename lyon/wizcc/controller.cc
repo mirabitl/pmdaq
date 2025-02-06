@@ -1,5 +1,5 @@
 #include "WizccInterface.hh"
-using namespace mpi;
+using namespace wizcc;
 #include <unistd.h>
 #include <sys/dir.h>  
 #include <sys/param.h>  
@@ -73,7 +73,7 @@ void wizcc::Controller::initialise()
    _onRead= new wizcc::bufferHandler();
    // Connection defaults callback
   _onClientDisconnect= new wizcc::OnClientDisconnect();
-  _onDisconnect= new wizcc::OnDisconnect(_msh);
+  _onDisconnect= new wizcc::OnDisconnect();
 
   // Set the callbacks of the select class 
   _group->setCmdOnRead(_onRead);
@@ -91,12 +91,12 @@ void wizcc::Controller:: add_board(wizcc::board* b)
   for (auto p=sm.begin();p!=sm.end();p++)
     {
       _group->add(p->second->socket());
-      _onRead->add_handler(p->second->id(),std::bind(&wizcc::socketHandler::process_buffer,p->second,std::placeholders::_1,std::placeholders::_2,std::placeholders::_3));
+      _onRead->add_handler(p->second->id(),p->second);
 		  
     }
   std::pair<std::string, wizcc::board*> p1(b->ip_address(),b);
 
-  printf("Board at address %s added \n",address.c_str());
+  printf("Board at address %s added \n",b->ip_address().c_str());
   _boards.insert(p1);
 }
 
@@ -105,19 +105,12 @@ void wizcc::Controller::close()
 {
   for (auto x=_boards.begin();x!=_boards.end();x++)
     {
-      PM_DEBUG(_logWizcc,"Remove data socket "<<std::flush);
-      _group->remove(x->second->data()->socket());
-      PM_DEBUG(_logWizcc,"disconnect data socket "<<std::flush);
-      x->second->data()->socket()->disconnect();
-      PM_DEBUG(_logWizcc,"Remove slc socket "<<std::flush);
-      _group->remove(x->second->slc()->socket());
-      PM_DEBUG(_logWizcc,"disconnect slc socket "<<std::flush);
-      x->second->slc()->socket()->disconnect();
-      PM_DEBUG(_logWizcc,"Remove reg socket "<<std::flush);
-      _group->remove(x->second->reg()->socket());
-      PM_DEBUG(_logWizcc,"disconnect reg socket "<<std::flush);
-      x->second->reg()->socket()->disconnect();
-
+      auto sm=x->second->processors();
+      for (auto p=sm.begin();p!=sm.end();p++)
+	{
+	  _group->remove(p->second->socket());
+	  p->second->socket()->disconnect();		  
+	}
     }
   _boards.clear();
   

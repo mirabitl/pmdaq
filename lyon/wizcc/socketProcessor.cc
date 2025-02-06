@@ -77,10 +77,10 @@ uint32_t wizcc::socketProcessor::send_message(wizcc::Message* m,bool noreply)
 
 }
 
-void  wizcc::socket_processor::process_acknowledge(char* buffer,int len)
+void  wizcc::socketProcessor::process_acknowledge(uint8_t* buffer,int len)
 {
-  if (_buf[wizcc::Message::Fmt::CMD]!=wizcc::Message::command::ACKNOWLEDGE) return;
-  uint8_t trans= _buf[wizcc::Message::Fmt::TRANS];
+  if (buffer[wizcc::Message::Fmt::CMD]!=wizcc::Message::command::ACKNOWLEDGE) return;
+  uint8_t trans=buffer[wizcc::Message::Fmt::TRANS];
   std::stringstream ss;
   ss<<"/dev/shm/"<<_id<<"_"<<(int) trans;
   int pipefifo, returnval;
@@ -91,7 +91,7 @@ void  wizcc::socket_processor::process_acknowledge(char* buffer,int len)
   if (pipefifo == -1)
     {
       std::cout << "Error, cannot open fifo" << std::endl;
-      return 1;
+      return;
     }
 
   write(pipefifo, buffer, len);
@@ -100,13 +100,13 @@ void  wizcc::socket_processor::process_acknowledge(char* buffer,int len)
 
 }
 
-void wizcc::socket_processor::wait_reply(wizcc::Message* m)
+void wizcc::socketProcessor::wait_reply(wizcc::Message* m)
 {
 
   	int pipefifo, returnval;
 
 	uint8_t trans= m->ptr()[wizcc::Message::Fmt::TRANS];
-	char *buffer=_ans[trans];
+	unsigned char *buffer=_answ[trans];
 	std::stringstream ss;
 	ss<<"/dev/shm/"<<_id<<"_"<<(int) trans;
 

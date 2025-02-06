@@ -1,4 +1,4 @@
-#include "bufferHandler.hh"
+#include "WizccInterface.hh"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -14,17 +14,9 @@
 #include <netdb.h>
 #include <errno.h>
 #include <sys/signal.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
 #include <vector>
 #include <map>
-
-#include "utils.hh"
 #include <err.h>
-
-#include <netlink/socket.h>
-#include <netlink/socket_group.h>
 #include <string>
 
 using namespace std;
@@ -76,7 +68,7 @@ wizcc::bufferHandler::bufferHandler(std::string directory) : _storeDir(directory
 void wizcc::bufferHandler::exec(NL::Socket* socket, NL::SocketGroup* group, void* reference) {
 
   //cout << "\nREAD -- ";
-  this->process_buffer(socket);
+  this->build_process_buffer(socket);
 
 
 }
@@ -84,7 +76,7 @@ void wizcc::bufferHandler::exec(NL::Socket* socket, NL::SocketGroup* group, void
 uint64_t wizcc::bufferHandler::socket_id(NL::Socket* socket)
 {return ((uint64_t) utils::convertIP(socket->hostTo())<<32)|socket->portTo();}
 
-void wizcc::bufferHandler::process_buffer(NL::Socket* socket) 
+void wizcc::bufferHandler::build_process_buffer(NL::Socket* socket) 
 {
   // build id
 
@@ -165,7 +157,7 @@ void wizcc::bufferHandler::process_buffer(NL::Socket* socket)
 
 
   // Now call the processors assoicated
-  std::map<uint64_t,MPIFunctor >::iterator icmd=_handlers.find(id);
+  std::map<uint64_t,socketProcessor* >::iterator icmd=_handlers.find(id);
   if (icmd==_handlers.end())
     {
       PM_ERROR(_logWizcc,"Message received from "<<socket->hostTo()<<":"<<socket->portTo()<<" =>"<<std::hex<<id<<std::dec<<std::flush);
@@ -175,7 +167,7 @@ void wizcc::bufferHandler::process_buffer(NL::Socket* socket)
       return;
           
     }
-  icmd->second(id,p.first,(char*) p.second);
+  icmd->second->process_buffer(id,p.first,(char*) p.second);
   p.first=0;
   return;
 }
@@ -188,8 +180,8 @@ void wizcc::bufferHandler::remove_socket(NL::Socket* socket)
   _sockMap.erase(itsock);
 }
 
-void wizcc::bufferHandler::addHandler(uint64_t id,wizccFunctor f)
+void wizcc::bufferHandler::add_handler(uint64_t id, socketProcessor* f)
 {
-  std::pair<uint64_t,wizccFunctor> p(id,f);
+  std::pair<uint64_t,socketProcessor*> p(id,f);
   _handlers.insert(p);
 }
