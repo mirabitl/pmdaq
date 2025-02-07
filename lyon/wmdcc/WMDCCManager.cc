@@ -147,8 +147,8 @@ void WmdccManager::fsm_initialise(http_request m)
     }
   PMF_INFO(_logWmdcc," New WMDCC found in db "<<std::hex<<ipboard<<std::dec<<" IP address "<<idif->second);
 
-  wizcc::board* b= new wizcc::board();
-  wdmdcc::registerHandler* rh=new wdmdcc::registerHandler(idif->second);
+  wizcc::board* b= new wizcc::board(idif->second);
+  wmdcc::registerHandler* rh=new wmdcc::registerHandler(idif->second);
   b->add_processor("REGISTER",rh);
   _mpi->add_board(b);
 
@@ -233,47 +233,47 @@ void WmdccManager::destroy(http_request m)
   // To be done: _wmdcc->clear();
 }
 
-void WmdccManager::resyncOn(){this->writeRegister(wmdcc::Message::Register::RESYNC_MASK,0x1);}
-void WmdccManager::resyncOff(){this->writeRegister(wmdcc::Message::Register::RESYNC_MASK,0x0);}
+void WmdccManager::resyncOn(){this->writeRegister(wmdcc::registerHandler::Register::RESYNC_MASK,0x1);}
+void WmdccManager::resyncOff(){this->writeRegister(wmdcc::registerHandler::Register::RESYNC_MASK,0x0);}
 
 
-uint32_t WmdccManager::version(){return this->readRegister(wmdcc::Message::Register::VERSION);}
-uint32_t WmdccManager::id(){return this->readRegister(wmdcc::Message::Register::ID);}
-uint32_t WmdccManager::mask(){return this->readRegister(wmdcc::Message::Register::MASK);}
-void WmdccManager::maskTrigger(){this->writeRegister(wmdcc::Message::Register::MASK,0xFFFFFFFF);}
-void WmdccManager::unmaskTrigger(){this->writeRegister(wmdcc::Message::Register::MASK,0x0);}
-uint32_t WmdccManager::spillCount(){return this->readRegister(wmdcc::Message::Register::SPILL_CNT);}
-void WmdccManager::resetCounter(){this->writeRegister(wmdcc::Message::Register::ACQ_CTRL,0x1);this->writeRegister(wmdcc::Message::Register::ACQ_CTRL,0x0);}
-uint32_t WmdccManager::spillOn(){return this->readRegister(wmdcc::Message::Register::SPILL_ON);}
-uint32_t WmdccManager::spillOff(){return this->readRegister(wmdcc::Message::Register::SPILL_OFF);}
-void WmdccManager::setSpillOn(uint32_t nc){this->writeRegister(wmdcc::Message::Register::SPILL_ON,nc);}
-void WmdccManager::setSpillOff(uint32_t nc){this->writeRegister(wmdcc::Message::Register::SPILL_OFF,nc);}
-uint32_t WmdccManager::Channels(){return this->readRegister(wmdcc::Message::Register::CHANNEL_ENABLE);}
-void WmdccManager::setChannels(uint32_t nc){this->writeRegister(wmdcc::Message::Register::CHANNEL_ENABLE,nc);}
-void WmdccManager::calibOn(){this->writeRegister(wmdcc::Message::Register::CALIB_CTRL,0x2);}
-void WmdccManager::calibOff(){this->writeRegister(wmdcc::Message::Register::CALIB_CTRL,0x0);}
-uint32_t WmdccManager::calibCount(){return this->readRegister(wmdcc::Message::Register::CALIB_NWIN);}
-void WmdccManager::setCalibCount(uint32_t nc){this->writeRegister(wmdcc::Message::Register::CALIB_NWIN,nc);}
+uint32_t WmdccManager::version(){return this->readRegister(wmdcc::registerHandler::Register::VERSION);}
+uint32_t WmdccManager::id(){return this->readRegister(wmdcc::registerHandler::Register::ID);}
+uint32_t WmdccManager::mask(){return this->readRegister(wmdcc::registerHandler::Register::MASK);}
+void WmdccManager::maskTrigger(){this->writeRegister(wmdcc::registerHandler::Register::MASK,0xFFFFFFFF);}
+void WmdccManager::unmaskTrigger(){this->writeRegister(wmdcc::registerHandler::Register::MASK,0x0);}
+uint32_t WmdccManager::spillCount(){return this->readRegister(wmdcc::registerHandler::Register::SPILL_CNT);}
+void WmdccManager::resetCounter(){this->writeRegister(wmdcc::registerHandler::Register::ACQ_CTRL,0x1);this->writeRegister(wmdcc::registerHandler::Register::ACQ_CTRL,0x0);}
+uint32_t WmdccManager::spillOn(){return this->readRegister(wmdcc::registerHandler::Register::SPILL_ON);}
+uint32_t WmdccManager::spillOff(){return this->readRegister(wmdcc::registerHandler::Register::SPILL_OFF);}
+void WmdccManager::setSpillOn(uint32_t nc){this->writeRegister(wmdcc::registerHandler::Register::SPILL_ON,nc);}
+void WmdccManager::setSpillOff(uint32_t nc){this->writeRegister(wmdcc::registerHandler::Register::SPILL_OFF,nc);}
+uint32_t WmdccManager::Channels(){return this->readRegister(wmdcc::registerHandler::Register::CHANNEL_ENABLE);}
+void WmdccManager::setChannels(uint32_t nc){this->writeRegister(wmdcc::registerHandler::Register::CHANNEL_ENABLE,nc);}
+void WmdccManager::calibOn(){this->writeRegister(wmdcc::registerHandler::Register::CALIB_CTRL,0x2);}
+void WmdccManager::calibOff(){this->writeRegister(wmdcc::registerHandler::Register::CALIB_CTRL,0x0);}
+uint32_t WmdccManager::calibCount(){return this->readRegister(wmdcc::registerHandler::Register::CALIB_NWIN);}
+void WmdccManager::setCalibCount(uint32_t nc){this->writeRegister(wmdcc::registerHandler::Register::CALIB_NWIN,nc);}
 
-void WmdccManager::setCalibRegister(uint32_t nc){this->writeRegister(wmdcc::Message::Register::CALIB_CTRL,nc);}
+void WmdccManager::setCalibRegister(uint32_t nc){this->writeRegister(wmdcc::registerHandler::Register::CALIB_CTRL,nc);}
 
-uint32_t WmdccManager::hardReset(){return this->readRegister(wmdcc::Message::Register::RESET_FE);}
-void WmdccManager::setHardReset(uint32_t nc){this->writeRegister(wmdcc::Message::Register::RESET_FE,nc);}
+uint32_t WmdccManager::hardReset(){return this->readRegister(wmdcc::registerHandler::Register::RESET_FE);}
+void WmdccManager::setHardReset(uint32_t nc){this->writeRegister(wmdcc::registerHandler::Register::RESET_FE,nc);}
 
-void WmdccManager::setSpillRegister(uint32_t nc){this->writeRegister(wmdcc::Message::Register::WIN_CTRL,nc);}
-uint32_t WmdccManager::spillRegister(){return this->readRegister(wmdcc::Message::Register::WIN_CTRL);}
+void WmdccManager::setSpillRegister(uint32_t nc){this->writeRegister(wmdcc::registerHandler::Register::WIN_CTRL,nc);}
+uint32_t WmdccManager::spillRegister(){return this->readRegister(wmdcc::registerHandler::Register::WIN_CTRL);}
 void WmdccManager::useSPSSpill(uint32_t len)
 {
 
   if (len==0)
     {
-      this->writeRegister(wmdcc::Message::Register::SPS_SPILL_CTRL,0);
-      this->writeRegister(wmdcc::Message::Register::SPS_SPILL_DURATION,0);
+      this->writeRegister(wmdcc::registerHandler::Register::SPS_SPILL_CTRL,0);
+      this->writeRegister(wmdcc::registerHandler::Register::SPS_SPILL_DURATION,0);
     }
   else
     {
-      this->writeRegister(wmdcc::Message::Register::SPS_SPILL_CTRL,1);
-      this->writeRegister(wmdcc::Message::Register::SPS_SPILL_DURATION,len);
+      this->writeRegister(wmdcc::registerHandler::Register::SPS_SPILL_CTRL,1);
+      this->writeRegister(wmdcc::registerHandler::Register::SPS_SPILL_DURATION,len);
     }
 
 }
@@ -286,19 +286,19 @@ void WmdccManager::useTrigExt(bool t)
     this->setSpillRegister(reg&~2);
 }
 
-void WmdccManager::setTriggerDelay(uint32_t nc){this->writeRegister(wmdcc::Message::Register::TRG_EXT_DELAY,nc);}
-uint32_t WmdccManager::triggerDelay(){return this->readRegister(wmdcc::Message::Register::TRG_EXT_DELAY);}
-void WmdccManager::setTriggerBusy(uint32_t nc){this->writeRegister(wmdcc::Message::Register::TRG_EXT_LEN,nc);}
-uint32_t WmdccManager::triggerBusy(){return this->readRegister(wmdcc::Message::Register::TRG_EXT_LEN);}
+void WmdccManager::setTriggerDelay(uint32_t nc){this->writeRegister(wmdcc::registerHandler::Register::TRG_EXT_DELAY,nc);}
+uint32_t WmdccManager::triggerDelay(){return this->readRegister(wmdcc::registerHandler::Register::TRG_EXT_DELAY);}
+void WmdccManager::setTriggerBusy(uint32_t nc){this->writeRegister(wmdcc::registerHandler::Register::TRG_EXT_LEN,nc);}
+uint32_t WmdccManager::triggerBusy(){return this->readRegister(wmdcc::registerHandler::Register::TRG_EXT_LEN);}
 
-void WmdccManager::setExternalTrigger(uint32_t nc){this->writeRegister(wmdcc::Message::Register::EN_BUSY_TRG,nc);}
-uint32_t WmdccManager::externalTrigger(){return this->readRegister(wmdcc::Message::Register::EN_BUSY_TRG);}
+void WmdccManager::setExternalTrigger(uint32_t nc){this->writeRegister(wmdcc::registerHandler::Register::EN_BUSY_TRG,nc);}
+uint32_t WmdccManager::externalTrigger(){return this->readRegister(wmdcc::registerHandler::Register::EN_BUSY_TRG);}
 
 void WmdccManager::reloadCalibCount(){
 
   this->maskTrigger();
-  this->writeRegister(wmdcc::Message::Register::WIN_CTRL,0x8);
-  this->writeRegister(wmdcc::Message::Register::CALIB_CTRL,0x4);
+  this->writeRegister(wmdcc::registerHandler::Register::WIN_CTRL,0x8);
+  this->writeRegister(wmdcc::registerHandler::Register::CALIB_CTRL,0x4);
   // sleep(1);
   // this->writeRegister(0x8,0x0);
   // sleep(1);
@@ -310,9 +310,9 @@ void WmdccManager::reloadCalibCount(){
 
 
 
-void WmdccManager::resetFSM(uint32_t b){this->writeRegister(wmdcc::Message::Register::RESET_FSM,b);}
-void WmdccManager::resetTDC(uint32_t b){this->writeRegister(wmdcc::Message::Register::RESET_FE,b);}
-uint32_t WmdccManager::busyCount(uint32_t b){return this->readRegister(wmdcc::Message::Register::BUSY_0+(b&0xF));}
+void WmdccManager::resetFSM(uint32_t b){this->writeRegister(wmdcc::registerHandler::Register::RESET_FSM,b);}
+void WmdccManager::resetTDC(uint32_t b){this->writeRegister(wmdcc::registerHandler::Register::RESET_FE,b);}
+uint32_t WmdccManager::busyCount(uint32_t b){return this->readRegister(wmdcc::registerHandler::Register::BUSY_0+(b&0xF));}
 
 
 
@@ -320,15 +320,20 @@ uint32_t WmdccManager::readRegister(uint32_t adr)
 {
   uint32_t rc;
   for (auto x:_mpi->boards())
-    rc=x.second->reg()->readRegister(adr);
+    {
+      auto reg=(wmdcc::registerHandler*) x.second->processors()["REGISTER"];
+      rc=reg->readRegister(adr);
+    }
   return rc;
 }
 
 void WmdccManager::writeRegister(uint32_t adr,uint32_t val)
 {
   for (auto x:_mpi->boards())
-    x.second->reg()->writeRegister(adr,val);
-
+    {
+      auto reg=(wmdcc::registerHandler*) x.second->processors()["REGISTER"];
+      reg->writeRegister(adr,val);
+    }
 }
 
 
@@ -344,10 +349,11 @@ void WmdccManager::c_readreg(http_request m)
 
   web::json::value r;
   for (auto x:_mpi->boards())
-    {    
-      uint32_t value=x.second->reg()->readRegister(adr);
-      PMF_INFO(_logWmdcc,"Read reg "<<x.second->ipAddress()<<" Address "<<adr<<" Value "<<value);
-      r[x.second->ipAddress()]=json::value::number(value);
+    {
+      auto reg=(wmdcc::registerHandler*) x.second->processors()["REGISTER"];
+      uint32_t value=reg->readRegister(adr);
+      PMF_INFO(_logWmdcc,"Read reg "<<x.second->ip_address()<<" Address "<<adr<<" Value "<<value);
+      r[x.second->ip_address()]=json::value::number(value);
     }
   
 
@@ -365,10 +371,11 @@ void WmdccManager::c_writereg(http_request m)
 
   web::json::value r;
   for (auto x:_mpi->boards())
-    {    
-      x.second->reg()->writeRegister(adr,val);
-      PMF_INFO(_logWmdcc,"Write reg "<<x.second->ipAddress()<<" Address "<<adr<<" Value "<<val);
-      r[x.second->ipAddress()]=json::value::number(val);
+    {
+      auto reg=(wmdcc::registerHandler*) x.second->processors()["REGISTER"];
+      reg->writeRegister(adr,val);
+      PMF_INFO(_logWmdcc,"Write reg "<<x.second->ip_address()<<" Address "<<adr<<" Value "<<val);
+      r[x.second->ip_address()]=json::value::number(val);
     }
   
 

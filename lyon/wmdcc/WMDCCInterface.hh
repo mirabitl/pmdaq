@@ -270,11 +270,12 @@ static LoggerPtr _logWmdcc(Logger::getLogger("PMDAQ_WMDCC"));
 		     
 
       registerHandler(std::string);
-      virtual bool process_packet();
+      virtual bool process_message();
       void writeRegister(uint16_t address,uint32_t value);
       uint32_t readRegister(uint16_t address);
     private:
       wizcc::Message* _msg;
+      bool _noTransReply;
     };
 
 

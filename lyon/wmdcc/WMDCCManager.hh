@@ -88,6 +88,6 @@ public:
 
 
 private:
-  wizzcc::Controller* _mpi;
+  wizcc::Controller* _mpi;
   
 };

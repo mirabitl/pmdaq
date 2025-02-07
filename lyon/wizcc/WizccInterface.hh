@@ -236,7 +236,7 @@ private:
     class board
     {
     public:
-      board(std::string ip);
+      board(std::string ip) :_ip(ip) {}
       inline std::string ip_address(){return _ip;}
       inline wizcc::socketProcessor* processor(std::string name){return _sockm[name];}
       void add_processor(std::string name, wizcc::socketProcessor* p)
