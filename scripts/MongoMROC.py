@@ -257,51 +257,7 @@ class MongoMROC(mga.MongoRoc):
 
 
 
-                
-    def slowShaper(self):
-        """!
-        Slow down the shaper , Set SW100 F and K to 1
-        """
-        for a in self.asiclist:
-            
-            a["slc"]["SW100F0"]=1
-            a["slc"]["SW100K0"]=1
-            a["slc"]["SW50F0"]=0
-            a["slc"]["SW50K0"]=0
-
-            a["slc"]["SW100F1"]=1
-            a["slc"]["SW100K1"]=1
-            a["slc"]["SW50F1"]=0
-            a["slc"]["SW50K1"]=0
-
-            a["slc"]["SW100F2"]=1
-            a["slc"]["SW100K2"]=1
-            a["slc"]["SW50F2"]=0
-            a["slc"]["SW50K2"]=0
-            a["_id"]=None
-            
-    def verySlowShaper(self):
-        """!
-        Slow down the shaper , Set SW100 F and K to 1
-        """
-        for a in self.asiclist:
-            
-            a["slc"]["SW100F0"]=1
-            a["slc"]["SW100K0"]=1
-            a["slc"]["SW50F0"]=1
-            a["slc"]["SW50K0"]=1
-
-            a["slc"]["SW100F1"]=1
-            a["slc"]["SW100K1"]=1
-            a["slc"]["SW50F1"]=1
-            a["slc"]["SW50K1"]=1
-
-            a["slc"]["SW100F2"]=1
-            a["slc"]["SW100K2"]=1
-            a["slc"]["SW50F2"]=1
-            a["slc"]["SW50K2"]=1
-            a["_id"]=None
-            
+                          
     def changeCTest(self,channel,ctest,idif=0,iasic=0):
         """!
          Change the CTEST value of one channel  of specified  asics, modified asics are tagged for upload
