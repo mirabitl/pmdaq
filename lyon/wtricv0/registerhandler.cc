@@ -39,7 +39,7 @@ uint32_t  wtricv0::registerHandler::sendCommand(uint8_t command)
   sp[0]=htons(len);
   _msg->ptr()[wizcc::Message::Fmt::CMD]=command;
   _msg->ptr()[len-1]=')';    
-  int32_t tr=this->sendMessage(_msg);
+  int32_t tr=this->send_message(_msg);
   uint32_t rep=0;
   //this->processReply(tr,&rep);
   if (!_noTransReply &&tr>=0)
@@ -63,7 +63,7 @@ void  wtricv0::registerHandler::sendParameter(uint8_t command,uint8_t par)
   _msg->ptr()[len-1]=')';
 
   PM_INFO(_logWtricv0," SENDING ="<<(int) command<<" length="<<len<<" parameter="<<(int) par<<" address="<<id());
-  uint32_t tr=this->sendMessage(_msg);
+  uint32_t tr=this->send_message(_msg);
   //this->processReply(tr);
 }
 
@@ -80,7 +80,7 @@ void wtricv0::registerHandler::sendSlowControl(uint8_t* slc,uint16_t lenbytes)
   _msg->ptr()[wizcc::Message::Fmt::CMD]=wtricv0::command::STORESC;
   memcpy(&(_msg->ptr()[wizcc::Message::Fmt::PAYLOAD]),slc,lenbytes);
   _msg->ptr()[len-1]=')';
-  uint32_t tr=this->sendMessage(_msg);
+  uint32_t tr=this->send_message(_msg);
   //this->processReply(tr);
 }
 

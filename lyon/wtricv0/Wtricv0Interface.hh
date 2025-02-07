@@ -12,7 +12,7 @@
 #include "utils.hh"
 
 #include "pmSender.hh"
-
+using namespace wizcc;
 
 static LoggerPtr _logWtricv0(Logger::getLogger("PMDAQ_WTRICV0"));
 namespace wtricv0
@@ -21,7 +21,7 @@ namespace wtricv0
     enum PORT {CTRL=9760,DATA=9761,SENSOR=9762};
     enum  command { STARTACQ=0,STOPACQ=1,RESET=2,READSC=5,LOADSC=6,STORESC=7,LASTABCID=3,LASTGTC=4,CLOSE=10,PULSE=11};
     // Gere la socket registre
-    class registerHandler : public socketProcessor
+    class registerHandler : public wizcc::socketProcessor
     {
     public:
       registerHandler(std::string);
@@ -39,7 +39,7 @@ namespace wtricv0
     };
 
     // Gere la socket Sensor
-    class sensorHandler : public socketProcessor
+    class sensorHandler : public wizcc::socketProcessor
     {
     public:
       sensorHandler(std::string);

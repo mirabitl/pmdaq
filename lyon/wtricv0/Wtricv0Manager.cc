@@ -1,5 +1,4 @@
 #include "Wtricv0Manager.hh"
-using namespace mpi;
 #include <unistd.h>
 #include <sys/dir.h>  
 #include <sys/param.h>  
@@ -88,7 +87,9 @@ void Wtricv0Manager::end()
 	  for (auto x:_mpi->boards())
 	    {
 	      // Automatic FSM (bit 1 a 0) , disabled (Bit 0 a 0)
-	      x.second->reg()->sendCommand(wtricv0::Message::command::STOPACQ);
+	      auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+
+	      reg->sendCommand(wtricv0::command::STOPACQ);
 	    }
 	  ::sleep(1);
 	  _running=false;
@@ -99,7 +100,9 @@ void Wtricv0Manager::end()
       PMF_INFO(_logWtricv0,"CLOSE CMD called ");
       for (auto x=_mpi->boards().begin();x!=_mpi->boards().end();x++)
       {
-	(*x).second->reg()->sendCommand(wtricv0::Message::command::CLOSE);
+	auto reg=(wtricv0::registerHandler*) (*x).second->processors()["REGISTER"];
+
+	reg->sendCommand(wtricv0::command::CLOSE);
       }
       PMF_INFO(_logWtricv0,"CLOSE DONE called ");
     PMF_INFO(_logWtricv0,"TERMINATE CMD called ");
@@ -114,17 +117,19 @@ web::json::value Wtricv0Manager::build_status()
    web::json::value jl;uint32_t mb=0;
   for (auto x:_mpi->boards())
     {
+      auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+      auto data=(wtricv0::dataHandler*) x.second->processors()["DATA"];
 
       web::json::value jt;
-      jt["detid"]=web::json::value::number(x.second->data()->detectorId());
+      jt["detid"]=web::json::value::number(data->detectorId());
       std::stringstream sid;
-      sid<<std::hex<<x.second->data()->difId()<<std::dec;
+      sid<<std::hex<<data->difId()<<std::dec;
       jt["sourceid"]=web::json::value::string(U(sid.str()));
-      jt["SLC"]=web::json::value::number(x.second->reg()->slcStatus());
-      jt["gtc"]=web::json::value::number(x.second->data()->gtc());
-      jt["abcid"]=web::json::value::number(x.second->data()->abcid());
-      jt["event"]=web::json::value::number(x.second->data()->event());
-      jt["triggers"]=web::json::value::number(x.second->data()->triggers());
+      jt["SLC"]=web::json::value::number(reg->slcStatus());
+      jt["gtc"]=web::json::value::number(data->gtc());
+      jt["abcid"]=web::json::value::number(data->abcid());
+      jt["event"]=web::json::value::number(data->event());
+      jt["triggers"]=web::json::value::number(data->triggers());
       jt["mode"]=web::json::value::number(_running_mode);
       jl[mb++]=jt;
     }
@@ -155,8 +160,10 @@ void Wtricv0Manager::c_startacq(http_request m)
   PMF_INFO(_logWtricv0,"STARTACQ CMD called ");
 
  for (auto x:_mpi->boards())
-    {
-      x.second->reg()->sendCommand(wtricv0::Message::command::STARTACQ);
+   {
+     auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+
+      reg->sendCommand(wtricv0::command::STARTACQ);
     }
   par["STATUS"]=web::json::value::string(U("DONE"));
   Reply(status_codes::OK,par);
@@ -169,7 +176,9 @@ void Wtricv0Manager::c_stopacq(http_request m)
   PMF_INFO(_logWtricv0,"STOPACQ CMD called ");
  for (auto x:_mpi->boards())
     {
-      x.second->reg()->sendCommand(wtricv0::Message::command::STOPACQ);
+      auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+
+      reg->sendCommand(wtricv0::command::STOPACQ);
     }
   par["STATUS"]=web::json::value::string(U("DONE"));
   Reply(status_codes::OK,par);
@@ -182,7 +191,9 @@ void Wtricv0Manager::c_reset(http_request m)
   PMF_INFO(_logWtricv0,"RESET CMD called ");
  for (auto x:_mpi->boards())
     {
-      x.second->reg()->sendCommand(wtricv0::Message::command::RESET);
+      auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+
+      reg->sendCommand(wtricv0::command::RESET);
     }
   par["STATUS"]=web::json::value::string(U("DONE"));
   Reply(status_codes::OK,par);
@@ -196,8 +207,10 @@ void Wtricv0Manager::c_storesc(http_request m)
 
   for (auto x:_mpi->boards())
     {
-      _hca->prepareSlowControl(x.second->ipAddress());
-      x.second->reg()->sendSlowControl(_hca->slcBuffer());
+      _hca->prepareSlowControl(x.second->ip_address());
+      auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+
+      reg->sendSlowControl(_hca->slcBuffer());
     }
   par["STATUS"]=web::json::value::string(U("DONE"));
   Reply(status_codes::OK,par);
@@ -210,7 +223,9 @@ void Wtricv0Manager::c_loadsc(http_request m)
   PMF_INFO(_logWtricv0,"LOADSC CMD called ");
  for (auto x:_mpi->boards())
     {
-      x.second->reg()->sendCommand(wtricv0::Message::command::LOADSC);
+      auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+
+      reg->sendCommand(wtricv0::command::LOADSC);
     }
   par["STATUS"]=web::json::value::string(U("DONE"));
   Reply(status_codes::OK,par);
@@ -222,7 +237,9 @@ void Wtricv0Manager::c_close(http_request m)
   PMF_INFO(_logWtricv0,"CLOSE CMD called ");
  for (auto x:_mpi->boards())
     {
-      x.second->reg()->sendCommand(wtricv0::Message::command::CLOSE);
+      auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+
+      reg->sendCommand(wtricv0::command::CLOSE);
     }
   par["STATUS"]=web::json::value::string(U("DONE"));
   Reply(status_codes::OK,par);
@@ -235,7 +252,9 @@ void Wtricv0Manager::c_readsc(http_request m)
   PMF_INFO(_logWtricv0,"READSC CMD called ");
  for (auto x:_mpi->boards())
     {
-      x.second->reg()->sendCommand(wtricv0::Message::command::READSC);
+      auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+
+      reg->sendCommand(wtricv0::command::READSC);
     }
   par["STATUS"]=web::json::value::string(U("DONE"));
   Reply(status_codes::OK,par);
@@ -248,7 +267,9 @@ void Wtricv0Manager::c_lastabcid(http_request m)
   PMF_INFO(_logWtricv0,"LOADSC CMD called ");
  for (auto x:_mpi->boards())
     {
-      x.second->reg()->sendCommand(wtricv0::Message::command::LASTABCID);
+      auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+
+      reg->sendCommand(wtricv0::command::LASTABCID);
     }
   par["STATUS"]=web::json::value::string(U("DONE"));
   Reply(status_codes::OK,par);
@@ -261,7 +282,8 @@ void Wtricv0Manager::c_lastgtc(http_request m)
   PMF_INFO(_logWtricv0,"LOADSC CMD called ");
  for (auto x:_mpi->boards())
     {
-      x.second->reg()->sendCommand(wtricv0::Message::command::LASTGTC);
+      auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+      reg->sendCommand(wtricv0::command::LASTGTC);
     }
   par["STATUS"]=web::json::value::string(U("DONE"));
   Reply(status_codes::OK,par);
@@ -315,7 +337,8 @@ void Wtricv0Manager::c_pulse(http_request m)
   uint32_t p0=utils::queryIntValue(m,"value",0);
  for (auto x:_mpi->boards())
     {
-      x.second->reg()->sendParameter(wtricv0::Message::command::PULSE,p0);
+      auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+      reg->sendParameter(wtricv0::command::PULSE,p0);
     }
   
 
@@ -423,7 +446,7 @@ void Wtricv0Manager::fsm_initialise(http_request m)
   // Now create the Message handler
   PMF_INFO(_logWtricv0,"Starting MPI ");
   if (_mpi==NULL)
-    _mpi= new wtricv0::Interface();
+    _mpi= new wizcc::Controller();
   _mpi->initialise();
 
   PMF_INFO(_logWtricv0,"Go thru parameters ");
@@ -516,7 +539,17 @@ void Wtricv0Manager::fsm_initialise(http_request m)
       
       PMF_INFO(_logWtricv0," New WTRICV0 found in db "<<std::hex<<eip<<std::dec<<" IP address "<<idif->second);
       vint.push_back(eip);
-      _mpi->addDevice(idif->second);
+      //_mpi->addDevice(idif->second);
+
+      wizcc::board* b= new wizcc::board(idif->second);
+      wtricv0::registerHandler* rh=new wtricv0::registerHandler(idif->second);
+      b->add_processor("REGISTER",rh);
+      wtricv0::dataHandler* dh=new wtricv0::dataHandler(idif->second);
+      b->add_processor("DATA",dh);
+      wtricv0::sensorHandler* sh=new wtricv0::sensorHandler(idif->second);
+      b->add_processor("SENSOR",sh);
+      _mpi->add_board(b);
+
       PMF_INFO(_logWtricv0," Registration done for "<<eip);
     }
   //std::string network=
@@ -525,7 +558,10 @@ void Wtricv0Manager::fsm_initialise(http_request m)
     _context= new zmq::context_t(1);
 
   for (auto x:_mpi->boards())
-    x.second->data()->autoRegister(_context,session(),"evb_builder","collectingPort");
+    {
+      auto data=(wtricv0::dataHandler*) x.second->processors()["DATA"];
+      data->autoRegister(_context,session(),"evb_builder","collectingPort");
+    }
   //x->connect(_context,params()["publish"].as_string());
 
   // Listen All Wtricv0 sockets
@@ -545,15 +581,17 @@ void Wtricv0Manager::configureHR2()
   fprintf(stderr,"Loop on socket for Sending slow control \n");
   for (auto x:_mpi->boards())
     {
-      _hca->prepareSlowControl(x.second->ipAddress());
-      x.second->reg()->sendSlowControl(_hca->slcBuffer());
+      _hca->prepareSlowControl(x.second->ip_address());
+      auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+      reg->sendSlowControl(_hca->slcBuffer());
     }
   
   PMF_INFO(_logWtricv0," Maintenant on charge ");
   for (auto x:_mpi->boards())
     {
-      uint32_t status=x.second->reg()->sendCommand(wtricv0::Message::command::LOADSC);
-      x.second->reg()->setSlcStatus(status);
+      auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+      uint32_t status=reg->sendCommand(wtricv0::command::LOADSC);
+      reg->setSlcStatus(status);
     }
 
 }
@@ -709,14 +747,18 @@ void Wtricv0Manager::start(http_request m)
   // Clear buffers
   for (auto x:_mpi->boards())
     {
-      x.second->data()->clear();
+      auto data=(wtricv0::dataHandler*) x.second->processors()["DATA"];
+
+      data->clear();
     }
 
   // Turn run type on
   for (auto x:_mpi->boards())
     {
       // Automatic FSM (bit 1 a 0) , enabled (Bit 0 a 1)
-      x.second->reg()->sendCommand(wtricv0::Message::command::STARTACQ);
+      auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+
+      reg->sendCommand(wtricv0::command::STARTACQ);
     }
    _running=true;
  par["status"]=json::value::string(U("done"));
@@ -733,7 +775,9 @@ void Wtricv0Manager::stop(http_request m)
   for (auto x:_mpi->boards())
     {
       // Automatic FSM (bit 1 a 0) , disabled (Bit 0 a 0)
-      x.second->reg()->sendCommand(wtricv0::Message::command::STOPACQ);
+      auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+
+      reg->sendCommand(wtricv0::command::STOPACQ);
     }
   ::sleep(2);
  _running=false;
@@ -752,7 +796,9 @@ void Wtricv0Manager::destroy(http_request m)
   for (auto x:_mpi->boards())
     {
       // Automatic FSM (bit 1 a 0) , disabled (Bit 0 a 0)
-      x.second->reg()->sendCommand(wtricv0::Message::command::CLOSE);
+      auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+
+      reg->sendCommand(wtricv0::command::CLOSE);
     }
 if (_mpi!=NULL)
     {
@@ -798,7 +844,9 @@ void Wtricv0Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,i
       for (auto x:_mpi->boards())
 	{
 	  // Automatic FSM (bit 1 a 0) , disabled (Bit 0 a 0)
-	  x.second->reg()->sendCommand(wtricv0::Message::command::STOPACQ);
+	  auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+
+	  reg->sendCommand(wtricv0::command::STOPACQ);
 	}
 
       usleep(1000);
@@ -820,7 +868,11 @@ void Wtricv0Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,i
 #define USEFEBS
 #ifdef USEFEBS
       for (auto x : _mpi->boards())
-	if (x.second->data()->event()>firstEvent) firstEvent=x.second->data()->event();
+	{
+	  auto data=(wtricv0::dataHandler*) x.second->processors()["DATA"];
+	  if (data->event()>firstEvent) firstEvent=data->event();
+
+	}
 #else
       auto frep = utils::sendCommand(builder, "STATUS", json::value::null());
       auto jfrep = frep.extract_json();
@@ -839,14 +891,17 @@ void Wtricv0Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,i
       utils::sendCommand(mdcc,"RELOADCALIB",json::value::null());
       for (auto x:_mpi->boards())
 	{
-	  x.second->data()->clear();
+	  auto data=(wtricv0::dataHandler*) x.second->processors()["DATA"];
+	  data->clear();
 	}
 
       // Turn run type on
       for (auto x:_mpi->boards())
 	{
 	  // Automatic FSM (bit 1 a 0) , enabled (Bit 0 a 1)
-	  x.second->reg()->sendCommand(wtricv0::Message::command::STARTACQ);
+	  auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];
+
+	  reg->sendCommand(wtricv0::command::STARTACQ);
 	}
       
       utils::sendCommand(mdcc,"RESUME",json::value::null());
@@ -857,7 +912,10 @@ void Wtricv0Manager::ScurveStep(std::string mdcc,std::string builder,int thmin,i
 	{
 	  ::usleep(10000);
 	  for (auto x : _mpi->boards())
-	    if (x.second->data()->event()>lastEvent) lastEvent=x.second->data()->event();
+	    {
+	      auto data=(wtricv0::dataHandler*) x.second->processors()["DATA"];
+	    if (data->event()>lastEvent) lastEvent=data->event();
+	    }
 	  nloop++;if (nloop > 60000 || !_running)  break;
 	}
       lastEvent=0;
@@ -1017,7 +1075,7 @@ void Wtricv0Manager::GainCurveStep(std::string mdcc,std::string builder,int gmin
       for (auto x:_mpi->boards())
 	{
 	  // Automatic FSM (bit 1 a 0) , disabled (Bit 0 a 0)
-	  x.second->reg()->sendCommand(wtricv0::Message::command::STOPACQ);
+	   auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];reg->sendCommand(wtricv0::command::STOPACQ);
 	}
 
       usleep(1000);
@@ -1029,7 +1087,10 @@ void Wtricv0Manager::GainCurveStep(std::string mdcc,std::string builder,int gmin
 #define USEFEBS
 #ifdef USEFEBS
       for (auto x : _mpi->boards())
-	if (x.second->data()->event()>firstEvent) firstEvent=x.second->data()->event();
+	{
+	  auto data=(wtricv0::dataHandler*) x.second->processors()["DATA"];
+	  if (data->event()>firstEvent) firstEvent=data->event();
+	}
 #else
       auto frep = utils::sendCommand(builder, "STATUS", json::value::null());
       auto jfrep = frep.extract_json();
@@ -1049,14 +1110,15 @@ void Wtricv0Manager::GainCurveStep(std::string mdcc,std::string builder,int gmin
       utils::sendCommand(mdcc,"RELOADCALIB",json::value::null());
       for (auto x:_mpi->boards())
 	{
-	  x.second->data()->clear();
+	  auto data=(wtricv0::dataHandler*) x.second->processors()["DATA"];
+	  data->clear();
 	}
 
       // Turn run type on
       for (auto x:_mpi->boards())
 	{
 	  // Automatic FSM (bit 1 a 0) , enabled (Bit 0 a 1)
-	  x.second->reg()->sendCommand(wtricv0::Message::command::STARTACQ);
+	   auto reg=(wtricv0::registerHandler*) x.second->processors()["REGISTER"];reg->sendCommand(wtricv0::command::STARTACQ);
 	}
       
       utils::sendCommand(mdcc,"RESUME",json::value::null());
@@ -1068,7 +1130,10 @@ void Wtricv0Manager::GainCurveStep(std::string mdcc,std::string builder,int gmin
 	{
 	  ::usleep(10000);
 	  for (auto x : _mpi->boards())
-	    if (x.second->data()->event()>lastInBoard) lastInBoard=x.second->data()->event();
+	    {
+	      auto data=(wtricv0::dataHandler*) x.second->processors()["DATA"];
+	    if (data->event()>lastInBoard) lastInBoard=data->event();
+	    }
 	  nloop++;if (nloop > 600 || !_running)  break;
 	}
       while (lastEvent < (firstEvent + ntrg - 1))
