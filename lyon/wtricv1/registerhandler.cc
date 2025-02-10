@@ -1,4 +1,4 @@
-#include "Tricv1Interface.hh"
+#include "Wtricv1Interface.hh"
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -24,13 +24,13 @@
 
 
 
-tricv1::registerHandler::registerHandler(std::string ip) : socketHandler(ip,tricv1::PORT::REGISTER),_noTransReply(false)
+wtricv1::registerHandler::registerHandler(std::string ip) : socketProcessor(ip,wtricv1::PORT::REGISTER),_noTransReply(false)
 
 {
   _msg= new wizcc::Message();
 }
 
-void tricv1::registerHandler::writeRegister(uint16_t address,uint32_t value)
+void wtricv1::registerHandler::writeRegister(uint16_t address,uint32_t value)
 {
   uint16_t len=16;
   _msg->setAddress(this->id());
@@ -46,7 +46,7 @@ void tricv1::registerHandler::writeRegister(uint16_t address,uint32_t value)
   _msg->ptr()[len-1]=')';    
   int32_t tr=this->send_message(_msg);
 }
-uint32_t tricv1::registerHandler::readRegister(uint16_t address)
+uint32_t wtricv1::registerHandler::readRegister(uint16_t address)
 {
   uint16_t len=16;
   _msg->setAddress(this->id());
@@ -74,7 +74,7 @@ uint32_t tricv1::registerHandler::readRegister(uint16_t address)
 }
 
 
-bool tricv1::registerHandler::process_message()
+bool wtricv1::registerHandler::process_message()
 {
   return true;
 }

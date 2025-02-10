@@ -1,4 +1,4 @@
-#include "Tricv1Interface.hh"
+#include "Wtricv1Interface.hh"
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -22,18 +22,18 @@
 #include <arpa/inet.h>
 
 
-tricv1::dataHandler::dataHandler(std::string ip) : socketHandler(ip,tricv1::PORT::DATA),_ntrg(0),_dsData(NULL),_triggerId(0),_detId(tricv1::IDS::DETID)
+wtricv1::dataHandler::dataHandler(std::string ip) : socketProcessor(ip,wtricv1::PORT::DATA),_ntrg(0),_dsData(NULL),_triggerId(0),_detId(wtricv1::IDS::DETID)
 {
   
 }
-void tricv1::dataHandler::connect(zmq::context_t* c,std::string dest)
+void wtricv1::dataHandler::connect(zmq::context_t* c,std::string dest)
 {
   if (_dsData!=NULL)
     delete _dsData;
   _dsData = new pm::pmSender(c,_detId,this->sourceid());
   _dsData->connect(dest);
 }
-void tricv1::dataHandler::clear()
+void wtricv1::dataHandler::clear()
 {
   _nProcessed=0;
   _lastGTC=0;
@@ -47,7 +47,7 @@ void tricv1::dataHandler::clear()
 }
 
 
-void tricv1::dataHandler::autoRegister(zmq::context_t* c,std::string session,std::string appname,std::string portname)
+void wtricv1::dataHandler::autoRegister(zmq::context_t* c,std::string session,std::string appname,std::string portname)
 {
   if (_dsData!=NULL)
     delete _dsData;
@@ -59,7 +59,7 @@ void tricv1::dataHandler::autoRegister(zmq::context_t* c,std::string session,std
 
 }
 
-bool tricv1::dataHandler::process_message()
+bool wtricv1::dataHandler::process_message()
 {
   uint16_t* _sBuf= (uint16_t*) &_buf[wizcc::Message::Fmt::LEN];
   uint16_t length=ntohs(_sBuf[0]); // Header
@@ -72,7 +72,7 @@ bool tricv1::dataHandler::process_message()
   _lastGTC=((uint32_t) cdb[2] <<16)|((uint32_t) cdb[3] <<8)|((uint32_t) cdb[4]);
   _lastABCID = ((uint64_t) cdb[5] <<48)|((uint64_t) cdb[6] <<32)|((uint64_t) cdb[7] <<24)|((uint64_t) cdb[8] <<16)|((uint64_t) cdb[9] <<8)|((uint64_t) cdb[10]);
   _lastBCID=((uint32_t) cdb[11] <<16)|((uint32_t) cdb[12] <<8)|((uint32_t) cdb[13]);
-  PM_DEBUG(_logTricv1,this->sourceid()<<" Command answer="<<command<<" length="<<length<<" trame id="<<trame<<" buffer length "<<_idx<<" GTC" <<_lastGTC<<" ABCID "<<_lastABCID<<" Last BCID "<<_lastBCID);
+  PM_DEBUG(_logWtricv1,this->sourceid()<<" Command answer="<<command<<" length="<<length<<" trame id="<<trame<<" buffer length "<<_idx<<" GTC" <<_lastGTC<<" ABCID "<<_lastABCID<<" Last BCID "<<_lastBCID);
 
 #define DEBUGEVENTN
 #ifdef DEBUGEVENT  
@@ -105,89 +105,12 @@ bool tricv1::dataHandler::process_message()
   if (_dsData!=NULL)
     {
       //memcpy((unsigned char*) _dsData->payload(),temp,idx);
-      PM_DEBUG(_logTricv1,this->sourceid()<<"Publishing  Event="<<_event<<" GTC="<<_lastGTC<<" ABCID="<<_lastABCID<<" size="<<idx);
+      PM_DEBUG(_logWtricv1,this->sourceid()<<"Publishing  Event="<<_event<<" GTC="<<_lastGTC<<" ABCID="<<_lastABCID<<" size="<<idx);
       memcpy((unsigned char*) _dsData->payload(),_buf,length);
       _dsData->publish(_lastABCID,_lastGTC,idx);
       //if (_event%100==0)
-      PM_DEBUG(_logTricv1,this->sourceid()<<"Published  Event="<<_event<<" GTC="<<_lastGTC<<" ABCID="<<_lastABCID<<" size="<<idx);
+      PM_DEBUG(_logWtricv1,this->sourceid()<<"Published  Event="<<_event<<" GTC="<<_lastGTC<<" ABCID="<<_lastABCID<<" size="<<idx);
     }
   _event++;
   return true;
-}
-void tricv1::dataHandler::processBuffer(uint64_t id, uint16_t l,char* bb)
-{
-  PM_DEBUG(_logTricv1," procesBuffer  "<<std::hex<<id<<std::dec<<" received "<<l<<" stored "<<_idx);
-  if ((_idx+l)>MBSIZE)
-    {
-      PM_WARN(_logTricv1," Resetting the buffer ");
-      _idx=0;
-    }
-  
-      
-  uint8_t temp[0x100000];
-  memcpy(&_buf[_idx],bb,l);
-  _idx+=l;
- processFullBuffer:
-  // Bad start of buffer
-  if (_buf[0]!='(')
-    {
-      PM_WARN(_logTricv1," Invalid start of buffer "<<std::hex<<_buf[0]<<std::dec);
-      _idx=0;memset(_buf,0,MBSIZE);return;
-    }
-  
-  uint16_t* _sBuf= (uint16_t*) &_buf[wizcc::Message::Fmt::LEN];
-  uint16_t length=ntohs(_sBuf[0]); // Header
-
-  // Invalid length
-  if (length>MBSIZE)
-    {
-      PM_WARN(_logTricv1," procesBuffer Size too large "<<std::hex<<id<<std::dec<<" Length "<<length);
-      memset(_buf,0,MBSIZE);
-      _idx=0;
-      return;
-    }
-  //  Data corrupted
-  if (_idx>length  && _buf[length-1]!=')')
-    {
-      PM_WARN(_logTricv1,"Corrupted buffer "<<std::hex<<id<<std::dec<<" Length "<<length);
-      //Bad buffer found next a0 00 00 00 00 00 00 29 28
-      for (int i=0;i<_idx-9;i++)
-	{
-	  if (_buf[i]==0xa0 &&
-	      _buf[i+1]==0x00 &&
-	      _buf[i+2]==0x00 &&
-	      _buf[i+3]==0x00 &&
-	      _buf[i+4]==0x00 &&
-	      _buf[i+5]==0x00 &&
-	      _buf[i+6]==0x00 &&
-	      _buf[i+7]==0x29 &&
-	      _buf[i+8]==0x28)
-	    {
-	      memcpy(temp,&_buf[i+8],_idx-(i+8));
-	      memcpy(_buf,temp,_idx-(i+8));
-	      _idx=_idx-(i+8);
-	      goto processFullBuffer;
-	    }
-	}
-	
-    }
-  // End of buffer
-  if (_buf[length-1]==')')
-    {
-      bool ok=processPacket();
-      int32_t nlen=_idx-length;
-      PM_DEBUG(_logTricv1,"Packet processed  "<<std::hex<<id<<std::dec<<" remaining Length "<<_idx<<" "<<length);
-      if (nlen>0)
-	{
-	  memcpy(temp,&_buf[length],nlen);
-	  _idx=nlen;
-	  memset(_buf,0,MBSIZE);
-	  memcpy(&_buf[0],temp,nlen);
-	  goto processFullBuffer;
-	}
-      else	
-	{_idx=0;memset(_buf,0,MBSIZE);}
-    }
-   
-  
 }

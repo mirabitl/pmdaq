@@ -1,5 +1,5 @@
 #pragma once
-#include "Gricv1Interface.hh"
+#include "Wtricv1Interface.hh"
 #include "HR2ConfigAccess.hh"
 #include "fsmw.hh"
 #include <stdint.h>
@@ -9,11 +9,13 @@
 #include <zlib.h>
 #include <iostream>
 
-class Gricv1Manager : public fsmw
+using namespace wtricv1;
+
+class Wtricv1Manager : public fsmw
 {
 public:
-  Gricv1Manager();
-  ~Gricv1Manager(){;}
+  Wtricv1Manager();
+  ~Wtricv1Manager(){;}
   virtual void initialise();
   virtual void end();
 
@@ -54,9 +56,12 @@ public:
   void c_ctest(http_request m);
   void c_setrunmode(http_request m);
   web::json::value build_status();
+  inline wtricv1::dataHandler* cast_data(wizcc::socketProcessor* s) {return ( wtricv1::dataHandler*) s;}
+  inline wtricv1::registerHandler* cast_reg(wizcc::socketProcessor* s) {return ( wtricv1::registerHandler*) s;}
+  inline wtricv1::slcHandler* cast_slc(wizcc::socketProcessor* s) {return ( wtricv1::slcHandler*) s;}
 private:
   HR2ConfigAccess* _hca;
-  gricv1::Interface* _mpi;
+  wizcc::Controller* _mpi;
 
 
 

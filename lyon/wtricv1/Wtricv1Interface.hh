@@ -12,9 +12,9 @@
 #include "utils.hh"
 
 #include "pmSender.hh"
-static LoggerPtr _logTricv1(Logger::getLogger("PMDAQ_TRICV1"));
+static LoggerPtr _logWtricv1(Logger::getLogger("PMDAQ_WTRICV1"));
 using namespace wizcc;
-  namespace tricv1
+  namespace wtricv1
   {
     enum IDS {DETID=160};
     enum PORT { REGISTER=10002,SLC=10001,DATA=10003};
@@ -61,7 +61,6 @@ using namespace wizcc;
     public:
       dataHandler(std::string ip);
       virtual bool process_message();
-      virtual void processBuffer(uint64_t id, uint16_t l,char* b);
       inline void setTriggerId(uint8_t i) {_triggerId=i;}
 
       inline uint32_t detectorId(){return _detId;}
@@ -85,5 +84,13 @@ using namespace wizcc;
       
     };
 
-
+    /*
+    class board: public wizcc::board
+    {
+      public:
+      inline tricv1::dataHandler* data() {return (tricv1::dataHandler*) this->processors()["DATA"];}
+      inline tricv1::registerHandler* reg() {return (tricv1::registerHandler*) this->processors()["REGISTER"];}
+      inline tricv1::slcHandler* slc() {return (tricv1::slcHandler*) this->processors()["SLOW"];}
+    }
+      */
   };

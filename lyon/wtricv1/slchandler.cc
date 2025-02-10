@@ -24,12 +24,12 @@
 
 
 
-tricv1::slcHandler::slcHandler(std::string ip) : socketHandler(ip,tricv1::PORT::SLC)
+wtricv1::slcHandler::slcHandler(std::string ip) : socketProcessor(ip,wtricv1::PORT::SLC)
 {
   _msg=new wizcc::Message();
 }
 
-void tricv1::slcHandler::sendSlowControl(uint8_t* slc,uint16_t lenbytes)
+void wtricv1::slcHandler::sendSlowControl(uint8_t* slc,uint16_t lenbytes)
 {
   uint16_t hrlen=lenbytes;
   uint16_t cpl32bit=4-hrlen%4;
@@ -49,7 +49,7 @@ void tricv1::slcHandler::sendSlowControl(uint8_t* slc,uint16_t lenbytes)
 }
 
 
-bool tricv1::slcHandler::process_message()
+bool wtricv1::slcHandler::process_message()
 {
   return true;
 }
