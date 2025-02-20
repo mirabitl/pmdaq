@@ -23,6 +23,8 @@ public:
 
   /// INITIALISE  handler
   void fsm_initialise(http_request m);
+  /// CREATE  handler
+  void createboard(http_request m);
   /// CONFIGURE  handler
   void configure(http_request m);
   /// START  handler
@@ -46,8 +48,8 @@ public:
 
 private:
   uint32_t _run, _type;
-  std::string _feb_host;
-  uint32_t _feb_port, _detId, _sourceId;
+  std::string _board_host;
+  uint32_t _board_port, _detId, _sourceId;
 
   pm::pmSender *_dsData;
   zmq::context_t *_context;

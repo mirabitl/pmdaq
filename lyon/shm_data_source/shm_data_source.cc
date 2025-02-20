@@ -26,7 +26,7 @@ void shm_data_source::initialise()
   this->addState("INITIALISED");
   this->addState("CONFIGURED");
   this->addState("RUNNING");
-  this->addTransition("CREATEFEB", "CREATED", "PREINITIALISED", std::bind(&shm_data_source::createfeb, this, std::placeholders::_1));
+  this->addTransition("CREATEBOARD", "CREATED", "PREINITIALISED", std::bind(&shm_data_source::createboard, this, std::placeholders::_1));
 
   this->addTransition("INITIALISE", "PREINITIALISED", "INITIALISED", std::bind(&shm_data_source::fsm_initialise, this, std::placeholders::_1));
   this->addTransition("CONFIGURE", "INITIALISED", "CONFIGURED", std::bind(&shm_data_source::configure, this, std::placeholders::_1));
@@ -82,6 +82,7 @@ void shm_data_source::spy_shm()
       std::vector<std::string> vnames;
       utils::ls(_shmPath, vnames);
       PM_DEBUG(_logShmDS, "Loop PATH for files " << _shmPath << " " << vnames.size());
+      uint32_t nproc=0;
       for (auto x : vnames)
 	{
 	  std::cout << x << std::endl;
@@ -99,8 +100,11 @@ void shm_data_source::spy_shm()
 	  b->setPayloadSize(pls);
 	  uint64_t idx_storage = b->eventId(); // usually abcid
 	  _dsData->publish(bxid, eventid, b->size());
+	  nproc++;
 	}
-
+      auto parcmd = json::value::object();
+      parcmd["tokens"] = json::value::number(nproc);
+      auto jrep=this->post("ADDTOKENS",parcmd);
       usleep(50000);
     }
   PM_INFO(_logShmDS, "Stoping spy_shm");
@@ -149,17 +153,17 @@ void shm_data_source::c_add_tokens(http_request m)
 
 web::json::value shm_data_source::post(std::string cmd, web::json::value v )
 {
-  std::cerr<<"post command "<<_feb_host<<":"<<_feb_port<<"/"<<cmd<<" "<<v<<std::endl;
-  http_response rep = utils::request(_feb_host, _feb_port, cmd, v);
+  std::cerr<<"post command "<<_board_host<<":"<<_board_port<<"/"<<cmd<<" "<<v<<std::endl;
+  http_response rep = utils::request(_board_host, _board_port, cmd, v);
   
   auto jrep = rep.extract_json();
   std::cerr<<" Returned response:"<<jrep.get()<<std::endl;
   return jrep.get();
 }
-void shm_data_source::createfeb(http_request m)
+void shm_data_source::createboard(http_request m)
 {
   auto par = json::value::object();
-  PM_INFO(_logShmDS, "****** CMD: PREINITIALISED , creating FEB object");
+  PM_INFO(_logShmDS, "****** CMD: PREINITIALISED , creating BOARD object");
   // Need a ShmDS tag
   if (!utils::isMember(params(), "shm_data_source"))
     {
@@ -173,17 +177,17 @@ void shm_data_source::createfeb(http_request m)
   //_msh =new MpiMessageHandler("/dev/shm");
   if (!utils::isMember(jShmDS, "daq"))
     {
-      PMF_ERROR(_logShmDS, "No ShmDS:febdaq tag");
-      par["status"] = json::value::string(U("Missing ShmDS:febdaq tag "));
+      PMF_ERROR(_logShmDS, "No ShmDS:boarddaq tag");
+      par["status"] = json::value::string(U("Missing ShmDS:boarddaq tag "));
       Reply(status_codes::OK, par);
       return;
     }
-  auto jFebDaq = jShmDS["daq"];
-  _feb_host = jFebDaq["host"].as_string();
-  _feb_port = jFebDaq["port"].as_integer();
+  auto jBoardDaq = jShmDS["daq"];
+  _board_host = jBoardDaq["host"].as_string();
+  _board_port = jBoardDaq["port"].as_integer();
   _shmPath=jShmDS["shm_path"].as_string();
 
-  auto jrep = this->post("/CREATE",jFebDaq["params"]);
+  auto jrep = this->post("/CREATE",jBoardDaq["params"]);
   auto w_rep=decode_spyne_answer(jrep,"CREATE");
   //  A FAIRE Recupperer info sur l'initialisation
 
@@ -192,6 +196,7 @@ void shm_data_source::createfeb(http_request m)
       delete _dsData;
       _dsData = NULL;
     }
+  this->clearShm();
   PMF_INFO(_logShmDS, " Create done  ");
   par["status"] = json::value::string(U("done"));
   par["answer"] = w_rep;

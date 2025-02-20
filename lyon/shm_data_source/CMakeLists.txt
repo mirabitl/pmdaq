@@ -3,20 +3,20 @@ cmake_minimum_required(VERSION 3.0)
 
 # Notre projet est étiqueté libhello
 
-project(lyon_febv2 VERSION 0.0.1 DESCRIPTION "Zup plugin")
+project(lyon_shm_data_source VERSION 0.0.1 DESCRIPTION "Zup plugin")
 
 
 
 set(SRCS
-  Febv2Manager.cc
+  shm_data_source.cc
   )
 	
 set(HEADERS
-  Febv2Manager.hh
+  shm_data_source.hh
   )
 
 link_directories( ../../lib )
-add_library(lyon_febv2 SHARED ${SRCS} ${HEADERS})
+add_library(lyon_shm_data_source SHARED ${SRCS} ${HEADERS})
 
 #set(zup_DIR /opt/lydaq/drivers/Zup )
 #find_library(ZUP_LIB lydaq_Zup PATHS /opt/lydaq/drivers/Zup/lib)
@@ -26,29 +26,29 @@ add_library(lyon_febv2 SHARED ${SRCS} ${HEADERS})
 
 
 
-#target_link_libraries(lyon_febv2 PUBLIC ${ZUP_LIB})
-target_link_libraries(lyon_febv2 PRIVATE pmdaq zmq ${PMDAQ_LIBS})
-#target_include_directories(lyon_febv2 PRIVATE ${zup_DIR}/include)
+#target_link_libraries(lyon_shm_data_source PUBLIC ${ZUP_LIB})
+target_link_libraries(lyon_shm_data_source PRIVATE pmdaq zmq ${PMDAQ_LIBS})
+#target_include_directories(lyon_shm_data_source PRIVATE ${zup_DIR}/include)
 
-#target_include_directories(lyon_febv2 PRIVATE /usr/include/jsoncpp)
+#target_include_directories(lyon_shm_data_source PRIVATE /usr/include/jsoncpp)
 
 
 include(../../CMake.defs)
 
-#target_link_libraries(lyon_febv2 PRIVATE cpprest)
+#target_link_libraries(lyon_shm_data_source PRIVATE cpprest)
 
 
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
 #find_package(log4cxx CONFIG REQUIRED)
-#target_link_libraries(lyon_febv2 PRIVATE log4cxx)
-target_link_libraries(lyon_febv2 PRIVATE  evb)
+#target_link_libraries(lyon_shm_data_source PRIVATE log4cxx)
+target_link_libraries(lyon_shm_data_source PRIVATE  evb)
 
-target_include_directories(lyon_febv2 PRIVATE ../../include ../../evb/include )
+target_include_directories(lyon_shm_data_source PRIVATE ../../include ../../evb/include )
 
 
-# Créé des variables avec les fichiers à cofebv2ler
+# Créé des variables avec les fichiers à coshm_data_sourceler
 
 # La bibliothèque peut être soit une bibliothèque statique, soit dynamique, donc on précise où installer pour les deux cas
-install(TARGETS lyon_febv2  LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+install(TARGETS lyon_shm_data_source  LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 
 
