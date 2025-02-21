@@ -587,7 +587,7 @@ uint32_t utils::pull(std::string name,void* buf,std::string sourcedir)
   int size_buf=::read(fd,buf,len);//0x100000);
   //  buf->setPayloadSize);
   uint8_t* cbuf=(uint8_t*) buf;
-  printf("utils::pull %d %d bytes read %x %x \n",len,size_buf,cbuf[0],cbuf[size_buf-1]);
+  //printf("utils::pull %d %d bytes read %x %x \n",len,size_buf,cbuf[0],cbuf[size_buf-1]);
   ::close(fd);
   ::unlink(sc.str().c_str());
   ::unlink(sd.str().c_str());

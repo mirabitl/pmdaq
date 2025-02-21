@@ -77,6 +77,8 @@ void shm_data_source::spy_shm()
   time_t tlast = time(0);
   uint32_t detid, sourceid, eventid;
   uint64_t bxid;
+  auto parcmd = json::value::object();
+  int id,offset,elen,gtc,tokens;
   while (_running)
     {
       std::vector<std::string> vnames;
@@ -85,7 +87,7 @@ void shm_data_source::spy_shm()
       uint32_t nproc=0;
       for (auto x : vnames)
 	{
-	  std::cout << x << std::endl;
+	  //std::cout << x << std::endl;
 	  // EUDAQ_WARN("Find file "+x);
 	  // continue;
 	  auto b = _dsData->buffer();
@@ -97,15 +99,58 @@ void shm_data_source::spy_shm()
 	  b->setEventId(eventid);
 	  b->setBxId(bxid);
 	  uint32_t pls = utils::pull(x, b->payload(), _shmPath);
+	  
+	  uint32_t* l=(uint32_t*) b->payload();
+	  id = ntohl(l[0]);
+	  offset = ntohl(l[1]);
+	  elen = ntohl(l[2]);
+	  gtc = ntohl(l[3]);
+	  tokens = ntohl(l[4]);
+
+	  PM_DEBUG(_logShmDS, "NPROC "<<nproc
+		  <<" Id " <<id
+		  <<" offset " <<offset
+		  <<" elen " <<elen
+		  <<" gtc " <<gtc
+		  <<" tokens " <<tokens);
+
+	  
 	  b->setPayloadSize(pls);
 	  uint64_t idx_storage = b->eventId(); // usually abcid
 	  _dsData->publish(bxid, eventid, b->size());
-	  nproc++;
+	  nproc+=pls/1472;
+
+	  // if (100000-tokens>10000)
+	  //   {
+
+
+
+	  //     parcmd["tokens"] = json::value::number(10000);
+	  //     auto jrep=this->post("ADDTOKENS",parcmd);
+	  //     nproc-=10000;
+	  //   }
+	    
 	}
-      auto parcmd = json::value::object();
-      parcmd["tokens"] = json::value::number(nproc);
-      auto jrep=this->post("ADDTOKENS",parcmd);
+      int nt=100000-tokens;
+      if (nt>40000 && vnames.size()>1)
+	{
+	  PM_INFO(_logShmDS, "resend "<<nt);
+	  //::sleep(10);
+	  parcmd["tokens"] = json::value::number(nt);
+	  auto jrep=this->post("ADDTOKENS",parcmd);
+	  PM_INFO(_logShmDS, "NPROC "<<nt
+	      <<" Id " <<id
+	      <<" offset " <<offset
+	      <<" elen " <<elen
+	      <<" gtc " <<gtc
+	      <<" tokens " <<tokens);
+
+	}
       usleep(50000);
+
+
+
+
     }
   PM_INFO(_logShmDS, "Stoping spy_shm");
 }
@@ -153,7 +198,7 @@ void shm_data_source::c_add_tokens(http_request m)
 
 web::json::value shm_data_source::post(std::string cmd, web::json::value v )
 {
-  std::cerr<<"post command "<<_board_host<<":"<<_board_port<<"/"<<cmd<<" "<<v<<std::endl;
+  //std::cerr<<"post command "<<_board_host<<":"<<_board_port<<"/"<<cmd<<" "<<v<<std::endl;
   http_response rep = utils::request(_board_host, _board_port, cmd, v);
   
   auto jrep = rep.extract_json();
