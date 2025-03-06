@@ -83,6 +83,11 @@ void ipdc::IpdcHandler::close()
 
 
 #define IPDC_BUSY_MIN 0x20
+/**
+0 central
+Bit 1 left
+Bit 2 Right
+ */
 #define IPDC_BUSY_ENABLE 0x21
 #define IPDC_SPILL_ON 0x5
 #define IPDC_SPILL_OFF 0x6
