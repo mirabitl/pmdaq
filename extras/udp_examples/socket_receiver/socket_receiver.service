@@ -1,0 +1,11 @@
+[Unit]
+Description = Starting socket_receiver  service
+After = network.target
+
+[Service]
+ExecStart = /usr/local/bin/socket_receiver_service_daemon
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy = multi-user.target

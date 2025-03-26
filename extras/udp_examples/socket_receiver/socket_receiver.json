@@ -1,0 +1,5 @@
+{
+    "interface":"enp1s0f1",
+    "ip-from":"192.168.100.2",
+    "port-from":8765
+}

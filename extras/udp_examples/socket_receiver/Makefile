@@ -16,7 +16,7 @@ LIBPCAP    ?= ${PCAPDIR}/libpcap.a  ${EXTRA_LIBS}
 #
 # Search directories
 #
-INCLUDE    ?= -I${PFRINGDIR} -I${PCAPDIR} -Ithird-party -I/opt/pmdaq/include
+INCLUDE    ?= -I${PFRINGDIR} -I${PCAPDIR} -Ithird-party -I/opt/pmdaq/include -I/usr/include/jsoncpp
 
 CC         = ${CROSS_COMPILE}g++
 CFLAGS     =  ${O_FLAG} -Wall ${INCLUDE} -g
@@ -24,7 +24,7 @@ CFLAGS     =  ${O_FLAG} -Wall ${INCLUDE} -g
 #
 # User and System libraries
 #
-LDFLAGS       = -L/usr/local/pmdaq/lib -lpmdaq ${LIBPFRING} ${LIBPCAP} -lpthread  -lrt -ldl -lssl -lcrypto -llog4cxx -lcpprest -lboost_system -lcrypto -lssl -lz 
+LDFLAGS       = -L/usr/local/pmdaq/lib -lpmdaq ${LIBPFRING} ${LIBPCAP} -lpthread  -lrt -ldl -lssl -lcrypto -llog4cxx -lcpprest -ljsoncpp -lboost_system -lcrypto -lssl -lz 
 
 PFPROGS   = pfring_rcv
 TARGETS   = ${PFPROGS}
