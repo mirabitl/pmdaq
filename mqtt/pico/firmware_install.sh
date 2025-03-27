@@ -3,6 +3,7 @@ cd /opt/pmdaq/mqtt/pico
 cp pmpico.py main.py
 nano settings.json
 
+ampy --port /dev/ttyACM0 put BMX280.py
 ampy --port /dev/ttyACM0 put bme280.py
 ampy --port /dev/ttyACM0 put cpwplus.py
 ampy --port /dev/ttyACM0 put freesans12.py

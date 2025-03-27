@@ -4,7 +4,8 @@ from machine import Pin,SPI,ADC,I2C
 import network
 import time
 import oled
-import bme280
+#import bme280
+import BMX280
 import hih81310
 import json
 from writer import Writer
@@ -17,6 +18,7 @@ import brooksPico
 import cpwplus
 import random
 from machine import WDT
+from machine import SoftI2C
 #mqtt config
 
 client_id = 'wiz'
@@ -27,6 +29,7 @@ class PmPico:
  
     def __init__(self,**kwargs):
         #
+        #pin_33v = Pin(28, mode=Pin.OUT, value=1)
         self.client=None
         self.wdt=None
         self.topic_prefix= "pico_w5500/Test/"
@@ -132,6 +135,8 @@ class PmPico:
             if  s_dv["use"]==1:
                 print("BME is used")
                 self.ping()
+                print("On a pinge %d %d %d" % (s_dv["i2c"],s_dv["sda"],s_dv["scl"]))
+
                 self.bme_init(s_dv["i2c"],s_dv["sda"],s_dv["scl"])
                 print("BME is initialised")
                 self.devices["bme"]={"period":s_dv["period"],"last":0,"measure":self.bme_status,
@@ -234,8 +239,16 @@ class PmPico:
         
     # BME280 init
     def bme_init(self,i2cid,psda,pscl):
-        self.i2c0=I2C(i2cid,sda=Pin(psda), scl=Pin(pscl), freq=100000)    #initializing the I2C method
-        self.bme = bme280.BME280(i2c=self.i2c0)
+        #pin_27 = Pin(pscl,pull=Pin.PULL_UP)
+        #pin_26 =Pin(psda,pull=Pin.PULL_UP)
+        self.i2c0=I2C(i2cid,sda=Pin(psda), scl=Pin(pscl), freq=100000)
+        #b=self.i2c0.readfrom_mem(0x76, 0xd0, 1)
+        #print(b)
+        #initializing the I2C method
+        #self.i2c0=I2C(i2cid,sda=pin_26, scl=pin_27, freq=100000)
+        #self.bme = bme280.BME280(i2c=self.i2c0)
+        self.bme=BMX280.BMX280(self.i2c0,0x76)
+        self.bme.print_calibration()
         self.draw_string("BME280\ninitialised\nI2C0\nSDA4 SCL5" )
         time.sleep(1)
     # HIH81310 init
@@ -427,14 +440,41 @@ class PmPico:
         
         self.wdt_feed()
     def bme_status(self):
-        t, p, h = self.bme.read_hrvalues()
-        #res={}
-        #res["T"]=t
-        #res["P"]=p
-        #res["H"]=h
+        if (1>0):
+            tt=self.bme.temperature
+            pp=self.bme.pressure
+            hh=self.bme.humidity
+            res={}
+            res["T"]=tt
+            res["P"]=pp
+            res["H"]=hh
+            res["r_T"]=self.bme._t_raw
+            res["r_P"]=self.bme._p_raw
+            res["r_H"]=self.bme._h_raw
+            res["d_T1"]=self.bme._T1
+            res["d_T2"]=self.bme._T2
+            res["d_T3"]=self.bme._T3
+            res["d_P1"]=self.bme._P1
+            res["d_P2"]=self.bme._P2
+            res["d_P3"]=self.bme._P3
+            res["d_P4"]=self.bme._P4
+            res["d_P5"]=self.bme._P5
+            res["d_P6"]=self.bme._P6
+            res["d_P7"]=self.bme._P7
+            res["d_P8"]=self.bme._P8
+            res["d_P9"]=self.bme._P9
+            res["d_H1"]=self.bme._H1
+            res["d_H2"]=self.bme._H2
+            res["d_H3"]=self.bme._H3
+            res["d_H4"]=self.bme._H4
+            res["d_H5"]=self.bme._H5
+            res["d_H6"]=self.bme._H6    
+
         #topic_pub ='pico_w5500/%s/bme280' % self.settings["id"]
         #tmsg=json.dumps(res)
-        self.publish("bme", {"T":t,"P":p,"H":h})
+        
+        #self.publish("bme", {"T":tt,"P":pp,"H":hh})
+        self.publish("bme",res)
         if (self.use_display):
             self.draw_string("BME280\nP=%.1f hPa\nT=%.1f C\nHum=%.1f %%" % (p,t,h))
             time.sleep(1);

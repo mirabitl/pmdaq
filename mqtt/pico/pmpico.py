@@ -135,6 +135,8 @@ class PmPico:
             if  s_dv["use"]==1:
                 print("BME is used")
                 self.ping()
+                print("On a pinge %d %d %d" % (s_dv["i2c"],s_dv["sda"],s_dv["scl"]))
+
                 self.bme_init(s_dv["i2c"],s_dv["sda"],s_dv["scl"])
                 print("BME is initialised")
                 self.devices["bme"]={"period":s_dv["period"],"last":0,"measure":self.bme_status,
