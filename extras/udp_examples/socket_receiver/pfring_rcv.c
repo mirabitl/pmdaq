@@ -97,11 +97,21 @@ void processCompleteUDPPacket(uint8_t *data, int total_size)
 	// printf("%d %d %d %d %d \n",id,offset,elen,gtc,tokens);
 	if (first_id < 0)
 		first_id = id;
+
 	nrec++;
 	totalbytes += udp_data_len;
 	if ((id - first_id + 1) != nrec)
+	  {
 		nloss++;
-
+		if (nloss==1 && nrec> (id+100))
+		  {
+		    first_id=id;
+		    nrec=1;
+		    nloss=0;
+		  }
+		if (nloss%10000==1)
+		  printf("Loss %d Id %d first_id %d nrec %d \n",nloss,id,first_id,nrec);
+	  }
 	if (offset == 0 && gtc > 1)
 	{
 		int *el = (int *)event_b;
