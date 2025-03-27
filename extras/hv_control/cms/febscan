@@ -1,0 +1,451 @@
+#!/usr/bin/env python3
+from __future__ import absolute_import
+from __future__ import print_function
+import os
+import socks
+import socket
+import six.moves.http_client
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
+from six.moves.urllib.error import URLError, HTTPError
+import json
+from copy import deepcopy
+import base64
+import time
+import argparse
+import requests
+#import combrc as crc
+import combrc_threaded as crc
+import serviceAccess as sac
+import pnsAccess
+import MongoJob as mg
+import sys
+from six.moves import range
+from six.moves import input
+import csv
+import progressbar
+
+config = os.getenv("DAQMONGO", "NONE")
+file_config=None
+session_name=None
+pm_hosts=[]
+
+if (config == "NONE"):
+    print("The ENV varaible DAQMONGO=name:version must be set")
+    exit(0)
+else:
+    w=mg.instance()
+    #print(config.split(':')[0],config.split(':')[1],True)
+    w.downloadConfig(config.split(':')[0],int(config.split(':')[1]),True)
+    file_config="/dev/shm/mgjob/%s_%s.json" % (config.split(':')[0],config.split(':')[1])
+    #exit(0)
+    session_name=config.split(':')[0]
+    j_sess=json.loads(open(file_config).read())
+    for x in j_sess["apps"]:
+        sh="http://%s:%d" % (x["host"],x["port"])
+        if (not sh in pm_hosts):
+            pm_hosts.append(sh)
+fdc = crc.combRC(file_config)
+
+def create_drivehv(hvset,fout="drivehv.csv"):
+    header=["channel","hvset","hvmin","hvmax"]
+    
+    with open(fout, 'w', encoding='UTF8') as f:
+        writer = csv.writer(f)
+
+        # write the header
+        writer.writerow(header)
+
+        # write the data
+        for data in hvset:
+            writer.writerow(data)
+
+def get_evt_info(sr):
+    l_event = 0
+    l_run =0
+    for k, v in sr.items():
+        #print(k,v)
+        l_run = v["run"]    
+        if (v["event"] > l_event):
+            l_event = v["event"]
+    return (l_run,l_event)
+
+    
+def thrscan(ptr_daq,jsfile):
+    scan=json.load(open(jsfile))
+    s_com=scan["comment"]
+    default_hv=scan["default_hv"]
+
+    print(scan)
+    hv=default_hv.copy()
+    print(hv)
+    create_drivehv(hv,f"drivehv.csv")
+    time.sleep(20)
+    for i in range(scan["thr"]["first"],scan["thr"]["last"],scan["thr"]["step"],):
+        com=scan["comment"]
+        for hv_line in hv:
+            com=com+f"|{hv_line[0]}/{hv_line[1]}"
+        print(com,hv)
+         # Change Seuil
+        scan["febv2"]["vth_shift"]=i
+       
+       
+        # wait 1 min for HV change
+        #time.sleep(60)
+        # Now reconfigure FEB
+        com=com+f" FEB {scan['febv2']} "
+        param={
+            "state":scan["febv2"]["db_state"],
+            "version":scan["febv2"]["db_version"]
+            }
+        rep=ptr_daq.processCommand("DOWNLOADDB","lyon_febv2",param)
+        param={
+            "shift":scan["febv2"]["vth_shift"],
+            }
+        rep=ptr_daq.processCommand("VTHSHIFT","lyon_febv2",param)
+
+        # idem for PMR
+        com=com+f' PMR {scan["pmr"]} '
+        param={
+            "state":scan["pmr"]["db_state"],
+            "version":scan["pmr"]["db_version"]
+        }
+        rep=ptr_daq.processCommand("DOWNLOADDB","lyon_pmr",param)
+        param={
+            "B0":scan["pmr"]["B0"],
+            "B1":scan["pmr"]["B1"],
+            "B2":scan["pmr"]["B2"]
+        }
+        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_pmr",param)
+        b025=scan["pmr"]["B0"]+25
+        param={
+            "PMR":5,
+            "B0":b025,
+            "B1":scan["pmr"]["B1"],
+            "B2":scan["pmr"]["B2"]
+        }
+        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_pmr",param)
+        # Now configure
+        ptr_daq.configure()
+        # Start the run
+        ptr_daq.comment=com
+        ptr_daq.start()
+        ptr_daq.mdcc_Resume()
+        # Wait 30 s to check EVB getting data
+        time.sleep(20)
+        run=0
+        evt=0
+        sr=json.loads(ptr_daq.BuilderStatus(False,False))
+        #print(sr)
+        run,evt=get_evt_info(json.loads(ptr_daq.BuilderStatus(False,False)))
+        #print(run)
+        #print(evt)
+        #ptr_daq.stop()
+        #exit(0)
+
+        if (run ==0  or evt==0):
+            print("Data taking stuck exiting")
+            exit(0)
+        #bar=progressbar.ProgressBar(max_value=scan['events'])
+        print(f"\b {time.asctime()} Got {run} {evt}",end="\r",flush=True)
+        while (evt<scan['events']):
+            time.sleep(30)
+            run,evt=get_evt_info(json.loads(ptr_daq.BuilderStatus(False,False)))
+            if (run ==0  or evt==0):
+                print("Data taking stuck stopping",run,evt)
+                break
+            if (evt<scan['events']):
+                #bar.update(evt)
+                print(f"\b {time.asctime()} Got {run} {evt}",end="\r",flush=True)
+                #print(f"\b Got {run} {evt}")
+            else:
+                break
+        ptr_daq.stop()
+        run,evt=get_evt_info(json.loads(ptr_daq.BuilderStatus(False,False)))
+        print(f'Point {i} {run} {evt} {com} is Completed')
+
+def ccompscan(ptr_daq,jsfile):
+    scan=json.load(open(jsfile))
+    s_com=scan["comment"]
+    default_hv=scan["default_hv"]
+
+    print(scan)
+    hv=default_hv.copy()
+    print(hv)
+    create_drivehv(hv,f"drivehv.csv")
+    time.sleep(20)
+    for i in range(scan["ccomp"]["first"],scan["ccomp"]["last"]+1,scan["ccomp"]["step"],):
+        com=scan["comment"]
+        for hv_line in hv:
+            com=com+f"|{hv_line[0]}/{hv_line[1]}"
+        print(com,hv)
+         # Change Seuil
+        scan["febv2"]["paccomp"]=i
+       
+       
+        # wait 1 min for HV change
+        #time.sleep(60)
+        # Now reconfigure FEB
+        com=com+f" FEB {scan['febv2']} "
+        param={
+            "state":scan["febv2"]["db_state"],
+            "version":scan["febv2"]["db_version"]
+            }
+        rep=ptr_daq.processCommand("DOWNLOADDB","lyon_febv2",param)
+        param={
+            "value":scan["febv2"]["paccomp"],
+            }
+        rep=ptr_daq.processCommand("PACCOMP","lyon_febv2",param)
+        
+        param={
+            "shift":scan["febv2"]["vth_shift"],
+            }
+        rep=ptr_daq.processCommand("VTHSHIFT","lyon_febv2",param)
+        # idem for PMR
+        com=com+f' PMR {scan["pmr"]} '
+        param={
+            "state":scan["pmr"]["db_state"],
+            "version":scan["pmr"]["db_version"]
+        }
+        rep=ptr_daq.processCommand("DOWNLOADDB","lyon_pmr",param)
+        param={
+            "B0":scan["pmr"]["B0"],
+            "B1":scan["pmr"]["B1"],
+            "B2":scan["pmr"]["B2"]
+        }
+        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_pmr",param)
+        b025=scan["pmr"]["B0"]+25
+        param={
+            "PMR":5,
+            "B0":b025,
+            "B1":scan["pmr"]["B1"],
+            "B2":scan["pmr"]["B2"]
+        }
+        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_pmr",param)
+        # Now configure
+        ptr_daq.configure()
+        # Start the run
+        ptr_daq.comment=com
+        ptr_daq.start()
+        ptr_daq.mdcc_Resume()
+        # Wait 30 s to check EVB getting data
+        time.sleep(20)
+        run=0
+        evt=0
+        sr=json.loads(ptr_daq.BuilderStatus(False,False))
+        #print(sr)
+        run,evt=get_evt_info(json.loads(ptr_daq.BuilderStatus(False,False)))
+        #print(run)
+        #print(evt)
+        #ptr_daq.stop()
+        #exit(0)
+
+        if (run ==0  or evt==0):
+            print("Data taking stuck exiting")
+            exit(0)
+        #bar=progressbar.ProgressBar(max_value=scan['events'])
+        print(f"\b {time.asctime()} Got {run} {evt}",end="\r",flush=True)
+        while (evt<scan['events']):
+            time.sleep(30)
+            run,evt=get_evt_info(json.loads(ptr_daq.BuilderStatus(False,False)))
+            if (run ==0  or evt==0):
+                print("Data taking stuck stopping",run,evt)
+                break
+            if (evt<scan['events']):
+                #bar.update(evt)
+                print(f"\b {time.asctime()} Got {run} {evt}",end="\r",flush=True)
+                #print(f"\b Got {run} {evt}")
+            else:
+                break
+        ptr_daq.stop()
+        run,evt=get_evt_info(json.loads(ptr_daq.BuilderStatus(False,False)))
+        print(f'Point {i} {run} {evt} {com} is Completed')
+
+def hvscan(ptr_daq,jsfile):
+    scan=json.load(open(jsfile))
+    s_com=scan["comment"]
+    default_hv=scan["default_hv"]
+
+    print(scan)
+    hv=default_hv.copy()
+    print(hv)
+
+    for i in range(len(scan["list"])):
+        com=scan["comment"]
+        for c in scan["channels"]:
+            for hv_line in hv:
+                if c==hv_line[0]:
+                    hv_line[1]=scan["list"][i]
+        for hv_line in hv:
+            com=com+f'|{hv_line[0]}/{hv_line[1]}'
+        print(com,hv)
+        # Change HV
+        create_drivehv(hv,f"drivehv.csv")
+        # wait 1 min for HV change
+        time.sleep(60)
+        # Now reconfigure FEB
+        com=com+f' FEB {scan["febv2"]} '
+        param={
+            "state":scan["febv2"]["db_state"],
+            "version":scan["febv2"]["db_version"]
+            }
+        rep=ptr_daq.processCommand("DOWNLOADDB","lyon_febv2",param)
+        param={
+            "shift":scan["febv2"]["vth_shift"],
+            }
+        rep=ptr_daq.processCommand("VTHSHIFT","lyon_febv2",param)
+
+        # idem for PMR
+        com=com+f' PMR {scan["pmr"]} '
+        param={
+            "state":scan["pmr"]["db_state"],
+            "version":scan["pmr"]["db_version"]
+        }
+        rep=ptr_daq.processCommand("DOWNLOADDB","lyon_pmr",param)
+
+        # Now configure
+        ptr_daq.configure()
+        # Change threshold
+        param={
+            "B0":scan["pmr"]["B0"],
+            "B1":scan["pmr"]["B1"],
+            "B2":scan["pmr"]["B2"]
+        }
+        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_pmr",param)
+        # Start the run
+        ptr_daq.comment=com
+        ptr_daq.start()
+        ptr_daq.mdcc_Resume()
+        # Wait 30 s to check EVB getting data
+        time.sleep(20)
+        run=0
+        evt=0
+        sr=json.loads(ptr_daq.BuilderStatus(False,False))
+        #print(sr)
+        run,evt=get_evt_info(json.loads(ptr_daq.BuilderStatus(False,False)))
+        #print(run)
+        #print(evt)
+        #ptr_daq.stop()
+        #exit(0)
+
+        if (run ==0  or evt==0):
+            print("Data taking stuck exiting")
+            exit(0)
+        print(f"\b {time.asctime()} Got {run} {evt}",end="\r",flush=True)
+        #bar=progressbar.ProgressBar(max_value=scan['events'])
+        while (evt<scan['events']):
+            time.sleep(30)
+            run,evt=get_evt_info(json.loads(ptr_daq.BuilderStatus(False,False)))
+            if (run ==0  or evt==0):
+                print("Data taking stuck stopping",run,evt)
+                break
+
+            if (evt<scan['events']):
+                #bar.update(evt)
+                print(f"\b {time.asctime()} Got {run} {evt}",end="\r",flush=True)
+            else:
+                break
+        ptr_daq.stop()
+        run,evt=get_evt_info(json.loads(ptr_daq.BuilderStatus(False,False)))
+        print(f'Point {i} {run} {evt} {com} is Completed')
+
+
+def timescan(ptr_daq,jsfile):
+    scan=json.load(open(jsfile))
+    s_com=scan["comment"]
+    default_hv=scan["default_hv"]
+
+    print(scan)
+    hv=default_hv.copy()
+    print(hv)
+    create_drivehv(hv,f"drivehv.csv")
+    time.sleep(20)
+    threshold=scan["thr"]["first"]
+    npoint=scan["thr"]["last"]
+    for i in range(npoint):
+        com=scan["comment"]
+        for hv_line in hv:
+            com=com+f"|{hv_line[0]}/{hv_line[1]}"
+        print(com,hv)
+         # Change Seuil
+        scan["febv2"]["vth_shift"]=threshold
+       
+       
+        # wait 1 min for HV change
+        #time.sleep(60)
+        # Now reconfigure FEB
+        com=com+f" FEB {scan['febv2']} "
+        param={
+            "state":scan["febv2"]["db_state"],
+            "version":scan["febv2"]["db_version"]
+            }
+        rep=ptr_daq.processCommand("DOWNLOADDB","lyon_febv2",param)
+        param={
+            "shift":scan["febv2"]["vth_shift"],
+            }
+        rep=ptr_daq.processCommand("VTHSHIFT","lyon_febv2",param)
+
+        # idem for PMR
+        com=com+f' PMR {scan["pmr"]} '
+        param={
+            "state":scan["pmr"]["db_state"],
+            "version":scan["pmr"]["db_version"]
+        }
+        rep=ptr_daq.processCommand("DOWNLOADDB","lyon_pmr",param)
+        param={
+            "B0":scan["pmr"]["B0"],
+            "B1":scan["pmr"]["B1"],
+            "B2":scan["pmr"]["B2"]
+        }
+        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_pmr",param)
+        b025=scan["pmr"]["B0"]+25
+        param={
+            "PMR":5,
+            "B0":b025,
+            "B1":scan["pmr"]["B1"],
+            "B2":scan["pmr"]["B2"]
+        }
+        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_pmr",param)
+        # Now configure
+        ptr_daq.configure()
+        # Start the run
+        ptr_daq.comment=com
+        ptr_daq.start()
+        ptr_daq.mdcc_Resume()
+        # Wait 30 s to check EVB getting data
+        time.sleep(20)
+        run=0
+        evt=0
+        sr=json.loads(ptr_daq.BuilderStatus(False,False))
+        #print(sr)
+        run,evt=get_evt_info(json.loads(ptr_daq.BuilderStatus(False,False)))
+        #print(run)
+        #print(evt)
+        #ptr_daq.stop()
+        #exit(0)
+
+        if (run ==0  or evt==0):
+            print("Data taking stuck exiting")
+            exit(0)
+        #bar=progressbar.ProgressBar(max_value=scan['events'])
+        print(f"\b {time.asctime()} Got {run} {evt}",end="\r",flush=True)
+        while (evt<scan['events']):
+            time.sleep(30)
+            run,evt=get_evt_info(json.loads(ptr_daq.BuilderStatus(False,False)))
+            if (run ==0  or evt==0):
+                print("Data taking stuck stopping",run,evt)
+                break
+            if (evt<scan['events']):
+                #bar.update(evt)
+                print(f"\b {time.asctime()} Got {run} {evt}",end="\r",flush=True)
+                #print(f"\b Got {run} {evt}")
+            else:
+                break
+        ptr_daq.stop()
+        run,evt=get_evt_info(json.loads(ptr_daq.BuilderStatus(False,False)))
+        print(f'Point {i} {run} {evt} {com} is Completed')
+
+
+#thrscan(fdc,"thrscan.json")
+#ccompscan(fdc,"ccompscan.json")
+hvscan(fdc,"json_files/scantel.json")

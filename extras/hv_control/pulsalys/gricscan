@@ -1,0 +1,174 @@
+#!/usr/bin/env python3
+from __future__ import absolute_import
+from __future__ import print_function
+import os
+import socks
+import socket
+import six.moves.http_client
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
+from six.moves.urllib.error import URLError, HTTPError
+import json
+from copy import deepcopy
+import base64
+import time
+import argparse
+import requests
+#import combrc as crc
+import combrc_threaded as crc
+import serviceAccess as sac
+import pnsAccess
+import MongoJob as mg
+import sys
+from six.moves import range
+from six.moves import input
+import csv
+import progressbar
+
+config = os.getenv("DAQMONGO", "NONE")
+file_config=None
+session_name=None
+pm_hosts=[]
+
+if (config == "NONE"):
+    print("The ENV varaible DAQMONGO=name:version must be set")
+    exit(0)
+else:
+    w=mg.instance()
+    #print(config.split(':')[0],config.split(':')[1],True)
+    w.downloadConfig(config.split(':')[0],int(config.split(':')[1]),True)
+    file_config="/dev/shm/mgjob/%s_%s.json" % (config.split(':')[0],config.split(':')[1])
+    #exit(0)
+    session_name=config.split(':')[0]
+    j_sess=json.loads(open(file_config).read())
+    for x in j_sess["apps"]:
+        sh="http://%s:%d" % (x["host"],x["port"])
+        if (not sh in pm_hosts):
+            pm_hosts.append(sh)
+fdc = crc.combRC(file_config)
+
+def create_drivehv(hvset,fout="drivehv.csv"):
+    header=["channel","hvset","hvmin","hvmax","type"]
+    
+    with open(fout, 'w', encoding='UTF8') as f:
+        writer = csv.writer(f)
+
+        # write the header
+        writer.writerow(header)
+
+        # write the data
+        for data in hvset:
+            writer.writerow(data)
+
+def get_evt_info(sr):
+    l_event = 0
+    l_run =0
+    for k, v in sr.items():
+        #print(k,v)
+        l_run = v["run"]    
+        if (v["event"] > l_event):
+            l_event = v["event"]
+    return (l_run,l_event)
+
+
+def hvscan(ptr_daq,jsfile):
+    scan=json.load(open(jsfile))
+    s_com=scan["comment"]
+    default_hv=scan["default_hv"]
+
+    print(scan)
+    hv=default_hv.copy()
+    hv=[]
+    for k in default_hv.keys():
+        hv.append(default_hv[k])
+        print(k)
+    print(hv)
+
+    for i in range(len(scan["list"])):
+        com=scan["comment"]
+        for c in scan["channels"]:
+            for hv_line in hv:
+                if (c[0]==hv_line[0] and c[1]==hv_line[4]):
+                    hv_line[1]=scan["list"][i]
+        for hv_line in hv:
+            com=com+f'|{hv_line[0]}-{hv_line[4]}/{hv_line[1]}'
+        print(com,hv)
+        # Change HV
+        create_drivehv(hv,f"drivehv.csv")
+        # wait 1 min for HV change
+        #exit(0)
+        time.sleep(60)
+        # idem for GRIC
+        com=com+f' GRICV0 {scan["gricv0"]} '
+        param={
+            "state":scan["gricv0"]["db_state"],
+            "version":scan["gricv0"]["db_version"]
+        }
+        rep=ptr_daq.processCommand("DOWNLOADDB","lyon_gricv0",param)
+        com=com+f' GRICV1 {scan["gricv1"]} '
+        param={
+            "state":scan["gricv1"]["db_state"],
+            "version":scan["gricv1"]["db_version"]
+        }
+        rep=ptr_daq.processCommand("DOWNLOADDB","lyon_gricv1",param)
+
+        # Now configure
+        ptr_daq.configure()
+        # Change thresholds
+        param={
+            "B0":scan["gricv0"]["B0"],
+            "B1":scan["gricv0"]["B1"],
+            "B2":scan["gricv0"]["B2"]
+        }
+        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_gricv0",param)
+        param={
+            "B0":scan["gricv1"]["B0"],
+            "B1":scan["gricv1"]["B1"],
+            "B2":scan["gricv1"]["B2"]
+        }
+        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_gricv1",param)
+        # Start the run
+        ptr_daq.comment=com
+        ptr_daq.start()
+        ptr_daq.mdcc_Resume()
+        # Wait 30 s to check EVB getting data
+        time.sleep(20)
+        run=0
+        evt=0
+        sr=json.loads(ptr_daq.BuilderStatus(False,False))
+        #print(sr)
+        run,evt=get_evt_info(json.loads(ptr_daq.BuilderStatus(False,False)))
+        #print(run)
+        #print(evt)
+        #ptr_daq.stop()
+        #exit(0)
+
+        if (run ==0  or evt==0):
+            print("Data taking stuck exiting")
+            exit(0)
+        print(f"\b {time.asctime()} Got {run} {evt}",end="\r",flush=True)
+        #bar=progressbar.ProgressBar(max_value=scan['events'])
+        minutes=0
+        while (minutes<scan['minutes']):
+            time.sleep(60)
+            minutes=minutes+1
+            run,evt=get_evt_info(json.loads(ptr_daq.BuilderStatus(False,False)))
+            if (run ==0  or evt==0):
+                print("Data taking stuck stopping",run,evt)
+                break
+
+            if (minutes<scan['minutes']):
+                #bar.update(evt)
+                print(f"\b {time.asctime()} Got {run} {evt} in {minutes} min",end="\r",flush=True)
+            else:
+                break
+        ptr_daq.stop()
+        run,evt=get_evt_info(json.loads(ptr_daq.BuilderStatus(False,False)))
+        print(f'Point {i} {run} {evt} {com} is Completed')
+
+
+
+#thrscan(fdc,"thrscan.json")
+#ccompscan(fdc,"ccompscan.json")
+hvscan(fdc,"json_files/scan.json")
+exit(0)

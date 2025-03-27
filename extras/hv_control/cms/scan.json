@@ -1,0 +1,28 @@
+{
+    "default_hv":[[30,6900,3000,7630],
+                  [31,6900,3000,7630],
+                  [32,7300,7000,9650],
+                  [33,7300,7000,9650],
+                  [34,7200,7000,9650],
+                  [35,7300,7000,9650]
+		 ],
+
+    "channels":[30,31],
+    "list":[6900,6950,7000,7050,7100,7200],
+    "events":800,
+    "comment":"Scan HV PM coinc Version 44 CCOMP 15 vth+10 (corrected version) auto 4 PF MITI 6/36/7",
+    "febv2":{
+	"db_state": "FEBV330_V47",
+	"db_version": 44,
+	"vth_shift": 10
+    },
+    "pmr":{
+	"db_state": "PMRTEST_DOME",
+	"db_version": 45,
+	"B0": 135,
+	"B1": 500,
+	"B2":350
+    }
+
+
+}

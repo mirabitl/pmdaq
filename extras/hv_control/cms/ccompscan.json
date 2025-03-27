@@ -1,0 +1,26 @@
+{
+    "default_hv":[[30,7000,4000,7500],
+                  [31,7000,4000,7500],
+                  [32,9300,7000,9650],
+                  [33,9300,7000,9650],
+                  [34,9300,7000,9650],
+                  [35,9300,7000,9650]
+		 ],
+    "ccomp":{"first":15,"last":15,"step":1},
+    "events":15000,
+    "comment":"Scan en CCOMP vth+12 PF MITI 5/60",
+        "febv2":{
+	"db_state": "FEBV330_V47",
+	"db_version": 6,
+	"vth_shift": 12
+    },
+    "pmr":{
+	"db_state": "PMRTEST_DOME",
+	"db_version": 45,
+	"B0": 135,
+	"B1": 500,
+	"B2":350
+    }
+    
+
+}

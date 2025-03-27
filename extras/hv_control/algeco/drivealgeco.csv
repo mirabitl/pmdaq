@@ -1,0 +1,3 @@
+channel,hvset,hvmin,hvmax,type
+4,1050,1000,15000,1
+5,12500,1000,15000,1
