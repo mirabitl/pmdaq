@@ -64,6 +64,7 @@ class combRC(pmdaqrc.pmdaqControl):
         EVB_BUILDER =CONFIGURE
         FEBV1 = RESETTDC INITIALISE
         FEBV2 = CREATEFEB INITIALISE
+        SHM_DATA_SOURCE = CREATEBOARD INITIALISE
         PMR = Threaded: SCAN INITIALISE
         LIBOARD = SCAN INITIALISE
         GRICV0/GRICV1 =  INITIALISE
@@ -250,6 +251,7 @@ class combRC(pmdaqrc.pmdaqControl):
         In this order if found in the configuration
         -------------------------------------------    
         FEBV1 = CONFIGURE
+        SHM_DATA_SOURCE = CONFIGURE
         FEBV2 = CONFIGURE
         PMR = Threaded: CONFIGURE
         LIBOARD/GRICV0/GRICV1 =  CONFIGURE
@@ -331,6 +333,7 @@ class combRC(pmdaqrc.pmdaqControl):
         In this order if found in the configuration
         -------------------------------------------    
         FEBV1 = STOP
+        SHM_DATA_SOURCE = STOP
         FEBV2 = STOP
         PMR =  STOP
         LIBOARD/GRICV0/GRICV1 =  STOP
@@ -400,6 +403,7 @@ class combRC(pmdaqrc.pmdaqControl):
         In this order if found in the configuration
         -------------------------------------------    
         FEBV1 = DESTROY
+        SHM_DATA_SOURCE = DESTROY
         FEBV2 = DESTROY
         PMR =  DESTROY
         LIBOARD/GRICV0/GRICV1/DIF =  DESTROY
@@ -463,6 +467,7 @@ class combRC(pmdaqrc.pmdaqControl):
         -------------------------------------------    
         EVB_BUIDER = START with 'run' parameter
         FEBV1 = START
+        SHM_DATA_SOURCE = START
         FEBV2 = START
         PMR =  START
         LIBOARD/GRICV0/GRICV1/DIF =  START
