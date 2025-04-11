@@ -116,7 +116,7 @@ def thrscan(ptr_daq,jsfile):
             "B1":scan["pmr"]["B1"],
             "B2":scan["pmr"]["B2"]
         }
-        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_pmr",param)
+        rep=ptr_daq.processCommand("SETTHRESHOLDS","lyon_pmr",param)
         b025=scan["pmr"]["B0"]+25
         param={
             "PMR":5,
@@ -124,7 +124,7 @@ def thrscan(ptr_daq,jsfile):
             "B1":scan["pmr"]["B1"],
             "B2":scan["pmr"]["B2"]
         }
-        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_pmr",param)
+        rep=ptr_daq.processCommand("SETTHRESHOLDS","lyon_pmr",param)
         # Now configure
         ptr_daq.configure()
         # Start the run
@@ -213,7 +213,7 @@ def ccompscan(ptr_daq,jsfile):
             "B1":scan["pmr"]["B1"],
             "B2":scan["pmr"]["B2"]
         }
-        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_pmr",param)
+        rep=ptr_daq.processCommand("SETTHRESHOLDS","lyon_pmr",param)
         b025=scan["pmr"]["B0"]+25
         param={
             "PMR":5,
@@ -221,7 +221,7 @@ def ccompscan(ptr_daq,jsfile):
             "B1":scan["pmr"]["B1"],
             "B2":scan["pmr"]["B2"]
         }
-        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_pmr",param)
+        rep=ptr_daq.processCommand("SETTHRESHOLDS","lyon_pmr",param)
         # Now configure
         ptr_daq.configure()
         # Start the run
@@ -311,7 +311,7 @@ def hvscan(ptr_daq,jsfile):
             "B1":scan["pmr"]["B1"],
             "B2":scan["pmr"]["B2"]
         }
-        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_pmr",param)
+        rep=ptr_daq.processCommand("SETTHRESHOLDS","lyon_pmr",param)
         # Start the run
         ptr_daq.comment=com
         ptr_daq.start()
@@ -397,7 +397,7 @@ def timescan(ptr_daq,jsfile):
             "B1":scan["pmr"]["B1"],
             "B2":scan["pmr"]["B2"]
         }
-        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_pmr",param)
+        rep=ptr_daq.processCommand("SETTHRESHOLDS","lyon_pmr",param)
         b025=scan["pmr"]["B0"]+25
         param={
             "PMR":5,
@@ -405,7 +405,7 @@ def timescan(ptr_daq,jsfile):
             "B1":scan["pmr"]["B1"],
             "B2":scan["pmr"]["B2"]
         }
-        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_pmr",param)
+        rep=ptr_daq.processCommand("SETTHRESHOLDS","lyon_pmr",param)
         # Now configure
         ptr_daq.configure()
         # Start the run

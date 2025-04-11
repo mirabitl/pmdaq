@@ -97,6 +97,7 @@ def hvscan(ptr_daq,jsfile):
         create_drivehv(hv,f"drivehv.csv")
         # wait 1 min for HV change
         #exit(0)
+        print(scan["pmr"])
         time.sleep(60)
         # idem for GRIC
         com=com+f' PMR {scan["pmr"]} '
@@ -105,23 +106,25 @@ def hvscan(ptr_daq,jsfile):
             "version":scan["pmr"]["db_version"]
         }
         rep=ptr_daq.processCommand("DOWNLOADDB","lyon_pmr",param)
-        com=com+f' GRICV1 {scan["gricv1"]} '
+        #v=input()
 
         # Now configure
         ptr_daq.configure()
+        #v=input()
         # Change thresholds
         param={
             "B0":scan["pmr"]["B0"],
             "B1":scan["pmr"]["B1"],
             "B2":scan["pmr"]["B2"]
         }
-        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_pmr",param)
+        rep=ptr_daq.processCommand("SETTHRESHOLDS","lyon_pmr",param)
+        #v=input()
         # Start the run
         ptr_daq.comment=com
         ptr_daq.start()
         ptr_daq.mdcc_Resume()
         # Wait 30 s to check EVB getting data
-        time.sleep(20)
+        time.sleep(60)
         run=0
         evt=0
         sr=json.loads(ptr_daq.BuilderStatus(False,False))
@@ -159,5 +162,6 @@ def hvscan(ptr_daq,jsfile):
 
 #thrscan(fdc,"thrscan.json")
 #ccompscan(fdc,"ccompscan.json")
-hvscan(fdc,"json_files/scan.json")
+os.system("cat ./scan.json")
+hvscan(fdc,"./scan.json")
 exit(0)

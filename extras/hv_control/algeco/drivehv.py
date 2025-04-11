@@ -22,10 +22,7 @@ def calVset(Vreq,P,T,unit="K",b=0.2,a=0.8):
     corr=b+a*(P/P0*T0/(T))
     if (unit!="K"):
         corr=b+a*(P/P0*T0/(T+273.15))
-    pcent=abs(1-corr)*100
-    print(f"{Vreq:.1f} P={P:.1f} T={T:.1f} C={corr:.4f} {pcent:.2f}")
-
-    return (Vreq*corr,pcent)
+    return (Vreq*corr)
 class pico_monitor:
     def __init__(self,host,port,session):
         """
@@ -53,6 +50,8 @@ class pico_monitor:
             self.gsender=graphyte.Sender(ghost)
         logging.basicConfig(level=logging.INFO)
         self.channels={}
+        self.P=0
+        self.T=0
     def connectMongo(self):
         self.msi=ms.instance()
 
@@ -136,14 +135,16 @@ class pico_monitor:
             self.rcv_msg[message.topic].pop(0)
 
         if (message.topic == "pico_dome/telescope_inlet/hih"):
-            self.T=r_m["content"]["T"]
-
-        if (message.topic == "pico_dome/cms_inlet/bme"):
+            self.T=r_m["content"]["T"]    
+        if (message.topic == "pico_dome/cms_inlet/bme" and self.T!=0):
             self.load_settings(self.csv_file)
             self.P=r_m["content"]["P"]/100.
-            #self.T=r_m["content"]["T"]
+            ### Wiener
             for k in self.channels.keys():
-                vreq,pcent=calVset(self.channels[k]["vset"],self.P,self.T,unit="C",b=0.,a=1.0)
+                if (self.channels[k]["type"]!=0):
+                    continue
+                kc=self.channels[k]["channel"]
+                vreq=calVset(self.channels[k]["vset"],self.P,self.T,unit="C",b=0,a=1.0)
                 print(k,self.channels[k]["vset"],vreq,self.channels[k]["vlast"])
                 if (vreq<self.channels[k]["vmin"]):
                     continue
@@ -151,19 +152,41 @@ class pico_monitor:
                     continue
                 if (abs(vreq-self.channels[k]["vlast"])<5):
                     continue
-                if (pcent>5):
+                self.channels[k]["vlast"]=vreq
+                topic_cmd="pico_dome/dome_iseg/CMD"
+                #topic_cmd = pico_location + "/" + s_sub + "/CMD";
+                j_msg = {};
+                j_msg["device"] = "wiener";
+                j_msg["command"] = "VSET";
+                j_msg["params"] = {};
+                j_msg["params"]["first"] =kc;
+                j_msg["params"]["last"] =kc;
+                j_msg["params"]["vset"] =vreq
+                self.client.publish(topic_cmd,json.dumps(j_msg));
+            ### CAEN
+            for k in self.channels.keys():
+                if (self.channels[k]["type"]!=1):
+                    continue
+                kc=self.channels[k]["channel"]
+                vreq=calVset(self.channels[k]["vset"],self.P,self.T,unit="C",b=0,a=1.0)
+                print(k,self.channels[k]["vset"],vreq,self.channels[k]["vlast"])
+                if (vreq<self.channels[k]["vmin"]):
+                    continue
+                if (vreq>self.channels[k]["vmax"]):
+                    continue
+                if (abs(vreq-self.channels[k]["vlast"])<5):
                     continue
                 self.channels[k]["vlast"]=vreq
                 topic_cmd="pico_dome/dome_caen/CMD"
                 #topic_cmd = pico_location + "/" + s_sub + "/CMD";
                 j_msg = {};
+                
                 j_msg["device"] = "sy1527";
                 j_msg["command"] = "VSET";
                 j_msg["params"] = {};
-                j_msg["params"]["first"] =k;
-                j_msg["params"]["last"] =k;
+                j_msg["params"]["first"] =kc;
+                j_msg["params"]["last"] =kc;
                 j_msg["params"]["vset"] =vreq
-                print(topic_cmd,j_msg)
                 self.client.publish(topic_cmd,json.dumps(j_msg));
 
         # Store in Mongo DB if connected
@@ -200,10 +223,14 @@ class pico_monitor:
         f=open(csv_file)
         csv_reader = csv.DictReader(f, delimiter=',')
 
-
         for r in csv_reader:
             print(r)
-            nr=int(r['channel'])
+            nc=int(r['channel'])
+            ctype=int(r["type"])
+            if (ctype==0):
+                nr=f"wiener_{nc}"
+            else:
+                nr=f"caen_{nc}"
             if (not nr in self.channels):
                 self.channels[nr]={}
                 self.channels[nr]["vlast"]=float(r["hvset"])-10
@@ -211,7 +238,8 @@ class pico_monitor:
             self.channels[nr]["vmin"]=float(r["hvmin"])
             self.channels[nr]["vmax"]=float(r["hvmax"])
             self.channels[nr]["vreq"]=float(r["hvset"])
-
+            self.channels[nr]["type"]=int(r["type"])
+            self.channels[nr]["channel"]=int(r["channel"])
             
         print(self.channels)
         f.close()
@@ -279,6 +307,6 @@ if __name__ == "__main__":
     while 1:
         if (s.flag_connected==0):
             s.stop()
-            s.Connect("drivecms.csv")
+            s.Connect("drivehv.csv")
             s.loop()
         time.sleep(1)

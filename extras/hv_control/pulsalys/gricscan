@@ -120,13 +120,13 @@ def hvscan(ptr_daq,jsfile):
             "B1":scan["gricv0"]["B1"],
             "B2":scan["gricv0"]["B2"]
         }
-        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_gricv0",param)
+        rep=ptr_daq.processCommand("SETTHRESHOLDS","lyon_gricv0",param)
         param={
             "B0":scan["gricv1"]["B0"],
             "B1":scan["gricv1"]["B1"],
             "B2":scan["gricv1"]["B2"]
         }
-        rep=ptr_daq.processCommand("SETTHREHOLDS","lyon_gricv1",param)
+        rep=ptr_daq.processCommand("SETTHRESHOLDS","lyon_gricv1",param)
         # Start the run
         ptr_daq.comment=com
         ptr_daq.start()
