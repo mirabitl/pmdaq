@@ -111,13 +111,14 @@ def hvscan(ptr_daq,jsfile):
         # Now configure
         ptr_daq.configure()
         #v=input()
-        # Change thresholds
+        # Change thresholds only if B0 is set
         param={
             "B0":scan["pmr"]["B0"],
             "B1":scan["pmr"]["B1"],
             "B2":scan["pmr"]["B2"]
         }
-        rep=ptr_daq.processCommand("SETTHRESHOLDS","lyon_pmr",param)
+        if (scan["pmr"]["B0"]!=0):
+            rep=ptr_daq.processCommand("SETTHRESHOLDS","lyon_pmr",param)
         #v=input()
         # Start the run
         ptr_daq.comment=com
@@ -162,6 +163,6 @@ def hvscan(ptr_daq,jsfile):
 
 #thrscan(fdc,"thrscan.json")
 #ccompscan(fdc,"ccompscan.json")
-os.system("cat ./scan.json")
-hvscan(fdc,"./scan.json")
+os.system("cat ./scan_william_2.json")
+hvscan(fdc,"./scan_william_2.json")
 exit(0)

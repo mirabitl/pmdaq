@@ -1,14 +1,14 @@
 {
     "default_hv":{
-	"caen_5":[5,12000,1000,15000,1]
+	"caen_5":[5,8500,1000,15000,1]
     },
     "channels":[[5,1]],
-    "list":[12000,12500,11500,11000,10500,10000,9500,9000,8500,8000],
+    "list":[8500,9000,9500,10000,10500,11000,11500,12000,12500],
     "minutes":30,
-    "comment":"3eme scan de la MRPC 4 avec le state Gain 128 (seuil a 250 dans les scans precedent)",
+    "comment":" HV Scan 4-gaps MRPC_G128/4 ",
     "pmr":{
-	"db_state": "MRPC_DIF8_ALGECO",
-	"db_version": 12,
+	"db_state": "MRPC_G128",
+	"db_version": 4,
 	"B0": 130,
 	"B1": 1000,
 	"B2":1000
