@@ -1,0 +1,11 @@
+{
+    "broker":"lyoilc07.in2p3.fr",
+    "port":1883,
+    "session":"pico_dome",
+    "dp_temperature":"pico_dome/telescope_inlet/hih",
+    "dp_pressure":"pico_dome/cms_inlet/bme",
+    "dp_wiener":"pico_dome/dome_iseg/CMD",
+    "dp_caen":"pico_dome/dome_caen/CMD",
+    "csv_file":"/home/acqilc/algeco/drivehv.csv"
+    
+}

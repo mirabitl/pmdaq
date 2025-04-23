@@ -1,0 +1,9 @@
+#!/bin/bash
+sudo systemctl disable hvcontrol 
+sudo service hvcontrol stop
+sudo cp hvcontrol.py /usr/local/bin
+sudo cp hvcontrol.sh /usr/local/bin
+
+sudo cp hvcontrol.service /lib/systemd/system/
+sudo systemctl enable hvcontrol 
+sudo service hvcontrol stop
