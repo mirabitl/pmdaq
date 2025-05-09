@@ -13,7 +13,7 @@ class MongoMqtt:
     Main class to access the Mongo DB 
     """
 
-    def __init__(self, host, port, dbname, username, pwd):
+    def __init__(self, host, port, dbname, username, pwd,auth=None):
         """!
         connect Mongodb database 
 
@@ -29,13 +29,18 @@ class MongoMqtt:
 
         """
 
-        if (pymongo.version_tuple[0] < 4):
+        if (pymongo.version_tuple[0] < 3):
             self.connection = MongoClient(host, port)
             self.db = self.connection[dbname]
             self.db.authenticate(username, pwd)
         else:
-            self.connection = MongoClient(
-                host, port, username=username, password=pwd, authSource=dbname)
+            if (auth==None):
+                self.connection = MongoClient(
+                    host, port, username=username, password=pwd, authSource=dbname)
+            else:
+                self.connection = MongoClient(
+                    host, port, username=username, password=pwd, authSource=auth)
+                
             self.db = self.connection[dbname]
 
     def reset(self):
@@ -407,14 +412,18 @@ def instance():
     if (login == "NONE"):
         print("The ENV varaible MGDBMON=user/pwd@host:port@dbname mut be set")
         exit(0)
-    userinfo = login.split("@")[0]
-    hostinfo = login.split("@")[1]
-    dbname = login.split("@")[2]
+    list_info=login.split("@")
+    userinfo = list_info[0]
+    hostinfo = list_info[1]
+    dbname = list_info[2]
+    auth=None
+    if (len(list_info)==4):
+        auth=list_info[3]
     user = userinfo.split("/")[0]
     pwd = userinfo.split("/")[1]
     host = hostinfo.split(":")[0]
     port = int(hostinfo.split(":")[1])
     # print(host,port,dbname,user,pwd)
-    _wdd = MongoMqtt(host, port, dbname, user, pwd)
+    _wdd = MongoMqtt(host, port, dbname, user, pwd,auth)
     # print("apres")
     return _wdd
