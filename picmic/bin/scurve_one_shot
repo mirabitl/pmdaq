@@ -76,6 +76,8 @@ map_liroc_to_ptdc_chan = {
 class picmic_scurve:
 
     def __init__(self,id,state,version):
+        daq.configLogger(logging.DEBUG)
+
         self.feb_id=id
         self.state=state
         self.version=version
@@ -148,6 +150,7 @@ class picmic_scurve:
     def scurve_one_channel(self,index,thmin,thmax,dac_loc=64):
         
         # First round thstep=5
+        
         scurve2=self.scurve_single_chan(index,start=thmin,stop=thmax,step=1,dac_loc=dac_loc)
         scurve2_th=[i for i in range(thmin,thmax,1)]
  
@@ -177,6 +180,7 @@ class picmic_scurve:
         v6=[]
         for idx in range(64):
             v6.append(self.feb.liroc.getParam(f'DAC_local_ch{idx}'))
+            if idx not in map_liroc_to_ptdc_chan: continue
             to=self.scurve_one_channel(idx,thi,tha,0)
             turn_on.append(to)
         print(f" Turn ON {turn_on}")
