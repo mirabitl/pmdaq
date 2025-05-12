@@ -32,7 +32,7 @@ class picmic_parameters:
         self.liroc["LIROC"]="LIROC"
         self.pico = defaultdict(dict)
         self.pico["PTDC"]="PTDC"
-        self.exceptions = {'EN_NOR64', 'channel_split2','channel_split4','shift_clk1G28'}
+        self.exceptions = {'EN_NOR64', 'channel_split2','channel_split4','shift_clk1G28','header_fields0','header_fields1','header_fields2','header_fields3'}
         self.digit={}
         self._id=None
     def parse_csv_file(self,file_name,a_type=None):
