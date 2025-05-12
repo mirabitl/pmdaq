@@ -32,7 +32,7 @@ class picmic_parameters:
         self.liroc["LIROC"]="LIROC"
         self.pico = defaultdict(dict)
         self.pico["PTDC"]="PTDC"
-        self.exceptions = {'EN_NOR64', 'channel_split2','channel_split4','shift_clk1G28','header_fields0','header_fields1','header_fields2','header_fields3'}
+        self.exceptions = {'EN_NOR64', 'channel_split2','channel_split4','shift_clk1G28'}
         self.digit={}
         self._id=None
     def parse_csv_file(self,file_name,a_type=None):
@@ -76,7 +76,7 @@ class picmic_parameters:
 
                 # Match ending digit (e.g. ch0, ch1), with exceptions
                 if key not in self.exceptions:
-                    match = re.match(r'^(.*?)(?:_ch)?(\d+)$', key)
+                    match = re.match(r'^(.*?)?(\d+)$', key)
                     if match:
                         base_name, index = match.groups()
                         index = int(index)
@@ -151,16 +151,16 @@ class picmic_parameters:
                     for i, v in enumerate(val):
                         if v is not None:
                             if not key in self.digit.keys():
-                                writer.writerow([f"{key}_ch{i}", v])
+                                writer.writerow([f"{key}{i}", v])
                                 continue
                             if (self.digit[key]=="d"):
-                                writer.writerow([f"{key}_ch{i}", v])
+                                writer.writerow([f"{key}{i}", v])
                             if (self.digit[key]=="b"):
-                                writer.writerow([f"{key}_ch{i}", '{0:#b}'.format(v)])
+                                writer.writerow([f"{key}{i}", '{0:#b}'.format(v)])
                             if (self.digit[key]=="x"):
-                                writer.writerow([f"{key}_ch{i}", '{0:#x}'.format(v)])
+                                writer.writerow([f"{key}{i}", '{0:#x}'.format(v)])
                             if (self.digit[key]=="o"):
-                                writer.writerow([f"{key}_ch{i}", '{0:#o}'.format(v)])
+                                writer.writerow([f"{key}{i}", '{0:#o}'.format(v)])
                 else:
                     if (self.digit[key]=="d"):
                         writer.writerow([key, val])
