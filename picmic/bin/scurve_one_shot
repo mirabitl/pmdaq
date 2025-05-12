@@ -176,7 +176,7 @@ class picmic_scurve:
         turn_on=[]
         v6=[]
         for idx in range(64):
-            v6.append(self.feb.liroc.getParam(f'DAC_local_ch{ch}'))
+            v6.append(self.feb.liroc.getParam(f'DAC_local_ch{idx}'))
             to=self.scurve_one_channel(idx,thi,tha,0)
             turn_on.append(to)
         print(f" Turn ON {turn_on}")
