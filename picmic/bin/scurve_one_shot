@@ -81,7 +81,11 @@ class picmic_scurve:
         self.version=version
         self.sdb=cra.instance()
         self.sdb.download_setup(state,version)
-        self.sdb.setup.boards[0].picmic.set("10b_dac_vth_discri_time",800)
+        target=800
+        tlsb=target&0xFF
+        tmsb=(target>>8)&0xFF
+        self.sdb.setup.boards[0].picmic.set("dac_threshold_lsb",tlsb)
+        self.sdb.setup.boards[0].picmic.set("dac_threshold_msb",tmsb)
         self.sdb.setup.version=998
         self.sdb.to_csv_files()
 
