@@ -214,8 +214,8 @@ class picmic_parameters:
         tmp = tempfile.NamedTemporaryFile()
 
         # Open the file for writing.
-        with open(tmp.name, 'w') as f:
-            self.to_csv(f)
+        #with open(tmp.name, 'w') as f:
+        self.to_csv(tmp.name)
         
         self.csv_str=open(tmp.name).read()
         #print(tmp.name)
@@ -246,9 +246,10 @@ class picmic_parameters:
         os.system("mkdir -p %s" % direc)
         fname="%s/%s_config_picmic.csv" % (direc,fn)
         self.last_file=fname
-        fout=open(fname, 'w', newline='')
-        self.to_csv(open(fname, 'w', newline=''))
-        fout.close()
+        #fout=open(fname, 'w', newline='')
+        #self.to_csv(open(fname, 'w', newline=''))
+        self.to_csv(fname)
+        #fout.close()
     def set_modified(self):
         """ Tag the object as modified, ie, one line was at least changed
         """

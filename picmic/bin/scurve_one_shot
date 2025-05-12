@@ -96,7 +96,7 @@ class picmic_scurve:
     
         self.feb = daq.FebBoard(self.kc705)
         self.feb.init()
-        self.feb.loadConfigFromCsv(folder='/dev/shm/board_csv', base_name='%s_%d_f_%d_config' % (self.state,998,self.feb_id))
+        self.feb.loadConfigFromCsv(folder='/dev/shm/board_csv', config_name='%s_%d_f_%d_config' % (self.state,998,self.feb_id))
         self.feb.fpga.enableDownlinkFastControl()
         # disable all liroc channels
         for ch in range(64): self.feb.liroc.maskChannel(ch)
