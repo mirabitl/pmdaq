@@ -48,7 +48,8 @@ class picmic_parameters:
             for row in reader:
                 key = row['Parameter']
                 value = row['Value']
-
+                if (key == "LIROC" or key == "PTDC"):
+                    dico[key]=value
                 # Skip non-numeric and non-convertible values
                 try:
                     if isinstance(value, str):
