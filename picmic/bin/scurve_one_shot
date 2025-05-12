@@ -1,0 +1,271 @@
+#!/usr/bin/env python3
+import logging
+import sys
+import time
+import matplotlib.pyplot as plt
+import liroc_ptdc_daq as daq
+import numpy as np 
+import picmic_register_access as cra
+import os
+import json
+
+map_liroc_to_ptdc_chan = {
+    62: 3 ,
+    58: 4 ,
+    63: 5 ,
+    54: 6 ,
+    60: 7 ,
+    61: 8 ,
+    56: 9 ,
+    44: 10,
+    50: 11,
+    59: 12,
+    46: 13,
+    57: 14,
+    52: 15,
+    48: 16,
+    53: 17,
+    51: 18,
+    42: 19,
+    49: 20,
+    40: 21,
+    47: 22,
+    38: 23,
+    45: 24,
+    36: 25,
+    43: 26,
+    34: 27,
+    41: 28,
+    32: 29,
+    39: 30,
+    30: 31,
+    37: 32,
+    28: 33,
+    35: 34,
+    26: 35,
+    33: 36,
+    24: 37,
+    31: 38,
+    22: 39,
+    29: 40,
+    20: 41,
+    27: 42,
+    18: 43,
+    25: 44,
+    16: 45,
+    23: 46,
+    21: 47,
+    12: 48,
+    19: 51,
+    5 : 50,
+    17: 49,
+    6 : 52,
+    15: 53,
+    4 : 54,
+    13: 55,
+    14: 56,
+    11: 57,
+    10: 58,
+    2 : 59,
+    3 : 60,
+    7 : 61,
+    8 : 62,
+    1 : 63,
+}
+
+class picmic_scurve:
+
+    def __init__(self,id,state,version):
+        self.feb_id=id
+        self.state=state
+        self.version=version
+        self.sdb=cra.instance()
+        self.sdb.download_setup(state,version)
+        self.sdb.setup.boards[0].picmic.set("10b_dac_vth_discri_time",800)
+        self.sdb.setup.version=998
+        self.sdb.to_csv_files()
+
+        
+        print(self.sdb.setup.boards[0].picmic_version)
+    
+        
+        
+
+        self.kc705 = daq.KC705Board()
+        self.kc705.init()
+    
+        self.feb = daq.FebBoard(self.kc705)
+        self.feb.init()
+        self.feb.loadConfigFromCsv(folder='/dev/shm/board_csv', base_name='%s_%d_f_%d_config' % (self.state,998,self.feb_id))
+        self.feb.fpga.enableDownlinkFastControl()
+        # disable all liroc channels
+        for ch in range(64): self.feb.liroc.maskChannel(ch)
+        self.feb.ptdc.setResMode('fine')
+
+        self.feb.ptdc.powerup()
+        
+        self.kc705.fastbitConfigure(mode='normal', flush_delay=100,
+            dig0_edge='rising', dig0_delay=0, 
+            dig1_edge='rising', dig1_delay=0)
+
+    def sweep_dac10b(self,start,stop,step):
+        scurves = [[] for _ in range(64)]
+        for dac10b_val in range(start,stop,step):
+            self.feb.liroc.set10bDac(dac10b_val)
+            self.feb.liroc.stopScClock()
+            #print(dac10b_val)
+            #time.sleep(0.1)
+            counters = self.kc705.acqPtdcCounters(window_ms=0.1)
+            for ch, counter in enumerate(counters):
+                scurves[ch].append(counter)
+        return scurves
+
+
+    def scurve_single_chan(self,lichan,start=450,stop=750,step=1,dac_loc=32):
+        for ch in range(64):
+            if (dac_loc!=0):
+                self.feb.liroc.setChannelDac(ch, dac_loc)
+            self.feb.liroc.maskChannel(ch, ch != lichan)
+            self.feb.liroc.setParam(f'DC_PA_ch{ch}',2)
+        scurve = self.sweep_dac10b(start, stop, step)[map_liroc_to_ptdc_chan[lichan]]
+        return scurve
+
+    def scurve_all_channels(self,start=450,stop=750,step=1,dac_loc=32):
+        for ch in range(64):
+            self.feb.liroc.setChannelDac(ch, dac_loc)
+            self.feb.liroc.maskChannel(ch,False)
+            self.feb.liroc.setParam(f'DC_PA_ch{ch}',2)
+        scurve_pico = self.sweep_dac10b(start, stop, step)
+        scurves=[]
+        for l in range(64):
+            scurves.append(scurve_pico[map_liroc_to_ptdc_chan[l]])
+        return scurves
+    
+    def scurve_one_channel(self,index,thmin,thmax,dac_loc=64):
+        
+        # First round thstep=5
+        scurve2=self.scurve_single_chan(index,start=thmin,stop=thmax,step=1,dac_loc=dac_loc)
+        scurve2_th=[i for i in range(thmin,thmax,1)]
+ 
+        # Now find the transition
+        to_0=thmin
+        cmax1=max(scurve2)
+        cmax_index = scurve2.index(max(scurve2))
+        to_1i=to_0
+        for t in range(cmax_index,len(scurve2)):
+            if (scurve2[t]<0.7*cmax1):
+                to_1i=scurve2_th[t]
+                break
+        to_1a=to_1i
+        for t in range(cmax_index,len(scurve2)):
+            if (scurve2[t]<0.3*cmax1):
+                to_1a=scurve2_th[t]
+                break
+        to_1=(to_1a+to_1i)//2
+        print(f"Seuil raw {to_0}")
+        print(f"Scan {thmin}-{thmax}  {scurve2}")
+        print(f"Seuil fin {to_1}")
+        #val=input("Next channel? ")
+        return to_1
+
+    def calib_dac_local(self,thi,tha):
+        turn_on=[]
+        v6=[]
+        for idx in range(64):
+            v6.append(self.feb.liroc.getParam(f'DAC_local_ch{ch}'))
+            to=self.scurve_one_channel(idx,thi,tha,0)
+            turn_on.append(to)
+        print(f" Turn ON {turn_on}")
+        nto=np.array(turn_on)
+        # Target
+        target=round(np.median(nto))
+        print(f"Median target {target}")
+        ## Check minimal gain value
+        too_low=False
+        too_high=False
+        vexp=[]
+        for idx in range(64):
+            gc=v6[idx]+round((target-turn_on[idx])/1.675)
+            vexp.append(gc)
+            too_low=too_low or (gc<3)
+            too_high=too_high or (gc>1020)
+        if (too_low):
+            target=target+10
+        if (too_high):
+            target=target-10
+        print(f"Median target final {target} \n v6 {v6} \n vexp {vexp}")
+        return target,vexp
+def main(state,version,feb_id,all_channels,upload_comment=None,thmin=420,thmax=750):
+    pb=picmic_scurve(feb_id,state,version)
+   
+    upload=(upload_comment!=None)
+    if (all_channels):
+        pass
+        #results=make_pedestal_all_channels(state,version,feb_id,feb,an,thi,tha,1)
+        #sdb.upload_results(results["state"],results["version"],results["feb"],results["analysis"],results,upload_comment)
+    else:
+        target,v_dac_local=pb.calib_dac_local(thmin,thmax)
+        # Upload to DB
+        for  ich in range(len(v_dac_local)):
+            pb.sdb.setup.boards[0].picmic.set(f"DAC_local_ch{ich}",v_dac_local[ich],ich)
+        tlsb=target&0xFF
+        tmsb=(target>>8)&0xFF
+        pb.sdb.setup.boards[0].picmic.set("dac_threshold_lsb",tlsb)
+        pb.sdb.setup.boards[0].picmic.set("dac_threshold_msb",tmsb)
+        #results=make_pedestal_all_channels(state,version,feb_id,feb,an,thi,tha,1,v6=v6_cor)
+        #val=input("Next ASIC ? ")
+            
+    
+    if (upload):
+        cm=upload_comment
+        pb.sdb.setup.version=version
+        pb.sdb.upload_changes(cm)
+    else:
+        pb.sdb.setup.version=999
+        pb.sdb.setup.to_csv_files()
+                
+                
+
+    
+
+    
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    
+    # configure all the actions
+    grp_action = parser.add_mutually_exclusive_group()
+    grp_action.add_argument('--allchan', dest='allchan', default=False, action='store_true',help="Make Scurve allchannels on")
+    # Arguments
+    parser.add_argument('--state', action='store', type=str,default=None, dest='state', help='DB State')
+    parser.add_argument('--version', action='store',type=int,default=None,dest='version',help='DB state version' )
+    parser.add_argument('--feb', action='store', type=int,default=None, dest='feb', help='FEB id')
+    parser.add_argument('--min', action='store', type=int,default=400, dest='thmin', help='Minimal 10b dac')
+    parser.add_argument('--max', action='store', type=int,default=700, dest='thmax', help='Maximal 10b dac')
+    
+    parser.add_argument('--upload', action='store', type=str,default=None, dest='upload', help='Upload comment')
+
+    results = parser.parse_args()
+    print(results)
+
+    if (results.state==None):
+        print("--state should be specified")
+        exit(0)
+    if (results.version==None):
+        print("--version should be specified")
+        exit(0)
+    if (results.feb==None):
+        print("--feb should be specified")
+        exit(0)
+
+        
+    state=results.state
+    version=results.version
+    feb_id=results.feb
+    all_channels=results.allchan
+    thi=results.thmin
+    tha=results.thmax
+    cm_up=None
+    if (results.upload!=None):
+        cm_up=results.upload
+    main(state,version,feb_id,all_channels,upload_comment=cm_up,thmin=thi,thmax=tha)
