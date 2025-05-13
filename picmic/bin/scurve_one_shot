@@ -176,13 +176,13 @@ class picmic_scurve:
         return to_1
 
     def calib_dac_local(self,thi,tha):
-        turn_on=[]
-        v6=[]
+        turn_on=[0 for i in range(64)]
+        v6=[0 for i in range(64)]
         for idx in range(64):
-            v6.append(self.feb.liroc.getParam(f'DAC_local_ch{idx}'))
+            v6[idx]=self.feb.liroc.getParam(f'DAC_local_ch{idx}')
             if idx not in map_liroc_to_ptdc_chan: continue
             to=self.scurve_one_channel(idx,thi,tha,0)
-            turn_on.append(to)
+            turn_on[idx]=to
         print(f" Turn ON {turn_on}")
         nto=np.array(turn_on)
         # Target
@@ -191,10 +191,14 @@ class picmic_scurve:
         ## Check minimal gain value
         too_low=False
         too_high=False
-        vexp=[]
+        vexp=[v6[i] for i in range(64)]
         for idx in range(64):
-            gc=v6[idx]+round((target-turn_on[idx])/1.675)
-            vexp.append(gc)
+            gc=v6[idx]
+            if (turn_on[idx]!=0):
+                gc=v6[idx]+round((target-turn_on[idx])/1.675)
+                vexp[idx]=gc
+            else:
+                continue
             too_low=too_low or (gc<3)
             too_high=too_high or (gc>1020)
         if (too_low):
