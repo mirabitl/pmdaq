@@ -539,11 +539,13 @@ class mg_picboard:
             print(f'{sti}|{resa["state"]}/{resa["version"]}/{resa["analysis"]}|{resa["board"]}|{resa["comment"]}')
             #print(f'{sti}|{resa["state"]}/{resa["version"]}/{resa["analysis"]}|{resa["board"]}|{resa["comment"]}')
                 
-    def upload_results(self,state,version,board,analysis,res,comment=None):
+    def upload_results(self,runid,location,state,version,board,analysis,res,comment=None):
         """
         Store test results for a given analysis in picmic_test collection
 
         Args:
+            runid(int): Run number of the test
+            location(str): experiment name
             state (str): DB state used for the test
             version (int): DB version used for the test
             board (int): PICMIC id
@@ -566,7 +568,7 @@ class mg_picboard:
             result=self.db.picmic_tests.insert_one(res)
 
         else:
-            print(res)
+            print(f"{res} cannot be included, comment is missing")
     def get_scurve(self,state,version,board,analysis,channel=None):
         """
         Get the last stored test results of a SCURVE_1 or SCURVE_A analysis
@@ -597,7 +599,7 @@ class mg_picboard:
         Get a new run number for a given setup
 
         Args:
-            location: Setup Name
+            location: Setup/experiment Name
             comment: Comment on the run
         Returns:
             a dictionnary corresponding to the base insertion {run,location,time,comment}
