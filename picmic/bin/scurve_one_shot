@@ -133,7 +133,7 @@ class picmic_scurve:
             #print(dac10b_val)
             #time.sleep(0.1)
             #counters = self.kc705.acqPtdcCounters(window_ms=0.1)
-            counters=self.kc705.acqPtdcCounters(window=1, deadtime=1000, window_number=100)
+            counters=self.kc705.acqPtdcCounters(window=1, deadtime=200, window_number=1000)
             for ch, counter in enumerate(counters):
                 scurves[ch].append(counter)
         return scurves
@@ -248,19 +248,23 @@ def main(state,version,feb_id,all_channels,loop_one,location=None,upload_comment
             plt.plot(range(thmin, thmax,1), scurves[liroc_chan], '+-', label=f"ch{liroc_chan}")
         plt.grid()
         plt.legend(loc="upper right")
-        plt.show() 
+        plt.show()
         runid=None
         if upload_comment!=None:
-            runid=sdb.getRun(location,upload_comment)
-            pb.sdb.upload_results(runid,location,res["state"],res["version"],res["feb"],res["analysis"],res,upload_comment)
+            runobj=pb.sdb.getRun(location,upload_comment)
+            runid=runobj['run']
+
         # Store results in json
         res_dir='results/%s_%d_f_%d' % (state,version,feb_id)
         if runid==None:
             runid=int(input("Enter a run number: "))
         os.system("mkdir -p %s" % res_dir)
-        fout=open("%s/scurves_all_channels_%d.json" % (res_dir,runid),"w")
+        fout=open(f"{res_dir}/scurves_all_channels_{runid}.json","w")
         fout.write(json.dumps(res))
         fout.close
+
+        if upload_comment!=None:
+            pb.sdb.upload_results(runid,location,res["state"],res["version"],res["feb"],res["analysis"],res,upload_comment)
 
     elif loop_one:
         res={}
@@ -287,16 +291,19 @@ def main(state,version,feb_id,all_channels,loop_one,location=None,upload_comment
         plt.show()
         runid=None
         if upload_comment!=None:
-            runid=pb.sdb.getRun(location,upload_comment)
-            pb.sdb.upload_results(runid,location,res["state"],res["version"],res["feb"],res["analysis"],res,upload_comment)
+            runobj=pb.sdb.getRun(location,upload_comment)
+            runid=runobj['run']
         # Store results in json
         res_dir='results/%s_%d_f_%d' % (state,version,feb_id)
         if runid==None:
             runid=int(input("Enter a run number: "))
         os.system("mkdir -p %s" % res_dir)
-        fout=open("%s/scurves_1_channels_%d.json" % (res_dir,runid),"w")
+        fout=open(f"{res_dir}/scurves_1_channels_{runid}.json","w")
         fout.write(json.dumps(res))
         fout.close
+
+        if upload_comment!=None:
+            pb.sdb.upload_results(runid,location,res["state"],res["version"],res["feb"],res["analysis"],res,upload_comment)
             
     else:
         target,v_dac_local=pb.calib_dac_local(thmin,thmax)
@@ -314,13 +321,13 @@ def main(state,version,feb_id,all_channels,loop_one,location=None,upload_comment
         #val=input("Next ASIC ? ")
             
     
-    if (upload):
-        cm=upload_comment
-        pb.sdb.setup.version=version
-        pb.sdb.upload_changes(cm)
-    else:
-        pb.sdb.setup.version=999
-        pb.sdb.setup.to_csv_files()
+        if (upload):
+            cm=upload_comment
+            pb.sdb.setup.version=version
+            pb.sdb.upload_changes(cm)
+        else:
+            pb.sdb.setup.version=999
+            pb.sdb.setup.to_csv_files()
                 
                 
 
