@@ -162,12 +162,12 @@ class picmic_scurve:
             scurves[ch]=self.scurve_single_chan(ch,start,stop,step,dac_loc)
             print(f"Channel {ch} {scurves[ch]}")
         return scurves
-    def scurve_one_channel(self,index,thmin,thmax,dac_loc=64):
+    def scurve_one_channel(self,index,thmin,thmax,thstep=1,dac_loc=64):
         
         # First round thstep=5
         
-        scurve2=self.scurve_single_chan(index,start=thmin,stop=thmax,step=1,dac_loc=dac_loc)
-        scurve2_th=[i for i in range(thmin,thmax,1)]
+        scurve2=self.scurve_single_chan(index,start=thmin,stop=thmax,step=thstep,dac_loc=dac_loc)
+        scurve2_th=[i for i in range(thmin,thmax,thstep)]
  
         # Now find the transition
         to_0=thmin
@@ -196,8 +196,45 @@ class picmic_scurve:
         for idx in range(64):
             v6[idx]=self.feb.liroc.getParam(f'DAC_local_ch{idx}')
             if idx not in map_liroc_to_ptdc_chan: continue
-            to=self.scurve_one_channel(idx,thi,tha,0)
+            to=self.scurve_one_channel(idx,thi,tha,dac_local=0)
             turn_on[idx]=to
+        print(f" Turn ON {turn_on}")
+        nto=np.array(turn_on)
+        # Target
+        target=round(np.median(nto))
+        print(f"Median target {target}")
+        ## Check minimal gain value
+        too_low=False
+        too_high=False
+        vexp=[v6[i] for i in range(64)]
+        for idx in range(64):
+            gc=v6[idx]
+            if (turn_on[idx]!=0):
+                gc=v6[idx]+round((target-turn_on[idx])/1.8)
+                vexp[idx]=max(1,min(127,gc))
+            else:
+                continue
+            too_low=too_low or (gc<3)
+            too_high=too_high or (gc>1020)
+        if (too_low):
+            target=target+10
+        if (too_high):
+            target=target-10
+        print(f"Median target final {target} \n v6 {v6} \n vexp {vexp}")
+        return target,vexp
+    def calib_iterative_dac_local(self,thi,tha):
+        turn_on=[0 for i in range(64)]
+        v6=[0 for i in range(64)]
+        
+        for idx in range(64):
+            v6[idx]=self.feb.liroc.getParam(f'DAC_local_ch{idx}')
+            if idx not in map_liroc_to_ptdc_chan: continue
+            # First step =5
+            to_0=self.scurve_one_channel(idx,thi,tha,thstep=5,dac_local=0)
+            ti0=round(max(to_0-15,thi))
+            ta0=round(min(to_0+15,tha))
+            to_1=self.scurve_one_channel(idx,ti0,ta0,thstep=1,dac_local=0)
+            turn_on[idx]=to_1
         print(f" Turn ON {turn_on}")
         nto=np.array(turn_on)
         # Target
@@ -306,7 +343,7 @@ def main(state,version,feb_id,all_channels,loop_one,location=None,upload_comment
             pb.sdb.upload_results(runid,location,res["state"],res["version"],res["feb"],res["analysis"],res,upload_comment)
             
     else:
-        target,v_dac_local=pb.calib_dac_local(thmin,thmax)
+        target,v_dac_local=pb.calib_iterative_dac_local(thmin,thmax)
         print(target)
         print(v_dac_local)
         # Upload to DB
