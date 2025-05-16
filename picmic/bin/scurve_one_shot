@@ -75,7 +75,7 @@ map_liroc_to_ptdc_chan = {
 
 class picmic_scurve:
 
-    def __init__(self,id,state,version):
+    def __init__(self,id,state,version,filtering=True,falling=False,val_evt=False,pol_neg=False,dc_pa=2):
         daq.configLogger(logging.DEBUG)
 
         self.feb_id=id
@@ -90,15 +90,27 @@ class picmic_scurve:
         self.sdb.setup.boards[0].picmic.set("dac_threshold_lsb",tlsb)
         self.sdb.setup.boards[0].picmic.set("dac_threshold_msb",tmsb)
         #Maximal filtering
-        self.sdb.setup.boards[0].picmic.set("hrx_top_delay",0x8)
-        self.sdb.setup.boards[0].picmic.set("hrx_top_bias",0xF)
-        self.sdb.setup.boards[0].picmic.set("hrx_top_filter_trailing",0)
-        self.sdb.setup.boards[0].picmic.set("hrx_top_filter_leading",1)
-        self.sdb.setup.boards[0].picmic.set("hrx_bot_delay",0x8)
-        self.sdb.setup.boards[0].picmic.set("hrx_bot_bias",0xF)
-        self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_trailing",0)
-        self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_leading",1)
-
+        if (filtering):
+            self.sdb.setup.boards[0].picmic.set("hrx_top_delay",0x8)
+            self.sdb.setup.boards[0].picmic.set("hrx_top_bias",0xF)
+            self.sdb.setup.boards[0].picmic.set("hrx_top_filter_trailing",0)
+            self.sdb.setup.boards[0].picmic.set("hrx_top_filter_leading",1)
+            self.sdb.setup.boards[0].picmic.set("hrx_bot_delay",0x8)
+            self.sdb.setup.boards[0].picmic.set("hrx_bot_bias",0xF)
+            self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_trailing",0)
+            self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_leading",1)
+        else:
+            self.sdb.setup.boards[0].picmic.set("hrx_top_filter_leading",0)
+            self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_leading",0)
+        # Falling ?
+        self.sdb.setup.boards[0].picmic.set("falling_en",falling)
+        # ValEvt
+        self.sdb.setup.boards[0].picmic.set("Forced_ValEvt",val_evt)
+        # Polarity
+        self.sdb.setup.boards[0].picmic.set("Polarity",pol_neg)
+        # DC_PA
+        for ch in range(64):
+            self.setup.boards[0].picmic.set('DC_PA_ch',dc_pa,ch)
         self.sdb.setup.version=998
         self.sdb.to_csv_files()
 
@@ -144,7 +156,7 @@ class picmic_scurve:
             if (dac_loc!=0):
                 self.feb.liroc.setChannelDac(ch, dac_loc)
             self.feb.liroc.maskChannel(ch, ch != lichan)
-            self.feb.liroc.setParam(f'DC_PA_ch{ch}',2)
+            #self.feb.liroc.setParam(f'DC_PA_ch{ch}',2)
         scurve = self.sweep_dac10b(start, stop, step)[map_liroc_to_ptdc_chan[lichan]]
         return scurve
 
@@ -152,7 +164,7 @@ class picmic_scurve:
         for ch in range(64):
             if dac_loc!=0 : self.feb.liroc.setChannelDac(ch, dac_loc)
             self.feb.liroc.maskChannel(ch,False)
-            self.feb.liroc.setParam(f'DC_PA_ch{ch}',2)
+            #self.feb.liroc.setParam(f'DC_PA_ch{ch}',2)
         scurves = self.sweep_dac10b(start, stop, step)
         return scurves
     def scurve_loop_one(self,start=450,stop=750,step=1,dac_loc=32):
@@ -230,10 +242,10 @@ class picmic_scurve:
             v6[idx]=self.feb.liroc.getParam(f'DAC_local_ch{idx}')
             if idx not in map_liroc_to_ptdc_chan: continue
             # First step =5
-            to_0=self.scurve_one_channel(idx,thi,tha,thstep=5,dac_local=0)
+            to_0=self.scurve_one_channel(idx,thi,tha,thstep=5,dac_loc=0)
             ti0=round(max(to_0-15,thi))
             ta0=round(min(to_0+15,tha))
-            to_1=self.scurve_one_channel(idx,ti0,ta0,thstep=1,dac_local=0)
+            to_1=self.scurve_one_channel(idx,ti0,ta0,thstep=1,dac_loc=0)
             turn_on[idx]=to_1
         print(f" Turn ON {turn_on}")
         nto=np.array(turn_on)
