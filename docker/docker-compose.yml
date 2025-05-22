@@ -1,0 +1,67 @@
+version: "3.8"
+services:
+  mongodb:
+    image : mongo:6-jammy
+    container_name: mongodb
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=RPC_2008
+    volumes:
+      - /data/mongo/database:/data/db
+    ports:
+      - 27017-27019:27017-27019
+    restart: unless-stopped
+  mosquitto:
+    image : eclipse-mosquitto
+    container_name: mosquitto
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - /data/docker-mosquitto/mosquitto:/mosquitto
+      - /data/docker-mosquitto/mosquitto/data:/mosquitto/data
+      - /data/docker-mosquitto/mosquitto/log:/mosquitto/log
+    ports:
+      - 1883:1883
+      - 8883:8883
+      - 8080:8080
+      - 9001:9001
+    restart: unless-stopped
+  graphite:
+    image : graphiteapp/graphite-statsd
+    container_name: graphite
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - /data/graphite/storage:/opt/graphite/storage
+    ports:
+      - 80:80
+      - 2003-2004:2003-2004
+      - 2023-2024:2023-2024
+      - 8126:8126
+      - 8125:8125/udp
+    restart: unless-stopped
+  grafana:
+    image: grafana/grafana:8.4.4
+    container_name: grafana-server
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=RPC_2008
+      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=grafana-mqtt-datasource
+    ports:
+      - 3000:3000
+    volumes:
+      - /data/docker-grafana/grafana_plugins:/var/lib/grafana/plugins
+      - /data/docker-grafana/grafana_data:/var/lib/grafana
+  apache:
+    image: httpd:2.4
+    container_name: mon_apache
+    ports:
+      - 7070:80
+    volumes:
+      - /usr/local/pmdaq/htdocs:/usr/local/apache2/htdocs/
+    restart: always
