@@ -158,7 +158,15 @@ file(GLOB ETC_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/etc/*"
      )
 
+file(GLOB DAQJS_TARGET
+     "${CMAKE_CURRENT_SOURCE_DIR}/scripts/web/*"
+     )
+file(GLOB PICOJS_TARGET
+     "${CMAKE_CURRENT_SOURCE_DIR}/mqtt/pico/web/*"
+     )
 
+install(FILES ${DAQJS_TARGET}  DESTINATION htdocs/webdaq )
+install(FILES ${PICOJS_TARGET}  DESTINATION htdocs/pico )
 install(FILES ${SCRIPT_TARGET}  DESTINATION share )
 install(FILES ${ETC_TARGET} DESTINATION etc)
 install(FILES ${MG_TARGET} ${DAQWEB_TARGET} ${RC_TARGET} ${SC_TARGET} ${DAEMON_TARGET} DESTINATION bin)
