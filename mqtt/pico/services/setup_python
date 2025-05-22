@@ -1,0 +1,10 @@
+cd /opt/pmdaq/
+deactivate
+rm -rf /opt/pmdaq/venv
+python3.12 -m venv /opt/pmdaq/venv
+source /opt/pmdaq/venv/bin/activate
+pip install --upgrade pip
+pip install paho-mqtt==2.1
+pip install graphyte
+pip install pymongo
+

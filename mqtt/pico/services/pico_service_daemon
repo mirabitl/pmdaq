@@ -15,4 +15,4 @@ export MALLOC_ARENA_MAX=1
 
 
 
-/opt/pmdaq/mqtt/pico/services/pico_daemon.py 
+/opt/pmdaq/venv/bin/python /opt/pmdaq/mqtt/pico/services/pico_daemon.py 

@@ -1,8 +1,8 @@
 {
-    "mongo":"acqilc/RPC_2008@lyoilc07:27017@LYONROC",
+    "mongo":"acqilc/RPC_2008@lyoilcdaq01:27017@SLOW",
     "graphyte":"lyocms09.in2p3.fr",
     "broker":{"host":"lyoilc07.in2p3.fr","port":1883},
     "sessions":["pico_test","pico_dome"]
-	
+
 }
-	    
+
