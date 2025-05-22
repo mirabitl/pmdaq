@@ -21,6 +21,8 @@ class pico_monitor:
         self.flag_connected=0
 
         self.settings=json.load(open(config_name))
+        self.host=self.settings["broker"]["host"]
+        self.port=self.settings["broker"]["port"]
         self.topics=[]
         self.topicm={}
         #self.topicinfos=[]
