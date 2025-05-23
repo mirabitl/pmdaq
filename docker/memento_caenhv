@@ -53,6 +53,8 @@ fi
 #echo "👉 Redémarre ton terminal ou fais 'source $PROFILE_FILE' pour activer LD_LIBRARY_PATH."
 
 
+\
+
 ## ENfin le service Sy1527Pico doit avaoir une ligne ENVIRONMENT
 [Unit]
 Description = Starting Sy1527Pico  service
