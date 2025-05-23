@@ -3,6 +3,7 @@ Description = Starting Sy1527Pico  service
 After = network.target
 
 [Service]
+Environment="LD_LIBRARY_PATH=/usr/local/openssl/lib:/lib:/usr/lib:/usr/local/lib"
 ExecStart = /usr/local/paho/bin/Sy1527Pico.exe
 Restart=always
 RestartSec=5

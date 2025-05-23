@@ -51,3 +51,18 @@ fi
 
 #echo "✅ OpenSSL $OPENSSL_VERSION installé dans $INSTALL_DIR"
 #echo "👉 Redémarre ton terminal ou fais 'source $PROFILE_FILE' pour activer LD_LIBRARY_PATH."
+
+
+## ENfin le service Sy1527Pico doit avaoir une ligne ENVIRONMENT
+[Unit]
+Description = Starting Sy1527Pico  service
+After = network.target
+
+[Service]
+Environment="LD_LIBRARY_PATH=/usr/local/openssl/lib:/lib:/usr/lib:/usr/local/lib"
+ExecStart = /usr/local/paho/bin/Sy1527Pico.exe
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy = multi-user.target
