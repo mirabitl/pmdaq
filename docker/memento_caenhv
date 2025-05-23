@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# Pour le dernier CAENHvwrapper CAENHVWrapper-6.6-build20240424.tgz il faut la librairie crypto1.1 qui n'est plus dans Ubuntu24
+
+OPENSSL_VERSION="1.1.1s"
+INSTALL_DIR="/usr/local/openssl"
+PROFILE_FILE="$HOME/.bashrc"
+
+# Détection shell (zsh support)
+if [[ $SHELL == *zsh ]]; then
+  PROFILE_FILE="$HOME/.zshrc"
+fi
+
+
+echo "🔧 Téléchargement d'OpenSSL $OPENSSL_VERSION..."
+cd /tmp
+mkdir ssl
+cd /tmp/ssl
+wget -c https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
+
+echo "📦 Extraction..."
+
+tar xf openssl-${OPENSSL_VERSION}.tar.gz
+cd openssl-${OPENSSL_VERSION} || exit
+
+echo "⚙️ Configuration..."
+./config --prefix="${INSTALL_DIR}"
+
+echo "🔨 Compilation..."
+make -j"$(nproc)"
+
+echo "🧪 Test..."
+make test
+
+echo "📦 Installation..."
+sudo make install
+
+echo "🛠️ Mise à jour de LD_LIBRARY_PATH... (modifier le .bashrc si non desire"
+LD_LINE="export LD_LIBRARY_PATH=${INSTALL_DIR}/lib:\$LD_LIBRARY_PATH"
+
+# Ajouter la ligne si elle n'existe pas déjà
+if ! grep -Fxq "$LD_LINE" "$PROFILE_FILE"; then
+  echo "$LD_LINE" >> "$PROFILE_FILE"
+  echo "✅ Ajouté à $PROFILE_FILE"
+else
+  echo "ℹ️ LD_LIBRARY_PATH déjà présent dans $PROFILE_FILE"
+fi
+
+#echo "🔁 Recharge de l'environnement..."
+#export LD_LIBRARY_PATH=${INSTALL_DIR}/lib:$LD_LIBRARY_PATH
+
+#echo "✅ OpenSSL $OPENSSL_VERSION installé dans $INSTALL_DIR"
+#echo "👉 Redémarre ton terminal ou fais 'source $PROFILE_FILE' pour activer LD_LIBRARY_PATH."
