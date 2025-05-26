@@ -53,7 +53,14 @@ fi
 #echo "👉 Redémarre ton terminal ou fais 'source $PROFILE_FILE' pour activer LD_LIBRARY_PATH."
 
 
-\
+### Driver CAEN
+cd /tmp/
+mkdir caen
+cd caen/
+cp /opt/pmdaq/extras/CAENHVWrapper-6.6-build20240424.tgz .
+tar zxvf CAENHVWrapper-6.6-build20240424.tgz 
+cd CAENHVWrapper-6.6/
+sudo ./install.sh 
 
 ## ENfin le service Sy1527Pico doit avaoir une ligne ENVIRONMENT
 [Unit]
