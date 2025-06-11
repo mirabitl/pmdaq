@@ -9,7 +9,7 @@ class mod81160:
     def __init__(self, config):
         self.config = config
         self.cfg = self.load_config()
-        self.inst = self.connect()
+        self.connect()
 
     def load_config(self):
         if os.path.exists(self.config):
@@ -33,12 +33,13 @@ class mod81160:
     def connect(self):
         rm = pyvisa.ResourceManager("@py")
         try:
-            self.inst = rm.open_resource(f'TCPIP::{self.self.cfg["ip"]}::INSTR')
+            self.inst = rm.open_resource(f'TCPIP::{self.cfg["ip"]}::INSTR')
             print(f"🖧 Connecté à: {self.inst.query('*IDN?').strip()}")
-            return inst
+            return 
         except Exception as e:
             print(f"❌ Erreur de connexion : {e}")
-            return None
+            self.inst=None
+            return 
 
     def save_config(self, config_file):
         with open(config_file, "w") as f:
@@ -63,8 +64,8 @@ class mod81160:
     def configure_trigger(self):
         print("🎯 Configuration du TRIGGER...")
         self.inst.write(f":ARM:SOURce1 {self.cfg['trigger_mode']}")
-        self.inst.write(f":ARM:SLOPe1 {cfg.get('trigger_slope', 'POS')}")
-        self.inst.write(f":ARM:LEVel1 {cfg.get('trigger_level', 1.0)}")
+        self.inst.write(f":ARM:SLOPe1 {self.cfg.get('trigger_slope', 'POS')}")
+        self.inst.write(f":ARM:LEVel1 {self.cfg.get('trigger_level', 1.0)}")
 
     def print_status(self):
         print("\n🔍 Lecture des paramètres actuels :")
@@ -96,14 +97,12 @@ class mod81160:
 
 def main():
     agp = mod81160("../etc/pulse_config.json")
-    if agp.inst:
+    #agp.print_status()
+    if agp.inst!=None:
         agp.print_status()
-        """
-        configure_pulse(inst, config)
-        configure_trigger(inst, config)
-        # ~ save_config(config)
-        print_status(inst)
-        """
+        agp.configure_pulse()
+        agp.configure_trigger()
+        agp.print_status()
         agp.close()
 
 

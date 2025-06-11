@@ -3,10 +3,10 @@
     "voltage_low": 0,
     "voltage_high": 0.65,
     "width": 1e-07,
-    "delay": 2e-7,
+    "delay": 1.96e-7,
     "polarity": "INV",
-    "rise_time": 2e-09,
-    "fall_time": 2e-09,
+    "rise_time": 1e-09,
+    "fall_time": 1e-09,
     "trigger_mode": "EXT",
     "trigger_slope": "POS",
     "trigger_level": 0.7
