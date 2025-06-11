@@ -15,15 +15,18 @@ def load_config():
             return json.load(f)
     else:
         return {
-            "ip": "192.168.0.10",
-            "frequency": 1e6,
-            "width": 100e-9,
-            "rise_time": 5e-9,
-            "fall_time": 5e-9,
+
+            "ip": "134.158.138.199",
+            "voltage_low": 0,
+            "voltage_high": 0.65,
+            "width": 1e-07,
+            "delay": 2e-7,
+            "polarity": "INV",
+            "rise_time": 2e-09,
+            "fall_time": 2e-09,
             "trigger_mode": "EXT",
             "trigger_slope": "POS",
-            "trigger_level": 1.0,
-            "trigger_delay": 0.0
+            "trigger_level": 0.7
         }
 
 def connect(ip):
@@ -83,10 +86,12 @@ def main():
     inst = connect(config["ip"])
     if inst:
         print_status(inst)
+        """
         configure_pulse(inst, config)
         configure_trigger(inst, config)
         # ~ save_config(config)
         print_status(inst)
+        """
         inst.close()
 
 if __name__ == "__main__":
