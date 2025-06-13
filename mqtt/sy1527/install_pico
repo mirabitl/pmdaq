@@ -6,7 +6,7 @@ g++ -o ../bin/Sy1527Pico.exe -DUNIX -I../include ../src/PicoInterface.cc HVCaenI
 
 sudo mkdir -p /usr/local/paho/bin
 sudo cp ../bin/Sy1527Pico.exe /usr/local/paho/bin/
-sudo sed -e 's,SERVICENAME,Sy1527Pico,g' ../etc/example.service > Sy1527Pico.service
+#sudo sed -e 's,SERVICENAME,Sy1527Pico,g' ../etc/example.service > Sy1527Pico.service
 sudo cp Sy1527Pico.service /lib/systemd/system/
 sudo systemctl enable Sy1527Pico 
 sudo service Sy1527Pico stop

@@ -3,7 +3,6 @@ Description = Starting WienerPico  service
 After = network.target
 
 [Service]
-Environment="LD_LIBRARY_PATH=/usr/local/lib:/lib:/usr/lib:/usr/local/lib"
 ExecStart = /usr/local/paho/bin/WienerPico.exe
 Restart=always
 RestartSec=5
