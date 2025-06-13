@@ -61,9 +61,9 @@ class mod81160:
         self.inst.write(":SOURce1:BURSt:STATe ON")
         self.inst.write(":SOURce1:BURSt:NCYCles 1")
         
-    def setVoltage(self,low,high):
-        self.inst.write(f":VOLTage1:LOW {low}")
-        self.inst.write(f":VOLTage1:HIGH {high}")
+    def setVoltage(self,channel,low,high):
+        self.inst.write(f":VOLTage{channel}:LOW {low}")
+        self.inst.write(f":VOLTage{channel}:HIGH {high}")
 
     def setON(self,channel):
         self.inst.write(f":OUTPut{channel} ON")
@@ -71,7 +71,14 @@ class mod81160:
     def setOFF(self,channel):
         self.inst.write(f":OUTPut{channel} OFF")
         
+    def setRiseTime(self,channel,rise_time):
+        self.inst.write(f":SOURce{channel}:PULSe:TRANsition:LEADing {rise_time}")
     
+    def setFallTime(self,channel,fall_time):
+        self.inst.write(f":SOURce{channel}:PULSe:TRANsition:TRAiling {fall_time}")
+
+    def setDelay(self,channel,delay):
+        self.inst.write(f":SOURce{channel}:PULSe:DElay {delay}")
     def configure_trigger(self):
         print("🎯 Configuration du TRIGGER...")
         self.inst.write(f":ARM:SOURce1 {self.cfg['trigger_mode']}")
