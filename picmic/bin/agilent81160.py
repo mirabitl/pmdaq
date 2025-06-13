@@ -113,6 +113,7 @@ def main():
         agp.print_status()
         agp.configure_pulse()
         agp.configure_trigger()
+        agp.setON(1)
         agp.print_status()
         agp.close()
 

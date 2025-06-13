@@ -42,11 +42,11 @@ class picmic_scurve:
             self.sdb.setup.boards[0].picmic.set("hrx_top_filter_trailing",0)
             self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_trailing",0)
         # Falling ?
-        self.sdb.setup.boards[0].picmic.set("falling_en",falling)
+        self.sdb.setup.boards[0].picmic.set("falling_en",0)
         # ValEvt
-        self.sdb.setup.boards[0].picmic.set("Forced_ValEvt",val_evt)
+        self.sdb.setup.boards[0].picmic.set("Forced_ValEvt",0)
         # Polarity
-        self.sdb.setup.boards[0].picmic.set("Polarity",pol_neg)
+        self.sdb.setup.boards[0].picmic.set("Polarity",0)
         # DC_PA
         for ch in range(64):
             if (dc_pa!=0):
@@ -87,7 +87,7 @@ class picmic_scurve:
         for dac10b_val in range(start,stop,step):
             self.feb.liroc.set10bDac(dac10b_val)
             self.feb.liroc.stopScClock()
-            counters=self.kc705.acqPtdcCounters(window=1, deadtime=500, window_number=1000)
+            counters=self.kc705.acqPtdcCounters(window=5, deadtime=500, window_number=1000)
             for ch, counter in enumerate(counters):
                 scurves[ch].append(counter)
         return scurves
@@ -214,7 +214,7 @@ class picmic_scurve:
         for idx in range(64):
             if idx not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
             dac_map={}
-            for gg in range(max(1,vexp[idx]-2),min(128,vexp[idx]+3)):
+            for gg in range(max(1,vexp[idx]-7),min(128,vexp[idx])):
                 self.feb.liroc.setParam(f'DAC_local_ch{idx}',gg)  
                 to_fine=self.scurve_one_channel(idx,target-20,target+20,thstep=1,dac_loc=0)
                 dac_map[gg]=abs(target-to_fine)
