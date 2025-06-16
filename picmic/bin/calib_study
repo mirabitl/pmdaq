@@ -2,6 +2,7 @@
 import logging
 import sys
 import time
+import csv
 import matplotlib.pyplot as plt
 import liroc_ptdc_daq as daq
 import numpy as np
@@ -36,6 +37,7 @@ class picmic_calib:
         tmsb = (target >> 8) & 0xFF
         self.sdb.setup.boards[0].picmic.set("dac_threshold_lsb", tlsb)
         self.sdb.setup.boards[0].picmic.set("dac_threshold_msb", tmsb)
+        
         # Maximal filtering
         if filtering:
             self.sdb.setup.boards[0].picmic.set("hrx_top_delay", 0xF)
@@ -120,42 +122,56 @@ class picmic_calib:
         scurves = self.sweep_dac10b(start, stop, step)
         return scurves
 
-    def scan_charge(self,pulser,vmin,vmax,pedestal=566,nstep=20,rise=1.0E-9,delay=120E-9):
+    def scan_charge_one(self,pulser,channel,vmin,vmax,pedestal=566,nstep=20,rise=1.0E-9,delay=120E-9):
         #turn_on = [0 for i in range(64)]
+        print(f"Scanning channel {channel}")
         if (vmax>1.0):
             print(f"No automatic scan with High V {vmax} greater than 1 V")
+            exit(0)
         vstep=(vmax-vmin)/nstep
         vhigh=[round(x,3) for x in np.arange(vmin,vmax+1E-3,vstep).tolist()]
         pulser.setRiseTime(1,rise)
         pulser.setDelay(1,delay)
+        pulser.setON(1)
         scurves=None
-        turn_on=[{} for i in range(64)]
+        
+        for ch in range(64):
+            if ch == channel:
+                self.feb.liroc.setParam(f"Ctest_ch{ch}",True)
+                self.feb.liroc.maskChannel(ch, False)
+            else:
+                self.feb.liroc.setParam(f"Ctest_ch{ch}",False)
+                self.feb.liroc.maskChannel(ch, True)
+        turn_on=[ [] for i in range(64)]
         for v in vhigh:
             pulser.setVoltage(1,0,v)
-            scurves=self.sweep_dac10b(self, pedestal+5,900,1)
+            print(v)
+            scurves=self.sweep_dac10b(pedestal+5,700,1)
             for lch in range(64):
                 if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
                 sch=scurves[daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[lch]]
+                if (lch == channel):
+                    print(lch,sch)
                 i_low=len(sch)
                 i_high=-1
                 for i in range(len(sch)-1,0,-1):
-                    if sch[i]>200 and i_low==len(sch):
+                    if sch[i]>300 and i_low==len(sch):
                         i_low=i
-                    if sch[i]>800 and i_high==-1:
+                    if sch[i]>700 and i_high==-1:
                         i_high=i
                 if (i_low==len(sch) or i_high==-1 or i_low==i_high or i_low==len(sch)-1): continue
                 i_on=(i_high+i_low)//2
                 t_on = pedestal+5+i_on
                 print(f"Channel {lch} Pico {daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[lch]} Index {i_on} Turn on {t_on} DAC {i_on+5} Charge {v}")
-                turn_on[lch][v]=i_on
-        print(turn_on)
-        return turn_on
-
+                turn_on[lch].append([v,i_on,t_on])
+        print(turn_on[channel])
+        return turn_on[channel]
 
 def main(
     state,
     version,
     feb_id,
+    channel,
     no_injection=False,
     location=None,
     upload_comment=None,
@@ -233,7 +249,7 @@ def main(
             )
 
     else:
-        pb.scan_charge(vmin,vmax)
+        pb.scan_charge_one(pulser,channel,vmin,vmax)
     pulser.setOFF(1)
     pulser.close()
 if __name__ == "__main__":
@@ -264,6 +280,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--feb", action="store", type=int, default=None, dest="feb", help="FEB id"
+    )
+    parser.add_argument(
+        "--channel", action="store", type=int, default=None, dest="channel", help="LIROC channel"
     )
     parser.add_argument(
         "--vmin",
@@ -327,12 +346,14 @@ if __name__ == "__main__":
     if results.feb == None:
         print("--feb should be specified")
         exit(0)
-
+    if results.channel == None:
+        print("--channel should be specified")
+        exit(0)
     state = results.state
     version = results.version
     feb_id = results.feb
-    noinj = results.ninj
-    loop_one = results.one
+    channel=results.channel 
+    noinj = results.noinj
     thi = results.thmin
     tha = results.thmax
     vhi=results.vmin
@@ -344,6 +365,7 @@ if __name__ == "__main__":
         state,
         version,
         feb_id,
+        channel,
         noinj,
         location=results.location,
         upload_comment=cm_up,
