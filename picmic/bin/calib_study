@@ -121,80 +121,61 @@ class picmic_calib:
         return scurves
 
     def scan_charge(self,pulser,vmin,vmax,pedestal=566,nstep=20,rise=1.0E-9,delay=120E-9):
-        turn_on = [0 for i in range(64)]
+        #turn_on = [0 for i in range(64)]
+        if (vmax>1.0):
+            print(f"No automatic scan with High V {vmax} greater than 1 V")
         vstep=(vmax-vmin)/nstep
         vhigh=[round(x,3) for x in np.arange(vmin,vmax+1E-3,vstep).tolist()]
         pulser.setRiseTime(1,rise)
         pulser.setDelay(1,delay)
+        scurves=None
+        
         for v in vhigh:
             pulser.setVoltage(1,0,v)
-            scurves=sweep_dac10b(self, pedestal+5,900,1)
-        for idx in range(64):
-            v6[idx] = self.feb.liroc.getParam(f"DAC_local_ch{idx}")
-            if idx not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN:
-                continue
-            # First step =5
-            to_0 = self.scurve_one_channel(idx, thi, tha, thstep=5, dac_loc=0)
-            ti0 = round(max(to_0 - 15, thi))
-            ta0 = round(min(to_0 + 15, tha))
-            to_1 = self.scurve_one_channel(idx, ti0, ta0, thstep=1, dac_loc=0)
-            turn_on[idx] = to_1
-        print(f" Turn ON {turn_on}")
-        nto = np.array(turn_on)
-        # Target
-        target = round(np.median(nto))
-        print(f"Median target {target}")
-        ## Check minimal gain value
-        too_low = False
-        too_high = False
-        vexp = [v6[i] for i in range(64)]
-        for idx in range(64):
-            gc = v6[idx]
-            if turn_on[idx] != 0:
-                gc = v6[idx] + round((target - turn_on[idx]) / 1.8)
-                vexp[idx] = max(1, min(127, gc))
-            else:
-                continue
-            too_low = too_low or (gc < 3)
-            too_high = too_high or (gc > 127)
-        if too_low:
-            target = target + 10
-        if too_high:
-            target = target - 10
-        print(f"Median target final {target} \n v6 {v6} \n vexp {vexp}")
-        for idx in range(64):
-            if idx not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN:
-                continue
-            dac_map = {}
-            for gg in range(max(1, vexp[idx] - 7), min(128, vexp[idx])):
-                self.feb.liroc.setParam(f"DAC_local_ch{idx}", gg)
-                to_fine = self.scurve_one_channel(
-                    idx, target - 20, target + 20, thstep=1, dac_loc=0
-                )
-                dac_map[gg] = abs(target - to_fine)
-                print(
-                    f"\t Channel {idx} target {target} dac {gg} turn on {to_fine} diff {dac_map[gg]}"
-                )
-            op_dac = min(dac_map, key=dac_map.get)
-            vexp[idx] = op_dac
-        return target, vexp
+            scurves=self.sweep_dac10b(self, pedestal+5,900,1)
+            for lch in range(64):
+                if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
+                sch=scurves[daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[lch]]
+                i_low=len(sch)
+                i_high=-1
+                for i in range(len(sch)-1,0,-1):
+                    if sch[i]>200 and i_low==len(sch):
+                        i_low=i
+                    if sch[i]>800 and i_high==-1:
+                        i_high=i
+                if (i_low==len(sch) or i_high==-1 or i_low==i_high or i_low==len(sch)-1): continue
+                i_on=(i_high+i_low)//2
+                t_on = pedestal+5+i_on
+                print(f"Channel {lch} Pico {daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[lch]} Index {i_on} Turn on {t_on} DAC {i_on+5} Charge {v}")
 
 
 def main(
     state,
     version,
     feb_id,
-    all_channels,
-    loop_one,
+    no_injection=False,
     location=None,
     upload_comment=None,
-    thmin=420,
-    thmax=750,
+    vmin=0.05,
+    vmax=0.9,
+    thmin=450,
+    thmax=700
 ):
-    pb = picmic_scurve(feb_id, state, version)
+    pulser=agp.mod81160("../etc/pulse_config.json")
+    #agp.print_status()
+    if pulser.inst!=None:
+        pulser.print_status()
+        pulser.configure_pulse()
+        pulser.configure_trigger()
+        pulser.setOFF(1)
+        pulser.print_status()
+    else:
+        print("No agilent pulser")
+        exit(0)
+    pb = picmic_calib(feb_id, state, version)
 
     upload = upload_comment != None
-    if all_channels:
+    if no_injection:
         res = {}
         res["state"] = state
         res["version"] = version
@@ -248,83 +229,10 @@ def main(
                 upload_comment,
             )
 
-    elif loop_one:
-        res = {}
-        res["state"] = state
-        res["version"] = version
-        res["feb"] = feb_id
-        res["thmin"] = thmin
-        res["thmax"] = thmax
-        res["thstep"] = 1
-        res["asic"] = "LIROC"
-        res["ctime"] = time.time()
-        res["analysis"] = "SCURVE_1"
-        res["channels"] = []
-        scurves = pb.scurve_loop_one(start=thmin, stop=thmax, step=1, dac_loc=0)
-        for liroc_chan in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN.keys():
-            rc = {}
-            rc["prc"] = liroc_chan
-            rc["tdc"] = daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]
-            rc["scurve"] = scurves[liroc_chan]
-            res["channels"].append(rc)
-            plt.plot(
-                range(thmin, thmax, 1),
-                scurves[liroc_chan],
-                "+-",
-                label=f"ch{liroc_chan}",
-            )
-        plt.grid()
-        plt.legend(loc="upper right")
-        plt.show()
-        runid = None
-        if upload_comment != None:
-            runobj = pb.sdb.getRun(location, upload_comment)
-            runid = runobj["run"]
-        # Store results in json
-        res_dir = "results/%s_%d_f_%d" % (state, version, feb_id)
-        if runid == None:
-            runid = int(input("Enter a run number: "))
-        os.system("mkdir -p %s" % res_dir)
-        fout = open(f"{res_dir}/scurves_1_channels_{runid}.json", "w")
-        fout.write(json.dumps(res))
-        fout.close
-
-        if upload_comment != None:
-            pb.sdb.upload_results(
-                runid,
-                location,
-                res["state"],
-                res["version"],
-                res["feb"],
-                res["analysis"],
-                res,
-                upload_comment,
-            )
-
     else:
-        target, v_dac_local = pb.calib_iterative_dac_local(thmin, thmax)
-        print(target)
-        print(v_dac_local)
-        # Upload to DB
-        for ich in range(len(v_dac_local)):
-            pb.sdb.setup.boards[0].picmic.set("DAC_local_ch", v_dac_local[ich], ich)
-            print(f"DAC_local_ch{ich}", v_dac_local[ich])
-        tlsb = target & 0xFF
-        tmsb = (target >> 8) & 0xFF
-        pb.sdb.setup.boards[0].picmic.set("dac_threshold_lsb", tlsb)
-        pb.sdb.setup.boards[0].picmic.set("dac_threshold_msb", tmsb)
-        # results=make_pedestal_all_channels(state,version,feb_id,feb,an,thi,tha,1,v6=v6_cor)
-        # val=input("Next ASIC ? ")
-
-        if upload:
-            cm = upload_comment
-            pb.sdb.setup.version = version
-            pb.sdb.upload_changes(cm)
-        else:
-            pb.sdb.setup.version = 999
-            pb.sdb.setup.to_csv_files()
-
-
+        pb.scan_charge(vmin,vmax)
+    pulser.setOFF(1)
+    pulser.close()
 if __name__ == "__main__":
     import argparse
 
@@ -333,18 +241,11 @@ if __name__ == "__main__":
     # configure all the actions
     grp_action = parser.add_mutually_exclusive_group()
     grp_action.add_argument(
-        "--allchan",
-        dest="allchan",
+        "--noinj",
+        dest="noinj",
         default=False,
         action="store_true",
         help="Make Scurve allchannels on",
-    )
-    grp_action.add_argument(
-        "--one",
-        dest="one",
-        default=False,
-        action="store_true",
-        help="Make Scurve one by one",
     )
     # Arguments
     parser.add_argument(
@@ -362,7 +263,23 @@ if __name__ == "__main__":
         "--feb", action="store", type=int, default=None, dest="feb", help="FEB id"
     )
     parser.add_argument(
-        "--min",
+        "--vmin",
+        action="store",
+        type=float,
+        default=0.05,
+        dest="vmin",
+        help="Minimal Pulser injection",
+    )
+    parser.add_argument(
+        "--vmax",
+        action="store",
+        type=float,
+        default=0.9,
+        dest="vmax",
+        help="Maximal pulser injection",
+    )
+    parser.add_argument(
+        "--thmin",
         action="store",
         type=int,
         default=400,
@@ -370,7 +287,7 @@ if __name__ == "__main__":
         help="Minimal 10b dac",
     )
     parser.add_argument(
-        "--max",
+        "--thmax",
         action="store",
         type=int,
         default=700,
@@ -411,10 +328,12 @@ if __name__ == "__main__":
     state = results.state
     version = results.version
     feb_id = results.feb
-    all_channels = results.allchan
+    noinj = results.ninj
     loop_one = results.one
     thi = results.thmin
     tha = results.thmax
+    vhi=results.vmin
+    vha=results.vmax
     cm_up = None
     if results.upload != None:
         cm_up = results.upload
@@ -422,10 +341,11 @@ if __name__ == "__main__":
         state,
         version,
         feb_id,
-        all_channels,
-        loop_one,
+        noinj,
         location=results.location,
         upload_comment=cm_up,
+        vmin=vhi,
+        vmax=vha,
         thmin=thi,
-        thmax=tha,
+        thmax=tha
     )
