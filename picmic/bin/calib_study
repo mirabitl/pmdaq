@@ -129,7 +129,7 @@ class picmic_calib:
         pulser.setRiseTime(1,rise)
         pulser.setDelay(1,delay)
         scurves=None
-        
+        turn_on=[{} for i in range(64)]
         for v in vhigh:
             pulser.setVoltage(1,0,v)
             scurves=self.sweep_dac10b(self, pedestal+5,900,1)
@@ -147,6 +147,9 @@ class picmic_calib:
                 i_on=(i_high+i_low)//2
                 t_on = pedestal+5+i_on
                 print(f"Channel {lch} Pico {daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[lch]} Index {i_on} Turn on {t_on} DAC {i_on+5} Charge {v}")
+                turn_on[lch][v]=i_on
+        print(turn_on)
+        return turn_on
 
 
 def main(
