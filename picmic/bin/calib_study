@@ -171,7 +171,8 @@ def main(
     state,
     version,
     feb_id,
-    channel,
+    first_channel,
+    last_channel,
     no_injection=False,
     location=None,
     upload_comment=None,
@@ -250,7 +251,15 @@ def main(
             )
 
     else:
-        pb.scan_charge_one(pulser,channel,vmin,vmax,rise=rising)
+        res={}
+        res["vmin"]=vmin
+        res["vmax"]=vmax
+        res["rise"]=rise
+        res["channels"]=[]
+        for lch in range(first_channel,last_channel+1):
+            if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
+            tos=pb.scan_charge_one(pulser,lch,vmin,vmax,rise=rising)
+            res["channels"].append({"channel":lch,"turn_on":tos})
     pulser.setOFF(1)
     pulser.close()
 if __name__ == "__main__":
@@ -283,7 +292,10 @@ if __name__ == "__main__":
         "--feb", action="store", type=int, default=None, dest="feb", help="FEB id"
     )
     parser.add_argument(
-        "--channel", action="store", type=int, default=None, dest="channel", help="LIROC channel"
+        "--firstchannel", action="store", type=int, default=None, dest="firstchannel", help="LIROC first channel"
+    )
+    parser.add_argument(
+        "--lastchannel", action="store", type=int, default=None, dest="lastchannel", help="LIROC last channel"
     )
     parser.add_argument(
         "--vmin",
@@ -355,13 +367,17 @@ if __name__ == "__main__":
     if results.feb == None:
         print("--feb should be specified")
         exit(0)
-    if results.channel == None:
-        print("--channel should be specified")
+    if results.firstchannel == None:
+        print("--firstchannel should be specified")
+        exit(0)
+    if results.lastchannel == None:
+        print("--lastchannel should be specified")
         exit(0)
     state = results.state
     version = results.version
     feb_id = results.feb
-    channel=results.channel 
+    firstchannel=results.firstchannel 
+    lastchannel=results.lastchannel 
     noinj = results.noinj
     thi = results.thmin
     tha = results.thmax
@@ -375,7 +391,8 @@ if __name__ == "__main__":
         state,
         version,
         feb_id,
-        channel,
+        firstchannel,
+        lastchannel,
         noinj,
         location=results.location,
         upload_comment=cm_up,
