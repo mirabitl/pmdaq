@@ -178,7 +178,8 @@ def main(
     vmin=0.05,
     vmax=0.9,
     thmin=450,
-    thmax=700
+    thmax=700,
+    rising=1.0E-9    
 ):
     pulser=agp.mod81160("../etc/pulse_config.json")
     #agp.print_status()
@@ -249,7 +250,7 @@ def main(
             )
 
     else:
-        pb.scan_charge_one(pulser,channel,vmin,vmax)
+        pb.scan_charge_one(pulser,channel,vmin,vmax,rise=rising)
     pulser.setOFF(1)
     pulser.close()
 if __name__ == "__main__":
@@ -316,6 +317,14 @@ if __name__ == "__main__":
         dest="thmax",
         help="Maximal 10b dac",
     )
+    parser.add_argument(
+        "--rise",
+        action="store",
+        type=float,
+        default=1.0,
+        dest="rise",
+        help="Rising time (ns)",
+    )
 
     parser.add_argument(
         "--upload",
@@ -358,6 +367,7 @@ if __name__ == "__main__":
     tha = results.thmax
     vhi=results.vmin
     vha=results.vmax
+    rise=results.rise*1.0E-9
     cm_up = None
     if results.upload != None:
         cm_up = results.upload
@@ -373,4 +383,5 @@ if __name__ == "__main__":
         vmax=vha,
         thmin=thi,
         thmax=tha
+        rising=rise
     )
