@@ -382,6 +382,6 @@ if __name__ == "__main__":
         vmin=vhi,
         vmax=vha,
         thmin=thi,
-        thmax=tha
+        thmax=tha,
         rising=rise
     )
