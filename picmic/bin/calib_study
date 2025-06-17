@@ -260,6 +260,14 @@ def main(
             if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
             tos=pb.scan_charge_one(pulser,lch,vmin,vmax,rise=rising)
             res["channels"].append({"channel":lch,"turn_on":tos})
+    print(res)
+    # Serializing json
+    json_object = json.dumps(res)
+
+    # Writing to sample.json
+    with open(f"calib_{first_channel}_{last_channel}_{vmax}.json", "w") as outfile:
+        outfile.write(json_object)
+
     pulser.setOFF(1)
     pulser.close()
 if __name__ == "__main__":
