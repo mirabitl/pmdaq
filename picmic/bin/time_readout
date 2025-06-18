@@ -1,0 +1,397 @@
+#!/usr/bin/env python3
+
+import numpy as np
+from pprint import pprint
+import datetime
+
+import sys, os
+import logging
+import time
+import csv
+import matplotlib.pyplot as plt
+import liroc_ptdc_daq as daq
+import picmic_register_access as cra
+import os
+import json
+import agilent81160 as agp
+
+N_ACQ = 10
+N_WINDOW = 1000
+
+class picmic_time:
+
+    def __init__(
+        self,
+        id,
+        state,
+        version,
+        filtering=True,
+        falling=0,
+        val_evt=0,
+        pol_neg=0,
+        dc_pa=0,
+    ):
+        daq.configLogger(logging.DEBUG)
+
+        self.feb_id = id
+        self.state = state
+        self.version = version
+        self.sdb = cra.instance()
+        self.sdb.download_setup(state, version)
+        self.sdb.to_csv_files()
+        target = 800
+        tlsb = target & 0xFF
+        tmsb = (target >> 8) & 0xFF
+        self.sdb.setup.boards[0].picmic.set("dac_threshold_lsb", tlsb)
+        self.sdb.setup.boards[0].picmic.set("dac_threshold_msb", tmsb)
+        
+        # Maximal filtering
+        if filtering:
+            self.sdb.setup.boards[0].picmic.set("hrx_top_delay", 0xF)
+            self.sdb.setup.boards[0].picmic.set("hrx_top_bias", 0xF)
+            self.sdb.setup.boards[0].picmic.set("hrx_top_filter_trailing", 1)
+            self.sdb.setup.boards[0].picmic.set("hrx_top_filter_leading", 1)
+            self.sdb.setup.boards[0].picmic.set("hrx_bot_delay", 0xF)
+            self.sdb.setup.boards[0].picmic.set("hrx_bot_bias", 0xF)
+            self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_trailing", 1)
+            self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_leading", 1)
+        else:
+            self.sdb.setup.boards[0].picmic.set("hrx_top_filter_leading", 0)
+            self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_leading", 0)
+            self.sdb.setup.boards[0].picmic.set("hrx_top_filter_trailing", 0)
+            self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_trailing", 0)
+        # Falling ?
+        self.sdb.setup.boards[0].picmic.set("falling_en", falling)
+        # ValEvt
+        self.sdb.setup.boards[0].picmic.set("Forced_ValEvt", val_evt)
+        # Polarity
+        self.sdb.setup.boards[0].picmic.set("Polarity", pol_neg)
+        # DC_PA
+        for ch in range(64):
+            if dc_pa != 0:
+                self.setup.boards[0].picmic.set("DC_PA_ch", dc_pa, ch)
+        self.sdb.setup.version = 888
+        self.sdb.to_csv_files()
+
+        print(self.sdb.setup.boards[0].picmic_version)
+
+        self.kc705 = daq.KC705Board()
+        self.kc705.init()
+
+        self.feb = daq.FebBoard(self.kc705)
+        self.feb.init()
+        self.feb.loadConfigFromCsv(
+            folder="/dev/shm/board_csv",
+            config_name="%s_%d_f_%d_config_picmic.csv" % (self.state, 888, self.feb_id),
+        )
+        self.feb.fpga.enableDownlinkFastControl()
+        # disable all liroc channels
+        for ch in range(64):
+            self.feb.liroc.maskChannel(ch)
+        self.feb.ptdc.setResMode("fine")
+
+        self.feb.ptdc.powerup()
+
+        self.kc705.fastbitConfigure(
+            mode="normal",
+            flush_delay=100,
+            dig0_edge="rising",
+            dig0_delay=0,
+            dig1_edge="rising",
+            dig1_delay=0,
+        )
+        # generate a few windows to flush out the agilient patterns
+        self.kc705.acqSetWindow(1, 1)
+        for _ in range(5):
+            self.kc705.ipbWrite("ACQ_CTRL_2", 1)
+            self.kc705.ipbWrite("ACQ_CTRL_2", 0)
+
+    def Acquire(self,n_acq,window_size=4000,dead_time=500,n_window=1000):
+        ts = [[] for _ in range(64)]
+        diff = []
+        coarsecount = 0
+
+        for i in range(n_acq):
+            words = self.kc705.acqPtdc(window=window_size, deadtime=dead_time, window_number=n_window)
+            first = [True]*64
+            if i%100 == 0: print(i)
+            print('.', end='', flush=True)
+            for p in range(4):
+                
+                # ~ print(f'--------------{p}-------------')
+                for word in words[p]:
+                    word   = daq.BitField(word)
+
+                    if word[31] == 1:
+                        assert word[30,28] == 0b000, f"{word:08X}"
+                        
+                        bxcount     = word[27,15]
+                        coarsecount = word[14,2]
+                        # ~ print(f"{bxcount=} {coarsecount=}")
+                        
+                    else:
+                        ch     = word[30,27] + 16*p
+                        if first[ch]:
+                            first[ch] = False
+                            continue
+                        edge   = word[26]
+                        coarse = word[25, 13]
+                        # ~ if coarse >= coarsecount:
+                            # ~ coarse -= coarsecount
+                        # ~ else:
+                            # ~ coarse = (coarse + 2**13) - coarsecount
+                        fine   = word[12,0]
+                        # ~ if ch == 1:
+                            # ~ print(f"ch{ch} {'r' if edge else 'f'}: {coarse} {fine} ({word[1,0]})")
+                        # ~ if (ch == 0  and edge == 1) or (ch == 1  and edge == 1) : continue
+                        ts[ch].append((coarse<<13 | fine)>>2*3.05e-3)
+        print('')
+        for lch in range(64):
+            if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
+            pch=daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[lch]
+            if (len(ts[pch])>0):
+                print(f"ch{lch} nbhit={len(ts[pch])}, mean={np.mean(ts[pch]):.8}, std={np.std(ts[pch]):.3}") 
+
+        """
+        # ~ print(f"ch{daq.FebBoard.MAP_PTDC_TO_LIROC_CHAN[31]} nbhit={len(ts[31])}, mean={np.mean(ts[31]):.8}, std={np.std(ts[31]):.3}") 
+        print(f"ch0 nbhit={len(ts[0])}, mean={np.mean(ts[0]):.8}, std={np.std(ts[0]):.3}") 
+        # ~ print(f"ch1 nbhit={len(ts[1])}, mean={np.mean(ts[1]):.8}, std={np.std(ts[1]):.3}") 
+        print(f"ch2 nbhit={len(ts[2])}, mean={np.mean(ts[2]):.8}, std={np.std(ts[2]):.3}") 
+        
+        
+        plt.plot(range(len(ts[0])), ts[0], 'r+')
+        plt.figure()
+        plt.hist(ts[0], label=f'ch0', bins=range(min(ts[0]), max(ts[0])+1), color='r')
+        plt.figure()
+        
+
+        plt.plot(range(len(ts[2])), ts[2], '+')
+        plt.figure()
+        plt.hist(ts[2], label=f'ch2', bins=range(min(ts[2]), max(ts[2])+1) )
+        """
+        return ts
+    def check_time(self,pulser,channel,vmin,vmax,threshold=566,nacq=20,rise=1.0E-9,delay=120E-9):
+        #turn_on = [0 for i in range(64)]
+        print(f"Checking channel {channel}")
+        # Set the pulser
+        if (vmax>1.05):
+            print(f"No automatic scan with High V {vmax} greater than 1 V")
+            exit(0)
+        pulser.setVoltage(1,vmin,vmax)
+        pulser.setRiseTime(1,rise)
+        pulser.setDelay(1,delay)
+        pulser.setON(1)
+        # Set CTEST
+        for ch in range(64):
+            if ch == channel:
+                self.feb.liroc.setParam(f"Ctest_ch{ch}",True)
+                self.feb.liroc.maskChannel(ch, False)
+            else:
+                self.feb.liroc.setParam(f"Ctest_ch{ch}",False)
+                self.feb.liroc.maskChannel(ch, True)
+        # Set the threshold
+        self.feb.liroc.set10bDac(threshold)
+        self.feb.liroc.stopScClock()
+        
+        # Now make the acquisition
+        ts=self.Acquire(nacq)
+        pch=daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[channel]
+        print(f"ch{channel} nbhit={len(ts[pch])}, mean={np.mean(ts[pch]):.8}, std={np.std(ts[pch]):.3}") 
+        
+        
+        plt.plot(range(len(ts[pch])), ts[pch], 'r+')
+        plt.figure()
+        plt.hist(ts[pch], label=f'ch{channel}', bins=range(min(ts[pch]), max(ts[pch])+1), color='r')
+        plt.figure()
+        return
+def main(
+    state,
+    version,
+    feb_id,
+    channel,
+    vmax=0.9,
+    threshold=600,
+    delay=120E-9,
+    rising=1.0E-9    
+):
+    pulser=agp.mod81160("../etc/pulse_config.json")
+    #agp.print_status()
+    if pulser.inst!=None:
+        pulser.print_status()
+        pulser.configure_pulse()
+        pulser.configure_trigger()
+        pulser.setOFF(1)
+        pulser.print_status()
+    else:
+        print("No agilent pulser")
+        exit(0)
+    pb = picmic_time(feb_id, state, version)
+
+    pb.check_time(channel,0,vmax,threshold=threshold,nacq=20,rise=rising,delay=delay)
+    # res={}
+    # res["vmin"]=vmin
+    # res["vmax"]=vmax
+    # res["rise"]=rise
+    # res["channels"]=[]
+    # for lch in range(first_channel,last_channel+1):
+    #     if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
+    #     tos=pb.scan_charge_one(pulser,lch,vmin,vmax,rise=rising)
+    #     res["channels"].append({"channel":lch,"turn_on":tos})
+    # print(res)
+    # # Serializing json
+    # json_object = json.dumps(res)
+
+    # # Writing to sample.json
+    # with open(f"calib_{first_channel}_{last_channel}_{vmax}.json", "w") as outfile:
+    #     outfile.write(json_object)
+
+    pulser.setOFF(1)
+    pulser.close()
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+
+    # configure all the actions
+    grp_action = parser.add_mutually_exclusive_group()
+    grp_action.add_argument(
+        "--noinj",
+        dest="noinj",
+        default=False,
+        action="store_true",
+        help="Make Scurve allchannels on",
+    )
+    # Arguments
+    parser.add_argument(
+        "--state", action="store", type=str, default=None, dest="state", help="DB State"
+    )
+    parser.add_argument(
+        "--version",
+        action="store",
+        type=int,
+        default=None,
+        dest="version",
+        help="DB state version",
+    )
+    parser.add_argument(
+        "--feb", action="store", type=int, default=None, dest="feb", help="FEB id"
+    )
+    parser.add_argument(
+        "--channel", action="store", type=int, default=None, dest="channel", help="LIROC first channel"
+    )
+    
+    parser.add_argument(
+        "--vmax",
+        action="store",
+        type=float,
+        default=0.9,
+        dest="vmax",
+        help="Maximal pulser injection",
+    )
+    parser.add_argument(
+        "--threshold",
+        action="store",
+        type=int,
+        default=400,
+        dest="threshold",
+        help="Minimal 10b dac",
+    )
+    parser.add_argument(
+        "--rise",
+        action="store",
+        type=float,
+        default=1.0,
+        dest="rise",
+        help="Rising time (ns)",
+    )
+    parser.add_argument(
+        "--delay",
+        action="store",
+        type=float,
+        default=120.0,
+        dest="delay",
+        help="Delay time (ns)",
+    )
+
+    
+    results = parser.parse_args()
+    print(results)
+
+    if results.state == None:
+        print("--state should be specified")
+        exit(0)
+    if results.version == None:
+        print("--version should be specified")
+        exit(0)
+    if results.feb == None:
+        print("--feb should be specified")
+        exit(0)
+    if results.channel == None:
+        print("--channel should be specified")
+        exit(0)
+    state = results.state
+    version = results.version
+    feb_id = results.feb
+    channel=results.channel 
+    #lastchannel=results.lastchannel 
+    threshold = results.threshold
+    vha=results.vmax
+    rise=results.rise*1.0E-9
+    delay=results.delay*1.0E-9
+    main(
+        state,
+        version,
+        feb_id,
+        channel,
+        vmax=vha,
+        threshold=threshold,
+        rising=rise,
+        delay=delay
+    )
+"""    
+if __name__ == '__main__':
+    daq.configLogger(logging.INFO)
+    
+    kc705 = daq.KC705Board()
+    kc705.init()
+    feb = daq.FebBoard(kc705)
+    feb.init()
+    
+    
+    feb.loadConfigFromCsv(folder=f"..{os.sep}febconfig", config_name='loup_config.csv')
+    feb.fpga.enableDownlinkFastControl()
+    feb.fpga.disableUplink()
+    # disable all liroc channels
+    # ~ for ch in range(64): feb.liroc.maskChannel(ch)
+    feb.liroc.set10bDac(600)
+    feb.liroc.stopScClock()
+    
+    # disable all ptdc channels except ch0 and ch1
+    # ~ for ch in range(2, 64):
+        # ~ feb.ptdc.setParam(f'channel_enable_{ch}', 0)
+
+    feb.ptdc.setResMode('coarse')
+    
+    # ~ feb.ptdc.setParam('hrx_top_en_r', 0)
+    # ~ feb.ptdc.setParam('hrx_bot_en_r', 0)
+    # ~ feb.ptdc.setParam('disable_ro_reject', 0)
+    # ~ feb.ptdc.setParam('falling_en', 1)
+    # ~ feb.ptdc.setParam('falling_en_tm_0', 1)
+    # ~ feb.ptdc.setParam('falling_en_tm_1', 1)
+    
+    feb.ptdc.powerup()
+
+    kc705.fastbitConfigure(mode='normal',
+        dig2_edge='rising', dig2_delay=1)
+    
+    # generate a few windows to flush out the agilient patterns
+    kc705.acqSetWindow(1, 1)
+    for _ in range(10): 
+        kc705.ipbWrite('ACQ_CTRL_2', 1)
+        kc705.ipbWrite('ACQ_CTRL_2', 0)
+    
+
+    
+    # ~ plt.figlegend()
+    plt.show()
+"""
