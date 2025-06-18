@@ -92,17 +92,20 @@ class picmic_time:
 
         self.feb.ptdc.powerup()
 
-        self.kc705.fastbitConfigure(
-            mode="normal",
-            flush_delay=100,
-            dig0_edge="rising",
-            dig0_delay=0,
-            dig1_edge="rising",
-            dig1_delay=0,
-        )
+        self.kc705.fastbitConfigure(mode='normal',
+        dig2_edge='rising', dig2_delay=1)
+
+        #self.kc705.fastbitConfigure(
+        #    mode="normal",
+            #flush_delay=100,
+        #    dig0_edge="rising",
+        #    dig0_delay=0,
+        #    dig1_edge="rising",
+        #    dig1_delay=0,
+        #)
         # generate a few windows to flush out the agilient patterns
         self.kc705.acqSetWindow(1, 1)
-        for _ in range(5):
+        for _ in range(10):
             self.kc705.ipbWrite("ACQ_CTRL_2", 1)
             self.kc705.ipbWrite("ACQ_CTRL_2", 0)
 
@@ -144,7 +147,7 @@ class picmic_time:
                         # ~ if ch == 1:
                             # ~ print(f"ch{ch} {'r' if edge else 'f'}: {coarse} {fine} ({word[1,0]})")
                         # ~ if (ch == 0  and edge == 1) or (ch == 1  and edge == 1) : continue
-                        ts[ch].append((coarse<<13 | fine)>>2*3.05e-3)
+                        ts[ch].append((coarse<<13 | fine)*3.0523E-3)
         print('')
         for lch in range(64):
             if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
@@ -196,13 +199,20 @@ class picmic_time:
         # Now make the acquisition
         ts=self.Acquire(nacq)
         pch=daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[channel]
+        mean=np.mean(ts[pch])
+        rms=np.std(ts[pch])
         print(f"ch{channel} nbhit={len(ts[pch])}, mean={np.mean(ts[pch]):.8}, std={np.std(ts[pch]):.3}") 
-        
-        
-        plt.plot(range(len(ts[pch])), ts[pch], 'r+')
+        tch=[]
+        for x in ts[pch]:
+            if abs(x-mean)<5*rms and abs(x-mean)<5: tch.append(x)
+        print(f"ch{channel} nbhit={len(tch)}, mean={np.mean(tch):.8}, std={np.std(tch):.3}") 
+        mean1=np.mean(tch)
+        rms1=np.std(tch)
+        #plt.plot(range(len(ts[pch])), ts[pch], 'r+')
+        #plt.figure()
+        plt.hist(tch, label=f'ch{channel}', bins=100,range=(round(mean1-5*rms1),round(mean1+5*rms1)), color='r')
         plt.figure()
-        plt.hist(ts[pch], label=f'ch{channel}', bins=range(min(ts[pch]), max(ts[pch])+1), color='r')
-        plt.figure()
+        plt.show()
         return
 def main(
     state,
@@ -227,7 +237,7 @@ def main(
         exit(0)
     pb = picmic_time(feb_id, state, version)
 
-    pb.check_time(channel,0,vmax,threshold=threshold,nacq=20,rise=rising,delay=delay)
+    pb.check_time(pulser,channel,0,vmax,threshold=threshold,nacq=20,rise=rising,delay=delay)
     # res={}
     # res["vmin"]=vmin
     # res["vmax"]=vmax
