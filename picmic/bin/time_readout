@@ -173,12 +173,12 @@ class picmic_time:
         plt.hist(ts[2], label=f'ch2', bins=range(min(ts[2]), max(ts[2])+1) )
         """
         return ts
-    def check_time(self,pulser,channel,vmin,vmax,threshold=566,nacq=20,rise=1.0E-9,delay=120E-9):
+    def check_time_one(self,pulser,channel,vmin,vmax,threshold=566,nacq=20,rise=1.0E-9,delay=120E-9):
         #turn_on = [0 for i in range(64)]
         print(f"Checking channel {channel}")
         # Set the pulser
-        if (vmax>1.05):
-            print(f"No automatic scan with High V {vmax} greater than 1 V")
+        if (vmax>1.0):
+            print(f"No automatic scan with High V {vmax} greater than 1.0 V")
             exit(0)
         pulser.setVoltage(1,vmin,vmax)
         pulser.setRiseTime(1,rise)
@@ -210,15 +210,15 @@ class picmic_time:
         rms1=np.std(tch)
         #plt.plot(range(len(ts[pch])), ts[pch], 'r+')
         #plt.figure()
-        plt.hist(tch, label=f'ch{channel}', bins=100,range=(round(mean1-5*rms1),round(mean1+5*rms1)), color='r')
-        plt.figure()
-        plt.show()
-        return
+        #plt.hist(tch, label=f'ch{channel}', bins=100,range=(round(mean1-5*rms1),round(mean1+5*rms1)), color='r')
+        #plt.show()
+        return (len(ts[pch]),mean,rms,len(tch),mean1,rms1)
 def main(
     state,
     version,
     feb_id,
-    channel,
+    first_c,
+    last_c,
     vmax=0.9,
     threshold=600,
     delay=120E-9,
@@ -236,24 +236,23 @@ def main(
         print("No agilent pulser")
         exit(0)
     pb = picmic_time(feb_id, state, version)
+    res={}
+    res["threshold"]=threshold
+    res["vmax"]=vmax
+    res["rise"]=rise
+    res["delay"]=delay
+    res["channels"]=[]
+    for lch in range(first_c,last_c+1):
+        if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
+        tos=pb.check_time_one(pulser,lch,0,vmax,threshold=threshold,nacq=20,rise=rising,delay=delay)
+        res["channels"].append({"channel":lch,"timing":tos})
+    print(res)
+    # Serializing json
+    json_object = json.dumps(res)
 
-    pb.check_time(pulser,channel,0,vmax,threshold=threshold,nacq=20,rise=rising,delay=delay)
-    # res={}
-    # res["vmin"]=vmin
-    # res["vmax"]=vmax
-    # res["rise"]=rise
-    # res["channels"]=[]
-    # for lch in range(first_channel,last_channel+1):
-    #     if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
-    #     tos=pb.scan_charge_one(pulser,lch,vmin,vmax,rise=rising)
-    #     res["channels"].append({"channel":lch,"turn_on":tos})
-    # print(res)
-    # # Serializing json
-    # json_object = json.dumps(res)
-
-    # # Writing to sample.json
-    # with open(f"calib_{first_channel}_{last_channel}_{vmax}.json", "w") as outfile:
-    #     outfile.write(json_object)
+    # Writing to sample.json
+    with open(f"timing_f{first_c}_l{last_c}_v{vmax}_t{threshold}_d{round(delay*1E12)}_r{round(rising*1E12)}.json", "w") as outfile:
+        outfile.write(json_object)
 
     pulser.setOFF(1)
     pulser.close()
@@ -287,9 +286,11 @@ if __name__ == "__main__":
         "--feb", action="store", type=int, default=None, dest="feb", help="FEB id"
     )
     parser.add_argument(
-        "--channel", action="store", type=int, default=None, dest="channel", help="LIROC first channel"
+        "--first", action="store", type=int, default=None, dest="first", help="LIROC first channel"
     )
-    
+    parser.add_argument(
+        "--last", action="store", type=int, default=None, dest="last", help="LIROC last channel"
+    )
     parser.add_argument(
         "--vmax",
         action="store",
@@ -336,14 +337,17 @@ if __name__ == "__main__":
     if results.feb == None:
         print("--feb should be specified")
         exit(0)
-    if results.channel == None:
-        print("--channel should be specified")
+    if results.first == None:
+        print("--first should be specified")
+        exit(0)
+    if results.last == None:
+        print("--last should be specified")
         exit(0)
     state = results.state
     version = results.version
     feb_id = results.feb
-    channel=results.channel 
-    #lastchannel=results.lastchannel 
+    firstchannel=results.first 
+    lastchannel=results.last 
     threshold = results.threshold
     vha=results.vmax
     rise=results.rise*1.0E-9
@@ -352,7 +356,8 @@ if __name__ == "__main__":
         state,
         version,
         feb_id,
-        channel,
+        firstchannel,
+        lastchannel,
         vmax=vha,
         threshold=threshold,
         rising=rise,
