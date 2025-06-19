@@ -64,6 +64,9 @@ class picmic_time:
         self.sdb.setup.boards[0].picmic.set("falling_en", falling)
         # ValEvt
         self.sdb.setup.boards[0].picmic.set("Forced_ValEvt", val_evt)
+        self.sdb.setup.boards[0].picmic.set("EN-CLPS", 1)
+        self.sdb.setup.boards[0].picmic.set("EN-pE", 15)
+        #self.sdb.setup.boards[0].picmic.set("PA_gain", 15)
         # Polarity
         self.sdb.setup.boards[0].picmic.set("Polarity", pol_neg)
         # DC_PA
@@ -173,11 +176,11 @@ class picmic_time:
         plt.hist(ts[2], label=f'ch2', bins=range(min(ts[2]), max(ts[2])+1) )
         """
         return ts
-    def check_time_one(self,pulser,channel,vmin,vmax,threshold=566,nacq=20,rise=1.0E-9,delay=120E-9):
+    def check_time_one(self,pulser,channel,vmin,vmax,threshold=566,nacq=20,rise=1.0E-9,delay=120E-9,use_ctest=False):
         #turn_on = [0 for i in range(64)]
         print(f"Checking channel {channel}")
         # Set the pulser
-        if (vmax>1.0):
+        if (vmax>1.0 and use_ctest):
             print(f"No automatic scan with High V {vmax} greater than 1.0 V")
             exit(0)
         pulser.setVoltage(1,vmin,vmax)
@@ -187,7 +190,10 @@ class picmic_time:
         # Set CTEST
         for ch in range(64):
             if ch == channel:
-                self.feb.liroc.setParam(f"Ctest_ch{ch}",True)
+                if (use_ctest):
+                    self.feb.liroc.setParam(f"Ctest_ch{ch}",True)
+                else:
+                    self.feb.liroc.setParam(f"Ctest_ch{ch}",False)
                 self.feb.liroc.maskChannel(ch, False)
             else:
                 self.feb.liroc.setParam(f"Ctest_ch{ch}",False)
@@ -210,8 +216,8 @@ class picmic_time:
         rms1=np.std(tch)
         #plt.plot(range(len(ts[pch])), ts[pch], 'r+')
         #plt.figure()
-        #plt.hist(tch, label=f'ch{channel}', bins=100,range=(round(mean1-5*rms1),round(mean1+5*rms1)), color='r')
-        #plt.show()
+        plt.hist(tch, label=f'ch{channel}', bins=100,range=(round(mean1-5*rms1),round(mean1+5*rms1)), color='r')
+        plt.show()
         return (len(ts[pch]),mean,rms,len(tch),mean1,rms1)
 def main(
     state,

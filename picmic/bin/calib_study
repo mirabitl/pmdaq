@@ -85,17 +85,10 @@ class picmic_calib:
 
         self.feb.ptdc.powerup()
 
-        self.kc705.fastbitConfigure(
-            mode="normal",
-            flush_delay=100,
-            dig0_edge="rising",
-            dig0_delay=0,
-            dig1_edge="rising",
-            dig1_delay=0,
-        )
+        self.kc705.fastbitConfigure(mode='normal',dig2_edge='rising', dig2_delay=1)
         # generate a few windows to flush out the agilient patterns
         self.kc705.acqSetWindow(1, 1)
-        for _ in range(5):
+        for _ in range(10):
             self.kc705.ipbWrite("ACQ_CTRL_2", 1)
             self.kc705.ipbWrite("ACQ_CTRL_2", 0)
 
@@ -122,10 +115,10 @@ class picmic_calib:
         scurves = self.sweep_dac10b(start, stop, step)
         return scurves
 
-    def scan_charge_one(self,pulser,channel,vmin,vmax,pedestal=566,nstep=20,rise=1.0E-9,delay=120E-9):
+    def scan_charge_one(self,pulser,channel,vmin,vmax,pedestal=566,nstep=20,rise=1.0E-9,delay=120E-9,use_ctest=False):
         #turn_on = [0 for i in range(64)]
         print(f"Scanning channel {channel}")
-        if (vmax>1.0):
+        if (vmax>1.0 and use_ctest):
             print(f"No automatic scan with High V {vmax} greater than 1 V")
             exit(0)
         vstep=(vmax-vmin)/nstep
@@ -137,8 +130,11 @@ class picmic_calib:
         
         for ch in range(64):
             if ch == channel:
-                self.feb.liroc.setParam(f"Ctest_ch{ch}",True)
-                self.feb.liroc.maskChannel(ch, False)
+                if (use_ctest):
+                    self.feb.liroc.setParam(f"Ctest_ch{ch}",True)
+                else:
+                    self.feb.liroc.setParam(f"Ctest_ch{ch}",False)
+                    self.feb.liroc.maskChannel(ch, False)
             else:
                 self.feb.liroc.setParam(f"Ctest_ch{ch}",False)
                 self.feb.liroc.maskChannel(ch, True)
@@ -146,12 +142,12 @@ class picmic_calib:
         for v in vhigh:
             pulser.setVoltage(1,0,v)
             print(v)
-            scurves=self.sweep_dac10b(pedestal+5,700,1)
+            scurves=self.sweep_dac10b(pedestal+5,1000,1)
             for lch in range(64):
                 if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
                 sch=scurves[daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[lch]]
                 if (lch == channel):
-                    print(lch,sch)
+                    print(lch,1000-(pedestal+5),len(sch),sch)
                 i_low=len(sch)
                 i_high=-1
                 for i in range(len(sch)-1,0,-1):
@@ -180,7 +176,8 @@ def main(
     vmax=0.9,
     thmin=450,
     thmax=700,
-    rising=1.0E-9    
+    rising=1.0E-9,
+    ctest=False    
 ):
     pulser=agp.mod81160("../etc/pulse_config.json")
     #agp.print_status()
@@ -258,7 +255,7 @@ def main(
         res["channels"]=[]
         for lch in range(first_channel,last_channel+1):
             if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
-            tos=pb.scan_charge_one(pulser,lch,vmin,vmax,rise=rising)
+            tos=pb.scan_charge_one(pulser,lch,vmin,vmax,rise=rising,use_ctest=ctest)
             res["channels"].append({"channel":lch,"turn_on":tos})
     print(res)
     # Serializing json
@@ -362,6 +359,7 @@ if __name__ == "__main__":
         dest="location",
         help="Experiment name",
     )
+    parser.add_argument('--ctest', dest='ctest', default=False, action='store_true',help="Use ctest input")
 
     results = parser.parse_args()
     print(results)
@@ -408,5 +406,6 @@ if __name__ == "__main__":
         vmax=vha,
         thmin=thi,
         thmax=tha,
-        rising=rise
+        rising=rise,
+        ctest=results.ctest
     )
