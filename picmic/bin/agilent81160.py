@@ -50,7 +50,7 @@ class mod81160:
         print("⚙️ Configuration de l'impulsion (mode burst, 1 pulse par trigger)...")
         self.inst.write("*RST")
         self.inst.write(":OUTPut1 OFF")
-        self.inst.write(":SOURce1:FUNCtion PULSe")
+        self.inst.write(":SOURce:FUNCtion1 PULSe")
         self.inst.write(f":VOLTage1:LOW {self.cfg['voltage_low']}")
         self.inst.write(f":VOLTage1:HIGH {self.cfg['voltage_high']}")
         self.inst.write(f":SOURce1:PULSe:WIDTh {self.cfg['width']}")
@@ -60,6 +60,20 @@ class mod81160:
         self.inst.write(f":SOURce1:PULSe:TRANsition:TRAiling {self.cfg['fall_time']}")
         self.inst.write(":SOURce1:BURSt:STATe ON")
         self.inst.write(":SOURce1:BURSt:NCYCles 1")
+        
+        self.inst.write(":OUTPut2 OFF")
+        self.inst.write(":SOURce:FUNCtion2 PULSe")
+        self.inst.write(f":VOLTage2:LOW 0")
+        self.inst.write(f":VOLTage2:HIGH 3.3")
+        #self.inst.write(f":SOURce:PULSe:WIDTh2 5.6e-8")
+        self.inst.write(f":FUNC2:PULSe:WIDTh  5.9e-8")
+
+        self.inst.write(f":FUNC2:PULSe:DElay 100.0e-9")
+        self.inst.write(f":OUTPut2:POLarity NORM")
+        self.inst.write(f":FUNC2:PULSe:TRANsition:LEADing 1.0e-9")
+        self.inst.write(f":FUNC2:PULSe:TRANsition:TRAiling 1.0e-9")
+        self.inst.write(":SOURce:BURSt:STATe2 ON")
+        self.inst.write(":SOURce:BURSt:NCYCles2 1")
         
     def setVoltage(self,channel,low,high):
         self.inst.write(f":VOLTage{channel}:LOW {low}")
@@ -84,7 +98,9 @@ class mod81160:
         self.inst.write(f":ARM:SOURce1 {self.cfg['trigger_mode']}")
         self.inst.write(f":ARM:SLOPe1 {self.cfg.get('trigger_slope', 'POS')}")
         self.inst.write(f":ARM:LEVel1 {self.cfg.get('trigger_level', 1.0)}")
-
+        self.inst.write(f":ARM:SOURce2 {self.cfg['trigger_mode']}")
+        self.inst.write(f":ARM:SLOPe2 {self.cfg.get('trigger_slope', 'POS')}")
+        self.inst.write(f":ARM:LEVel2 {self.cfg.get('trigger_level', 1.0)}")
     def print_status(self):
         print("\n🔍 Lecture des paramètres actuels :")
         params = {
@@ -100,10 +116,25 @@ class mod81160:
             "Fall Time (s)": self.inst.query(
                 ":SOURce1:PULSe:TRANsition:TRAiling?"
             ).strip(),
-            "Trigger Source": self.inst.query(":ARM:SOURce1?").strip(),
-            "Trigger Slope": self.inst.query(":ARM:SLOPe1?").strip(),
-            "Trigger Level": self.inst.query(":ARM:LEVel1?").strip(),
-            "Output State": self.inst.query(":OUTPut1?").strip(),
+            "Voltage low2": self.inst.query(":VOLTage2:LOW?").strip(),
+            "Voltage high2": self.inst.query(":VOLTage2:HIGH?").strip(),
+            #"Width2 (s)": self.inst.query(":SOURce2:PULSe:WIDTh?").strip(),
+            #"Delay2 (s)": self.inst.query(":SOURce2:PULSe:DElay?").strip(),
+            "Polarity2": self.inst.query(":OUTPut2:POLarity?").strip(),
+            #"Rise Time2 (s)": self.inst.query(
+            #    ":SOURce2:PULSe:TRANsition:LEADing?"
+            #).strip(),
+            #"Fall Time2 (s)": self.inst.query(
+            #    ":SOURce2:PULSe:TRANsition:TRAiling?"
+            #).strip(),
+            "Trigger Source1": self.inst.query(":ARM:SOURce1?").strip(),
+            "Trigger Slope1": self.inst.query(":ARM:SLOPe1?").strip(),
+            "Trigger Level1": self.inst.query(":ARM:LEVel1?").strip(),
+            "Output State1": self.inst.query(":OUTPut1?").strip(),
+            "Trigger Source2": self.inst.query(":ARM:SOURce2?").strip(),
+            "Trigger Slope2": self.inst.query(":ARM:SLOPe2?").strip(),
+            #"Trigger Level2": self.inst.query(":ARM:LEVel2?").strip(),
+            "Output State2": self.inst.query(":OUTPut2?").strip(),
         }
         for label, value in params.items():
             print(f"  {label:20s} : {value}")
@@ -117,10 +148,10 @@ def main():
     agp = mod81160("../etc/pulse_config.json")
     #agp.print_status()
     if agp.inst!=None:
-        agp.print_status()
+        #agp.print_status()
         agp.configure_pulse()
         agp.configure_trigger()
-        agp.setON(1)
+        #agp.setON(1)
         agp.print_status()
         agp.close()
 

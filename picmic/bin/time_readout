@@ -15,7 +15,7 @@ import os
 import json
 import agilent81160 as agp
 
-N_ACQ = 10
+N_ACQ = 30
 N_WINDOW = 1000
 
 class picmic_time:
@@ -64,8 +64,8 @@ class picmic_time:
         self.sdb.setup.boards[0].picmic.set("falling_en", falling)
         # ValEvt
         self.sdb.setup.boards[0].picmic.set("Forced_ValEvt", val_evt)
-        self.sdb.setup.boards[0].picmic.set("EN-CLPS", 1)
-        self.sdb.setup.boards[0].picmic.set("EN-pE", 15)
+        #self.sdb.setup.boards[0].picmic.set("EN-CLPS", 1)
+        #self.sdb.setup.boards[0].picmic.set("EN-pE", 15)
         #self.sdb.setup.boards[0].picmic.set("PA_gain", 15)
         # Polarity
         self.sdb.setup.boards[0].picmic.set("Polarity", pol_neg)
@@ -122,6 +122,7 @@ class picmic_time:
             first = [True]*64
             if i%100 == 0: print(i)
             print('.', end='', flush=True)
+            t0=0.0
             for p in range(4):
                 
                 # ~ print(f'--------------{p}-------------')
@@ -150,14 +151,27 @@ class picmic_time:
                         # ~ if ch == 1:
                             # ~ print(f"ch{ch} {'r' if edge else 'f'}: {coarse} {fine} ({word[1,0]})")
                         # ~ if (ch == 0  and edge == 1) or (ch == 1  and edge == 1) : continue
-                        ts[ch].append((coarse<<13 | fine)*3.0523E-3)
+                        if (ch==0):
+                            ts[ch].append((coarse<<13 | fine)*3.0523E-3)
+                            t0=(coarse<<13 | fine)*3.0523E-3
+                        else:
+                            #print(t0,(coarse<<13 | fine)*3.0523E-3)
+                            ts[ch].append(((coarse<<13 | fine)*3.0523E-3)) 
         print('')
+        tdiff=[]
         for lch in range(64):
-            if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
-            pch=daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[lch]
-            if (len(ts[pch])>0):
-                print(f"ch{lch} nbhit={len(ts[pch])}, mean={np.mean(ts[pch]):.8}, std={np.std(ts[pch]):.3}") 
-
+            if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN and lch!=0: continue
+            if (lch!=0):
+                pch=daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[lch]
+                if (len(ts[pch])>0):
+                    print(f"ch{lch} nbhit={len(ts[pch])}, mean={np.mean(ts[pch]):.8}, std={np.std(ts[pch]):.3}")
+                    if (len(ts[pch])==len(ts[0])):
+                        td= np.subtract(ts[pch],ts[0]).tolist()
+                        print(f"Substracted ch{lch} nbhit={len(td)}, mean={np.mean(td):.8}, std={np.std(td):.3}")
+                        ts[pch]=td
+            else:
+                print(f"ch{lch} nbhit={len(ts[lch])}, mean={np.mean(ts[lch]):.8}, std={np.std(ts[lch]):.3}") 
+         
         """
         # ~ print(f"ch{daq.FebBoard.MAP_PTDC_TO_LIROC_CHAN[31]} nbhit={len(ts[31])}, mean={np.mean(ts[31]):.8}, std={np.std(ts[31]):.3}") 
         print(f"ch0 nbhit={len(ts[0])}, mean={np.mean(ts[0]):.8}, std={np.std(ts[0]):.3}") 
@@ -176,7 +190,7 @@ class picmic_time:
         plt.hist(ts[2], label=f'ch2', bins=range(min(ts[2]), max(ts[2])+1) )
         """
         return ts
-    def check_time_one(self,pulser,channel,vmin,vmax,threshold=566,nacq=20,rise=1.0E-9,delay=120E-9,use_ctest=False):
+    def check_time_one(self,pulser,channel,vmin,vmax,threshold=566,nacq=20,rise=1.0E-9,delay=120E-9,use_ctest=False,display=True):
         #turn_on = [0 for i in range(64)]
         print(f"Checking channel {channel}")
         # Set the pulser
@@ -187,6 +201,8 @@ class picmic_time:
         pulser.setRiseTime(1,rise)
         pulser.setDelay(1,delay)
         pulser.setON(1)
+        pulser.setON(2)
+
         # Set CTEST
         for ch in range(64):
             if ch == channel:
@@ -216,8 +232,9 @@ class picmic_time:
         rms1=np.std(tch)
         #plt.plot(range(len(ts[pch])), ts[pch], 'r+')
         #plt.figure()
-        plt.hist(tch, label=f'ch{channel}', bins=100,range=(round(mean1-5*rms1),round(mean1+5*rms1)), color='r')
-        plt.show()
+        if (display):
+            plt.hist(tch, label=f'ch{channel}', bins=100,range=(round(mean1-5*rms1),round(mean1+5*rms1)), color='r')
+            plt.show()
         return (len(ts[pch]),mean,rms,len(tch),mean1,rms1)
 def main(
     state,
@@ -228,7 +245,8 @@ def main(
     vmax=0.9,
     threshold=600,
     delay=120E-9,
-    rising=1.0E-9    
+    rising=1.0E-9,
+    vmin=None    
 ):
     pulser=agp.mod81160("../etc/pulse_config.json")
     #agp.print_status()
@@ -242,25 +260,54 @@ def main(
         print("No agilent pulser")
         exit(0)
     pb = picmic_time(feb_id, state, version)
-    res={}
-    res["threshold"]=threshold
-    res["vmax"]=vmax
-    res["rise"]=rise
-    res["delay"]=delay
-    res["channels"]=[]
-    for lch in range(first_c,last_c+1):
-        if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
-        tos=pb.check_time_one(pulser,lch,0,vmax,threshold=threshold,nacq=20,rise=rising,delay=delay)
-        res["channels"].append({"channel":lch,"timing":tos})
-    print(res)
-    # Serializing json
-    json_object = json.dumps(res)
+    if (vmin==None):
+        res={}
+        res["threshold"]=threshold
+        res["vmax"]=vmax
+        res["rise"]=rise
+        res["delay"]=delay
+        res["channels"]=[]
+        for lch in range(first_c,last_c+1):
+            if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
+            tos=pb.check_time_one(pulser,lch,0,vmax,threshold=threshold,nacq=20,rise=rising,delay=delay)
+            res["channels"].append({"channel":lch,"timing":tos})
+        print(res)
+        # Serializing json
+        json_object = json.dumps(res)
 
-    # Writing to sample.json
-    with open(f"timing_f{first_c}_l{last_c}_v{vmax}_t{threshold}_d{round(delay*1E12)}_r{round(rising*1E12)}.json", "w") as outfile:
-        outfile.write(json_object)
+        # Writing to sample.json
+        with open(f"timing_f{first_c}_l{last_c}_v{vmax}_t{threshold}_d{round(delay*1E12)}_r{round(rising*1E12)}.json", "w") as outfile:
+            outfile.write(json_object)
+    else:
+        # Threshold send should be the one of lower point
+        res={}
+        res["points"]=[]
+        res["rise"]=rise
+        res["delay"]=delay 
+        vstep=(vmax-vmin)/20
+        vhigh=[round(x,3) for x in np.arange(vmin,vmax+1E-3,vstep).tolist()]
+        for vset in vhigh:
+            thr=max(threshold,min(1022,int(round((vset-vmin)/2*1000*0.5626)+threshold)))
+            thr=threshold
+            resv={}
+            resv["threshold"]=thr
+            resv["vmax"]=vset
+            
+            resv["channels"]=[]
+            for lch in range(first_c,last_c+1):
+                if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
+                tos=pb.check_time_one(pulser,lch,0,vset,threshold=thr,nacq=20,rise=rising,delay=delay,display=False)
+                resv["channels"].append({"channel":lch,"timing":tos})
+            print(resv)
+            res["points"].append(resv)
+        # Serializing json
+        json_object = json.dumps(res)
 
+        # Writing to sample.json
+        with open(f"timing_vscan_f{first_c}_l{last_c}_v{vmax}_t{threshold}_d{round(delay*1E12)}_r{round(rising*1E12)}.json", "w") as outfile:
+            outfile.write(json_object)
     pulser.setOFF(1)
+    pulser.setOFF(2)
     pulser.close()
 if __name__ == "__main__":
     import argparse
@@ -304,6 +351,14 @@ if __name__ == "__main__":
         default=0.9,
         dest="vmax",
         help="Maximal pulser injection",
+    )
+    parser.add_argument(
+        "--vmin",
+        action="store",
+        type=float,
+        default=None,
+        dest="vmin",
+        help="Minimal pulser injection for a scan",
     )
     parser.add_argument(
         "--threshold",
@@ -367,7 +422,8 @@ if __name__ == "__main__":
         vmax=vha,
         threshold=threshold,
         rising=rise,
-        delay=delay
+        delay=delay,
+        vmin=results.vmin
     )
 """    
 if __name__ == '__main__':
