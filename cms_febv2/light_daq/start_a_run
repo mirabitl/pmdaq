@@ -1,0 +1,4 @@
+curl -g http://lyocms09:29029/CREATE?s_conf='{"name":"acquisition_test","version":1}'
+curl -g http://lyocms09:29029/INITIALISE
+curl -g http://lyocms09:29029/CONFIGURE
+curl -g http://lyocms09:29029/START
