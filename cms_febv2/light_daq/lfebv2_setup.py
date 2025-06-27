@@ -139,8 +139,8 @@ class lfebv2_setup:
         """
         self.feb0.load_config_from_csv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.params["db_state"],self.params["db_version"],self.params["feb_id"]))
         #enableforces2=True
-        #if ("disable_force_s2" in self.params):
-        #    enableforces2=not (self.params["disable_force_s2"]==1)
+        if ("disable_force_s2" in self.params):
+            enableforces2=not (self.params["disable_force_s2"]==1)
         for fpga in lightdaq.FPGA_ID:
             self.feb0.fpga[fpga].tdcSetInjectionMode('trig_ext_resync')
             self.feb0.fpga[fpga].tdcEnable(False)       
@@ -151,8 +151,8 @@ class lfebv2_setup:
             s1_duration=self.params["orbit_fsm"]["s1"],
             s2_duration=self.params["orbit_fsm"]["s2"],
             s3_duration=self.params["orbit_fsm"]["s3"],
-            s4_duration=self.params["orbit_fsm"]["s4"])
-        #    enable_force_s2=enableforces2)
+            s4_duration=self.params["orbit_fsm"]["s4"],
+            enable_force_s2=enableforces2)
 
         self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=False, delay=100)
     
