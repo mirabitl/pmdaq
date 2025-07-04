@@ -220,13 +220,18 @@ private:
 };
 
 // HTTP Serveur REST
-void start_http_server(DummySocket& daq, Logger& log) {
-    http_listener listener("http://0.0.0.0:8080");
+void start_http_server(DummySocket& daq, Logger& log)
+{
+  utility::string_t address = U("http://127.0.0.1:8091");
+  uri_builder uri(address);
+  auto addr = uri.to_uri().to_string();
+  std::cout<<addr<<std::endl;
+  http_listener listener(addr);
 
-    listener.support(methods::GET, [&](http_request request) {
-        auto path = uri::decode(request.relative_uri().path());
+  listener.support(methods::GET, [&](http_request request) {
+    auto path = uri::decode(request.relative_uri().path());
 
-        if (path == "/status") {
+    if (path == "/status") {
             request.reply(status_codes::OK, daq.status());
         }
         else if (path == "/addtokens") {
@@ -246,45 +251,48 @@ void start_http_server(DummySocket& daq, Logger& log) {
         else {
             request.reply(status_codes::NotFound, "Unknown GET endpoint");
         }
-    });
+  });
 
-    listener.support(methods::POST, [&](http_request request) {
-        auto path = uri::decode(request.relative_uri().path());
-
-        if (path == "/start") {
-            daq.start(1);
-            request.reply(status_codes::OK, "Started");
-        } else if (path == "/stop") {
-            daq.stop();
-            request.reply(status_codes::OK, "Stopped");
-        } else if (path == "/pause") {
-            daq.pause();
-            request.reply(status_codes::OK, "Paused");
-        } else if (path == "/resume") {
-            daq.resume();
-            request.reply(status_codes::OK, "Resumed");
-        } else if (path == "/addtokens") {
-            request.extract_json().then([&](pplx::task<json::value> task) {
-                try {
-                    auto body = task.get();
-                    if (body.has_field("count")) {
-                        int n = body["count"].as_integer();
-                        daq.addTokens(n);
-                        request.reply(status_codes::OK, "Tokens added via POST");
-                    } else {
-                        request.reply(status_codes::BadRequest, "Missing 'count' field");
-                    }
-                } catch (...) {
-                    request.reply(status_codes::BadRequest, "Invalid JSON");
-                }
-            });
-        } else {
-            request.reply(status_codes::NotFound, "Unknown POST endpoint");
-        }
-    });
-
-    listener.open().wait();
-    log.log("[INFO] HTTP control server started on port 8080");
+  listener.support(methods::POST, [&](http_request request) {
+    auto path = uri::decode(request.relative_uri().path());
+    
+    if (path == "/start") {
+      daq.start(1);
+      request.reply(status_codes::OK, "Started");
+    } else if (path == "/stop") {
+      daq.stop();
+      request.reply(status_codes::OK, "Stopped");
+    } else if (path == "/pause") {
+      daq.pause();
+      request.reply(status_codes::OK, "Paused");
+    } else if (path == "/resume") {
+      daq.resume();
+      request.reply(status_codes::OK, "Resumed");
+    } else if (path == "/addtokens") {
+      request.extract_json().then([&](pplx::task<json::value> task) {
+	try {
+	  auto body = task.get();
+	  if (body.has_field("count")) {
+	    int n = body["count"].as_integer();
+	    daq.addTokens(n);
+	    request.reply(status_codes::OK, "Tokens added via POST");
+	  } else {
+	    request.reply(status_codes::BadRequest, "Missing 'count' field");
+	  }
+	} catch (...) {
+	  request.reply(status_codes::BadRequest, "Invalid JSON");
+	}
+      });
+    } else {
+      request.reply(status_codes::NotFound, "Unknown POST endpoint");
+    }
+  });
+  std::cout<<" avant wait " <<std::endl;
+  listener.open().wait();
+  log.log("[INFO] HTTP control server started on port 8080");
+  std::cin.get(); // bloque pour garder le serveur actif
+  listener.close().wait();
+  std::cout<<" apres wait " <<std::endl;
 }
 
 int main() {
@@ -297,6 +305,8 @@ int main() {
     std::thread server_thread(start_http_server, std::ref(daq), std::ref(logger));
 
     std::cout << "HTTP control available on port 8080 (GET /status, /addtokens?count=XXX, POST /start, /stop, /pause, /resume, /addtokens)" << std::endl;
+    while (1)
+      ::sleep(10);
     server_thread.join();
     return 0;
 }

@@ -79,6 +79,7 @@ add_subdirectory(lyon/liboard)
 add_subdirectory(lyon/dbtool)
 add_subdirectory(lyon/febv2)
 add_subdirectory(lyon/shm_data_source)
+add_subdirectory(lyon/udp_data_source)
 add_subdirectory(lyon/picotdc)
 
 include(CPack)
