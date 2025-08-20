@@ -1,0 +1,136 @@
+#!/usr/bin/env python3
+import os
+#import socks
+import socket
+import json
+from copy import deepcopy
+import base64
+import time
+import argparse
+import requests
+import picmic_register_access as cra
+from termcolor import colored
+def argHandler(res):
+    _wdd=cra.instance()
+    if (res.states):
+        _wdd.list_setups()
+        return
+    if (res.tests):
+        _wdd.list_tests()
+        return
+    if (res.runs):
+        _wdd.runs()
+        return
+    if (res.configurations):
+        _wdd.configurations()
+        return
+    if (res.picmic_info):
+        if (res.state==None or res.version==None):
+            print("State name (--state) and version (--version)  should be provided")
+        else:
+            _wdd.download_setup(res.state,res.version)
+            _wdd.to_csv_files()
+            cmd="column -s\; -t <%s" %_wdd.setup.boards[0].picmic.last_file
+            if (res.param!=None):
+                cmd=cmd+"| grep -i %s" % res.param
+                os.system(cmd)
+            else:
+                cmd=cmd+"|less"
+                os.system(cmd)
+            print("The file can be found in ",_wdd.setup.boards[0].picmic.last_file)
+        return
+    if (res.download):
+        if (res.state==None or res.version==None):
+            print("State name (--state) and version (--version) should be provided")
+        else:
+            _wdd.download_setup(res.state,res.version)
+            _wdd.to_csv_files()
+            print(_wdd.setup.boards[0].picmic.last_file," created for picmic")
+        return
+    if (res.upload):
+        if (res.state==None or res.comment==None or res.board==None or res.picodef==None or res.lirocdef==None):
+            print("No way to create a state :--state --comment --board --pico-file and --liroc-file should be provided")
+        else:
+            _wdd.create_setup(res.state)    
+            f1=cra.picmic_registers(res.board)
+            f1.load_defaults(fnp=res.picodef,fnl=res.lirocdef)
+            _wdd.setup.add_picmic(f1)
+            _wdd.upload_changes(res.comment)
+
+        return
+    if (res.acq_upload):
+        if (res.comment==None or res.config_file==None ):
+            print("No way to create a config :--config-file and -comment should be provided")
+        else:
+            _wdd.upload_configuration(res.config_file,res.comment)
+
+        return
+    if (res.acq_download):
+        if (res.name==None or res.version==None):
+            print("Config name (--name) and version (--version) should be provided")
+        else:
+            slc=_wdd.download_configuration(res.name,res.version)
+            print(slc)
+        return
+
+    if (res.scurves):
+        if (res.state==None or res.version==None or res.board==None or res.analysis==None ):
+            print("SCurves access :--state --version  --board --analysis ")
+        else:
+            sc=_wdd.get_scurve(res.state,res.version,res.board,res.analysis)
+            sc["_id"]=0
+            if (res.out==None):
+                print(json.dumps(sc))
+            else:
+                fout=open(res.out,"w")
+                fout.write(json.dumps(sc))
+                fout.close()
+
+        return
+# create the default access
+
+#print("COUCOU")
+parser = argparse.ArgumentParser()
+
+# configure all the actions
+grp_action = parser.add_mutually_exclusive_group()
+grp_action.add_argument('--states', action='store_true',help='List all the available states')
+grp_action.add_argument('--tests', action='store_true',help='List all the available tests')
+grp_action.add_argument('--runs', action='store_true',help='List all the available runs')
+grp_action.add_argument('--configurations', action='store_true',help='List all the available acquisition configurations')
+grp_action.add_argument('--asic-info', action='store_true',help='print picmic asic file for a given --state and --version')
+
+grp_action.add_argument('--upload', action='store_true',help='Upload a new state given --state and a given --comment, with --board #id,  --liroc-file  and --pico-file specified')
+grp_action.add_argument('--acq-upload', action='store_true',help='Upload a new acquisition configuration, with a given --comment  and --config-file specified')
+grp_action.add_argument('--scurves', action='store_true',help='Download the last SCURVE test for --state and --version --board #id, --analysis (SCURVE_1 or SCURVE_A)  and --asic (LEFT_BOT..). Optionnaly  --out #jsonfile can be given ')
+
+grp_action.add_argument('--download', action='store_true',
+                        help='download the state specified in --state=state --version=version')
+grp_action.add_argument('--acq-download', action='store_true',
+                        help='download the acquisition specified in --name=state --version=version')
+# Arguments
+parser.add_argument('--state', action='store', type=str,default=None, dest='state', help='DB State')
+parser.add_argument('--version', action='store',type=int,default=1,dest='version',help='DB state version' )
+parser.add_argument('--board', action='store',type=int,default=None,dest='board',help='board ID' )
+parser.add_argument('--pico-file', action='store',type=str,default="ALL",dest='picodef',help='picotdc default file' )
+parser.add_argument('--liroc-file', action='store',type=str,default="ALL",dest='lirocdef',help='liroc default file' )
+parser.add_argument('--file', action='store',type=str,default=None,dest='config_file',help='acquisition configuration file' )
+parser.add_argument('--comment', action='store', type=str,default=None, dest='comment', help='Comment')
+parser.add_argument('--param', action='store', type=str,default=None, dest='param', help='Parameter name')
+parser.add_argument('--analysis', action='store', type=str,default=None, dest='analysis', help='Analysis name')
+parser.add_argument('--asic', action='store', type=str,default=None, dest='asic', help='Asic name')
+parser.add_argument('--name', action='store', type=str,default=None, dest='name', help='Configuration name')
+parser.add_argument('--out', action='store', type=str,default=None, dest='out', help='Output file name')
+
+results = parser.parse_args()
+
+
+# Analyse results
+# analyse the command
+lcgi = {}
+r_cmd = None
+#print(colored(results,'blue','on_yellow'),results.__dict__)
+#if (results.state==None):
+argHandler(results)
+exit(0)
+
