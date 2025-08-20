@@ -1,0 +1,3 @@
+  swig -python -c++ BoardWriter.i
+  g++ -c -fPIC BoardWriter_wrap.cxx BoardWriter.cxx -I /opt/pmdaq/include/ -I /usr/include/python3.10
+  g++ -shared BoardWriter_wrap.o BoardWriter.o -o _BoardWriter.so -L/usr/local/pmdaq/lib -lpmdaq
