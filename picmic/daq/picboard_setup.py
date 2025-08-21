@@ -10,10 +10,9 @@ from pprint import pprint
 import numpy as np 
 from matplotlib import pyplot as plt
 
-import cms_irpc_feb_lightdaq as lightdaq
-
-import csv_register_access as cra
-import FebWriter as FW
+import liroc_ptdc_daq as daq
+import picmic_register_access as cra
+import BoardWriter as FW
 
 import os
 import json
@@ -21,13 +20,13 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler("/tmp/febv2debug%d.log" % os.getpid(), mode='w')  # ,
+        logging.FileHandler("/tmp/picmicdebug%d.log" % os.getpid(), mode='w')  # ,
         # logging.StreamHandler()
     ]
 )
 
 
-class lfebv2_setup:
+class picboard_setup:
     """The Light FEBV2 setup interface class.
     It hides access to MINIDAQ driver classes and implements basics function as
     init,configure,start,stop ....
@@ -48,41 +47,184 @@ class lfebv2_setup:
         self.running = False
         self.dummy=False
         self.writer=None
-        self.last_paccomp=None
-        self.last_delay_reset_trigger=None
-        lightdaq.configLogger(loglevel=logging.INFO)
-        self.logger = logging.getLogger('CMS_IRPC_FEB_LightDAQ')
+        daq.configLogger(loglevel=logging.INFO)
+        self.logger = logging.getLogger('PICBOARD_DAQ')
 
     def init(self):
         """
         Initialise the setup. 
-        It creates the access to the DB, access to FC7 and boot the FEB
+        It creates the access to the DB, access to KC705 
 
         """
         self.sdb=cra.instance()
         self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
         if "vth_shift" in self.params:
-            self.sdb.setup.febs[0].petiroc.shift_10b_dac(self.params["vth_shift"])
-        
+            target = self.sdb.setup.boards[0].picmic.get_dac_threshold()
+            target=target+self.params["vth_shift"]
+            self.sdb.setup.boards[0].picmic.set_dac_threshold(target)
+        # Maximal filtering
+        if "filtering" in self.params:
+            if (self.params["filtering"]==1):
+                self.sdb.setup.boards[0].picmic.set("hrx_top_delay", 0xF)
+                self.sdb.setup.boards[0].picmic.set("hrx_top_bias", 0xF)
+                self.sdb.setup.boards[0].picmic.set("hrx_top_filter_trailing", 1)
+                self.sdb.setup.boards[0].picmic.set("hrx_top_filter_leading", 1)
+                self.sdb.setup.boards[0].picmic.set("hrx_bot_delay", 0xF)
+                self.sdb.setup.boards[0].picmic.set("hrx_bot_bias", 0xF)
+                self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_trailing", 1)
+                self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_leading", 1)
+            else:
+                self.sdb.setup.boards[0].picmic.set("hrx_top_filter_leading", 0)
+                self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_leading", 0)
+                self.sdb.setup.boards[0].picmic.set("hrx_top_filter_trailing", 0)
+                self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_trailing", 0)
+        # Falling ?
+        if "falling" in self.params:
+            self.sdb.setup.boards[0].picmic.set("falling_en", self.params("falling"))
+        # ValEvt
+        if "val_evt" in self.params:
+            self.sdb.setup.boards[0].picmic.set("Forced_ValEvt", self.params("val_evt"))
+        # Polarity
+        if "pol_neg" in self.params:
+            self.sdb.setup.boards[0].picmic.set("Polarity",self.params("pol_neg") )
+        # DC_PA
+        if "dc_pa" in self.params:
+            dc_pa=self.params("dc_pa")
+            for ch in range(64):
+                if dc_pa != 0:
+                    self.setup.boards[0].picmic.set("DC_PA_ch", dc_pa, ch)
         self.sdb.to_csv_files()
-        lightdaq.configLogger(logging.INFO)
+        daq.configLogger(logging.INFO)
 
-        try:
+        self.kc705 = daq.KC705Board()
+        self.kc705.init()
 
-            self.ax7325b = lightdaq.AX7325BBoard()
-            self.ax7325b.init(feb0=True, feb1=False)
-            ### Test
-            self.sdb.setup.febs[0].fpga_version='4.8'
-            self.feb0 = lightdaq.FebV2Board(self.ax7325b, febid='FEB0', fpga_fw_ver='4.8')
-            self.feb0.init()
-            #fmc_mapping="dome"
-            #if "mapping" in self.params["config"]:
-            #    fmc_mapping=self.params["config"]["mapping"]
-            #self.fc7.init(init_gbt=True,mapping=fmc_mapping)
-            #self.feb.boot(app_fw=False)
+        self.feb = daq.FebBoard(self.kc705)
+        self.feb.init()
+        self.feb.loadConfigFromCsv(
+            folder="/dev/shm/board_csv",
+            config_name="%s_%d_f_%d_config_picmic.csv" % (self.state, 888, self.feb_id),
+        )
+        self.feb.fpga.enableDownlinkFastControl()
+        # disable all liroc channels
+        for ch in range(64):
+            self.feb.liroc.maskChannel(ch)
+        self.feb.ptdc.setResMode("fine")
 
-        except TestError as e:
-            print(f"Test failed with message: {e}")
+        self.feb.ptdc.powerup()
+    def configure(self):
+        """ Configure the setup
+
+        It configures the Board and prepare the KC705 for a run setting the orbit and trigger definition
+        """
+        self.feb.loadConfigFromCsv(
+            folder="/dev/shm/board_csv",
+            config_name="%s_%d_f_%d_config_picmic.csv" % (self.state, 888, self.feb_id),
+        )
+        self.feb.fpga.enableDownlinkFastControl()
+        # disable all liroc channels
+        for ch in range(64):
+            self.feb.liroc.maskChannel(ch)
+        self.feb.ptdc.setResMode("fine")
+
+        self.feb.ptdc.powerup()
+
+        self.kc705.fastbitConfigure(
+            mode="normal",
+            flush_delay=100,
+            dig0_edge="rising",
+            dig0_delay=0,
+            dig1_edge="rising",
+            dig1_delay=0,
+        )
+        # generate a few windows to flush out the agilient patterns
+        self.kc705.acqSetWindow(1, 1)
+        for _ in range(5):
+            self.kc705.ipbWrite("ACQ_CTRL_2", 1)
+            self.kc705.ipbWrite("ACQ_CTRL_2", 0)
+        """
+        La configuration des fenetres et des orbits est a redefinir
+        #enableforces2=True
+        if ("disable_force_s2" in self.params):
+            enableforces2=not (self.params["disable_force_s2"]==1)
+        for fpga in daq.FPGA_ID:
+            self.feb0.fpga[fpga].tdcSetInjectionMode('trig_ext_resync')
+            self.feb0.fpga[fpga].tdcEnable(False)       
+
+        
+        self.ax7325b.fastbitFsmConfigure(
+            s0_duration=self.params["orbit_fsm"]["s0"],
+            s1_duration=self.params["orbit_fsm"]["s1"],
+            s2_duration=self.params["orbit_fsm"]["s2"],
+            s3_duration=self.params["orbit_fsm"]["s3"],
+            s4_duration=self.params["orbit_fsm"]["s4"],
+            enable_force_s2=enableforces2)
+
+        self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=False, delay=100)
+    
+        self.ax7325b.fastbitResetBc0Id()
+        #self.fc7.configure_resync_external(100)
+        #self.fc7.reset_bc0_id()
+
+        if ("trigger" in self.params):
+            trg=self.params["trigger"]
+            if "n_bc0" in trg:
+                #self.fc7.configure_nBC0_trigger(trg["n_bc0"])
+                self.ax7325b.triggerBc0Configure(True, trg["n_bc0"])
+            #if "n_data" in trg:
+            #    self.fc7.configure_ndata_trigger(trg["n_data"])
+
+            if "external" in trg:
+                #self.fc7.configure_external_trigger(trg["external"])
+                self.ax7325b.triggerExternalConfigure(True, trg["external"])                
+            #if "periodic" in trg:
+            #    self.fc7.configure_periodic_trigger(trg["periodic"])
+
+        """  
+    def change_db(self,state_name,version):
+        """ Download and store a new DB version
+            The FPGA/PETIROC parameters to be used are stored but not load (configure needed)
+        Args:
+            state_name (str): name of the state
+            version (int)" version number
+        """
+        self.params["db_state"]=state_name
+        self.params["db_version"]=version
+        
+        self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
+        self.sdb.to_csv_files()
+
+   
+    def setWriter(self,fw):
+        """ Set the FEBWriter object to be used
+
+        Args:
+            fw: The FebWriter object
+        """
+        self.writer=fw
+    def writeRunHeader(self):
+        """  Create and write the run header using the FebWriter object
+
+        """
+        if (self.writer==None):
+            logging.fatal("no writer defined")
+            return
+        runHeaderWordList=[]
+        runHeaderWordList.append(int(self.fc7.fpga_registers.get_general_register())) #[0]
+        # self.feb.feb_ctrl_and_status.get_temperature()
+        # temperatures=self.feb.feb_ctrl_and_status.temperature_value
+        # temperatures_int_values=[]
+        # for i in range(1,6):
+        #     key = "LM75_SENSOR"+str(i)
+        #     temperatures_int_values.append(int(2*temperatures[key][0])) # this should be a 9 bit word
+        # runHeaderWordList.append(( (temperatures_int_values[0]<<18)+(temperatures_int_values[1]<<9)+temperatures_int_values[2])) #[5]
+        # runHeaderWordList.append(( (temperatures_int_values[3]<<9)+temperatures_int_values[4]))  #[6]
+        # #reading back channel enabled word for TDC
+        # message="Information on potential enabled channel : {}".format(chanset)
+        #logging.info(message)
+        message="runHeader Word List : {}".format(runHeaderWordList)
+        logging.debug(message)
+        self.writer.writeRunHeader(runHeaderWordList)
 
     def change_vth_shift(self,shift):
         """ Change the PETIROC VTH_TIME threshold
@@ -119,92 +261,6 @@ class lfebv2_setup:
         self.last_delay_reset_trigger=value
         self.sdb.to_csv_files()
     
-    def change_db(self,state_name,version):
-        """ Download and store a new DB version
-            The FPGA/PETIROC parameters to be used are stored but not load (configure needed)
-        Args:
-            state_name (str): name of the state
-            version (int)" version number
-        """
-        self.params["db_state"]=state_name
-        self.params["db_version"]=version
-        
-        self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
-        self.sdb.to_csv_files()
-
-    def configure(self):
-        """ Configure the setup
-
-        It configures the FEB and prepare the FC7 for a run setting the orbit and trigger definition
-        """
-        self.feb0.load_config_from_csv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.params["db_state"],self.params["db_version"],self.params["feb_id"]))
-        #enableforces2=True
-        if ("disable_force_s2" in self.params):
-            enableforces2=not (self.params["disable_force_s2"]==1)
-        for fpga in lightdaq.FPGA_ID:
-            self.feb0.fpga[fpga].tdcSetInjectionMode('trig_ext_resync')
-            self.feb0.fpga[fpga].tdcEnable(False)       
-
-        
-        self.ax7325b.fastbitFsmConfigure(
-            s0_duration=self.params["orbit_fsm"]["s0"],
-            s1_duration=self.params["orbit_fsm"]["s1"],
-            s2_duration=self.params["orbit_fsm"]["s2"],
-            s3_duration=self.params["orbit_fsm"]["s3"],
-            s4_duration=self.params["orbit_fsm"]["s4"],
-            enable_force_s2=enableforces2)
-
-        self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=False, delay=100)
-    
-        self.ax7325b.fastbitResetBc0Id()
-        #self.fc7.configure_resync_external(100)
-        #self.fc7.reset_bc0_id()
-
-        if ("trigger" in self.params):
-            trg=self.params["trigger"]
-            if "n_bc0" in trg:
-                #self.fc7.configure_nBC0_trigger(trg["n_bc0"])
-                self.ax7325b.triggerBc0Configure(True, trg["n_bc0"])
-            #if "n_data" in trg:
-            #    self.fc7.configure_ndata_trigger(trg["n_data"])
-
-            if "external" in trg:
-                #self.fc7.configure_external_trigger(trg["external"])
-                self.ax7325b.triggerExternalConfigure(True, trg["external"])                
-            #if "periodic" in trg:
-            #    self.fc7.configure_periodic_trigger(trg["periodic"])
-
-      
-    def setWriter(self,fw):
-        """ Set the FEBWriter object to be used
-
-        Args:
-            fw: The FebWriter object
-        """
-        self.writer=fw
-    def writeRunHeader(self):
-        """  Create and write the run header using the FebWriter object
-
-        """
-        if (self.writer==None):
-            logging.fatal("no writer defined")
-            return
-        runHeaderWordList=[]
-        runHeaderWordList.append(int(self.fc7.fpga_registers.get_general_register())) #[0]
-        # self.feb.feb_ctrl_and_status.get_temperature()
-        # temperatures=self.feb.feb_ctrl_and_status.temperature_value
-        # temperatures_int_values=[]
-        # for i in range(1,6):
-        #     key = "LM75_SENSOR"+str(i)
-        #     temperatures_int_values.append(int(2*temperatures[key][0])) # this should be a 9 bit word
-        # runHeaderWordList.append(( (temperatures_int_values[0]<<18)+(temperatures_int_values[1]<<9)+temperatures_int_values[2])) #[5]
-        # runHeaderWordList.append(( (temperatures_int_values[3]<<9)+temperatures_int_values[4]))  #[6]
-        # #reading back channel enabled word for TDC
-        # message="Information on potential enabled channel : {}".format(chanset)
-        #logging.info(message)
-        message="runHeader Word List : {}".format(runHeaderWordList)
-        logging.debug(message)
-        self.writer.writeRunHeader(runHeaderWordList)
 
     def start(self,run=0):
         """ Start a run.
@@ -218,7 +274,7 @@ class lfebv2_setup:
         if (self.writer==None):
             logging.fatal("no writer defined")
             return
-        lightdaq.configLogger(logging.WARN)
+        daq.configLogger(logging.WARN)
         self.writer.setIds(self.detectorId, self.sourceId)
         if (run != 0):
             self.run= run
@@ -278,7 +334,7 @@ class lfebv2_setup:
         ntrig = 0
         self.logger.setLevel(logging.WARN)
         #self.feb.enable_tdc(True)
-        for fpga in lightdaq.FPGA_ID:
+        for fpga in daq.FPGA_ID:
             self.feb0.fpga[fpga].tdcSetInjectionMode('trig_ext_resync')
             self.feb0.fpga[fpga].tdcEnable(True)
             self.feb0.fpga[fpga].tdcEnableChannel()       
@@ -386,7 +442,7 @@ class lfebv2_setup:
         self.producer_thread.join()
         self.stop_acquisition()
         self.feb.enable_tdc(False)
-                acq_ctrl = BitField()
+        acq_ctrl = BitField()
         acq_ctrl[30] = 0
         acq_ctrl[29] = 1
         acq_ctrl[15,0] = 0
@@ -399,14 +455,14 @@ class lfebv2_setup:
         """
         nacq= 0
         ntrig = 0
-        lightdaq.configLogger(loglevel=logging.WARN)
+        daq.configLogger(loglevel=logging.WARN)
         logger = logging.getLogger('FEB_minidaq')
         logger.setLevel(logging.WARN)
         #self.feb.enable_tdc(True)
-        for fpga in lightdaq.FPGA_ID:
+        for fpga in daq.FPGA_ID:
             self.feb0.fpga[fpga].tdcEnable(False)
 
-        lightdaq.configLogger(logging.INFO)
+        daq.configLogger(logging.INFO)
         self.writer.endRun()
         logging.info("Daq is stopped")
 
