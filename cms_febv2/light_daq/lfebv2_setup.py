@@ -392,21 +392,10 @@ class lfebv2_setup:
         acq_ctrl[29] = 1
         acq_ctrl[15,0] = 0
         self.ax7325b.ipbWrite('ACQ_CTRL', acq_ctrl)
-    def acquiring_data(self):
-        """ Acquisition thread
-
-        While running, it loops continously and spy data in the FC7 readout fifo
-        It writes data to disk or shared memory until running is false and the run stopped. 
-        """
         nacq= 0
         ntrig = 0
         lightdaq.configLogger(loglevel=logging.WARN)
-        logger = logging.getLogger('FEB_minidaq')
-        logger.setLevel(logging.WARN)
-        #self.feb.enable_tdc(True)
-        for fpga in lightdaq.FPGA_ID:
-            self.feb0.fpga[fpga].tdcEnable(False)
-
+        logger = logging.getLogger('FEB_minidaq')        
         lightdaq.configLogger(logging.INFO)
         self.writer.endRun()
         logging.info("Daq is stopped")
