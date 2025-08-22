@@ -18,7 +18,7 @@ import FebWriter as FW
 import os
 import json
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler("/tmp/febv2debug%d.log" % os.getpid(), mode='w')  # ,
@@ -50,7 +50,7 @@ class lfebv2_setup:
         self.writer=None
         self.last_paccomp=None
         self.last_delay_reset_trigger=None
-        lightdaq.configLogger(loglevel=logging.INFO)
+        lightdaq.configLogger(loglevel=logging.DEBUG)
         self.logger = logging.getLogger('CMS_IRPC_FEB_LightDAQ')
 
     def init(self):
@@ -70,10 +70,10 @@ class lfebv2_setup:
         try:
 
             self.ax7325b = lightdaq.AX7325BBoard()
+            self.feb0 = lightdaq.FebV2Board(self.ax7325b, febid='FEB0', fpga_fw_ver='4.8')
             self.ax7325b.init(feb0=True, feb1=False)
             ### Test
             self.sdb.setup.febs[0].fpga_version='4.8'
-            self.feb0 = lightdaq.FebV2Board(self.ax7325b, febid='FEB0', fpga_fw_ver='4.8')
             self.feb0.init()
             #fmc_mapping="dome"
             #if "mapping" in self.params["config"]:
@@ -137,7 +137,7 @@ class lfebv2_setup:
 
         It configures the FEB and prepare the FC7 for a run setting the orbit and trigger definition
         """
-        self.feb0.load_config_from_csv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.params["db_state"],self.params["db_version"],self.params["feb_id"]))
+        self.feb0.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.params["db_state"],self.params["db_version"],self.params["feb_id"]))
         #enableforces2=True
         if ("disable_force_s2" in self.params):
             enableforces2=not (self.params["disable_force_s2"]==1)
@@ -190,7 +190,8 @@ class lfebv2_setup:
             logging.fatal("no writer defined")
             return
         runHeaderWordList=[]
-        runHeaderWordList.append(int(self.fc7.fpga_registers.get_general_register())) #[0]
+        #runHeaderWordList.append(int(self.ax7325b.ipbRead('GENERAL')) #[0]
+        runHeaderWordList.append(int(0))                         
         # self.feb.feb_ctrl_and_status.get_temperature()
         # temperatures=self.feb.feb_ctrl_and_status.temperature_value
         # temperatures_int_values=[]
@@ -317,7 +318,7 @@ class lfebv2_setup:
                     logging.error(message)
                     self.stop_acquisition()
                     time.sleep(10)
-                    self.fc7.reset_bc0_id()
+                    self.ax7325b.fastbitResetBc0Id()
                     self.start_acquisition()
                     nwait=0
                 time.sleep(0.001)
@@ -386,7 +387,7 @@ class lfebv2_setup:
         self.producer_thread.join()
         self.stop_acquisition()
         self.feb.enable_tdc(False)
-                acq_ctrl = BitField()
+        acq_ctrl = BitField()
         acq_ctrl[30] = 0
         acq_ctrl[29] = 1
         acq_ctrl[15,0] = 0
