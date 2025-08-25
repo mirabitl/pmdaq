@@ -5,7 +5,7 @@ import time
 import logging
 import sys
 import time
-
+import copy
 from pprint import pprint
 import numpy as np 
 from matplotlib import pyplot as plt
@@ -49,7 +49,70 @@ class picboard_setup:
         self.writer=None
         daq.configLogger(loglevel=logging.INFO)
         self.logger = logging.getLogger('PICBOARD_DAQ')
+        # Effective parameters
+        self.patches={"dac_threshold_shift":None,"filtering":None,"falling":None,"val_evt":None,"pol_neg":None,"dc_pa":None}
+        if "dac_threshold_shift" in self.params:
+            self.patches["dac_threshold_shift"]=self.params["dac_threshold_shift"]
+        if "filtering" in self.params:
+            self.patches["filtering"]=self.params["filtering"]
+        if "falling" in self.params:
+            self.patches["falling"]=self.params["falling"]
+        if "val_evt" in self.params:
+            self.patches["val_evt"]=self.params["val_evt"]
+        if "pol_neg" in self.params:
+            self.patches["pol_neg"]=self.params["pol_neg"]
+        if "dc_pa" in self.params:
+            self.patches["dc_pa"]=self.params["dc_pa"]
 
+    def patch_db(self,state=None,version=0):
+        """
+        Patch DB version and  build csv file with dummy_version number if not 0
+        """
+        if self.patches["dac_threshold_shift"] != None:
+            #always shift from db setting
+            target = self.db_registers.picmic.get_dac_threshold()
+            target=target+self.patches["dac_threshold_shift"]
+            self.registers.picmic.set_dac_threshold(target)
+        # Maximal filtering
+        if self.patches["filtering"] != None:
+            if (self.patches["filtering"]==1):
+                self.registers.picmic.set("hrx_top_delay", 0xF)
+                self.registers.picmic.set("hrx_top_bias", 0xF)
+                self.registers.picmic.set("hrx_top_filter_trailing", 1)
+                self.registers.picmic.set("hrx_top_filter_leading", 1)
+                self.registers.picmic.set("hrx_bot_delay", 0xF)
+                self.registers.picmic.set("hrx_bot_bias", 0xF)
+                self.registers.picmic.set("hrx_bot_filter_trailing", 1)
+                self.registers.picmic.set("hrx_bot_filter_leading", 1)
+            else:
+                self.registers.picmic.set("hrx_top_filter_leading", 0)
+                self.registers.picmic.set("hrx_bot_filter_leading", 0)
+                self.registers.picmic.set("hrx_top_filter_trailing", 0)
+                self.registers.picmic.set("hrx_bot_filter_trailing", 0)
+        # Falling ?
+        if self.patches["falling"] != None:
+            self.registers.picmic.set("falling_en", self.patches("falling"))
+        # ValEvt
+        if self.patches["val_evt"] != None:
+            self.registers.picmic.set("Forced_ValEvt", self.patches("val_evt"))
+        # Polarity
+        if self.patches["pol_neg"] != None:
+            self.registers.picmic.set("Polarity",self.patches("pol_neg") )
+        # DC_PA
+        if self.patches["dc_pa"] != None:
+            dc_pa=self.patches("dc_pa")
+            for ch in range(64):
+                if dc_pa != 0:
+                    self.registers.picmic.set("DC_PA_ch", dc_pa, ch)
+        if version > 0:
+            # Patched version from config file
+            self.registers.to_csv_files(state,version)
+
+    def loadConfigInBoard(self,state,version):
+        self.feb.loadConfigFromCsv(
+            folder="/dev/shm/board_csv",
+            config_name="%s_%d_f_%d_config_picmic.csv" % (state, version, self.feb_id),
+        )
     def init(self):
         """
         Initialise the setup. 
@@ -58,42 +121,14 @@ class picboard_setup:
         """
         self.sdb=cra.instance()
         self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
-        if "vth_shift" in self.params:
-            target = self.sdb.setup.boards[0].picmic.get_dac_threshold()
-            target=target+self.params["vth_shift"]
-            self.sdb.setup.boards[0].picmic.set_dac_threshold(target)
-        # Maximal filtering
-        if "filtering" in self.params:
-            if (self.params["filtering"]==1):
-                self.sdb.setup.boards[0].picmic.set("hrx_top_delay", 0xF)
-                self.sdb.setup.boards[0].picmic.set("hrx_top_bias", 0xF)
-                self.sdb.setup.boards[0].picmic.set("hrx_top_filter_trailing", 1)
-                self.sdb.setup.boards[0].picmic.set("hrx_top_filter_leading", 1)
-                self.sdb.setup.boards[0].picmic.set("hrx_bot_delay", 0xF)
-                self.sdb.setup.boards[0].picmic.set("hrx_bot_bias", 0xF)
-                self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_trailing", 1)
-                self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_leading", 1)
-            else:
-                self.sdb.setup.boards[0].picmic.set("hrx_top_filter_leading", 0)
-                self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_leading", 0)
-                self.sdb.setup.boards[0].picmic.set("hrx_top_filter_trailing", 0)
-                self.sdb.setup.boards[0].picmic.set("hrx_bot_filter_trailing", 0)
-        # Falling ?
-        if "falling" in self.params:
-            self.sdb.setup.boards[0].picmic.set("falling_en", self.params("falling"))
-        # ValEvt
-        if "val_evt" in self.params:
-            self.sdb.setup.boards[0].picmic.set("Forced_ValEvt", self.params("val_evt"))
-        # Polarity
-        if "pol_neg" in self.params:
-            self.sdb.setup.boards[0].picmic.set("Polarity",self.params("pol_neg") )
-        # DC_PA
-        if "dc_pa" in self.params:
-            dc_pa=self.params("dc_pa")
-            for ch in range(64):
-                if dc_pa != 0:
-                    self.setup.boards[0].picmic.set("DC_PA_ch", dc_pa, ch)
-        self.sdb.to_csv_files()
+        self.db_registers=self.sdb.setup.boards[0]
+        self.registers=copy.deepcopy(self.sdb.setup.boards[0])
+        # Bare version
+        self.db_registers.to_csv_files(self.params["db_state"],self.params["db_version"])
+        # Now patch the registers from the config
+        self.patch_db(self.params["db_state"],777)
+        
+        
         daq.configLogger(logging.INFO)
 
         self.kc705 = daq.KC705Board()
@@ -101,10 +136,8 @@ class picboard_setup:
 
         self.feb = daq.FebBoard(self.kc705)
         self.feb.init()
-        self.feb.loadConfigFromCsv(
-            folder="/dev/shm/board_csv",
-            config_name="%s_%d_f_%d_config_picmic.csv" % (self.state, 888, self.feb_id),
-        )
+        self.loadConfigInBoard(self.params["db_state"],777)
+        
         self.feb.fpga.enableDownlinkFastControl()
         # disable all liroc channels
         for ch in range(64):
@@ -117,10 +150,8 @@ class picboard_setup:
 
         It configures the Board and prepare the KC705 for a run setting the orbit and trigger definition
         """
-        self.feb.loadConfigFromCsv(
-            folder="/dev/shm/board_csv",
-            config_name="%s_%d_f_%d_config_picmic.csv" % (self.state, 888, self.feb_id),
-        )
+        self.loadConfigInBoard(self.params["db_state"],777)
+        
         self.feb.fpga.enableDownlinkFastControl()
         # disable all liroc channels
         for ch in range(64):
@@ -192,7 +223,10 @@ class picboard_setup:
         self.params["db_version"]=version
         
         self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
-        self.sdb.to_csv_files()
+        self.db_registers=self.sdb.setup.boards[0]
+        self.registers=copy.deepcopy(self.sdb.setup.boards[0])
+        # Bare version
+        self.db_registers.to_csv_files(self.params["db_state"],self.params["db_version"])
 
    
     def setWriter(self,fw):
@@ -210,7 +244,7 @@ class picboard_setup:
             logging.fatal("no writer defined")
             return
         runHeaderWordList=[]
-        runHeaderWordList.append(int(self.fc7.fpga_registers.get_general_register())) #[0]
+        runHeaderWordList.append(int(0)) #[0]
         # self.feb.feb_ctrl_and_status.get_temperature()
         # temperatures=self.feb.feb_ctrl_and_status.temperature_value
         # temperatures_int_values=[]
@@ -226,41 +260,18 @@ class picboard_setup:
         logging.debug(message)
         self.writer.writeRunHeader(runHeaderWordList)
 
-    def change_vth_shift(self,shift):
+    def change_params(self,pname,pval):
         """ Change the PETIROC VTH_TIME threshold
             The PETIROC parameters to be used are modified but not load (configure needed)
         Args:
             shift (int): Shift to add to VTH_TIME DAC10 bits taken in the DB
         """
-        self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
-        self.sdb.setup.febs[0].petiroc.shift_10b_dac(shift)
-        if (self.last_paccomp!=None):
-            self.sdb.setup.febs[0].petiroc.set_parameter("pa_ccomp",self.last_paccomp&0XF,asic=None)
-        if (self.last_delay_reset_trigger!=None):
-            self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",self.last_delay_trigger&0XF,asic=None)
-
-        self.sdb.to_csv_files()
-    def change_paccomp(self,value):
-        """ Change the PETIROC PACCOMP
-            The PETIROC parameters to be used are modified but not load (configure needed)
-        Args:
-            value (int): PACCOMP to all asics
-        """
-        self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
-        self.sdb.setup.febs[0].petiroc.set_parameter("pa_ccomp",value&0XF,asic=None)
-        self.last_paccomp=value
-        self.sdb.to_csv_files()
-    def change_delay_reset_trigger(self,value):
-        """ Change the PETIROC delay_reset_trigger value
-            The PETIROC parameters to be used are modified but not load (configure needed)
-        Args:
-            value (int): DELAY_RESET_TRIGGER VALUE
-        """
-        self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
-        self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",value&0XF,asic=None)
-        self.last_delay_reset_trigger=value
-        self.sdb.to_csv_files()
-    
+        if not pname in self.patches:
+            return
+        
+        self.patches[pname]=pval
+        self.patch_db(self.params["db_state"],777)
+        
 
     def start(self,run=0):
         """ Start a run.
