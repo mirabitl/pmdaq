@@ -314,24 +314,38 @@ class picboard_setup:
             r["event"]=-1
         return r
     def start_acquisition(self):
-        acq_ctrl = BitField()
-        acq_ctrl[30] = 1
-        acq_ctrl[29] = 1
-        acq_ctrl[15,0] = 0
-        self.ax7325b.ipbWrite('ACQ_CTRL', acq_ctrl)
+        self.kc705.acqSetWindow(1, 1)
+        self.kc705.ipbWrite("ACQ_CTRL_2", 1)
     def stop_acquisition(self):
-        acq_ctrl = BitField()
-        acq_ctrl[30] = 0
-        acq_ctrl[29] = 1
-        acq_ctrl[15,0] = 0
-        self.ax7325b.ipbWrite('ACQ_CTRL', acq_ctrl)
+        self.kc705.acqSetWindow(1, 1)
+        self.kc705.ipbWrite("ACQ_CTRL_2", 0)
     def getNFrames(self):
-        acq_status = BitField(self.ax7325b.ipbRead('ACQ_STATUS'))
-        assert acq_status[31] == 0, "Not trigged => no data!"
-        n = acq_status[15,0]
-        self.logger.info(f"Reading {n}+3 TDC frames")
-        return n
-    def readFrames(self,n):
+        status1 = daq.BitField(self.kc705.ipbRead('ACQ_STATUS_1'))
+        status2 = daq.BitField(self.kc705.ipbRead('ACQ_STATUS_2'))
+        nwords = []
+        nwords.append(status1[31,16])
+        nwords.append(status1[15,0])
+        nwords.append(status2[31,16])
+        nwords.append(status2[15,0])
+        return nwords
+    def readFrames(self):
+        ptdc_words = []
+        status1 = daq.BitField(self.ipbRead('ACQ_STATUS_1'))
+        status2 = daq.BitField(self.ipbRead('ACQ_STATUS_2'))
+        nwords = []
+        nwords.append(status1[31,16])
+        nwords.append(status1[15,0])
+        nwords.append(status2[31,16])
+        nwords.append(status2[15,0])
+
+        for p in range(4):
+            if nwords[p]:
+                ptdc_words.append(self.kc705.ipbReadBlock(f'FEB0_PTDC_PORT{p}_DATA', nwords[p]))
+            else:
+                ptdc_words.append([])
+
+        return ptdc_words
+
         self.logger.info(f"Reading {n+3} TDC frames")
         rawdata = self.ipbReadBlock('FEBS_TDC_DATA_WORDS', (n+3)*8) # 3 tdcframes are stuck between ringbuffer and ipbreadout
         return rawdata
@@ -344,89 +358,14 @@ class picboard_setup:
         nacq= 0
         ntrig = 0
         self.logger.setLevel(logging.WARN)
-        #self.feb.enable_tdc(True)
-        for fpga in daq.FPGA_ID:
-            self.feb0.fpga[fpga].tdcSetInjectionMode('trig_ext_resync')
-            self.feb0.fpga[fpga].tdcEnable(True)
-            self.feb0.fpga[fpga].tdcEnableChannel()       
-
         fout=open("debug.out","w")
 
         while (self.running):
             self.writer.newEvent()
+            datas = self.kc705.acqPtdc(window=4000, deadtime=500, window_number=1000)
             
-            #self.fc7.configure_resync_external(2) 
-            #self.fc7.reset_bc0_id()
-            self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=False, delay=2)
-    
-            self.ax7325b.fastbitResetBc0Id()
-            """ 
-            self.fc7.configure_acquisition(buf_size=self.params["config"]["buf_size"],
-                                           triggerless=(self.params["config"]["triggerless"]==1),
-                                           single=(self.params["config"]["single"]==1),
-                                           keep=(self.params["config"]["keep"]==1),
-                                           external_window=(self.params["config"]["external_window"]==1))
-            """
-            self.start_acquisition()
-            nbt=0
-            datawait=0
-            nb_frame32=0
-            nb_last=0
-            nwait=0
-            while (nb_frame32==0 or nb_last!=nb_frame32) and self.running:
-                nb_frame32 = self.getNFrames()
-                nb_last=nb_frame32
-                if (nwait%1000==999):
-                    print(nwait)
-                nwait+=1
-                if (nwait>5E4):
-                    message= "Resetting BC0 and restart DAQ after number {}, event {}.".format(nacq, self.writer.eventNumber())
-                    logging.error(message)
-                    self.stop_acquisition()
-                    time.sleep(10)
-                    self.fc7.reset_bc0_id()
-                    self.start_acquisition()
-                    nwait=0
-                time.sleep(0.001)
-            if not self.running:
-                break
-            #print(f"Found {nb_frame32}")
-            while nb_frame32!=0:
-                #ntdcf=0
-                #for tdc_frame in self.fc7.uplink.receive_tdc_frames(nb_frame=nb_frame32*8, timeout=0.01):
-                #    print(f"{nacq} {ntdcf} {tdc_frame.raw:032X} ", file=fout)
-                #    ntdcf+=1
-                #time.sleep(0.01)
-                nb_frame32_1 = self.getNFrames()
-                if (nb_frame32%8!=0 or nb_frame32_1< nb_frame32):
-                    print("oops not x 8 %d et le second %d \n" % (nb_frame32,nb_frame32_1))
-                    nb_frame32 = self.getNFrames()
-                    continue
-                else:
-                    nb_frame32=nb_frame32_1
-
-                try:
-                    message= "Nb frames to be block read {}".format(nb_frame32)
-                    logging.info(message)
-                    nb_frame32 = min(4096+2048, nb_frame32)
-                    #print("frames :%d %d\n"% (nb_frame32//8,nb_frame32))
-                    #sys.stdout.flush()
-                    datas=self.readFrames(nb_frame32)
-                except:
-                    print("error")
-                #self.fc7.fpga_registers.ipbus_device.ReadBlock("USER_OUTPUT_FIFO_TDC", nb_frame32)
-                # for i in range(0,len(datas),8):
-                #     fr="%d %d " % (nacq,ntdcf)
-                #     for j in range(8):
-                #         fr=fr+"%.8x" % datas[i+j]  
-                #     print(fr,file=fout)
-                #     ntdcf+=1
-                self.writer.appendEventData(datas)
-                #print(f"{nb_frame32} read",flush=True)
-                nbt+=nb_frame32
-                #time.sleep(0.01)
-                nb_frame32 = self.getNFrames()
-            if nbt == 0:
+            self.writer.appendEventData(datas)
+            if len(datas) == 0:
                 message= "problem at fifo readout number {}, event written {}.".format(nacq, self.writer.eventNumber())
                 logging.error(message)
                 time.sleep(0.01)
@@ -436,12 +375,11 @@ class picboard_setup:
                     self.writer.writeEvent()
            
             if (nacq % 1 == 0):
-                message= "Info : Event {} (acquisition number {}) have read {} words = {} potential TDC frames.".format(self.writer.eventNumber(), nacq, nbt, nbt/8)
+                message= "Info : Event {} (acquisition number {}) have read {} words.".format(self.writer.eventNumber(), nacq,len(datas) )
                 logging.info(message)
 
                 #with open("/data/trigger_count.txt", "w") as trig_output:
                 #    trig_output.write(str(self.writer.eventNumber()))             
-            self.stop_acquisition()
             time.sleep(0.005)
         logging.info("Thread %d: finishing", self.run)
     def stop(self):
@@ -452,18 +390,6 @@ class picboard_setup:
         self.running= False
         self.producer_thread.join()
         self.stop_acquisition()
-        self.feb.enable_tdc(False)
-        acq_ctrl = BitField()
-        acq_ctrl[30] = 0
-        acq_ctrl[29] = 1
-        acq_ctrl[15,0] = 0
-        self.ax7325b.ipbWrite('ACQ_CTRL', acq_ctrl)
-    def acquiring_data(self):
-        """ Acquisition thread
-
-        While running, it loops continously and spy data in the FC7 readout fifo
-        It writes data to disk or shared memory until running is false and the run stopped. 
-        """
         nacq= 0
         ntrig = 0
         daq.configLogger(loglevel=logging.WARN)
