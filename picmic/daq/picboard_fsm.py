@@ -5,9 +5,9 @@ import argparse
 import json
 import os.path
 from transitions import Machine, State
-import FebWriter as FW
-from lfebv2_setup import *
-import csv_register_access as cra
+import Boardwriter as FW
+from picboard_setup import *
+import picmic_register_access as cra
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -18,16 +18,16 @@ logging.basicConfig(
 )
 
 
-class lfebv2_fsm:
-    """ Finite State Machine interface to febv2 setup
+class picboard_fsm:
+    """ Finite State Machine interface to picboard setup
 
-    It handles a FSM connected to the methods of febv2_setup object
+    It handles a FSM connected to the methods of picboard_setup object
     It parses the configuration file provided to control the acquisition
     """
     def __init__(self, config_file=None):
         """ Object creation
 
-            It parses the configuration file, creates the FSM and the febv2_setup object
+            It parses the configuration file, creates the FSM and the picboard_setup object
         Args:
             config_file (str): if set, it is used otherwise the DB configuration defined in DAQSETUP environmnet variable is used
         """
@@ -67,7 +67,7 @@ class lfebv2_fsm:
         # getting the configuration
         self.config = json.load(open(self.config_file))
         print(self.config)
-        self.setup=lfebv2_setup(self.config["daq"])
+        self.setup=picboard_setup(self.config["daq"])
 
         # debug printout
         self.EDAQ_debug = False
@@ -121,7 +121,7 @@ class lfebv2_fsm:
     # Talking to the FEB through FC7
     #
     def dispatch_config(self):
-        """ Dispatch the configuration to the febv2_setup object
+        """ Dispatch the configuration to the picboard_setup object
         """
         if (self.setup!=None):
             self.setup.params["daq"]=self.config["daq"]
@@ -172,7 +172,7 @@ class lfebv2_fsm:
 
     def FEB_initialising(self):
         """ Initialise method 
-        It calls febv2_setup init
+        It calls picboard_setup init
         """
         if self.EDAQ_debug:
             logging.getLogger().setLevel(logging.DEBUG)
@@ -181,7 +181,7 @@ class lfebv2_fsm:
 
     def FEB_configuring(self):
         """ Configure method
-        It calls febv2_setup configure
+        It calls picboard_setup configure
         """
         self.setup.configure()
         # self.feb.reset()
@@ -194,13 +194,13 @@ class lfebv2_fsm:
 
         it uses writer tag configuration to create the writer if needed, the shred memory directory if needed and
         to gte the run number in standalone mode.
-        It then call the febv2_setup start method
+        It then call the picboard_setup start method
         """
         print("STARTING ",self.config["daq"])
         if (self.writer == None):
             if "writer" in self.config["daq"]:
                 s_w=self.config["daq"]["writer"]
-                self.writer = FW.FebWriter(s_w["file_directory"], s_w["location"])
+                self.writer = FW.Boardwriter(s_w["file_directory"], s_w["location"])
                 self.writer.setIds(s_w["detector_id"], s_w["source_id"])
                 if ("shm_directory" in s_w):
                     os.system("mkdir -p %s/closed" % s_w["shm_directory"])
@@ -236,11 +236,11 @@ class lfebv2_fsm:
         logging.info("Daq is stopped")
 
     def FEB_destroying(self):
-        """ Destroy the febv2_setup and writer and create a new setup ready for an "init" call
+        """ Destroy the picboard_setup and writer and create a new setup ready for an "init" call
         """
         self.configured = False
         del self.setup
-        self.setup=febv2_setup(self.config["daq"])
+        self.setup=picboard_setup(self.config["daq"])
 
         # debug printout
         self.EDAQ_debug = False
@@ -251,7 +251,7 @@ class lfebv2_fsm:
         logging.info("Daq is destroyed")
 
     def changeDB(self, state, version):
-        """ Interface to changeDB in febv2_setup
+        """ Interface to changeDB in picboard_setup
 
         Args:
             state (str): State name
@@ -261,29 +261,14 @@ class lfebv2_fsm:
         self.config["daq"]["db_version"] = version
         self.dispatch_config()
         self.setup.change_db(state,version)
-    def change_vth_shift(self,shift):
-        """ interface to change_vth_shift in febv2_setup
+    def change_params(self,pname,pval):
+        """ interface to change_vth_shift in picboard_setup
 
         Args:
             shift (int): VTH_TIME threhold shift
         """
-        self.setup.change_vth_shift(shift)
+        self.setup.change_params(pname,pval)
 
-    def change_paccomp(self,value):
-        """ interface to change_paccomp in febv2_setup
-
-        Args:
-            value (int): VTH_TIME threhold shiftPA_CCOMP value
-        """
-        self.setup.change_paccomp(value)
-
-    def change_delay_reset_trigger(self,value):
-        """ interface to change_dealy_reset_trigger in febv2_setup
-
-        Args:
-            value (int): DELAY_RESET_TRIGGER value
-        """
-        self.setup.change_delay_reset_trigger(value)
 
     def veto(self):
         """ Obsolete """
@@ -295,7 +280,7 @@ if __name__ == '__main__':
     """
       fb=FEB_control_FSM(daqMode)
       if needStateConfig:
-         #fb.config_statename="UN_TEST_FEBV2"
+         #fb.config_statename="UN_TEST_picboard"
       fb.config_statename="FEB_TEST_DOME_C"
       fb.config_version=2
       fb.config_source="DB"

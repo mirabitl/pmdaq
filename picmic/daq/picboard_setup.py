@@ -154,8 +154,8 @@ class picboard_setup:
         
         self.feb.fpga.enableDownlinkFastControl()
         # disable all liroc channels
-        for ch in range(64):
-            self.feb.liroc.maskChannel(ch)
+        # for ch in range(64):
+        #     self.feb.liroc.maskChannel(ch)
         self.feb.ptdc.setResMode("fine")
 
         self.feb.ptdc.powerup()

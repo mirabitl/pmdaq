@@ -6,7 +6,7 @@ from spyne.protocol.csv import Csv
 from spyne.protocol.http import HttpRpc
 from spyne.server.wsgi import WsgiApplication
 from spyne.model.complex import ComplexModelMeta
-import  lfebv2_fsm as FSM
+import  picboard_fsm as FSM
 import os,sys,json
 import socket
 import time
@@ -60,9 +60,9 @@ class wddService(ServiceBase):
 
         if (version!=0):
             os.environ["DAQSETUP"]="%s:%d" % (name,version) 
-            _wdd=FSM.lfebv2_fsm()
+            _wdd=FSM.picboard_fsm()
         else:
-            _wdd=FSM.lfebv2_fsm(config_file=name)
+            _wdd=FSM.picboard_fsm(config_file=name)
         status={}
         print("On est la",_wdd.state)
         status["STATUS"]=_wdd.state
@@ -191,8 +191,8 @@ class wddService(ServiceBase):
             status={}
             status["STATUS"]="FAILED"
             yield json.dumps(status)
-    @srpc(Integer16, _returns=Iterable(String))
-    def SHIFTVTH(shift):
+    @srpc( String, UnsignedInteger, _returns=Iterable(String))
+    def CHANGEPARAMS(pname,pval):
         """ calls febv2_fsm change_vth_time method
 
         Args:
@@ -200,51 +200,17 @@ class wddService(ServiceBase):
         """
         global _wdd
         if (_wdd!=None):
-            _wdd.change_vth_shift(shift)
+            _wdd.change_params(pname,pval)
             status={}
-            status["SHIFT"]=shift
+            status["PARAMETER"]=pname
+            status["VALUE"]=pval
             yield json.dumps(status)
         else:
             status={}
             status["STATUS"]="FAILED"
             yield json.dumps(status)
        
-    @srpc(Integer16, _returns=Iterable(String))
-    def DELAY_RESET(value):
-        """ calls febv2_fsm change_delay_reset method
-
-        Args:
-            value (int): DELAY_RESET_TRIGGER value
-        """
-        global _wdd
-        if (_wdd!=None):
-            _wdd.change_delay_reset_trigger(value)
-            status={}
-            status["DELAY_RESET_TRIGGER"]=value
-            yield json.dumps(status)
-        else:
-            status={}
-            status["STATUS"]="FAILED"
-            yield json.dumps(status)
-    @srpc(Integer16, _returns=Iterable(String))
-    def PACCOMP(value):
-        """ calls febv2_fsm change_paccomp method
-
-        Args:
-            value (int): PACCOMP value
-        """
-        global _wdd
-        if (_wdd!=None):
-            _wdd.change_paccomp(value)
-            status={}
-            status["PACCOMP"]=value
-            yield json.dumps(status)
-        else:
-            status={}
-            status["STATUS"]="FAILED"
-            yield json.dumps(status)
-        
-            
+         
 if __name__=='__main__':
     # Python daemon boilerplate
     from wsgiref.simple_server import make_server
