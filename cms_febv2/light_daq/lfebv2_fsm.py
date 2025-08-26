@@ -240,7 +240,7 @@ class lfebv2_fsm:
         """
         self.configured = False
         del self.setup
-        self.setup=febv2_setup(self.config["daq"])
+        self.setup=lfebv2_setup(self.config["daq"])
 
         # debug printout
         self.EDAQ_debug = False
