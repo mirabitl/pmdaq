@@ -1,0 +1,13 @@
+{
+    "apps":{
+	"lyon_pmr":
+	{"threaded":1,
+	 "transitions":{
+	     "INITIALISE":["SCAN","INITIALISE"],
+	     "CONFIGURE":["CONFIGURE"],
+	     "START":["START"],
+	     "STOP":["STOP"]
+	 }
+	}
+    }
+}
