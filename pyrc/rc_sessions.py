@@ -1,10 +1,8 @@
 
-import os
 import json
 import six
 import rc_services as sac
 import json
-import rc_request
 import rc_pns
 def create_session(config):
     """!
