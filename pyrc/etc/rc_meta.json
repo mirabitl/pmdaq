@@ -1,13 +1,48 @@
 {
     "apps":{
-	"lyon_pmr":
-	{"threaded":1,
+	"lyon_pmr":{"threaded":1,
 	 "transitions":{
 	     "INITIALISE":["SCAN","INITIALISE"],
 	     "CONFIGURE":["CONFIGURE"],
 	     "START":["START"],
 	     "STOP":["STOP"]
 	 }
-	}
+	},
+	"lyon_gricv0":{"threaded":1,
+	 "transitions":{
+	     "INITIALISE":["INITIALISE"],
+	     "CONFIGURE":["CONFIGURE"],
+	     "START":["START"],
+	     "STOP":["STOP"]}
+    },
+	"lyon_gricv1":{"threaded":1,
+	 "transitions":{
+	     "INITIALISE":["INITIALISE"],
+	     "CONFIGURE":["CONFIGURE"],
+	     "START":["START"],
+	     "STOP":["STOP"]}
+    },
+	"lyon_febv1":{"threaded":0,
+	 "transitions":{
+	     "INITIALISE":["INITIALISE"],
+	     "CONFIGURE":["CONFIGURE"],
+	     "START":["START"],
+	     "STOP":["STOP"]}
+    },
+	"lyon_febv2":{"threaded":0,
+	 "transitions":{
+	     "INITIALISE":["CREATEFEB","INITIALISE"],
+	     "CONFIGURE":["CONFIGURE"],
+	     "START":["START"],
+	     "STOP":["STOP"]}
     }
+	,
+	"lyon_shm_data_source":{"threaded":0,
+	 "transitions":{
+	     "INITIALISE":["CREATEBOARD","INITIALISE"],
+	     "CONFIGURE":["CONFIGURE"],
+	     "START":["START"],
+	     "STOP":["STOP"]}
+    }
+}
 }
