@@ -95,6 +95,12 @@ class MdccManager : public fsmw
      * 
      * @param m The http request containing the transition command, parameters and answer
      */
+    void configure(http_request m);
+    /**
+     * @brief CONFIGURE transition
+     * 
+     * @param m The http request containing the transition command, parameters and answer
+     */
     void fsm_initialise(http_request m);
     /**
      * @brief DESTROY transition

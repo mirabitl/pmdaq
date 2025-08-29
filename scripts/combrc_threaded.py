@@ -311,6 +311,21 @@ class combRC(pmdaqrc.pmdaqControl):
             for x in self.session.apps["lyon_gricv1"]:
                 s = json.loads(x.sendTransition("CONFIGURE", m))
                 r["lyon_gricv1_%d" % x.instance] = s
+        # Mdcc
+        if ("lyon_mdcc" in self.session.apps):
+            s = json.loads(
+                self.session.apps['lyon_mdcc'][0].sendTransition("CONFIGURE", m))
+            r["lyon_mdcc"] = s
+        if ("lyon_ipdc" in self.session.apps):
+            s = json.loads(
+                self.session.apps['lyon_ipdc'][0].sendTransition("CONFIGURE", m))
+            r["lyon_ipdc"] = s
+            self.md_name = "lyon_ipdc"
+        if ("lyon_mbmdcc" in self.session.apps):
+            s = json.loads(
+                self.session.apps['lyon_mbmdcc'][0].sendTransition("CONFIGURE", m))
+            r["lyon_mbmdcc"] = s
+            self.md_name = "lyon_mbmdcc"
         # Old DIF Firmware
         if ("lyon_sdcc" in self.session.apps):
             json.loads(self.session.apps['lyon_sdcc']

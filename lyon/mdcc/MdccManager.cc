@@ -34,6 +34,36 @@ void MdccManager::fsm_initialise(http_request m)
   Reply(status_codes::OK,par);  
     
 }
+void MdccManager::configure(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logMdcc," CMD: Closing");
+  if (_mdcc==NULL)
+    {
+      PMF_ERROR(_logMdcc,"Please open MDC01 first");
+      return;
+    }
+  // reload parameters
+  if (utils::isMember(params(),"spillon") && _mdcc!=NULL)
+    {
+      _mdcc->setSpillOn(params()["spillon"].as_integer()); 
+    }
+  if (utils::isMember(params(),"spilloff") && _mdcc!=NULL)
+    {
+      _mdcc->setSpillOff(params()["spilloff"].as_integer()); 
+    }
+  if (utils::isMember(params(),"spillregister") && _mdcc!=NULL)
+    {
+      _mdcc->setSpillRegister(params()["spillregister"].as_integer()); 
+    }
+  if (utils::isMember(params(),"external") && _mdcc!=NULL)
+    {
+      _mdcc->setExternalTrigger(params()["external"].as_integer()); 
+    }  
+  par["status"]=json::value::string(U("DONE"));
+  Reply(status_codes::OK,par);  
+    
+}
 void MdccManager::destroy(http_request m)
 {
   auto par = json::value::object();
@@ -413,17 +443,24 @@ void MdccManager::end()
 {
 
   if (_mdcc!=NULL)
-    _mdcc->close();}
+    _mdcc->close();
+  }
 void MdccManager::initialise()			   
 {
   
   // Register state
-  this->addState("OPENED");
+  // Register state
 
-
-  this->addTransition("INITIALISE","CREATED","OPENED",std::bind(&MdccManager::fsm_initialise, this,std::placeholders::_1));
-  this->addTransition("DESTROY","OPENED","CREATED",std::bind(&MdccManager::destroy, this,std::placeholders::_1));
-
+  this->addState("INITIALISED");
+  this->addState("CONFIGURED");
+  this->addState("RUNNING");
+  
+  this->addTransition("INITIALISE","CREATED","INITIALISED",std::bind(&MdccManager::fsm_initialise, this,std::placeholders::_1));
+  this->addTransition("CONFIGURE","INITIALISED","CONFIGURED",std::bind(&MdccManager::configure, this,std::placeholders::_1));
+  this->addTransition("CONFIGURE","CONFIGURED","CONFIGURED",std::bind(&MdccManager::configure, this,std::placeholders::_1));
+  
+  this->addTransition("DESTROY","CONFIGURED","CREATED",std::bind(&MdccManager::destroy, this,std::placeholders::_1));
+  this->addTransition("DESTROY","INITIALISED","CREATED",std::bind(&MdccManager::destroy, this,std::placeholders::_1));
 
   this->addCommand("PAUSE",std::bind(&MdccManager::c_pause,this,std::placeholders::_1));
   this->addCommand("RESUME",std::bind(&MdccManager::c_resume,this,std::placeholders::_1));
