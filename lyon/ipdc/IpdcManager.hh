@@ -17,6 +17,7 @@ class IpdcManager : public fsmw
     virtual void end();
     
     void fsm_initialise(http_request m);
+    void configure(http_request m);
     void destroy(http_request m);
 
     

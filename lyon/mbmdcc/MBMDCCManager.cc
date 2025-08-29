@@ -182,7 +182,14 @@ void MbmdccManager::fsm_initialise(http_request m)
     {
       this->setChannels(params()["channels"].as_integer());
     }
- 
+  if (utils::isMember(params(),"external") )
+    {
+      this->setExternalTrigger(params()["external"].as_integer()); 
+    }
+  if (utils::isMember(params(),"lemomask") )
+    {
+      this->setLemoMask(params()["lemomask"].as_integer()); 
+    }   
   PMF_INFO(_logMbmdcc," Init done  ");
   par["status"]=json::value::string(U("done"));
   Reply(status_codes::OK,par);
@@ -195,8 +202,30 @@ void MbmdccManager::configure(http_request m)
   PMF_INFO(_logMbmdcc," CMD: CONFIGURING");
 
   // Now loop on slowcontrol socket
-
-
+  if (utils::isMember(params(),"spillon"))
+    {
+      this->setSpillOn(params()["spillon"].as_integer());
+    }
+  if (utils::isMember(params(),"spilloff"))
+    {
+      this->setSpillOff(params()["spilloff"].as_integer());
+    }
+  if (utils::isMember(params(),"spillregister"))
+    {
+      this->setSpillRegister(params()["spillregister"].as_integer());
+    }
+  if (utils::isMember(params(),"channels"))
+    {
+      this->setChannels(params()["channels"].as_integer());
+    }
+  if (utils::isMember(params(),"external") )
+    {
+      this->setExternalTrigger(params()["external"].as_integer()); 
+    }    
+  if (utils::isMember(params(),"lemomask") )
+    {
+      this->setLemoMask(params()["lemomask"].as_integer()); 
+    }  
   par["status"]=json::value::string(U("done"));
   Reply(status_codes::OK,par);
 
@@ -290,7 +319,8 @@ uint32_t MbmdccManager::triggerBusy(){return this->readRegister(mbmdcc::Message:
 
 void MbmdccManager::setExternalTrigger(uint32_t nc){this->writeRegister(mbmdcc::Message::Register::EN_BUSY_TRG,nc);}
 uint32_t MbmdccManager::externalTrigger(){return this->readRegister(mbmdcc::Message::Register::EN_BUSY_TRG);}
-
+void MbmdccManager::setLemoMask(uint32_t nc){this->writeRegister(mbmdcc::Message::Register::LEMO_MASK,nc);}
+uint32_t MbmdccManager::lemoMask(){return this->readRegister(mbmdcc::Message::Register::LEMO_MASK);}
 void MbmdccManager::reloadCalibCount(){
 
   this->maskTrigger();

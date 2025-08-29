@@ -54,6 +54,8 @@ public:
   uint32_t triggerBusy();
   void setExternalTrigger(uint32_t nc);
   uint32_t externalTrigger();
+  void setLemoMask(uint32_t nc);
+  uint32_t lemoMask();
   void reloadCalibCount();
   void resetTDC(uint32_t b);
   void resetFSM(uint32_t b);

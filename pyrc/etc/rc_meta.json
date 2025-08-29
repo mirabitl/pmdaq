@@ -54,7 +54,7 @@
 	"lyon_mdcc":{"threaded":0,
 	 "transitions":{
 	     "INITIALISE":{"fsm":["INITIALISE"],"commands":[]},
-	     "CONFIGURE":{"fsm":[],"commands":[]},
+	     "CONFIGURE":{"fsm":["CONFIGURE"],"commands":[]},
 	     "START":{"fsm":[],"commands":[["RESET",{}],["ECALRESUME",{}]]},
 	     "STOP":{"fsm":[],"commands":[["PAUSE",{}]]}
 		}

@@ -27,10 +27,58 @@ void IpdcManager::fsm_initialise(http_request m)
     {
       _ipdc->setSpillRegister(params()["spillregister"].as_integer()); 
     }
-  
+  if (utils::isMember(params(),"external") && _ipdc!=NULL)
+    {
+      _ipdc->setExternalTrigger(params()["external"].as_integer()); 
+    }
+  if (utils::isMember(params(),"lemomask") && _ipdc!=NULL)
+    {
+      _ipdc->setLemoMask(params()["lemomask"].as_integer()); 
+    }
+  if (utils::isMember(params(),"busyenable") && _ipdc!=NULL)
+    {
+      _ipdc->setBusyEnable(params()["busyenable"].as_integer()); 
+    }  
   _ipdc->maskTrigger();
   _ipdc->resetCounter();
-  par["status"]=json::value::string(U("Opened"));
+  par["status"]=json::value::string(U("Done"));
+  Reply(status_codes::OK,par);  
+    
+}
+void IpdcManager::configure(http_request m)
+{
+  auto par = json::value::object();
+  PMF_INFO(_logIpdc," CMD: Configuring");
+  if (_ipdc==NULL)
+    {
+      PMF_ERROR(_logIpdc,"Please open MDC01 first");
+      return;
+    }
+  if (utils::isMember(params(),"spillon") && _ipdc!=NULL)
+    {
+      _ipdc->setSpillOn(params()["spillon"].as_integer()); 
+    }
+  if (utils::isMember(params(),"spilloff") && _ipdc!=NULL)
+    {
+      _ipdc->setSpillOff(params()["spilloff"].as_integer()); 
+    }
+  if (utils::isMember(params(),"spillregister") && _ipdc!=NULL)
+    {
+      _ipdc->setSpillRegister(params()["spillregister"].as_integer()); 
+    }
+  if (utils::isMember(params(),"external") && _ipdc!=NULL)
+    {
+      _ipdc->setExternalTrigger(params()["external"].as_integer()); 
+    }
+  if (utils::isMember(params(),"lemomask") && _ipdc!=NULL)
+    {
+      _ipdc->setLemoMask(params()["lemomask"].as_integer()); 
+    }
+  if (utils::isMember(params(),"busyenable") && _ipdc!=NULL)
+    {
+      _ipdc->setBusyEnable(params()["busyenable"].as_integer()); 
+    }  
+  par["status"]=json::value::string(U("Done"));
   Reply(status_codes::OK,par);  
     
 }
@@ -401,12 +449,16 @@ void IpdcManager::initialise()
 {
   
   // Register state
-  this->addState("OPENED");
-
-
-  this->addTransition("INITIALISE","CREATED","OPENED",std::bind(&IpdcManager::fsm_initialise, this,std::placeholders::_1));
-  this->addTransition("DESTROY","OPENED","CREATED",std::bind(&IpdcManager::destroy, this,std::placeholders::_1));
-
+  this->addState("INITIALISED");
+  this->addState("CONFIGURED");
+  this->addState("RUNNING");
+  
+  this->addTransition("INITIALISE","CREATED","INITIALISED",std::bind(&IpdcManager::fsm_initialise, this,std::placeholders::_1));
+  this->addTransition("CONFIGURE","INITIALISED","CONFIGURED",std::bind(&IpdcManager::configure, this,std::placeholders::_1));
+  this->addTransition("CONFIGURE","CONFIGURED","CONFIGURED",std::bind(&IpdcManager::configure, this,std::placeholders::_1));
+  
+  this->addTransition("DESTROY","CONFIGURED","CREATED",std::bind(&IpdcManager::destroy, this,std::placeholders::_1));
+  this->addTransition("DESTROY","INITIALISED","CREATED",std::bind(&IpdcManager::destroy, this,std::placeholders::_1));
 
   this->addCommand("PAUSE",std::bind(&IpdcManager::c_pause,this,std::placeholders::_1));
   this->addCommand("RESUME",std::bind(&IpdcManager::c_resume,this,std::placeholders::_1));
