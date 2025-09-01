@@ -112,6 +112,7 @@ public:
      @param b2 Third threshold
      @param idif The dif ID
   */
+ void parseParameters();
   void setThresholds(uint16_t b0, uint16_t b1, uint16_t b2, uint32_t idif = 0);
   void shiftThresholds(uint16_t b0, uint16_t b1, uint16_t b2, uint32_t idif = 0);
   void setGain(uint16_t gain);

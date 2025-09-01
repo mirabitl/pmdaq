@@ -535,7 +535,67 @@ void Gricv0Manager::fsm_initialise(http_request m)
   par["status"]=json::value::string(U("done"));
   Reply(status_codes::OK,par);
 }
+void Gricv0Manager::parseParameters()
+{
+    // First check if there is a new data base  state/version
+  if (utils::isMember(params(), "database"))
+  {
+    auto dbname=params()["database"]["name"].as_string();
+    auto dbversion=params()["database"]["version"].as_integer();
+   
+    _hca->clear();
+	  _hca->parseMongoDb(dbname,dbversion);
+  }
+  // Threshold set ?
+  if (utils::isMember(params(), "thresholds"))
+  {
+    auto idif=params()["thresholds"]["dif"].as_integer();
+    auto b0=params()["thresholds"]["B0"].as_integer();
+    auto b1=params()["thresholds"]["B1"].as_integer();
+    auto b2=params()["thresholds"]["B2"].as_integer();
+   for (auto it = _hca->asicMap().begin(); it != _hca->asicMap().end(); it++)
+    {
+      if (idif != 0)
+	      {
+	        uint32_t ip1 = (((it->first) >> 32) & 0XFFFFFFFF);
+	        uint32_t ip = (ip1>>24);
+	        if (idif != ip)
+	          continue;
+	         printf("%x %d %d %lu \n",ip1, ip, idif,it->first & 0xFF);
+        }
+      it->second.setB0(b0);
+      it->second.setB1(b1);
+      it->second.setB2(b2);
+    } 
+  }
+  // Threshold shift ?
+  if (utils::isMember(params(), "shifts"))
+  {
+    auto idif=params()["shifts"]["dif"].as_integer();
+    auto b0=params()["shifts"]["B0"].as_integer();
+    auto b1=params()["shifts"]["B1"].as_integer();
+    auto b2=params()["shifts"]["B2"].as_integer();
+   for (auto it = _hca->asicMap().begin(); it != _hca->asicMap().end(); it++)
+    {
+      if (idif != 0)
+	      {
+	        uint32_t ip1 = (((it->first) >> 32) & 0XFFFFFFFF);
+	        uint32_t ip = (ip1>>24);
+	        if (idif != ip)
+	          continue;
+	         printf("%x %d %d %lu \n",ip1, ip, idif,it->first & 0xFF);
+        }
+      uint16_t nb0=b0+ it->second.getB0();
+      uint16_t nb1=b1+ it->second.getB1();
+      uint16_t nb2=b2+ it->second.getB2();
+      it->second.setB0(nb0);
+      it->second.setB1(nb1);
+      it->second.setB2(nb2);
+    } 
+  }
+  
 
+}
 void Gricv0Manager::configureHR2()
 {
   PMF_INFO(_logGricv0," COnfigure the chips ");
@@ -563,6 +623,7 @@ void Gricv0Manager::configure(http_request m)
 
   PMF_INFO(_logGricv0," CMD: CONFIGURING");
 
+  this->parseParameters();
   // Now loop on slowcontrol socket
 
 
