@@ -23,7 +23,11 @@ class IpdcManager : public fsmw
     
     void doOpen(std::string s);
     IpdcHandler* getIpdcHandler(){  return _ipdc;}
-
+    /**
+     * @brief Parse Params and make corresponding action
+     * 
+     */
+    void parseParameters();
     void c_status(http_request m);
     void c_pause(http_request m);
     void c_resume(http_request m);

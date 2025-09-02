@@ -15,7 +15,18 @@ void IpdcManager::fsm_initialise(http_request m)
 
   this->doOpen(device);
   
-  if (utils::isMember(params(),"spillon") && _ipdc!=NULL)
+  
+  this->parseParameters();
+  
+  _ipdc->maskTrigger();
+  _ipdc->resetCounter();
+  par["status"]=json::value::string(U("Done"));
+  Reply(status_codes::OK,par);  
+    
+}
+void IpdcManager::parseParameters()
+{
+ if (utils::isMember(params(),"spillon") && _ipdc!=NULL)
     {
       _ipdc->setSpillOn(params()["spillon"].as_integer()); 
     }
@@ -39,11 +50,6 @@ void IpdcManager::fsm_initialise(http_request m)
     {
       _ipdc->setBusyEnable(params()["busyenable"].as_integer()); 
     }  
-  _ipdc->maskTrigger();
-  _ipdc->resetCounter();
-  par["status"]=json::value::string(U("Done"));
-  Reply(status_codes::OK,par);  
-    
 }
 void IpdcManager::configure(http_request m)
 {
@@ -54,30 +60,7 @@ void IpdcManager::configure(http_request m)
       PMF_ERROR(_logIpdc,"Please open MDC01 first");
       return;
     }
-  if (utils::isMember(params(),"spillon") && _ipdc!=NULL)
-    {
-      _ipdc->setSpillOn(params()["spillon"].as_integer()); 
-    }
-  if (utils::isMember(params(),"spilloff") && _ipdc!=NULL)
-    {
-      _ipdc->setSpillOff(params()["spilloff"].as_integer()); 
-    }
-  if (utils::isMember(params(),"spillregister") && _ipdc!=NULL)
-    {
-      _ipdc->setSpillRegister(params()["spillregister"].as_integer()); 
-    }
-  if (utils::isMember(params(),"external") && _ipdc!=NULL)
-    {
-      _ipdc->setExternalTrigger(params()["external"].as_integer()); 
-    }
-  if (utils::isMember(params(),"lemomask") && _ipdc!=NULL)
-    {
-      _ipdc->setLemoMask(params()["lemomask"].as_integer()); 
-    }
-  if (utils::isMember(params(),"busyenable") && _ipdc!=NULL)
-    {
-      _ipdc->setBusyEnable(params()["busyenable"].as_integer()); 
-    }  
+  this->parseParameters();
   par["status"]=json::value::string(U("Done"));
   Reply(status_codes::OK,par);  
     

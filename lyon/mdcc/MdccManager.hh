@@ -116,6 +116,11 @@ class MdccManager : public fsmw
      */
     void doOpen(std::string s);
     /**
+     * @brief Parse Params and make corresponding action
+     * 
+     */
+    void parseParameters();
+    /**
      * @brief Get the Mdcc Handler object
      * 
      * @return MdccHandler* pointer to the handler
