@@ -53,12 +53,42 @@ void Febv2Manager::end()
   // Stop any running process
 
   if (g_mon != NULL)
-    {
-      _running = false;
-      g_mon->join();
-      delete g_mon;
-      g_mon = NULL;
-    }
+  {
+    _running = false;
+    g_mon->join();
+    delete g_mon;
+    g_mon = NULL;
+  }
+}
+void Febv2Manager::parseParameters()
+{
+  if (utils::isMember(params(), "database"))
+  {
+    auto dbname = params()["database"]["name"].as_string();
+    auto dbversion = params()["database"]["version"].as_integer();
+    auto parcmd = json::value::object();
+    parcmd["statename"] = json::value::string(U(dbname));
+    parcmd["version"] = json::value::number(dbversion);
+    auto jrep = this->post("DOWNLOADDB", parcmd);
+  }
+  if (utils::isMember(params(), "vthshift"))
+  {
+    auto parcmd = json::value::object();
+    parcmd["shift"] = json::value::number(params()["vthshift"].as_integer());
+    auto jrep = this->post("SHIFTVTH", parcmd);
+  }
+  if (utils::isMember(params(), "paccomp"))
+  {
+    auto parcmd = json::value::object();
+    parcmd["value"] = json::value::number(params()["paccomp"].as_integer());
+    auto jrep = this->post("PACCOMP", parcmd);
+  }
+  if (utils::isMember(params(), "delay_reset"))
+  {
+    auto parcmd = json::value::object();
+    parcmd["value"] = json::value::number(params()["delay_reset"].as_integer());
+    auto jrep = this->post("DELAY_RESET", parcmd);
+  }
 }
 void Febv2Manager::clearShm()
 {
@@ -68,12 +98,12 @@ void Febv2Manager::clearShm()
   sc.str(std::string());
   sd.str(std::string());
   for (auto name : vnames)
-    {
-      sc << _shmPath << "/closed/" << name;
-      sd << _shmPath << name;
-      ::unlink(sc.str().c_str());
-      ::unlink(sd.str().c_str());
-    }
+  {
+    sc << _shmPath << "/closed/" << name;
+    sd << _shmPath << name;
+    ::unlink(sc.str().c_str());
+    ::unlink(sd.str().c_str());
+  }
 }
 void Febv2Manager::spy_shm()
 {
@@ -83,41 +113,40 @@ void Febv2Manager::spy_shm()
   uint32_t detid, sourceid, eventid;
   uint64_t bxid;
   while (_running)
+  {
+    std::vector<std::string> vnames;
+    utils::ls(_shmPath, vnames);
+    PM_DEBUG(_logFebv2, "Loop PATH for files " << _shmPath << " " << vnames.size());
+    for (auto x : vnames)
     {
-      std::vector<std::string> vnames;
-      utils::ls(_shmPath, vnames);
-      PM_DEBUG(_logFebv2, "Loop PATH for files " << _shmPath << " " << vnames.size());
-      for (auto x : vnames)
-	{
-	  std::cout << x << std::endl;
-	  // EUDAQ_WARN("Find file "+x);
-	  // continue;
-	  auto b = _dsData->buffer();
+      std::cout << x << std::endl;
+      // EUDAQ_WARN("Find file "+x);
+      // continue;
+      auto b = _dsData->buffer();
 
-	  sscanf(x.c_str(), "Event_%u_%u_%u_%lu", &detid, &sourceid, &eventid, &bxid);
+      sscanf(x.c_str(), "Event_%u_%u_%u_%lu", &detid, &sourceid, &eventid, &bxid);
 
-	  b->setDetectorId(detid);
-	  b->setDataSourceId(sourceid);
-	  b->setEventId(eventid);
-	  b->setBxId(bxid);
-	  uint32_t pls = utils::pull(x, b->payload(), _shmPath);
-	  b->setPayloadSize(pls);
-	  uint64_t idx_storage = b->eventId(); // usually abcid
-	  _dsData->publish(bxid, eventid, b->size());
-	}
-
-      usleep(50000);
+      b->setDetectorId(detid);
+      b->setDataSourceId(sourceid);
+      b->setEventId(eventid);
+      b->setBxId(bxid);
+      uint32_t pls = utils::pull(x, b->payload(), _shmPath);
+      b->setPayloadSize(pls);
+      uint64_t idx_storage = b->eventId(); // usually abcid
+      _dsData->publish(bxid, eventid, b->size());
     }
+
+    usleep(50000);
+  }
   PM_INFO(_logFebv2, "Stoping spy_shm");
 }
-web::json::value Febv2Manager::decode_spyne_answer(web::json::value v,std::string c)
+web::json::value Febv2Manager::decode_spyne_answer(web::json::value v, std::string c)
 {
-  std::string s1=c+"Response";
-  std::string s2=c+"Result";
-  auto s_v=v.as_object()[s1][s2][0].as_string();
+  std::string s1 = c + "Response";
+  std::string s2 = c + "Result";
+  auto s_v = v.as_object()[s1][s2][0].as_string();
   web::json::value ret = json::value::parse(s_v);
   return ret;
-
 }
 void Febv2Manager::c_status(http_request m)
 {
@@ -125,15 +154,15 @@ void Febv2Manager::c_status(http_request m)
   auto par = json::value::object();
 
   auto jrep = this->post("STATUS");
-  auto w_rep=decode_spyne_answer(jrep,"STATUS");
+  auto w_rep = decode_spyne_answer(jrep, "STATUS");
 
   _detId = w_rep.as_object()["DETID"].as_integer();
   _sourceId = w_rep.as_object()["SOURCEID"].as_integer();
   par["STATUS"] = json::value::string(U("DONE"));
   par["DETID"] = _detId;
   par["SOURCEID"] = _sourceId;
-  par["EVENT"]=w_rep.as_object()["STATUS"];
-  mqtt_publish("status",par);
+  par["EVENT"] = w_rep.as_object()["STATUS"];
+  mqtt_publish("status", par);
   Reply(status_codes::OK, par);
 }
 
@@ -148,7 +177,7 @@ void Febv2Manager::c_downloadDB(http_request m)
   auto parcmd = json::value::object();
   parcmd["statename"] = json::value::string(U(dbstate));
   parcmd["version"] = json::value::number(version);
-  auto jrep=this->post("DOWNLOADDB",parcmd);
+  auto jrep = this->post("DOWNLOADDB", parcmd);
 
   par["DBSTATE"] = json::value::string(U(dbstate));
   Reply(status_codes::OK, par);
@@ -159,10 +188,10 @@ void Febv2Manager::c_vthshift(http_request m)
   auto par = json::value::object();
   par["STATUS"] = json::value::string(U("DONE"));
   uint32_t shift = utils::queryIntValue(m, "shift", 50);
-  PM_INFO(_logFebv2, "VTHSHIFT called "<<shift);
+  PM_INFO(_logFebv2, "VTHSHIFT called " << shift);
   auto parcmd = json::value::object();
   parcmd["shift"] = json::value::number(shift);
-  auto jrep=this->post("SHIFTVTH",parcmd);
+  auto jrep = this->post("SHIFTVTH", parcmd);
 
   par["SHIFT"] = json::value::number(shift);
   Reply(status_codes::OK, par);
@@ -173,15 +202,14 @@ void Febv2Manager::c_paccomp(http_request m)
   auto par = json::value::object();
   par["STATUS"] = json::value::string(U("DONE"));
   uint32_t paccomp = utils::queryIntValue(m, "value", 15);
-  PM_INFO(_logFebv2, "PACCOMP called "<<paccomp);
+  PM_INFO(_logFebv2, "PACCOMP called " << paccomp);
   auto parcmd = json::value::object();
   parcmd["value"] = json::value::number(paccomp);
-  auto jrep=this->post("PACCOMP",parcmd);
+  auto jrep = this->post("PACCOMP", parcmd);
 
   par["PACCOMP"] = json::value::number(paccomp);
   Reply(status_codes::OK, par);
 }
-
 
 void Febv2Manager::c_delay_reset(http_request m)
 {
@@ -189,22 +217,22 @@ void Febv2Manager::c_delay_reset(http_request m)
   auto par = json::value::object();
   par["STATUS"] = json::value::string(U("DONE"));
   uint32_t delay_reset = utils::queryIntValue(m, "value", 15);
-  PM_INFO(_logFebv2, "DELAY_RESET called "<<delay_reset);
+  PM_INFO(_logFebv2, "DELAY_RESET called " << delay_reset);
   auto parcmd = json::value::object();
   parcmd["value"] = json::value::number(delay_reset);
-  auto jrep=this->post("DELAY_RESET",parcmd);
+  auto jrep = this->post("DELAY_RESET", parcmd);
 
   par["DELAY_RESET"] = json::value::number(delay_reset);
   Reply(status_codes::OK, par);
 }
 
-web::json::value Febv2Manager::post(std::string cmd, web::json::value v )
+web::json::value Febv2Manager::post(std::string cmd, web::json::value v)
 {
-  std::cerr<<"post command "<<_feb_host<<":"<<_feb_port<<"/"<<cmd<<" "<<v<<std::endl;
+  std::cerr << "post command " << _feb_host << ":" << _feb_port << "/" << cmd << " " << v << std::endl;
   http_response rep = utils::request(_feb_host, _feb_port, cmd, v);
-  
+
   auto jrep = rep.extract_json();
-  std::cerr<<" Returned response:"<<jrep.get()<<std::endl;
+  std::cerr << " Returned response:" << jrep.get() << std::endl;
   return jrep.get();
 }
 void Febv2Manager::createfeb(http_request m)
@@ -213,36 +241,36 @@ void Febv2Manager::createfeb(http_request m)
   PM_INFO(_logFebv2, "****** CMD: PREINITIALISED , creating FEB object");
   // Need a Febv2 tag
   if (!utils::isMember(params(), "febv2"))
-    {
-      PMF_ERROR(_logFebv2, "No febv2 tag");
-      par["status"] = json::value::string(U("Missing Febv2 tag "));
-      Reply(status_codes::OK, par);
-      return;
-    }
+  {
+    PMF_ERROR(_logFebv2, "No febv2 tag");
+    par["status"] = json::value::string(U("Missing Febv2 tag "));
+    Reply(status_codes::OK, par);
+    return;
+  }
   PM_INFO(_logFebv2, "Access Febv2");
   web::json::value jFebv2 = params()["febv2"];
   //_msh =new MpiMessageHandler("/dev/shm");
   if (!utils::isMember(jFebv2, "daq"))
-    {
-      PMF_ERROR(_logFebv2, "No Febv2:febdaq tag");
-      par["status"] = json::value::string(U("Missing Febv2:febdaq tag "));
-      Reply(status_codes::OK, par);
-      return;
-    }
+  {
+    PMF_ERROR(_logFebv2, "No Febv2:febdaq tag");
+    par["status"] = json::value::string(U("Missing Febv2:febdaq tag "));
+    Reply(status_codes::OK, par);
+    return;
+  }
   auto jFebDaq = jFebv2["daq"];
   _feb_host = jFebDaq["host"].as_string();
   _feb_port = jFebDaq["port"].as_integer();
-  _shmPath=jFebv2["shm_path"].as_string();
+  _shmPath = jFebv2["shm_path"].as_string();
 
-  auto jrep = this->post("/CREATE",jFebDaq["params"]);
-  auto w_rep=decode_spyne_answer(jrep,"CREATE");
+  auto jrep = this->post("/CREATE", jFebDaq["params"]);
+  auto w_rep = decode_spyne_answer(jrep, "CREATE");
   //  A FAIRE Recupperer info sur l'initialisation
 
   if (_dsData != NULL)
-    {
-      delete _dsData;
-      _dsData = NULL;
-    }
+  {
+    delete _dsData;
+    _dsData = NULL;
+  }
   PMF_INFO(_logFebv2, " Create done  ");
   par["status"] = json::value::string(U("done"));
   par["answer"] = w_rep;
@@ -255,12 +283,12 @@ void Febv2Manager::fsm_initialise(http_request m)
   PM_INFO(_logFebv2, "****** CMD: INITIALISING");
   // Send Initialise command
   auto jrep = this->post("/INITIALISE");
-  auto w_rep=decode_spyne_answer(jrep,"INITIALISE");
+  auto w_rep = decode_spyne_answer(jrep, "INITIALISE");
   if (_dsData != NULL)
-    {
-      delete _dsData;
-      _dsData = NULL;
-    }
+  {
+    delete _dsData;
+    _dsData = NULL;
+  }
   PMF_INFO(_logFebv2, " Init done  ");
   par["status"] = json::value::string(U("done"));
   par["answer"] = w_rep;
@@ -273,6 +301,7 @@ void Febv2Manager::configure(http_request m)
   auto par = json::value::object();
   PMF_INFO(_logFebv2, " CMD: Configuring");
 
+  this->parseParameters();
   // Now Send the CONFIGURE COMMAND
 
   auto jrep = this->post("/CONFIGURE");
@@ -280,22 +309,20 @@ void Febv2Manager::configure(http_request m)
   // A FAIRE RECUPPERER DETID ET SOURCEID
 
   auto jrepl = this->post("/STATUS");
-  auto w_rep=decode_spyne_answer(jrepl,"STATUS");
+  auto w_rep = decode_spyne_answer(jrepl, "STATUS");
 
   _detId = w_rep.as_object()["DETID"].as_integer();
   _sourceId = w_rep.as_object()["SOURCEID"].as_integer();
 
-
-  
-  //std::cout<<_detId<<" "<<_sourceId<<std::endl;
+  // std::cout<<_detId<<" "<<_sourceId<<std::endl;
   if (_context == NULL)
     _context = new zmq::context_t(1);
   if (_dsData == NULL)
-    {
-      _dsData = new pm::pmSender(_context, _detId, _sourceId);
-      _dsData->autoDiscover(session(), "evb_builder", "collectingPort");
-      _dsData->collectorRegister();
-    }
+  {
+    _dsData = new pm::pmSender(_context, _detId, _sourceId);
+    _dsData->autoDiscover(session(), "evb_builder", "collectingPort");
+    _dsData->collectorRegister();
+  }
   par["status"] = json::value::string(U("done"));
   par["answer"] = w_rep;
 
@@ -314,7 +341,7 @@ void Febv2Manager::start(http_request m)
   // Now Send the START COMMAND
 
   auto jrep = this->post("/START");
-  auto w_rep=decode_spyne_answer(jrep,"START");
+  auto w_rep = decode_spyne_answer(jrep, "START");
   par["status"] = json::value::string(U("done"));
   par["answer"] = w_rep;
   Reply(status_codes::OK, par);
@@ -326,14 +353,14 @@ void Febv2Manager::stop(http_request m)
 
   // Now Send the STOP COMMAND
   auto jrep = this->post("/STOP");
-  auto w_rep=decode_spyne_answer(jrep,"STOP");
+  auto w_rep = decode_spyne_answer(jrep, "STOP");
   if (g_mon != NULL && _running)
-    {
-      _running = false;
-      g_mon->join();
-      delete g_mon;
-      g_mon = NULL;
-    }
+  {
+    _running = false;
+    g_mon->join();
+    delete g_mon;
+    g_mon = NULL;
+  }
 
   par["status"] = json::value::string(U("done"));
   par["answer"] = w_rep;
@@ -346,15 +373,15 @@ void Febv2Manager::destroy(http_request m)
   PMF_INFO(_logFebv2, " CMD: DESTROYING");
   // Now Send the DESTROY COMMAND
   auto jrep = this->post("/DESTROY");
-  auto w_rep=decode_spyne_answer(jrep,"DESTROY");
+  auto w_rep = decode_spyne_answer(jrep, "DESTROY");
 
   if (g_mon != NULL)
-    {
-      _running = false;
-      g_mon->join();
-      delete g_mon;
-      g_mon = NULL;
-    }
+  {
+    _running = false;
+    g_mon->join();
+    delete g_mon;
+    g_mon = NULL;
+  }
   par["status"] = json::value::string(U("done"));
   par["answer"] = w_rep;
 

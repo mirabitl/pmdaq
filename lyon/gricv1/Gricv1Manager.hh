@@ -16,6 +16,7 @@ public:
   ~Gricv1Manager(){;}
   virtual void initialise();
   virtual void end();
+  void parseParameters();
 
   
   void c_status(http_request m);

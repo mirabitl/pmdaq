@@ -49,6 +49,7 @@ public:
 
   web::json::value post(std::string command, web::json::value v = web::json::value::null());
   web::json::value decode_spyne_answer(web::json::value v, std::string c);
+  void parseParameters();
 
 private:
   uint32_t _run, _type;

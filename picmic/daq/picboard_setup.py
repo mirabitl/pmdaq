@@ -362,7 +362,7 @@ class picboard_setup:
 
         while (self.running):
             self.writer.newEvent()
-            datas = self.kc705.acqPtdc(window=4000, deadtime=500, window_number=1000)
+            datas = self.kc705.acqPtdc(window=self.params["window"], deadtime=self.params["deadtime"], window_number=self.params["nbwindows"])
             
             self.writer.appendEventData(datas)
             if len(datas) == 0:
