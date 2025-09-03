@@ -114,7 +114,98 @@ class rc_control(rc_interface.daqControl):
        self.process_transition("DESTROY")
     def daq_starting(self):
        self.process_transition("START")
-       
+
+    def TriggerStatus(self,verbose=False):
+        """! Print out of trigger board (mdcc,mbmdcc, ipdc,liboard) status
+        @param verbose If true print out results otherwise return string with json content of the printout
+        @return string with json content of the printout (verbose=False)
+        """
+        pn=None
+        if ("lyon_mdcc" in self.session.apps): 
+            pn="lyon_mdcc"
+        if ("lyon_mbmdcc" in self.session.apps): 
+            pn="lyon_mbmdcc"
+        if ("lyon_ipdc" in self.session.apps): 
+            pn="lyon_ipdc"
+        if ("lyon_liboard" in self.session.apps): 
+            pn="lyon_liboard"
+        if (pn==None):
+            print("""
+            \t \t ****************************    
+            \t \t ** No Trigger information **
+            \t \t ****************************
+            """)
+            return
+        mr = json.loads(self.processCommand("STATUS",pn,{}))
+        #print(mr)
+        #print("ON DEBUG ",mr)
+        #print("ON DEBUG ",mr)
+        if (not verbose):
+            return json.dumps(mr)
+        else:
+            print("""
+            \t \t *************************    
+            \t \t ** Trigger information **
+            \t \t *************************
+            """)
+            for tk,tv in mr.items():
+                print("\t ",tk)
+                if ("COUNTERS" in tv):
+                    for k,v in tv["COUNTERS"].items():
+                        if (k =="version"):
+                            print("\t \t %s %x" % (k,v))
+                        else:
+                            print("\t \t ",k,v)
+        
+    def BuilderStatus(self, verbose=False,mqtt=True):
+        """! Print out of event builder status
+        @param verbose If true print out results otherwise return string with json content of the printout
+        @param mqtt if true trigger the publication of evb_builder status to mqtt (if configured to)
+        @return string with json content of the printout (verbose=False)
+        """
+        if (not "evb_builder" in self.session.apps):
+            print("No Event builder found in thi session ",self.session.name())
+        rep = {}
+        
+        for s in self.session.apps["evb_builder"]:
+            r = {}
+            r['run'] = -1
+            r['event'] = -1
+            r['url'] = s.host
+            par={"mqtt":0}
+            if (mqtt):
+                par={"mqtt":1}
+
+            mr = json.loads(s.sendCommand("STATUS",par))
+            #print("Event Builder",mr)
+            if (mr['status'] != "FAILED"):
+                r["run"] = mr["answer"]["run"]
+                r["event"] = mr["answer"]["event"]
+                r["builder"] = mr["answer"]["difs"]
+                r["built"] = mr["answer"]["build"]
+                r["total"] = mr["answer"]["total"]
+                r["compressed"] = mr["answer"]["compressed"]
+                r["time"] = time.time()
+                rep["%s%s" % (s.host, s.path)] = r
+            else:
+                rep["%s%s" % (s.host, s.path)] = mr
+        if (not verbose):
+            return json.dumps(rep)
+        print("""
+        \t \t *************************    
+        \t \t ** Builder information **
+        \t \t *************************
+        """)
+        #rep = json.loads(sr)
+        for k, v in rep.items():
+            print(k)
+            for xk, xv in v.items():
+                    if (xk != "builder"):
+                        print("\t", xk, xv)
+                    else:
+                        if (xv != None):
+                            for y in xv:
+                                print("\t \t ID %x => %d " % (int(y['id'].split('-')[2]), y['received']))
 
   
     def SourceStatus(self, verbose=False):
@@ -219,17 +310,6 @@ class rc_control(rc_interface.daqControl):
                     rep["%s_%s_%d" % (s.host,k, s.instance)] = mr
 
                     #rep["%s_%d" % (s.host, s.infos['instance'])] = r
-        for k, v in self.session.apps.items():
-            if (k != "lyon_dif"):
-                continue
-            for s in v:
-                mr = json.loads(s.sendCommand("STATUS", {}))
-                # print(mr)
-                if (mr['status'] != "FAILED"):
-                    rep["%s_%s_%d" % (s.host,k, s.infos['instance'])
-                        ] = mr["DIFLIST"]
-                else:
-                    rep["%s_%s_%d" % (s.host,k, s.infos['instance'])] = mr
         if (not verbose):
             return json.dumps(rep)
         # Verbose Printout
