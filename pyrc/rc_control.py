@@ -30,7 +30,7 @@ class rc_control(rc_interface.daqControl):
         ## Comment for a run
         self.comment = "Not yet set"
         ## Setup name
-        self.location = "UNKNOWN"
+        self.experiment = "UNKNOWN"
         ## MDCC plugin name
         self.md_name = "lyon_mdcc"
         ## MongoDB MongoJob instance
@@ -44,523 +44,79 @@ class rc_control(rc_interface.daqControl):
             sh="http://%s:%d" % (x["host"],x["port"])
             if (not sh in self.pm_hosts):
                 self.pm_hosts.append(sh)
+        ## Meta donnees
+        self.metadata=json.loads(open("/opt/pmdaq/pyrc/etc/rc_meta.json").read())
     # daq
+    def process_transition(self,transition_name):
+        rep={}
+        if not transition_name in self.metadata["sequences"].keys():
+            print(f"{transition_name} is not in possibles kest {self.metadata["sequences"].keys()}")
+            return rep
+        app_list=self.metadata["sequences"][transition_name]
+        for app_name in app_list:
+            if not app_name in self.session.apps:
+                continue
+            if not app_name in self.metadata["apps"].keys():
+                continue
+            threaded=self.metadata["apps"][app_name].threaded==1
+            fsm_list=self.metadata["apps"][app_name][transition_name]["fsm"]
+            cmd_list=self.metadata["apps"][app_name][transition_name]["commands"]
+            for t in fsm_list:
+                msg=self.build_message(app_name,transition_name)
+                if not threaded:
+                    for a in self.session.apps[app_name]:
+                        s = json.loads(a.sendTransition(t,msg))
+                        rep[f"{app_name}_{a.instance}"]=s
+                else:
+                    lt=list()
+                for x in self.session.apps[app_name]:
+                    rep[f"{app_name}_{x.instance}"]={}
+                    thr = threading.Thread(target=pmrTransitionWorker, args=(x,t,rep[f"{app_name}_{x.instance}"],))
+                    thr.start()
+                    lt.append(thr)
+
+                logging.info(f'{t} Waiting for worker threads')
+                alive=True
+                while (alive):
+                    nalive=False
+                    for thr in lt:
+                        nalive=nalive or thr.is_alive()
+                        logging.debug("%s %d " % (thr.getName() ,thr.is_alive()))                    
+                        thr.join(1)
+                    alive=nalive
+            for c in cmd_list:
+                msg={}
+                for a in self.session.apps[app_name]:
+                    s = json.loads(a.sendCommand(c,msg))
+                    rep[f"{app_name}_{a.instance}_{c}"]=s
+                
+        self.daq_answer = json.dumps(rep)
+        self.storeState()
+    
+    def build_message(self,app_name,transition_name):
+        m={}
+        if (app_name == "evb_builder" and transition_name == "START"):
+            if (self.experiment == "UNKNOWN"):
+                self.experiment = os.getenv("DAQSETUP", "UNKNOWN")
+
+            jnrun = self.db.getRun(self.experiment, self.comment)
+            m['run'] = jnrun['run']
+        return m 
     # Initialising implementation
 
     def daq_initialising(self):
-        """! 
-        Initialisation for all boards
-
-        @verbatim
-        In this order if found in the configuration
-        -------------------------------------------    
-        GPIO =  CONFIGURE VMEON VMEOFF VMEONN
-        SDCC= OPEN INITIALISE CONFIGURE STOP CCCRESET DIFRESET
-        MDCC/IPDC/MBMDCC =INITIALISE
-        EVB_BUILDER =CONFIGURE
-        FEBV1 = RESETTDC INITIALISE
-        FEBV2 = CREATEFEB INITIALISE
-        SHM_DATA_SOURCE = CREATEBOARD INITIALISE
-        PMR = Threaded: SCAN INITIALISE
-        LIBOARD = SCAN INITIALISE
-        GRICV0/GRICV1 =  INITIALISE
-        DIF = SCAN INITIALISE
-        @endverbatim
-        """
-        m = {}
-        r = {}
-        # old DIF Fw
-        if ("lyon_gpio" in self.session.apps):
-            s = json.loads(
-                self.session.apps['lyon_gpio'][0].sendTransition("CONFIGURE", m))
-            r["lyon_gpio"] = s
-            json.loads(self.session.apps['lyon_gpio']
-                       [0].sendCommand("VMEON", {}))
-            json.loads(self.session.apps['lyon_gpio']
-                       [0].sendCommand("VMEOFF", {}))
-            json.loads(self.session.apps['lyon_gpio']
-                       [0].sendCommand("VMEON", {}))
-            time.sleep(5)
-        if ("lyon_sdcc" in self.session.apps):
-            s = json.loads(
-                self.session.apps['lyon_sdcc'][0].sendTransition("OPEN", m))
-            s = json.loads(
-                self.session.apps['lyon_sdcc'][0].sendTransition("INITIALISE", m))
-            s = json.loads(
-                self.session.apps['lyon_sdcc'][0].sendTransition("CONFIGURE", m))
-            json.loads(self.session.apps['lyon_sdcc']
-                       [0].sendTransition("STOP", m))
-            time.sleep(1.)
-            json.loads(self.session.apps['lyon_sdcc']
-                       [0].sendCommand("CCCRESET", {}))
-            json.loads(self.session.apps['lyon_sdcc']
-                       [0].sendCommand("DIFRESET", {}))
-            r["lyon_sdcc"] = s
-        # Mdcc
-        if ("lyon_mdcc" in self.session.apps):
-            s = json.loads(
-                self.session.apps['lyon_mdcc'][0].sendTransition("INITIALISE", m))
-            r["lyon_mdcc"] = s
-        if ("lyon_ipdc" in self.session.apps):
-            s = json.loads(
-                self.session.apps['lyon_ipdc'][0].sendTransition("INITIALISE", m))
-            r["lyon_ipdc"] = s
-            self.md_name = "lyon_ipdc"
-        if ("lyon_mbmdcc" in self.session.apps):
-            s = json.loads(
-                self.session.apps['lyon_mbmdcc'][0].sendTransition("INITIALISE", m))
-            r["lyon_mbmdcc"] = s
-            self.md_name = "lyon_mbmdcc"
-        # Mbdaq0
-        if ("lyon_mbdaq0" in self.session.apps):
-            for x in self.session.apps["lyon_mbdaq0"]:
-                s = json.loads(x.sendTransition("INITIALISE", m))
-                r["lyon_mbdaq0_%d" % x.instance] = s
-
-        # evb_builder
-        for x in self.session.apps["evb_builder"]:
-            s = json.loads(x.sendTransition("CONFIGURE", m))
-            r["evb_builder_%d" % x.instance] = s
-        # Reset for FEB V1
-        if (self.reset != 0):
-            self.mdcc_resetTdc((self.reset > 0),)
-            time.sleep(abs(self.reset)/1000.)
-
-        if ("lyon_febv1" in self.session.apps):
-            for x in self.session.apps["lyon_febv1"]:
-                s = json.loads(x.sendTransition("INITIALISE", m))
-                r["lyon_febv1_%d" % x.instance] = s
-
-        if ("lyon_febv2" in self.session.apps):
-            print("ON A VU DES FEBV2")
-            for x in self.session.apps["lyon_febv2"]:
-                print("FEBV2 CREATEFEB")
-                s1=x.sendTransition("CREATEFEB", m)
-                print(s1)
-                
-                #s = json.loads(x.sendTransition("CREATEFEB", m))
-                r["lyon_febv2_%d" % x.instance] = s
-                print(s)
-
-            for x in self.session.apps["lyon_febv2"]:
-                print("FEBV2 INITIALISE")
-                s = json.loads(x.sendTransition("INITIALISE", m))
-                r["lyon_febv2_%d" % x.instance] = s
-                print(s)
-                
-        if ("lyon_shm_data_source" in self.session.apps):
-            print("ON A VU DES SHM_DATA_SOURCE")
-            for x in self.session.apps["lyon_shm_data_source"]:
-                print("SHMDS CREATEBOARD")
-                s1=x.sendTransition("CREATEBOARD", m)
-                print(s1)
-                
-                #s = json.loads(x.sendTransition("CREATEFEB", m))
-                r["lyon_shm_data_source_%d" % x.instance] = s
-                print(s)
-
-            for x in self.session.apps["lyon_shm_data_source"]:
-                print("SHMDS INITIALISE")
-                s = json.loads(x.sendTransition("INITIALISE", m))
-                r["lyon_shm_data_source_%d" % x.instance] = s
-                print(s)
-                
-        if ("lyon_pmr" in self.session.apps):
-            #for x in self.session.apps["lyon_pmr"]:
-            #    s = json.loads(x.sendTransition("SCAN", m))
-            #    r["lyon_pmr_%d" % x.instance] = s
-            lt=list()
-            for x in self.session.apps["lyon_pmr"]:
-                r["lyon_pmr_%d" % x.instance]={}
-                t = threading.Thread(target=pmrTransitionWorker, args=(x,"SCAN",r["lyon_pmr_%d" % x.instance],))
-                #t.setDaemon(True)
-                t.start()
-                lt.append(t)
-
-            logging.info('SCAN Waiting for worker threads')
-            alive=True
-            while (alive):
-                nalive=False
-                for t in lt:
-                    nalive=nalive or t.is_alive()
-                    logging.debug("%s %d " % (t.getName() ,t.is_alive()))                    
-                    t.join(1)
-                alive=nalive
-                
-            #for x in self.session.apps["lyon_pmr"]:
-                #s = json.loads(x.sendTransition("INITIALISE", m))
-                #r["lyon_pmr_%d" % x.instance] = s
-            lt=list()
-            for x in self.session.apps["lyon_pmr"]:
-                r["lyon_pmr_%d" % x.instance]={}
-                t = threading.Thread(target=pmrTransitionWorker, args=(x,"INITIALISE",r["lyon_pmr_%d" % x.instance],))
-                #t.setDaemon(True)
-                t.start()
-                lt.append(t)
-
-            logging.info('INITIALISE Waiting for worker threads')
-            alive=True
-            while (alive):
-                nalive=False
-                for t in lt:
-                    nalive=nalive or t.is_alive()
-                    logging.debug("%s %d " % (t.getName() ,t.is_alive()))                    
-                    t.join(1)
-                alive=nalive
-
-        if ("lyon_liboard" in self.session.apps):
-            for x in self.session.apps["lyon_liboard"]:
-                s = json.loads(x.sendTransition("SCAN", m))
-                r["lyon_liboard_%d" % x.instance] = s
-
-            for x in self.session.apps["lyon_liboard"]:
-                s = json.loads(x.sendTransition("INITIALISE", m))
-                r["lyon_liboard_%d" % x.instance] = s
-
-        if ("lyon_gricv0" in self.session.apps):
-            for x in self.session.apps["lyon_gricv0"]:
-                s = json.loads(x.sendTransition("INITIALISE", m))
-                r["lyon_gricv0_%d" % x.instance] = s
-
-        if ("lyon_gricv1" in self.session.apps):
-            for x in self.session.apps["lyon_gricv1"]:
-                s = json.loads(x.sendTransition("INITIALISE", m))
-                r["lyon_gricv1_%d" % x.instance] = s
-        # Old DIF Fw
-        if ("lyon_dif" in self.session.apps):
-            for x in self.session.apps["lyon_dif"]:
-                s = json.loads(x.sendTransition("SCAN", m))
-                r["lyon_dif_SCAN_%d" % x.instance] = s
-
-            for x in self.session.apps["lyon_dif"]:
-                s = json.loads(x.sendTransition("INITIALISE", m))
-                r["lyon_dif_INIT_%d" % x.instance] = s
-
-        self.daq_answer = json.dumps(r)
-        self.storeState()
-
+       self.process_transition("INITIALISE")
     def daq_configuring(self):
-        """! 
-        Configuration for all boards
-
-        @verbatim
-        In this order if found in the configuration
-        -------------------------------------------    
-        FEBV1 = CONFIGURE
-        SHM_DATA_SOURCE = CONFIGURE
-        FEBV2 = CONFIGURE
-        PMR = Threaded: CONFIGURE
-        LIBOARD/GRICV0/GRICV1 =  CONFIGURE
-        SDCC=  CCCRESET DIFRESET
-        DIF = CONFIGURE
-        @endverbatim
-        """
-        m = {}
-        r = {}
-        if ("lyon_febv1" in self.session.apps):
-            for x in self.session.apps["lyon_febv1"]:
-                s = json.loads(x.sendTransition("CONFIGURE", m))
-                r["lyon_febv1_%d" % x.instance] = s
-        if ("lyon_shm_data_source" in self.session.apps):
-            for x in self.session.apps["lyon_shm_data_source"]:
-                rr=x.sendTransition("CONFIGURE", m)
-                print(rr)
-                #s = json.loads(x.sendTransition("CONFIGURE", m))
-                #r["lyon_shm_data_source_%d" % x.instance] = s
-        if ("lyon_febv2" in self.session.apps):
-            for x in self.session.apps["lyon_febv2"]:
-                rr=x.sendTransition("CONFIGURE", m)
-                print(rr)
-                #s = json.loads(x.sendTransition("CONFIGURE", m))
-                #r["lyon_febv2_%d" % x.instance] = s
-        if ("lyon_pmr" in self.session.apps):
-            #for x in self.session.apps["lyon_pmr"]:
-            #    s = json.loads(x.sendTransition("CONFIGURE", m))
-            #    r["lyon_pmr_%d" % x.instance] = s
-            lt=list()
-            for x in self.session.apps["lyon_pmr"]:
-                r["lyon_pmr_%d" % x.instance]={}
-                t = threading.Thread(target=pmrTransitionWorker, args=(x,"CONFIGURE",r["lyon_pmr_%d" % x.instance],))
-                #t.setDaemon(True)
-                t.start()
-                lt.append(t)
-
-            logging.info('CONFIGURE Waiting for worker threads')
-            alive=True
-            while (alive):
-                nalive=False
-                for t in lt:
-                    nalive=nalive or t.is_alive()
-                    logging.debug("%s %d " % (t.getName() ,t.is_alive()))                    
-                    t.join(1)
-                alive=nalive
-
-        if ("lyon_liboard" in self.session.apps):
-            for x in self.session.apps["lyon_liboard"]:
-                s = json.loads(x.sendTransition("CONFIGURE", m))
-                r["lyon_liboard_%d" % x.instance] = s
-        if ("lyon_gricv0" in self.session.apps):
-            for x in self.session.apps["lyon_gricv0"]:
-                s = json.loads(x.sendTransition("CONFIGURE", m))
-                r["lyon_gricv0_%d" % x.instance] = s
-        if ("lyon_gricv1" in self.session.apps):
-            for x in self.session.apps["lyon_gricv1"]:
-                s = json.loads(x.sendTransition("CONFIGURE", m))
-                r["lyon_gricv1_%d" % x.instance] = s
-        # Mdcc
-        if ("lyon_mdcc" in self.session.apps):
-            s = json.loads(
-                self.session.apps['lyon_mdcc'][0].sendTransition("CONFIGURE", m))
-            r["lyon_mdcc"] = s
-        if ("lyon_ipdc" in self.session.apps):
-            s = json.loads(
-                self.session.apps['lyon_ipdc'][0].sendTransition("CONFIGURE", m))
-            r["lyon_ipdc"] = s
-            self.md_name = "lyon_ipdc"
-        if ("lyon_mbmdcc" in self.session.apps):
-            s = json.loads(
-                self.session.apps['lyon_mbmdcc'][0].sendTransition("CONFIGURE", m))
-            r["lyon_mbmdcc"] = s
-            self.md_name = "lyon_mbmdcc"
-        # Old DIF Firmware
-        if ("lyon_sdcc" in self.session.apps):
-            json.loads(self.session.apps['lyon_sdcc']
-                       [0].sendCommand("CCCRESET", {}))
-            s = json.loads(
-                self.session.apps['lyon_sdcc'][0].sendCommand("DIFRESET", {}))
-            r["lyon_sdcc"] = s
-        if ("lyon_dif" in self.session.apps):
-            for x in self.session.apps["lyon_dif"]:
-                s = json.loads(x.sendTransition("CONFIGURE", m))
-                r["lyon_dif_%d" % x.instance] = s
-        self.daq_answer = json.dumps(r)
-        self.storeState()
-
+       self.process_transition("CONFIGURE")
     def daq_stopping(self):
-        """! 
-        Stopping run and boards
-
-        @verbatim
-        In this order if found in the configuration
-        -------------------------------------------    
-        FEBV1 = STOP
-        SHM_DATA_SOURCE = STOP
-        FEBV2 = STOP
-        PMR =  STOP
-        LIBOARD/GRICV0/GRICV1 =  STOP
-        SDCC =  STOP
-        DIF = STOP
-        EVB_BUILDER = STOP 
-        @endverbatim
-        """
-        m = {}
-        r = {}
-
-        self.mdcc_Pause()
-
-        if ("lyon_febv1" in self.session.apps):
-            for x in self.session.apps["lyon_febv1"]:
-                s = json.loads(x.sendTransition("STOP", m))
-                r["lyon_febv1_%d" % x.instance] = s
-        if ("lyon_shm_data_source" in self.session.apps):
-            for x in self.session.apps["lyon_shm_data_source"]:
-                s = json.loads(x.sendTransition("STOP", m))
-                r["lyon_shm_data_source_%d" % x.instance] = s
-
-        if ("lyon_febv2" in self.session.apps):
-            for x in self.session.apps["lyon_febv2"]:
-                s = json.loads(x.sendTransition("STOP", m))
-                r["lyon_febv2_%d" % x.instance] = s
-
-        if ("lyon_pmr" in self.session.apps):
-            for x in self.session.apps["lyon_pmr"]:
-                s = json.loads(x.sendTransition("STOP", m))
-                r["lyon_pmr_%d" % x.instance] = s
-
-        if ("lyon_liboard" in self.session.apps):
-            for x in self.session.apps["lyon_liboard"]:
-                s = json.loads(x.sendTransition("STOP", m))
-                r["lyon_liboard_%d" % x.instance] = s
-        if ("lyon_gricv0" in self.session.apps):
-            for x in self.session.apps["lyon_gricv0"]:
-                s = json.loads(x.sendTransition("STOP", m))
-                r["lyon_gricv0_%d" % x.instance] = s
-        if ("lyon_gricv1" in self.session.apps):
-            for x in self.session.apps["lyon_gricv1"]:
-                s = json.loads(x.sendTransition("STOP", m))
-                r["lyon_gricv1_%d" % x.instance] = s
-        # Old DIF fw
-        if ("lyon_sdcc" in self.session.apps):
-            s = json.loads(
-                self.session.apps['lyon_sdcc'][0].sendTransition("STOP", m))
-            r["lyon_sdcc"] = s
-        if ("lyon_dif" in self.session.apps):
-            for x in self.session.apps["lyon_dif"]:
-                s = json.loads(x.sendTransition("STOP", m))
-                r["lyon_dif_%d" % x.instance] = s
-
-        for x in self.session.apps["evb_builder"]:
-            s = json.loads(x.sendTransition("STOP", m))
-            r["evb_builder_%d" % x.instance] = s
-
-        self.daq_answer = json.dumps(r)
-        self.storeState()
-
+       self.process_transition("STOP")
     def daq_destroying(self):
-        """! 
-       destroying transition 
-
-        @verbatim
-        In this order if found in the configuration
-        -------------------------------------------    
-        FEBV1 = DESTROY
-        SHM_DATA_SOURCE = DESTROY
-        FEBV2 = DESTROY
-        PMR =  DESTROY
-        LIBOARD/GRICV0/GRICV1/DIF =  DESTROY
-        MBMDCC =  DESTROY
-        @endverbatim
-        """
-        m = {}
-        r = {}
-        if ("lyon_febv1" in self.session.apps):
-            for x in self.session.apps["lyon_febv1"]:
-                s = json.loads(x.sendTransition("DESTROY", m))
-                r["lyon_febv1_%d" % x.instance] = s
-        if ("lyon_shm_data_source" in self.session.apps):
-            for x in self.session.apps["lyon_shm_data_source"]:
-                s = json.loads(x.sendTransition("DESTROY", m))
-                r["lyon_shm_data_source_%d" % x.instance] = s
-        if ("lyon_febv2" in self.session.apps):
-            for x in self.session.apps["lyon_febv2"]:
-                s = json.loads(x.sendTransition("DESTROY", m))
-                r["lyon_febv2_%d" % x.instance] = s
-        if ("lyon_pmr" in self.session.apps):
-            for x in self.session.apps["lyon_pmr"]:
-                s = json.loads(x.sendTransition("DESTROY", m))
-                r["lyon_pmr_%d" % x.instance] = s
-        if ("lyon_liboard" in self.session.apps):
-            for x in self.session.apps["lyon_liboard"]:
-                s = json.loads(x.sendTransition("DESTROY", m))
-                r["lyon_liboard_%d" % x.instance] = s
-        if ("lyon_gricv0" in self.session.apps):
-            for x in self.session.apps["lyon_gricv0"]:
-                s = json.loads(x.sendTransition("DESTROY", m))
-                r["lyon_gricv0_%d" % x.instance] = s
-        if ("lyon_gricv1" in self.session.apps):
-            for x in self.session.apps["lyon_gricv1"]:
-                s = json.loads(x.sendTransition("DESTROY", m))
-                r["lyon_gricv1_%d" % x.instance] = s
-        # old DIF Fw
-        if ("lyon_dif" in self.session.apps):
-            for x in self.session.apps["lyon_dif"]:
-                s = json.loads(x.sendTransition("DESTROY", m))
-                r["lyon_dif_%d" % x.instance] = s
-
-        if ("lyon_mbmdcc" in self.session.apps):
-            for x in self.session.apps["lyon_mbmdcc"]:
-                s = json.loads(x.sendTransition("DESTROY", m))
-                r["lyon_mbmdcc_%d" % x.instance] = s
-
-        self.daq_answer = json.dumps(r)
-        self.storeState()
-
+       self.process_transition("DESTROY")
     def daq_starting(self):
-        """! 
-        starting transition 
+       self.process_transition("START")
+       
 
-        It first connect to MongoDB and get a run number for the session location
-        defined in $DAQSETUP
-
-
-        @verbatim
-        In this order if found in the configuration
-        -------------------------------------------    
-        EVB_BUIDER = START with 'run' parameter
-        FEBV1 = START
-        SHM_DATA_SOURCE = START
-        FEBV2 = START
-        PMR =  START
-        LIBOARD/GRICV0/GRICV1/DIF =  START
-        MDCC = RESET (counters) ECALRESUME
-        IPDC = INITIALISE
-        MBMDCC =  RESET (counters) 
-        DIF = START
-        SDCC = START
-        @endverbatim
-        """
-        if (self.location == "UNKNOWN"):
-            self.location = os.getenv("DAQSETUP", "UNKNOWN")
-
-        jnrun = self.db.getRun(self.location, self.comment)
-        r = {}
-        m = {}
-        # print "EVENT evb_builder",jnrun['run']
-        m['run'] = jnrun['run']
-        for x in self.session.apps["evb_builder"]:
-            print("Sending Start to vent evb_builder")
-            s = json.loads(x.sendTransition("START", m))
-            r["evb_builder_%d" % x.instance] = s
-
-        m = {}
-        if ("lyon_febv1" in self.session.apps):
-            for x in self.session.apps["lyon_febv1"]:
-                s = json.loads(x.sendTransition("START", m))
-                r["lyon_febv1_%d" % x.instance] = s
-        if ("lyon_shm_data_source" in self.session.apps):
-            for x in self.session.apps["lyon_shm_data_source"]:
-                s = json.loads(x.sendTransition("START", m))
-                r["lyon_shm_data_source_%d" % x.instance] = s
-        if ("lyon_febv2" in self.session.apps):
-            for x in self.session.apps["lyon_febv2"]:
-                s = json.loads(x.sendTransition("START", m))
-                r["lyon_febv2_%d" % x.instance] = s
-        if ("lyon_pmr" in self.session.apps):
-            for x in self.session.apps["lyon_pmr"]:
-                s = json.loads(x.sendTransition("START", m))
-                r["lyon_pmr_%d" % x.instance] = s
-        if ("lyon_liboard" in self.session.apps):
-            for x in self.session.apps["lyon_liboard"]:
-                s = json.loads(x.sendTransition("START", m))
-                r["lyon_liboard_%d" % x.instance] = s
-        if ("lyon_gricv0" in self.session.apps):
-            for x in self.session.apps["lyon_gricv0"]:
-                s = json.loads(x.sendTransition("START", m))
-                r["lyon_gricv0_%d" % x.instance] = s
-        if ("lyon_gricv1" in self.session.apps):
-            for x in self.session.apps["lyon_gricv1"]:
-                s = json.loads(x.sendTransition("START", m))
-                r["lyon_gricv1_%d" % x.instance] = s
-        if ("lyon_mdcc" in self.session.apps):
-            s = json.loads(
-                self.session.apps['lyon_mdcc'][0].sendCommand("RESET", m))
-            s = json.loads(
-                self.session.apps['lyon_mdcc'][0].sendCommand("ECALRESUME", m))
-            r["lyon_mdcc"] = s
-        if ("lyon_ipdc" in self.session.apps):
-            s = json.loads(
-                self.session.apps['lyon_ipdc'][0].sendTransition("INITIALISE", m))
-            r["lyon_ipdc"] = s
-
-        if ("lyon_mbmdcc" in self.session.apps):
-            s = json.loads(
-                self.session.apps['lyon_mbmdcc'][0].sendCommand("RESET", m))
-            r["lyon_mbmdcc"] = s
-
-        # old firmware
-        if ("lyon_dif" in self.session.apps):
-            for x in self.session.apps["lyon_dif"]:
-                s = json.loads(x.sendTransition("START", m))
-                r["lyon_dif_%d" % x.instance] = s
-
-        if ("lyon_sdcc" in self.session.apps):
-            s = json.loads(
-                self.session.apps['lyon_sdcc'][0].sendTransition("START", m))
-            r["lyon_sdcc"] = s
-
-        self.daq_answer = json.dumps(r)
-        self.storeState()
-
+  
     def SourceStatus(self, verbose=False):
         """!
         Print out of data source status
@@ -701,31 +257,6 @@ class rc_control(rc_interface.daqControl):
         else:
             print(url+"/EXIT will be called")
             sac.executeRequest(url+"/EXIT")
-    # FEBV2 specific
-    def febv2_start(self):
-        """!
-        FEBV2 only start a run (No event builder/MDCC)
-        @deprecated Not used anywhere
-        """
-        r={}
-        m={}
-        if ("lyon_febv2" in self.session.apps):
-            for x in self.session.apps["lyon_febv2"]:
-                s = json.loads(x.sendTransition("START", m))
-                r["lyon_febv2_%d" % x.instance] = s
-            return json.dumps(r)
-    def febv2_stop(self):
-        """!
-        FEBV2 only stop a run (No event builder/MDCC)
-        @deprecated Not used anywhere
-        """
-        r={}
-        m={}
-        if ("lyon_febv2" in self.session.apps):
-            for x in self.session.apps["lyon_febv2"]:
-                s = json.loads(x.sendTransition("STOP", m))
-                r["lyon_febv2_%d" % x.instance] = s
-            return json.dumps(r)
     # FEBV1 specific
 
     def set6BDac(self, dac):
@@ -861,117 +392,3 @@ class rc_control(rc_interface.daqControl):
         r["cal_status"] = json.loads(tdc.sendCommand("CALIBSTATUS", param))
         return json.dumps(r)
 
-    def febScurve(self, ntrg, ncon, ncoff, thmin, thmax, step):
-        """! Scurve FEBV1 in run control
-        @deprecated Obsolete, use SCURVE command instead
-        """
-        r = {}
-        self.mdcc_Pause()
-        self.mdcc_setSpillOn(ncon,)
-        print(" Clock On %d Off %d" % (ncon, ncoff))
-        self.mdcc_setSpillOff(ncoff,)
-        self.mdcc_setSpillRegister(4,)
-        self.mdcc_CalibOn(1,)
-        self.mdcc_setCalibCount(ntrg,)
-        self.mdcc_Status()
-        thrange = (thmax - thmin + 1) // step
-        for vth in range(0, thrange+1):
-            self.mdcc_Pause()
-            self.setVthTime(thmax - vth * step)
-            time.sleep(0.2)
-            self.builder_setHeader(2, thmax - vth * step, 0xFF)
-
-            # Check Last built event
-            sr = json.loads(self.builderStatus())
-
-            firstEvent = 0
-            for k, v in sr.items():
-                if (v["event"] > firstEvent):
-                    firstEvent = v["event"]
-            # print sr,firstEvent
-            # Resume Calibration
-            self.mdcc_ReloadCalibCount()
-            self.mdcc_Resume()
-            self.mdcc_Status()
-
-            # Wait for ntrg events capture
-            lastEvent = firstEvent
-            nloop = 0
-            while (lastEvent < (firstEvent + ntrg - 20)):
-                sr = json.loads(self.builderStatus())
-                lastEvent = 0
-                for k, v in sr.items():
-                    if (v["event"] > lastEvent):
-                        lastEvent = v["event"]
-
-                print(" %d First %d  Last %d Step %d" %
-                      (thmax-vth*step, firstEvent, lastEvent, step))
-                time.sleep(0.2)
-                nloop = nloop+1
-                if (nloop > 20):
-                    break
-
-            r["TH_%d" % (thmax-vth*step)] = lastEvent - firstEvent + 1
-
-            # End Point
-            self.mdcc_CalibOn(0,)
-            self.mdcc_CalibOff()
-            self.mdcc_Pause()
-        return json.dumps(r)
-
-    def runScurve(self, run, ch, spillon, spilloff, beg, las, step=2, asic=255, Comment="PR2 Calibration", Location="UNKNOWN", nevmax=50):
-        """! Scurve FEBV1 in run control
-        @deprecated Obsolete, use SCURVE command instead
-        """
-        oldfirmware = [3, 4, 5, 6, 7, 8, 9, 10, 11,
-                       12, 20, 21, 22, 23, 24, 26, 28, 30]
-        firmware = [0, 2, 4, 6, 7, 8, 10, 12,
-                    14, 16, 18, 20, 22, 24, 26, 28, 30]
-
-        comment = Comment + \
-            " Mode %d ON %d Off %d TH min %d max %d Step %d" % (
-                ch, spillon, spilloff, beg, las, step)
-        self.comment = comment
-        self.start()
-        r = {}
-        r["run"] = run
-        if (ch == 255):
-            print("Run Scurve on all channel together")
-            mask = 0
-            for i in firmware:
-                mask = mask | (1 << i)
-            self.setTdcMask(mask, asic)
-            r["S_%d" % ch] = json.loads(self.febScurve(
-                nevmax, spillon, spilloff, beg, las, step))
-            self.stop()
-            return json.dumps(r)
-        if (ch == 1023):
-            print("Run Scurve on all channel one by one")
-            mask = 0
-            for i in firmware:
-                print("SCurve for channel %d " % i)
-                mask = mask | (1 << i)
-                self.setTdcMask(mask, asic)
-                r["S_%d" % ch] = json.loads(self.febScurve(
-                    nevmax, spillon, spilloff, beg, las, step))
-            self.stop()
-            return json.dumps(r)
-        print("Run Scurve on  channel %d " % ch)
-        mask = 0
-        mask = mask | (1 << ch)
-        self.setTdcMask(mask, asic)
-        r["S_%d" % ch] = json.loads(self.febScurve(
-            nevmax, spillon, spilloff, beg, las, step))
-        self.stop()
-        return json.dumps(r)
-# DIF Specific
-
-    def setControlRegister(self, ctrlreg):
-        """! 
-        DIF only Set the control register
-        @param ctrlreg Control register value
-        @return processCommand answer
-        """
-        param = {}
-        param["value"] = int(ctrlreg, 16)
-        return self.processCommand("CTRLREG", "lyon_dif", param)
