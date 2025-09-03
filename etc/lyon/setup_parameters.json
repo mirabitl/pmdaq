@@ -1,0 +1,45 @@
+{
+    "setups":
+    {
+	"PULSALYS2021":{
+	    "mode":{
+		"normal":
+		{
+		    "lyon_mdcc":{"spillon":20000000,"spilloff":10000,"spillregister":64,"external":0},
+		    "lyon_gricv0":{"database":{"name":"PULSALYS_DOME","version":61},"thresholds":{"B0":200,"B1":200,"B2":200}},
+		    "lyon_gricv1":{"database":{"name":"PULSALYS_DOME","version":61},"thresholds":{"B0":180,"B1":200,"B2":200}}
+		}
+	    }
+	},
+	"TEL_CMS_1022":{
+	    "mode":{
+		"normal":
+		{
+		    "lyon_mbmdcc":{"spillon":8000000,"spilloff":5000,"spillregister":4,"external":0,"channels":527,"lemomask":0},
+		    "lyon_pmr":{"database":{"name":"PMRTEST_DOME","version":56},"thresholds":{"B0":160,"B1":500,"B2":350},"external":0}	    
+		},
+		"telescope":
+		{
+		    "lyon_mbmdcc":{"spillon":20000000,"spilloff":1000,"spillregister":4,"external":0,"channels":15,"lemomask":0},
+		    "lyon_pmr":{"database":{"name":"PMRTEST_DOME","version":33},"thresholds":{"B0":110,"B1":500,"B2":350},"external":0}	    
+		}
+
+	    }
+	},
+	"TESTMRPC2025":{
+	    "mode":{
+		"normal":
+		{
+		    "lyon_ipdcc":{"spillon":100000000,"spilloff":1000,"spillregister":4,"external":2,"busyenable":5,"lemomask":2},
+		    "lyon_pmr":{"database":{"name":"TEST_DIF","version":25},"thresholds":{"B0":120,"B1":1000,"B2":1000},"external":1}	    
+		},
+		"pedestal":
+		{
+		    "lyon_ipdcc":{"spillon":100000000,"spilloff":1000,"spillregister":64,"external":0,"busyenable":5,"lemomask":0},
+		    "lyon_pmr":{"database":{"name":"TEST_DIF","version":25},"thresholds":{"B0":120,"B1":1000,"B2":1000},"external":1}	    
+		}
+
+	    }
+	}
+    }
+}
