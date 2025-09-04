@@ -118,4 +118,80 @@ class pns_access:
     def session_purge(self):
         pl=json.loads(rc_request.executeCMD(self.host,self.port,"/PNS/SESSION/PURGE",{}))
         return pl
-            
+    def remove(self,req_session=None):
+
+        # One loop for all but evb_builder
+        for x in self.registered:
+            if (req_session!=None and x.session!=req_session):
+                continue
+            if (x.name!="lyon_mbmdcc" ):
+                continue;
+            print("removing Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state," Session :",x.session," Name : ",x.name," Instance ",x.instance )
+            par={}
+            par["session"]=x.session
+            par["name"]=x.name
+            par["instance"]=x.instance
+            r_services=rc_request.executeCMD(x.host,x.port,"/REMOVE",par)
+
+        for x in self.registered:
+            if (req_session!=None and x.session!=req_session):
+                continue
+            if (x.name=="evb_builder"):
+                continue;
+            if (x.name=="lyon_mbmdcc"):
+                continue;
+            print("removing Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state," Session :",x.session," Name : ",x.name," Instance ",x.instance )
+            par={}
+            par["session"]=x.session
+            par["name"]=x.name
+            par["instance"]=x.instance
+            r_services=rc_request.executeCMD(x.host,x.port,"/REMOVE",par)
+        #  One loop for evb
+        for x in self.registered:
+            if (req_session!=None and x.session!=req_session):
+                continue
+            if (x.name!="evb_builder" ):
+                continue;
+            print("removing Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state," Session :",x.session," Name : ",x.name," Instance ",x.instance )
+            par={}
+            par["session"]=x.session
+            par["name"]=x.name
+            par["instance"]=x.instance
+            r_services=rc_request.executeCMD(x.host,x.port,"/REMOVE",par)
+        # PURGE
+        self.purge()
+        if (req_session!= None):
+            self.session_update({"session":req_session,"state":"DEAD"})
+        self.session_purge()
+        return
+    def update_status(self,donotaccess=False):
+        self.process_list= self.list()
+        #print("process  list: ",self.process_list)
+        self.session_list=self.session_list()
+        #print("session  list: ",self.session_list)
+        self.registered=[]
+        if (self.process_list["REGISTERED"]!= None):
+            for x in self.process_list["REGISTERED"]:
+                #print(x)
+                self.registered.append(strip_pns_string(x))
+
+        #xf=None
+        if (donotaccess):
+            return
+        for x in self.registered:
+            #print("Host:",x.host,"Port :",x.port,"Path :",x.path,"State :",x.state)
+            rep=json.loads(rc_request.executeCMD(x.host,x.port,x.path+"INFO",None))
+            if ( 'error' in rep):
+                print(rep)
+                x.state="DEAD"
+                par={}
+                par["host"]=x.host
+                par["port"]=x.port
+                par["path"]=x.path
+                par["state"]=x.state
+                self.update(par)
+            else:
+                if (rep["STATE"]!= x.state):
+                    print(rep["STATE"]," found different from store one",x.state)
+                    x.state=rep["STATE"]
+

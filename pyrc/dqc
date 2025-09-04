@@ -1,0 +1,350 @@
+#!/usr/bin/env python3
+
+
+import os
+import json
+import time
+import argparse
+import rc_control as crc
+import rc_services as sac
+import rc_pns 
+import MongoJob as mg
+import sys
+
+
+parser = argparse.ArgumentParser()
+
+# configure all the actions
+grp_action = parser.add_mutually_exclusive_group()
+# JOB Control
+
+grp_action.add_argument('--jc-destroy', action='store_true',
+                        help='delete all registered services and the session (--name for a given application)')
+grp_action.add_argument('--jc-info', action='store_true',
+                        help='List all services and parameters')
+grp_action.add_argument('--jc-pns-list', action='store_true',
+                        help='List all services in PNS (--name session for a given session)')
+grp_action.add_argument('--jc-pns-session', action='store_true',
+                        help='List all session in PNS ')
+# DAQ preparation
+# Running
+grp_action.add_argument('--daq-restart', action='store_true',
+                        help='Restart all PMDAQ daemons')
+grp_action.add_argument('--daq-initialise', action='store_true',
+                        help='Initialise DAQ, data source discovery and Builder final configuration')
+grp_action.add_argument('--daq-register', action='store_true',
+                        help='Ensure registration of all services and Print them')
+grp_action.add_argument('--daq-configure', action='store_true',
+                        help=' Configure FDAQ, front end ASICs configuration')
+grp_action.add_argument('--daq-startrun', action='store_true',
+                        help=' start the run')
+grp_action.add_argument('--daq-stoprun', action='store_true',
+                        help=' stop the run')
+grp_action.add_argument('--daq-destroy', action='store_true',
+                        help='destroy the readout, back to the CREATED state')
+# Status
+grp_action.add_argument('--daq-status', action='store_true',
+                        help=' display DAQ status of all processes')
+grp_action.add_argument('--daq-tdcstatus', action='store_true',
+                        help=' display DAQ status of all FEBCMS TDC')
+grp_action.add_argument('--daq-evbstatus', action='store_true',
+                        help=' display event builder status')
+# Actions
+grp_action.add_argument('--daq-downloaddb', action='store_true',
+                        help='download the dbstate specified in --dbstate=state --version=num')
+
+grp_action.add_argument('--dif-ctrlreg', action='store_true',
+                        help=' Send CTRLREG to DIFMANAGER --ctrlreg=ctrl')
+# FEBV1 actions
+grp_action.add_argument('--feb-resettdc', action='store_true',
+                        help=' Send Reset to all FEB TDC')
+grp_action.add_argument('--feb-calibdac', action='store_true',
+                        help='Start a PETIROC calibdac run')
+grp_action.add_argument('--feb-scurve', action='store_true',
+                        help='Start a PETIROC scurve run')
+grp_action.add_argument('--feb-setvth', action='store_true',
+                        help='change the VTHTIME threshold of PETIROC2 and reconfigure chips with -vth=xxx')
+grp_action.add_argument('--feb-setmask', action='store_true',
+                        help='change the MASK of PETIROC2reconfigure chips with -mask=xxx')
+grp_action.add_argument('--feb-settdcmode', action='store_true',
+                        help='change the trigger mode before starting the run with --value=1/0')
+grp_action.add_argument('--feb-settdcdelays', action='store_true',
+                        help='change the PETIROC mode before starting the run with --active=1-255, --dead=1-255 ')
+grp_action.add_argument('--feb-lutcalib', action='store_true',
+                        help='Calibrate --tdc=i --channel=k  is the total number of channels')
+grp_action.add_argument('--feb-lutmask', action='store_true',
+                        help='Set the LUT mask --tdc=i --mask=Hexadecimal mask --feb=febid')
+grp_action.add_argument('--feb-lutdump', action='store_true',
+                        help='Dump lut --tdc=i --channel=k ')
+# grp_action.add_argument('--histo-draw', action='store_true',
+#                        help='Draw histo --name=histo ')
+
+
+# TRIGGER MDCC
+grp_action.add_argument('--trig-status', action='store_true',
+                        help=' display trigger (MDCC) counter status')
+grp_action.add_argument('--trig-reset', action='store_true',
+                        help=' reset trigger (MDCC) counter')
+grp_action.add_argument('--trig-pause', action='store_true',
+                        help=' trigger (MDCC) soft veto')
+grp_action.add_argument('--trig-resume', action='store_true',
+                        help=' release trigger (MDCC) soft veto ')
+grp_action.add_argument('--ecal-pause', action='store_true',
+                        help=' (Obsolete) Ecal soft veto')
+grp_action.add_argument('--ecal-resume', action='store_true',
+                        help=' (Obsolete) release Ecal soft veto')
+grp_action.add_argument('--trig-spillregister', action='store_true',
+                        help=' set spill register  with --value=nc ')
+grp_action.add_argument('--trig-spillon', action='store_true',
+                        help=' set spill nclock on with --clock=nc (20ns)')
+grp_action.add_argument('--trig-spilloff', action='store_true',
+                        help=' set spill nclock off with --clock=nc (20ns)')
+grp_action.add_argument('--trig-calibcount', action='store_true',
+                        help=' set the value of the calibcount (FEB calibration) register --value=xx ')
+grp_action.add_argument('--trig-beam', action='store_true',
+                        help=' reload calib (FEB calibration)  ')
+
+grp_action.add_argument('--trig-rearm', action='store_true',
+                        help=' reload calib (FEB calibration)  ')
+grp_action.add_argument('--trig-setregister', action='store_true',
+                        help=' set the value of the MDCC register --value=xx --address=yy')
+grp_action.add_argument('--trig-getregister', action='store_true',
+                        help=' get the value of the MDCC register  --address=yy')
+grp_action.add_argument('--trig-tdcreset', action='store_true',
+                        help=' hard reset of TDC (FEB) counters')
+
+
+# Arguments
+parser.add_argument('--config', action='store', dest='config',
+                    default=None, help='json config file')
+parser.add_argument('--dbstate', action='store', default=None,
+                    dest='dbstate', help='set the dbstate')
+parser.add_argument('--dbversion', action='store', type=int,
+                    dest='dbversion', default=None, help='DB state version')
+
+parser.add_argument('--clock', action='store', type=int, default=None,
+                    dest='clock', help='set the number of 20 ns clock')
+parser.add_argument('--directory', action='store', type=str,
+                    dest='directory', default=None, help='shm publisher directory')
+parser.add_argument('--vth', action='store', type=int,
+                    default=None, dest='vth', help='set the vth for chips')
+parser.add_argument('--gain', action='store', type=int,
+                    default=None, dest='gain', help='set the gain for chips')
+
+parser.add_argument('--tdc', action='store', type=int,
+                    default=None, dest='tdc', help='set the tdc instance')
+
+parser.add_argument('--channel', action='store', type=int,
+                    default=None, dest='channel', help='set the channel number')
+
+parser.add_argument('--spillon', action='store', type=int,
+                    default=None, dest='spillon', help='spill on')
+parser.add_argument('--spilloff', action='store', type=int,
+                    default=None, dest='spilloff', help='spill off')
+parser.add_argument('--step', action='store', type=int,
+                    default=None, dest='step', help='Scurve step')
+parser.add_argument('--first', action='store', type=int,
+                    default=None, dest='first', help='Scurve low vth')
+parser.add_argument('--last', action='store', type=int,
+                    default=None, dest='last', help='Scurve high vth')
+
+# Job
+parser.add_argument('--lines', action='store', type=int, default=None,
+                    dest='lines', help='set the number of lines to be dump')
+parser.add_argument('--host', action='store', dest='host',
+                    default=None, help='host for log')
+parser.add_argument('--name', action='store', dest='name',
+                    default=None, help='application name')
+parser.add_argument('--jobname', action='store',
+                    dest='jobname', default=None, help='job name')
+parser.add_argument('--jobpid', action='store', type=int,
+                    dest='jobpid', default=None, help='job pid')
+parser.add_argument('--value', action='store', type=int,
+                    dest='value', default=None, help='value to pass')
+parser.add_argument('--address', action='store', type=int,
+                    dest='address', default=None, help='address to pass')
+parser.add_argument('--active', action='store', type=int,
+                    dest='active', default=None, help='active time of Petiroc')
+parser.add_argument('--dead', action='store', type=int,
+                    dest='dead', default=None, help='dead time of Petiroc')
+parser.add_argument('--asic', action='store', type=int,
+                    dest='asic', default=None, help='asic header of Petiroc')
+parser.add_argument('--feb', action='store', type=int,
+                    dest='feb', default=None, help='FEB id')
+parser.add_argument('-v', '--verbose', action='store_true', dest='verbose',
+                    default=False, help='Raw Json output')
+
+parser.add_argument('--comment', action='store', default=None,
+                    dest='comment', help=' Comment for start run')
+
+parser.add_argument('--mask', action='store', dest='mask',
+                    default=None, help='Hexadecimal string mask')
+
+parser.add_argument('-M', '--Method', action='store', dest='method',
+                    default=None, help='Command name')
+parser.add_argument('-A', '--Application', action='store', dest='application',
+                    default=None, help='Application name')
+parser.add_argument('-P', '--Parameter', action='store', dest='parameter',
+                    default=None, help='parameter set')
+parser.add_argument('-u', '--url', action='store', dest='url',
+                    default=None, help='url for daq-restart command')
+
+account = os.getenv("MGDBLOGIN", "NONE")
+if (account == "NONE"):
+    print("The ENV varaible MGDBLOGIN=user/pwd@host:port@dbname mut be set")
+    exit(0)
+
+config = os.getenv("DAQMONGO", "NONE")
+file_config=None
+session_name=None
+pm_hosts=[]
+
+if (config == "NONE"):
+    print("The ENV varaible DAQMONGO=name:version must be set")
+    exit(0)
+else:
+    w=mg.instance()
+    #print(config.split(':')[0],config.split(':')[1],True)
+    w.downloadConfig(config.split(':')[0],int(config.split(':')[1]),True)
+    file_config="/dev/shm/mgjob/%s_%s.json" % (config.split(':')[0],config.split(':')[1])
+    #exit(0)
+    session_name=config.split(':')[0]
+    j_sess=json.loads(open(file_config).read())
+    for x in j_sess["apps"]:
+        sh="http://%s:%d" % (x["host"],x["port"])
+        if (not sh in pm_hosts):
+            pm_hosts.append(sh)
+
+if len(sys.argv) == 1:
+    parser.print_help(sys.stderr)
+    sys.exit(1)
+results = parser.parse_args()
+
+if(results.daq_restart):
+    if (results.url==None):
+        for x in pm_hosts:
+            print(x+"/EXIT will be called")
+            sac.executeRequest(x+"/EXIT")
+        # clear PNS
+        pns_host=os.getenv("PNS_NAME","NONE")
+        if (pns_host == "NONE"):
+            print("The ENV varaible PNS_NAME mut be set")
+            exit(0)
+        pnsurl="http://"+pns_host+":8888/PNS/CLEAR"
+        sac.executeRequest(pnsurl)
+    else:
+        print(results.url+"/EXIT will be called")
+        sac.executeRequest(results.url+"/EXIT")
+
+    time.sleep(10)
+    
+    exit(0)
+
+
+# PNS access
+fpns=rc_pns.pns_access()
+
+
+# fdc.updateInfo(True,True)
+
+
+# analyse the command
+lcgi = {}
+r_cmd = None
+
+if(results.pns_remove):
+    fpns.update_status()
+    if (results.name!=None):
+        fpns.remove(results.name)
+    else:
+        fpns.remove(session_name)
+    exit(0)
+elif(results.pns_list):
+    fpns.update_status()
+    if (results.name!=None):
+        rep=fpns.list(results.name)
+        print(rep)
+    else:
+        print(session_name)
+        rep=fpns.list(session_name)
+        print(rep)
+    exit(0)
+elif(results.pns_session):
+    fpns.update_status()
+    rep=fpns.session_list()
+    print(rep)
+    exit(0)
+elif(results.pns_info):
+    fpns.update_status()
+    fpns.Print(session_name,True)
+    exit(0)
+# DAQ
+fdc = crc.rc_control(file_config)
+if(results.daq_register):
+    fdc.session.Print(True)
+    exit(0)
+elif(results.daq_initialise):
+    delay=0
+    if (results.dead!=None):
+        fdc.reset=results.dead
+        fdc.initialise()
+    else:
+        fdc.initialise()
+    exit(0)
+elif(results.daq_configure):
+    fdc.configure()
+    exit(0)
+elif(results.daq_status):
+    if (fdc.state!="CREATED"):
+        fdc.BuilderStatus(True)
+        fdc.SourceStatus(True)
+        fdc.TriggerStatus(True)
+    exit(0)
+elif(results.source_status):
+    if (fdc.state!="CREATED"):
+        fdc.SourceStatus(True)
+    exit(0)
+elif(results.builder_status):
+    if (fdc.state!="CREATED"):
+        fdc.BuilderStatus(True)
+    exit(0)
+elif(results.trigger_status):
+    if (fdc.state!="CREATED"):
+        fdc.TriggerStatus(True)
+    exit(0)
+elif(results.daq_startrun):
+    if (results.comment != None):
+        fdc.comment=results.comment
+        fdc.start()
+    else:
+        fdc.start()
+    exit(0)
+elif(results.daq_stoprun):
+    fdc.stop()
+    exit(0)
+elif(results.daq_destroy):
+    fdc.destroy()
+    exit(0)
+
+elif(results.daq_evbstatus):
+    sr = fdc.BuilderStatus()
+    if (not results.verbose):
+        print(sr)
+    exit(0)
+    
+elif(results.trig_reset):
+    fdc.mdcc_Reset()
+    exit(0)
+elif(results.trig_pause):
+    fdc.mdcc_Pause()
+    exit(0)
+elif(results.trig_resume):
+    fdc.mdcc_Resume()
+    exit(0)
+elif (results.method!=None):
+    param=json.loads(results.parameter)
+    rep =fdc.processCommand(results.method,results.application,param)
+    if (results.verbose):
+        print(rep)
+    exit(0)
+

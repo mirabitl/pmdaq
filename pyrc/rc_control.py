@@ -26,7 +26,7 @@ class rc_control(rc_interface.daqControl):
         """
         super().__init__(config)
         ##reset time
-        self.reset = 0 
+        self.reset = 0
         ## Comment for a run
         self.comment = "Not yet set"
         ## Setup name
@@ -81,7 +81,7 @@ class rc_control(rc_interface.daqControl):
                     nalive=False
                     for thr in lt:
                         nalive=nalive or thr.is_alive()
-                        logging.debug("%s %d " % (thr.getName() ,thr.is_alive()))                    
+                        logging.debug("%s %d " % (thr.getName() ,thr.is_alive()))
                         thr.join(1)
                     alive=nalive
             for c in cmd_list:
@@ -89,10 +89,10 @@ class rc_control(rc_interface.daqControl):
                 for a in self.session.apps[app_name]:
                     s = json.loads(a.sendCommand(c,msg))
                     rep[f"{app_name}_{a.instance}_{c}"]=s
-                
+
         self.daq_answer = json.dumps(rep)
         self.storeState()
-    
+
     def build_message(self,app_name,transition_name):
         m={}
         if (app_name == "evb_builder" and transition_name == "START"):
@@ -101,12 +101,39 @@ class rc_control(rc_interface.daqControl):
 
             jnrun = self.db.getRun(self.experiment, self.comment)
             m['run'] = jnrun['run']
-        return m 
+        return m
+    def set_parameters(self):
+        rep={}
+        if (self.daq_params_file == "UNKNOWN"):
+                self.daq_params_file = os.getenv("DAQ_PARAMS_FILE", "UNKNOWN")
+        if (self.daq_params_set == "UNKNOWN:UNKNOWN"):
+                self.daq_params_set = os.getenv("DAQ_PARAMS_SET", "UNKNOWN:UNKNOWN")
+        if (self.daq_params_file == "UNKNOWN" or self.daq_params_set == "UNKNOWN:UNKNOWN"):
+            return rep
+        j_params=json.loads(open(self.daq_params_file).read())
+        pset=self.daq_params_set.split(":")
+        if (not pset[0] in j_params["setup"].keys()):
+            print(f"Missing experiment {pset[0]} in file {self.daq_params_file} ({j_params["setup"].keys()})")
+            return rep
+        if (not pset[1] in j_params["setup"][pset[0]].keys()):
+            print(f"Missing parameters set {pset[1]} in {pset[0]} experiment in the file {self.daq_params_file} ({j_params["setup"].keys()})")
+            return rep
+        p_apps=j_params["setup"][pset[0]][pset[1]]["apps"]
+        for x in p_apps:
+            if not x["name"] in self.session.apps.keys():
+                continue
+            for a in self.session.apps[x["name"]]:
+                    s = json.loads(a.sendCommand("SETPARAMS",x["params"]))
+                    rep[f"{x["name"]}_{a.instance}"]=s
+        return rep
+        
+
     # Initialising implementation
 
     def daq_initialising(self):
        self.process_transition("INITIALISE")
     def daq_configuring(self):
+       self.set_parameters()
        self.process_transition("CONFIGURE")
     def daq_stopping(self):
        self.process_transition("STOP")
@@ -121,17 +148,17 @@ class rc_control(rc_interface.daqControl):
         @return string with json content of the printout (verbose=False)
         """
         pn=None
-        if ("lyon_mdcc" in self.session.apps): 
+        if ("lyon_mdcc" in self.session.apps):
             pn="lyon_mdcc"
-        if ("lyon_mbmdcc" in self.session.apps): 
+        if ("lyon_mbmdcc" in self.session.apps):
             pn="lyon_mbmdcc"
-        if ("lyon_ipdc" in self.session.apps): 
+        if ("lyon_ipdc" in self.session.apps):
             pn="lyon_ipdc"
-        if ("lyon_liboard" in self.session.apps): 
+        if ("lyon_liboard" in self.session.apps):
             pn="lyon_liboard"
         if (pn==None):
             print("""
-            \t \t ****************************    
+            \t \t ****************************
             \t \t ** No Trigger information **
             \t \t ****************************
             """)
@@ -144,7 +171,7 @@ class rc_control(rc_interface.daqControl):
             return json.dumps(mr)
         else:
             print("""
-            \t \t *************************    
+            \t \t *************************
             \t \t ** Trigger information **
             \t \t *************************
             """)
@@ -156,7 +183,7 @@ class rc_control(rc_interface.daqControl):
                             print("\t \t %s %x" % (k,v))
                         else:
                             print("\t \t ",k,v)
-        
+
     def BuilderStatus(self, verbose=False,mqtt=True):
         """! Print out of event builder status
         @param verbose If true print out results otherwise return string with json content of the printout
@@ -166,7 +193,7 @@ class rc_control(rc_interface.daqControl):
         if (not "evb_builder" in self.session.apps):
             print("No Event builder found in thi session ",self.session.name())
         rep = {}
-        
+
         for s in self.session.apps["evb_builder"]:
             r = {}
             r['run'] = -1
@@ -192,7 +219,7 @@ class rc_control(rc_interface.daqControl):
         if (not verbose):
             return json.dumps(rep)
         print("""
-        \t \t *************************    
+        \t \t *************************
         \t \t ** Builder information **
         \t \t *************************
         """)
@@ -207,12 +234,12 @@ class rc_control(rc_interface.daqControl):
                             for y in xv:
                                 print("\t \t ID %x => %d " % (int(y['id'].split('-')[2]), y['received']))
 
-  
+
     def SourceStatus(self, verbose=False):
         """!
         Print out of data source status
         @param verbose if True only printout False return a JSON string of the sources status
-        @return JSON string of the sources status 
+        @return JSON string of the sources status
         """
         rep = {}
         for k, v in self.session.apps.items():
@@ -232,7 +259,7 @@ class rc_control(rc_interface.daqControl):
                     rep["%s_%d_SHM" % (s.host, s.instance)] = [cc]
                 else:
                     rep["%s_%s_%d" % (s.host,k, s.instance)] = mr
-                    
+
         for k, v in self.session.apps.items():
             if (k != "lyon_febv2"):
                 continue
@@ -266,7 +293,7 @@ class rc_control(rc_interface.daqControl):
                 continue
             for s in v:
                 mr = json.loads(s.sendCommand("STATUS", {}))
-                
+
                 if (mr['STATUS'] != "FAILED"):
                     rep["%s_%s_%d" % (s.host,k, s.instance)
                         ] = mr["DIFLIST"]
@@ -314,7 +341,7 @@ class rc_control(rc_interface.daqControl):
             return json.dumps(rep)
         # Verbose Printout
         print("""
-        \t \t ******************************    
+        \t \t ******************************
         \t \t ** Data sources information **
         \t \t ******************************
         """)
@@ -326,7 +353,7 @@ class rc_control(rc_interface.daqControl):
     # RESTART
     def restart(self,url=None):
         """!
-        Send an EXIT command to all pmdaq daemon 
+        Send an EXIT command to all pmdaq daemon
         @param url If not None send EXIT only to this url
         @warning It is a real restarting of the whole DAQ
         """
