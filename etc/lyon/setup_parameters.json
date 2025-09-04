@@ -2,6 +2,7 @@
     "setups":
     {
 	"PULSALYS2021":{
+	    "comment":"Parameters tuned for 8 Tricots chambers at Dome in 2025. Auto-triggered",
 	    "mode":{
 		"normal":
 		{
@@ -12,6 +13,7 @@
 	    }
 	},
 	"TEL_CMS_1022":{
+	    "comment":"FEBV2+telescope setup at Dome in 2025. The mode=telescope correspond to Telescope only MbMdcc settings",
 	    "mode":{
 		"normal":
 		{
