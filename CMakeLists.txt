@@ -31,6 +31,18 @@ endif()
 
 include(CMake.defs)
 
+
+# Macro de debug pour afficher toutes les variables correspondant à un motif
+macro(debug_var pattern)
+    get_cmake_property(_vars VARIABLES)
+    foreach(var ${_vars})
+        if(var MATCHES "${pattern}")
+            message(STATUS "DEBUG: ${var} = ${${var}}")
+        endif()
+    endforeach()
+endmacro()
+
+
 message(${CMAKE_SYSTEM_PROCESSOR})
 add_subdirectory(pns)
 add_subdirectory(evb)
@@ -155,9 +167,12 @@ file(GLOB DAEMON_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/bin/*daemon"
      )
    
+
 file(GLOB ETC_TARGET
-     "${CMAKE_CURRENT_SOURCE_DIR}/etc/*"
-     )
+    "${CMAKE_CURRENT_SOURCE_DIR}/etc/*.conf"
+    "${CMAKE_CURRENT_SOURCE_DIR}/etc/*.xml"
+    "${CMAKE_CURRENT_SOURCE_DIR}/etc/lyon/*.json"
+)
 
 file(GLOB DAQJS_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/web/*"
@@ -165,6 +180,8 @@ file(GLOB DAQJS_TARGET
 file(GLOB PICOJS_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/mqtt/pico/web/*"
      )
+
+debug_var("ETC_TARGET")
 
 install(FILES ${DAQJS_TARGET}  DESTINATION htdocs/webdaq )
 install(FILES ${PICOJS_TARGET}  DESTINATION htdocs/pico )
