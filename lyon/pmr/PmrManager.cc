@@ -583,6 +583,18 @@ web::json::value PmrManager::build_status()
     }
   return array_slc;
 }
+void  PmrManager::c_dslist(http_request m)
+{
+  auto par = json::value::object();
+  int32_t rc = 1;
+
+  web::json::value array_slc=build_status();
+  par["STATUS"] = web::json::value::string(U("DONE"));
+  par["DSLIST"] = array_slc;
+  Reply(status_codes::OK, par);
+
+  return;
+}
 void PmrManager::c_status(http_request m)
 {
   auto par = json::value::object();
@@ -777,6 +789,7 @@ void PmrManager::initialise()
   this->addTransition("DESTROY", "CONFIGURED", "CREATED", std::bind(&PmrManager::destroy, this, std::placeholders::_1));
 
   this->addCommand("STATUS", std::bind(&PmrManager::c_status, this, std::placeholders::_1));
+  this->addCommand("DSLIST", std::bind(&PmrManager::c_dslist, this, std::placeholders::_1));
   this->addCommand("SETTHRESHOLDS", std::bind(&PmrManager::c_setthresholds, this, std::placeholders::_1));
   this->addCommand("SHIFTTHRESHOLDS", std::bind(&PmrManager::c_shiftthresholds, this, std::placeholders::_1));
   this->addCommand("SETPAGAIN", std::bind(&PmrManager::c_setpagain, this, std::placeholders::_1));

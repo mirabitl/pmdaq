@@ -23,6 +23,8 @@ public:
   bool useShm();
   void setShmDirectory(std::string shmd); 
   void setIds(uint32_t did,uint32_t sid);
+  inline uint32_t detectorId(){return _detectorId;}
+  inline uint32_t sourceId(){return _sourceId;}
 private:
   std::string _directory;
   std::string _location;

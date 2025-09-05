@@ -142,20 +142,37 @@ class rc_control(rc_interface.daqControl):
     def daq_starting(self):
        self.process_transition("START")
 
+    def TriggerCommand(self,command,param={}):
+        """! Send command to trigger board (mdcc,mbmdcc, ipdc,liboard) status
+        """
+        pn=None
+        tboards=["lyon_mdcc","lyon_mbmdcc","lyon_ipdc","lyon_liboard"]
+        for b in tboards:
+            if b in self.session.apps:
+                pn=b
+                break
+        if (pn==None):
+            print("""
+            \t \t ****************************
+            \t \t ** No Trigger information **
+            \t \t ****************************
+            """)
+            return
+        mr = json.loads(self.processCommand(command,pn,param))
+        
+        return json.dumps(mr)
+
     def TriggerStatus(self,verbose=False):
         """! Print out of trigger board (mdcc,mbmdcc, ipdc,liboard) status
         @param verbose If true print out results otherwise return string with json content of the printout
         @return string with json content of the printout (verbose=False)
         """
         pn=None
-        if ("lyon_mdcc" in self.session.apps):
-            pn="lyon_mdcc"
-        if ("lyon_mbmdcc" in self.session.apps):
-            pn="lyon_mbmdcc"
-        if ("lyon_ipdc" in self.session.apps):
-            pn="lyon_ipdc"
-        if ("lyon_liboard" in self.session.apps):
-            pn="lyon_liboard"
+        tboards=["lyon_mdcc","lyon_mbmdcc","lyon_ipdc","lyon_liboard"]
+        for b in tboards:
+            if b in self.session.apps:
+                pn=b
+                break
         if (pn==None):
             print("""
             \t \t ****************************
@@ -364,138 +381,4 @@ class rc_control(rc_interface.daqControl):
         else:
             print(url+"/EXIT will be called")
             sac.executeRequest(url+"/EXIT")
-    # FEBV1 specific
-
-    def set6BDac(self, dac):
-        """!
-        FEBV1 only SET6BDAC
-        @param value DAC6B value for all ASICs
-        @return processCommand answer
-        """
-        param = {}
-        param["value"] = dac
-        return self.processCommand("SET6BDAC", "lyon_febv1", param)
-
-    def cal6BDac(self, mask, shift):
-        """!
-        FEBV1 only CAL6BDAC
-        @param shift DAC6B shift for all ASICs
-        @param mask Channel mask
-        @return processCommand answer
-        """
-        param = {}
-        param["shift"] = shift
-        param["mask"] = int(mask, 16)
-        return self.processCommand("CAL6BDAC", "lyon_febv1", param)
-
-    def setVthTime(self, Threshold):
-        """!
-        FEBV1 only SETVTHTIME
-        @param value DAC10B VTH
-        @return processCommand answer
-        """
-        param = {}
-        param["value"] = Threshold
-        return self.processCommand("SETVTHTIME", "lyon_febv1", param)
-
-    def setTdcMode(self, mode):
-        """!
-        FEBV1 only SETMODE
-        @param value 0/1 TDC mode
-        @return processCommand answer
-        """
-        param = {}
-        param["value"] = mode
-        return self.processCommand("SETMODE", "lyon_febv1", param)
-
-    def setTdcDelays(self, active, dead):
-        """!
-        FEBV1 only SETDELAY/DURATION
-        @param active Dealy active value
-        @param dead Delay length  value
-        @return dictionnary
-        """
-        param = {}
-        param["value"] = active
-        r = {}
-        r["active"] = json.loads(self.processCommand(
-            "SETDELAY", "lyon_febv1", param))
-        param["value"] = active
-        r = {}
-        r["dead"] = json.loads(self.processCommand(
-            "SETDURATION", "lyon_febv1", param))
-    def setTdcMask(self, channelmask, asicmask):
-        """!
-        FEBV1 only SETMASK
-        @param channelmask 32 bits mask
-        @param asicmask 1/2/3 ASIC mask
-        @return processCommand answer
-        """
-        param = {}
-        param["value"] = channelmask
-        param["asic"] = asicmask
-        return self.processCommand("SETMASK", "lyon_febv1", param)
-
-    def tdcLUTCalib(self, instance, channel):
-        """!
-        FEBV1 only LUT calibration
-        @param channel TDC channel to scan
-        @param instance FEBV1Manager Instance
-        @return dictionnary answer
-        """
-        if (not "lyon_febv1" in self.session.apps):
-            return '{"answer":"NOlyon_febv1","status":"FAILED"}'
-        if (len(self.session.apps["lyon_febv1"]) <= instance):
-            return '{"answer":"InvalidInstance","status":"FAILED"}'
-
-        tdc = self.session.apps["lyon_febv1"][instance]
-        n = (1 << channel)
-        param = {}
-        param["value"] = "%x" % n
-        param["value"] = channel
-        r = {}
-        r["cal_mask"] = json.loads(tdc.sendCommand("CALIBMASK", param))
-        r["cal_status"] = json.loads(tdc.sendCommand("CALIBSTATUS", param))
-        return json.dumps(r)
-
-    def tdcLUTDump(self, instance, channel):
-        """!
-        FEBV1 only Dump Look up Table
-        @param channel TDC channel to scan
-        @param instance FEBV1Manager Instance
-        @return dictionnary answer
-        """
-        if (not "lyon_febv1" in self.session.apps):
-            return '{"answer":"NOlyon_febv1","status":"FAILED"}'
-        if (len(self.session.apps["lyon_febv1"]) <= instance):
-            return '{"answer":"InvalidInstance","status":"FAILED"}'
-
-        tdc = self.session.apps["lyon_febv1"][instance]
-        param = {}
-        param["value"] = channel
-        r = {}
-        r["lut_%d" % channel] = json.loads(tdc.sendCommand("GETLUT", param))
-        return json.dumps(r)
-
-    def tdcLUTMask(self, instance, mask, feb):
-        """!
-        FEBV1 only SET6BDSet LUT Mask
-        @param instance FEBV1Manager Instance
-        @param TDC channel mask
-        @param feb Feb Id
-        @return dictionnary answer
-        """
-        if (not "lyon_febv1" in self.session.apps):
-            return '{"answer":"NOlyon_febv1","status":"FAILED"}'
-        if (len(self.session.apps["lyon_febv1"]) <= instance):
-            return '{"answer":"InvalidInstance","status":"FAILED"}'
-
-        tdc = self.session.apps["lyon_febv1"][instance]
-        param = {}
-        param["value"] = mask
-        param["feb"] = feb
-        r = {}
-        r["test_mask"] = json.loads(tdc.sendCommand("TESTMASK", param))
-        r["cal_status"] = json.loads(tdc.sendCommand("CALIBSTATUS", param))
-        return json.dumps(r)
-
+    

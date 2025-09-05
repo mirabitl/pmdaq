@@ -36,6 +36,8 @@ public:
 
   /// STATUS Command handler
   void c_status(http_request m);
+  /// DSLIST Command handler
+  void c_dslist(http_request m);
 
   /// DOWNLOADDB Command handler
   void c_add_tokens(http_request m);

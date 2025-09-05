@@ -38,6 +38,7 @@ void shm_data_source::initialise()
   this->addTransition("DESTROY", "INITIALISED", "PREINITIALISED", std::bind(&shm_data_source::destroy, this, std::placeholders::_1));
 
   this->addCommand("STATUS", std::bind(&shm_data_source::c_status, this, std::placeholders::_1));
+  this->addCommand("DSLIST", std::bind(&shm_data_source::c_dslist, this, std::placeholders::_1));
 
   this->addCommand("ADDTOKENS", std::bind(&shm_data_source::c_add_tokens, this, std::placeholders::_1));
 
@@ -163,9 +164,30 @@ web::json::value shm_data_source::decode_spyne_answer(web::json::value v,std::st
   return ret;
 
 }
+void shm_data_source::c_dslist(http_request m)
+{
+  PM_INFO(_logShmDS, "DSLIST CMD called ");
+  auto par = json::value::object();
+
+  auto jrep = this->post("STATUS");
+  auto w_rep=decode_spyne_answer(jrep,"STATUS");
+
+  _detId = w_rep.as_object()["DETID"].as_integer();
+  _sourceId = w_rep.as_object()["SOURCEID"].as_integer();
+
+  web::json::value array_slc;
+  web::json::value ds;
+  ds["detid"]=_detId;
+  ds["id"] =_sourceId;
+  ds["gtc"]=w_rep.as_object()["STATUS"];
+  array_slc[0]=ds;
+  par["STATUS"] = web::json::value::string(U("DONE"));
+  par["DSLIST"] = array_slc;
+  Reply(status_codes::OK, par);  
+}
 void shm_data_source::c_status(http_request m)
 {
-  PM_INFO(_logShmDS, "Status CMD called ");
+  PM_DEBUG(_logShmDS, "STATUS CMD called ");
   auto par = json::value::object();
 
   auto jrep = this->post("STATUS");
@@ -180,7 +202,6 @@ void shm_data_source::c_status(http_request m)
   mqtt_publish("status",par);
   Reply(status_codes::OK, par);
 }
-
 void shm_data_source::c_add_tokens(http_request m)
 {
   PM_INFO(_logShmDS, "Add tokens called ");

@@ -97,6 +97,7 @@ public:
   void stop(http_request m);
   void destroy(http_request m);
 
+  void c_dslist(http_request m);
   void c_status(http_request m);
   void c_downloadDB(http_request m);
   void c_setchannelmask(http_request m);

@@ -38,6 +38,7 @@ void Febv2Manager::initialise()
   this->addTransition("DESTROY", "INITIALISED", "PREINITIALISED", std::bind(&Febv2Manager::destroy, this, std::placeholders::_1));
 
   this->addCommand("STATUS", std::bind(&Febv2Manager::c_status, this, std::placeholders::_1));
+  this->addCommand("DSLIST", std::bind(&Febv2Manager::c_dslist, this, std::placeholders::_1));
 
   this->addCommand("DOWNLOADDB", std::bind(&Febv2Manager::c_downloadDB, this, std::placeholders::_1));
 
@@ -147,6 +148,27 @@ web::json::value Febv2Manager::decode_spyne_answer(web::json::value v, std::stri
   auto s_v = v.as_object()[s1][s2][0].as_string();
   web::json::value ret = json::value::parse(s_v);
   return ret;
+}
+void Febv2Manager::c_dslist(http_request m)
+{
+  PM_INFO(_logFebv2, "DSLIST CMD called ");
+  auto par = json::value::object();
+
+  auto jrep = this->post("STATUS");
+  auto w_rep=decode_spyne_answer(jrep,"STATUS");
+
+  _detId = w_rep.as_object()["DETID"].as_integer();
+  _sourceId = w_rep.as_object()["SOURCEID"].as_integer();
+
+  web::json::value array_slc;
+  web::json::value ds;
+  ds["detid"]=_detId;
+  ds["id"] =_sourceId;
+  ds["gtc"]=w_rep.as_object()["STATUS"];
+  array_slc[0]=ds;
+  par["STATUS"] = web::json::value::string(U("DONE"));
+  par["DSLIST"] = array_slc;
+  Reply(status_codes::OK, par);  
 }
 void Febv2Manager::c_status(http_request m)
 {

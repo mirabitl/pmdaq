@@ -44,6 +44,7 @@ void Gricv0Manager::initialise()
   
   //this->addCommand("JOBLOG",std::bind(&Gricv0Manager::c_joblog,this,std::placeholders::_1));
   this->addCommand("STATUS",std::bind(&Gricv0Manager::c_status,this,std::placeholders::_1));
+  this->addCommand("DSLIST",std::bind(&Gricv0Manager::c_dslist,this,std::placeholders::_1));
   this->addCommand("RESET",std::bind(&Gricv0Manager::c_reset,this,std::placeholders::_1));
   this->addCommand("STARTACQ",std::bind(&Gricv0Manager::c_startacq,this,std::placeholders::_1));
   this->addCommand("STOPACQ",std::bind(&Gricv0Manager::c_stopacq,this,std::placeholders::_1));
@@ -146,7 +147,17 @@ void Gricv0Manager::c_status(http_request m)
 
 }
 
+void Gricv0Manager::c_dslist(http_request m)
+{
+  auto par = json::value::object();
 
+  PMF_DEBUG(_logGricv0, "DSLIST CMD called ");
+  par["STATUS"] = web::json::value::string(U("DONE"));
+  auto jl = build_status();
+
+  par["DSLIST"] = jl;
+  Reply(status_codes::OK, par);
+}
 
 void Gricv0Manager::c_startacq(http_request m)
 {
