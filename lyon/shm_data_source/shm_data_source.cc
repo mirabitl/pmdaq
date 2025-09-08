@@ -13,7 +13,7 @@
 #include <arpa/inet.h>
 #include "stdafx.hh"
 
-shm_data_source::shm_data_source() : _context(NULL), _running(false), g_mon(NULL), _dsData(NULL)
+shm_data_source::shm_data_source() : _context(NULL), _running(false), g_mon(NULL), _dsData(NULL),_udpUrl("")
 {
   ;
 }
@@ -212,7 +212,8 @@ void shm_data_source::c_add_tokens(http_request m)
   auto parcmd = json::value::object();
   parcmd["tokens"] = json::value::number(tokens);
   auto jrep=this->post("ADDTOKENS",parcmd);
-
+  if (_udpUrl.length()>1)
+    utils::sendCommand(_udpUrl, "ADDTOKENS", parcmd);
   par["TOKENS"] = json::value::number(tokens);
   Reply(status_codes::OK, par);
 }
@@ -273,6 +274,7 @@ void shm_data_source::fsm_initialise(http_request m)
 {
   auto par = json::value::object();
   PM_INFO(_logShmDS, "****** CMD: INITIALISING");
+  _udpUrl = utils::findUrl(session(), "lyon_udp_data_source", 0);
   // Send Initialise command
   auto jrep = this->post("/INITIALISE");
   auto w_rep=decode_spyne_answer(jrep,"INITIALISE");

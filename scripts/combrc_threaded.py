@@ -169,6 +169,14 @@ class combRC(pmdaqrc.pmdaqControl):
                 r["lyon_shm_data_source_%d" % x.instance] = s
                 print(s)
                 
+        if ("lyon_udp_data_source" in self.session.apps):
+            print("ON A VU DES UDP_DATA_SOURCE")
+            for x in self.session.apps["lyon_udp_data_source"]:
+                print("UDPDS INITIALISE")
+                s = json.loads(x.sendTransition("INITIALISE", m))
+                r["lyon_udp_data_source_%d" % x.instance] = s
+                print(s)
+                
         if ("lyon_pmr" in self.session.apps):
             #for x in self.session.apps["lyon_pmr"]:
             #    s = json.loads(x.sendTransition("SCAN", m))
@@ -271,6 +279,13 @@ class combRC(pmdaqrc.pmdaqControl):
                 print(rr)
                 #s = json.loads(x.sendTransition("CONFIGURE", m))
                 #r["lyon_shm_data_source_%d" % x.instance] = s
+        if ("lyon_udp_data_source" in self.session.apps):
+            for x in self.session.apps["lyon_udp_data_source"]:
+                rr=x.sendTransition("CONFIGURE", m)
+                print(rr)
+                #s = json.loads(x.sendTransition("CONFIGURE", m))
+                r["lyon_udp_data_source_%d" % x.instance] = rr
+
         if ("lyon_febv2" in self.session.apps):
             for x in self.session.apps["lyon_febv2"]:
                 rr=x.sendTransition("CONFIGURE", m)
@@ -370,6 +385,11 @@ class combRC(pmdaqrc.pmdaqControl):
             for x in self.session.apps["lyon_shm_data_source"]:
                 s = json.loads(x.sendTransition("STOP", m))
                 r["lyon_shm_data_source_%d" % x.instance] = s
+        if ("lyon_udp_data_source" in self.session.apps):
+            for x in self.session.apps["lyon_udp_data_source"]:
+                s = json.loads(x.sendTransition("STOP", m))
+                r["lyon_udp_data_source_%d" % x.instance] = s
+
 
         if ("lyon_febv2" in self.session.apps):
             for x in self.session.apps["lyon_febv2"]:
@@ -435,7 +455,11 @@ class combRC(pmdaqrc.pmdaqControl):
             for x in self.session.apps["lyon_shm_data_source"]:
                 s = json.loads(x.sendTransition("DESTROY", m))
                 r["lyon_shm_data_source_%d" % x.instance] = s
-        if ("lyon_febv2" in self.session.apps):
+        if ("lyon_udp_data_source" in self.session.apps):
+            for x in self.session.apps["lyon_udp_data_source"]:
+                s = json.loads(x.sendTransition("DESTROY", m))
+                r["lyon_udp_data_source_%d" % x.instance] = s
+         if ("lyon_febv2" in self.session.apps):
             for x in self.session.apps["lyon_febv2"]:
                 s = json.loads(x.sendTransition("DESTROY", m))
                 r["lyon_febv2_%d" % x.instance] = s
@@ -515,6 +539,10 @@ class combRC(pmdaqrc.pmdaqControl):
             for x in self.session.apps["lyon_shm_data_source"]:
                 s = json.loads(x.sendTransition("START", m))
                 r["lyon_shm_data_source_%d" % x.instance] = s
+        if ("lyon_udp_data_source" in self.session.apps):
+            for x in self.session.apps["lyon_udp_data_source"]:
+                s = json.loads(x.sendTransition("START", m))
+                r["lyon_udp_data_source_%d" % x.instance] = s
         if ("lyon_febv2" in self.session.apps):
             for x in self.session.apps["lyon_febv2"]:
                 s = json.loads(x.sendTransition("START", m))

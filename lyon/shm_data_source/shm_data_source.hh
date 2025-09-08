@@ -58,4 +58,5 @@ private:
   bool _running;
   std::string _shmPath;
   std::thread *g_mon;
+  std::string _udpUrl;
 };
