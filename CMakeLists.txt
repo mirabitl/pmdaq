@@ -151,6 +151,12 @@ target_link_libraries(scannet PRIVATE pmdaq ${PMDAQ_LIBS})
 file(GLOB SCRIPT_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/*.py"
      )
+file(GLOB PYRC_SCRIPT_TARGET
+     "${CMAKE_CURRENT_SOURCE_DIR}/pyrc/*.py"
+     )
+file(GLOB PYRC_TARGET
+     "${CMAKE_CURRENT_SOURCE_DIR}/pyrc/dqc"
+     )
 file(GLOB MG_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/mg*"
      )
@@ -172,6 +178,7 @@ file(GLOB ETC_TARGET
     "${CMAKE_CURRENT_SOURCE_DIR}/etc/*.conf"
     "${CMAKE_CURRENT_SOURCE_DIR}/etc/*.xml"
     "${CMAKE_CURRENT_SOURCE_DIR}/etc/lyon/*.json"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pyrc/etc/*.json"
 )
 
 file(GLOB DAQJS_TARGET
@@ -185,9 +192,9 @@ debug_var("ETC_TARGET")
 
 install(FILES ${DAQJS_TARGET}  DESTINATION htdocs/webdaq )
 install(FILES ${PICOJS_TARGET}  DESTINATION htdocs/pico )
-install(FILES ${SCRIPT_TARGET}  DESTINATION share )
+install(FILES ${SCRIPT_TARGET} ${PYRC_SCRIPT_TARGET} DESTINATION share )
 install(FILES ${ETC_TARGET} DESTINATION etc)
-install(FILES ${MG_TARGET} ${DAQWEB_TARGET} ${RC_TARGET} ${SC_TARGET} ${DAEMON_TARGET} DESTINATION bin)
+install(FILES ${MG_TARGET} ${DAQWEB_TARGET} ${RC_TARGET} ${PYRC_TARGET} ${SC_TARGET} ${DAEMON_TARGET} DESTINATION bin)
 
 
 install(TARGETS pmd scannet DESTINATION bin  ARCHIVE DESTINATION bin)

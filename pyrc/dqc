@@ -195,7 +195,7 @@ elif(results.daq_status):
     exit(0)
 elif(results.source_status):
     if (fdc.state!="CREATED"):
-        fdc.SourceStatus(True)
+        fdc.DataSourceStatus(True)
     exit(0)
 elif(results.builder_status):
     if (fdc.state!="CREATED"):

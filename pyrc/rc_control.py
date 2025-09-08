@@ -7,7 +7,7 @@ import json
 import os
 import logging
 import threading
-
+from tabulate import tabulate
 def pmrTransitionWorker(app,transition,res):
     """!thread pmr Transition worker function"""
     s = json.loads(app.sendTransition(transition, {}))
@@ -45,7 +45,7 @@ class rc_control(rc_interface.daqControl):
             if (not sh in self.pm_hosts):
                 self.pm_hosts.append(sh)
         ## Meta donnees
-        self.metadata=json.loads(open("/opt/pmdaq/pyrc/etc/rc_meta.json").read())
+        self.metadata=json.loads(open("/usr/local/pmdqa/etc/rc_meta.json").read())
     # daq
     def process_transition(self,transition_name):
         rep={}
@@ -367,6 +367,40 @@ class rc_control(rc_interface.daqControl):
             if (v != None):
                 for x in v:
                     print("\t \t", x)
+    def DataSourceStatus(self, verbose=False):
+        """!
+        Print out of data source status
+        @param verbose if True only printout False return a JSON string of the sources status
+        @return JSON string of the sources status
+        """
+        dslist=["lyon_shm_data_source","lyon_febv1","lyon_febv2","lyon_gricv0","lyon_gricv1","lyon_liboard","lyon_pmr"]
+        rep = {}
+        
+        for k, v in self.session.apps.items():
+            if (not k in dslist):
+                continue
+            for s in v:
+                mr = json.loads(s.sendCommand("DSLIST", {}))
+
+                if (mr['STATUS'] != "FAILED"):
+                    rep["%s_%s_%d" % (s.host,k, s.instance)
+                        ] = mr["DSLIST"]
+                else:
+                    rep["%s_%s_%d" % (s.host,k, s.instance)] = mr
+
+
+        if (not verbose):
+            return json.dumps(rep)
+        # Verbose Printout
+        print("""
+        \t \t ******************************
+        \t \t ** Data sources information **
+        \t \t ******************************
+        """)
+        for k, v in rep.items():
+            print(k)
+            if (v != None):
+                print(tabulate(v,headers="keys",tablefmt="simple"))
     # RESTART
     def restart(self,url=None):
         """!
