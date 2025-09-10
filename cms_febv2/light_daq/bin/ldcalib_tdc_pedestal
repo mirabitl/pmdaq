@@ -7,9 +7,9 @@ from pprint import pprint
 import numpy as np 
 from matplotlib import pyplot as plt
 
-from minidaq.fc7 import fc7_board
-from minidaq.feb import feb_v2_cycloneV
-from minidaq.tools import *
+
+import cms_irpc_feb_lightdaq as lightdaq
+
 import csv_register_access as cra
 import os
 import json
@@ -28,51 +28,52 @@ def make_time_pedestal(state,version,feb_id,nevt_max=200,c_upload=None):
     sdb.to_csv_files()
 
     #do_fc7_gbt_init = len(sys.argv) == 1
-    configFEBMinidaqLogger(logging.INFO)
+    lightdaq.configLogger(loglevel=logging.INFO)
+    logger = logging.getLogger('CMS_IRPC_FEB_LightDAQ')
 
     try:
-        fc7 = fc7_board(False)
-        #feb = feb_v2_cycloneV(fc7, fpga_fw_ver='3.13', petiroc_ver='2C', verbose=True)
-        feb = feb_v2_cycloneV(fc7, fpga_fw_ver=sdb.setup.febs[0].fpga_version, petiroc_ver=sdb.setup.febs[0].petiroc_version, verbose=True)
-        fc7.init(init_gbt=True)
-        feb.boot(app_fw=False)
-        feb.enable_tdc(False)
-        feb.load_config_from_csv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (state,996,feb_id))
+        ax7325b = lightdaq.AX7325BBoard()
+        feb = lightdaq.FebV2Board(ax7325b, febid='FEB0', fpga_fw_ver='4.8')
+        ax7325b.init(feb0=True, feb1=False)
+        ### Test
+        sdb.setup.febs[0].fpga_version='4.8'
+        feb.init()
+        feb.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (state,996,feb_id))
 
-        #feb.load_config_from_csv(folder='./FEB_config', base_name='QC_config')
+        for fpga in lightdaq.FPGA_ID:
+            feb.fpga[fpga].tdcSetInjectionMode('trig_ext_resync')
+            feb.fpga[fpga].tdcEnable(False)       
 
-        fc7.configure_los_fsm(
+        ax7325b.fastbitFsmConfigure(
             s0_duration=int(89e-6/25e-9),
             s1_duration=106,
             s2_duration=10,
             s3_duration=5,
             s4_duration=5)
-        fc7.configure_resync_after_bc0(20) 
-        fc7.reset_bc0_id()
+        
+        ax7325b.fastbitResyncConfigure(external=False, after_bc0=True, delay=20)
+        #fc7.configure_resync_after_bc0(20) 
+        #fc7.reset_bc0_id()
 
 
-        feb.tdc_left.set_tdc_injection_mode('trig_ext_resync')
-        feb.tdc_middle.set_tdc_injection_mode('trig_ext_resync')
-        feb.tdc_right.set_tdc_injection_mode('trig_ext_resync')
-        feb.enable_tdc(True)
+        
+        feb.tdcEnable(True)
         #feb.enable_tdc(True,"right")
 
-        fc7.configure_nBC0_trigger(nevt_max)
-        fc7.configure_acquisition(buf_size=0xffff, triggerless=False, single=True, keep=True, external_window=False)
-        
-        data = fc7.acquire_to_mem(timeout=5)
-        #fc7.acquire_to_disk_txt('minidaq_acq')
-        feb.enable_tdc(False)
-        #exit(0)
-        #print(data)
+        ax7325b.triggerBc0Configure(True, nevt_max)
+        ax7325b.fastbitResetBc0Id()
+
+        data = ax7325b.acquireToMemory(timeout=0.1)
+        feb.tdcEnable(False)
+
 
         fpga_chan_offset = {}
         fpga_chan_mu = {}
         min_resync = 5000000000
 
-        for fpga in FPGA_ID:
+        for fpga in lightdaq.FPGA_ID:
             chan_ts = [[] for _ in range(34)]
-            for chan, ts, *_ in data[fpga]:
+            for chan, ts, *_ in data['FEB0'][fpga]:
                 #ts = round(ts*1e3/(256*400.79), 2) # ts in ns
                 chan_ts[chan].append(ts)
             res={}
@@ -84,7 +85,7 @@ def make_time_pedestal(state,version,feb_id,nevt_max=200,c_upload=None):
             sdb1.upload_results(state,version,feb_id,"TIME_PEDESTAL",res,comment=c_upload)
 
                 
-    except TestError as e:
+    except NameError as e:
         print(f"Test failed with message: {e}")
 
 if __name__ == '__main__':
