@@ -81,7 +81,7 @@ class lfebv2_setup:
             #self.fc7.init(init_gbt=True,mapping=fmc_mapping)
             #self.feb.boot(app_fw=False)
 
-        except TestError as e:
+        except NameError as e:
             print(f"Test failed with message: {e}")
 
     def change_vth_shift(self,shift):
