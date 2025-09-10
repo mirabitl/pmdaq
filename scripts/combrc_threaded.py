@@ -459,7 +459,7 @@ class combRC(pmdaqrc.pmdaqControl):
             for x in self.session.apps["lyon_udp_data_source"]:
                 s = json.loads(x.sendTransition("DESTROY", m))
                 r["lyon_udp_data_source_%d" % x.instance] = s
-         if ("lyon_febv2" in self.session.apps):
+        if ("lyon_febv2" in self.session.apps):
             for x in self.session.apps["lyon_febv2"]:
                 s = json.loads(x.sendTransition("DESTROY", m))
                 r["lyon_febv2_%d" % x.instance] = s

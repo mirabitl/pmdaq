@@ -18,7 +18,7 @@ import FebWriter as FW
 import os
 import json
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler("/tmp/febv2debug%d.log" % os.getpid(), mode='w')  # ,
@@ -50,7 +50,7 @@ class lfebv2_setup:
         self.writer=None
         self.last_paccomp=None
         self.last_delay_reset_trigger=None
-        lightdaq.configLogger(loglevel=logging.DEBUG)
+        lightdaq.configLogger(loglevel=logging.INFO)
         self.logger = logging.getLogger('CMS_IRPC_FEB_LightDAQ')
 
     def init(self):
@@ -248,19 +248,19 @@ class lfebv2_setup:
             r["event"]=-1
         return r
     def start_acquisition(self):
-        acq_ctrl = BitField()
+        acq_ctrl = lightdaq.BitField()
         acq_ctrl[30] = 1
         acq_ctrl[29] = 1
         acq_ctrl[15,0] = 0
         self.ax7325b.ipbWrite('ACQ_CTRL', acq_ctrl)
     def stop_acquisition(self):
-        acq_ctrl = BitField()
+        acq_ctrl = lightdaq.BitField()
         acq_ctrl[30] = 0
         acq_ctrl[29] = 1
         acq_ctrl[15,0] = 0
         self.ax7325b.ipbWrite('ACQ_CTRL', acq_ctrl)
     def getNFrames(self):
-        acq_status = BitField(self.ax7325b.ipbRead('ACQ_STATUS'))
+        acq_status = lightdaq.BitField(self.ax7325b.ipbRead('ACQ_STATUS'))
         assert acq_status[31] == 0, "Not trigged => no data!"
         n = acq_status[15,0]
         self.logger.info(f"Reading {n}+3 TDC frames")
@@ -313,7 +313,7 @@ class lfebv2_setup:
                 if (nwait%1000==999):
                     print(nwait)
                 nwait+=1
-                if (nwait>5E4):
+                if (nwait>1E4):
                     message= "Resetting BC0 and restart DAQ after number {}, event {}.".format(nacq, self.writer.eventNumber())
                     logging.error(message)
                     self.stop_acquisition()
@@ -386,8 +386,9 @@ class lfebv2_setup:
         self.running= False
         self.producer_thread.join()
         self.stop_acquisition()
-        self.feb.enable_tdc(False)
-        acq_ctrl = BitField()
+        for fpga in lightdaq.FPGA_ID:
+            self.feb0.fpga[fpga].tdcEnable(False) 
+        acq_ctrl = lightdaq.BitField()
         acq_ctrl[30] = 0
         acq_ctrl[29] = 1
         acq_ctrl[15,0] = 0
