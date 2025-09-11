@@ -155,6 +155,7 @@ class lfebv2_setup:
             enable_force_s2=enableforces2)
 
         self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=False, delay=100)
+        #self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=True, delay=100)
     
         self.ax7325b.fastbitResetBc0Id()
         #self.fc7.configure_resync_external(100)
@@ -385,14 +386,10 @@ class lfebv2_setup:
         """
         self.running= False
         self.producer_thread.join()
-        self.stop_acquisition()
         for fpga in lightdaq.FPGA_ID:
             self.feb0.fpga[fpga].tdcEnable(False) 
-        acq_ctrl = lightdaq.BitField()
-        acq_ctrl[30] = 0
-        acq_ctrl[29] = 1
-        acq_ctrl[15,0] = 0
-        self.ax7325b.ipbWrite('ACQ_CTRL', acq_ctrl)
+        self.stop_acquisition()
+
         nacq= 0
         ntrig = 0
         lightdaq.configLogger(loglevel=logging.WARN)
