@@ -122,8 +122,11 @@ class rc_control(rc_interface.daqControl):
         for x in p_apps:
             if not x["name"] in self.session.apps.keys():
                 continue
+
             for a in self.session.apps[x["name"]]:
-                    s = json.loads(a.sendCommand("SETPARAMS",x["params"]))
+                    par={}
+                    par["params"]=x["params"]
+                    s = json.loads(a.sendCommand("SETPARAMS",par))
                     rep[f"{x["name"]}_{a.instance}"]=s
         return rep
         
