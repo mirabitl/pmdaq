@@ -7,6 +7,7 @@ import time
 import argparse
 import rc_control as crc
 import rc_services as sac
+import rc_request
 import rc_pns 
 import MongoJob as mg
 import sys
@@ -123,17 +124,17 @@ if(results.daq_restart):
     if (results.url==None):
         for x in pm_hosts:
             print(x+"/EXIT will be called")
-            sac.executeRequest(x+"/EXIT")
+            rc_request.executeRequest(x+"/EXIT")
         # clear PNS
         pns_host=os.getenv("PNS_NAME","NONE")
         if (pns_host == "NONE"):
             print("The ENV varaible PNS_NAME mut be set")
             exit(0)
         pnsurl="http://"+pns_host+":8888/PNS/CLEAR"
-        sac.executeRequest(pnsurl)
+        rc_request.executeRequest(pnsurl)
     else:
         print(results.url+"/EXIT will be called")
-        sac.executeRequest(results.url+"/EXIT")
+        rc_request.executeRequest(results.url+"/EXIT")
 
     time.sleep(10)
     
@@ -234,10 +235,10 @@ elif(results.daq_destroy):
 elif(results.trigger_reset):
     fdc.TriggerCommand("RESET")
     exit(0)
-elif(results.trig_pause):
+elif(results.trigger_pause):
     fdc.TriggerCommand("PAUSE")
     exit(0)
-elif(results.trig_resume):
+elif(results.trigger_resume):
     fdc.TriggerCommand("RESUME")
     exit(0)
 elif (results.method!=None):

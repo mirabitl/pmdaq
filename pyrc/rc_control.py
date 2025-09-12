@@ -8,6 +8,22 @@ import os
 import logging
 import threading
 from tabulate import tabulate
+from termcolor import colored
+
+def print_dict(d, mode="row", tablefmt="grid"):
+    """
+    Affiche un dictionnaire avec tabulate.
+
+    mode="row"    → affiche le dict comme une seule ligne (colonnes = clés)
+    mode="kv"     → affiche le dict en deux colonnes clé/valeur
+    """
+    if mode == "row":
+        print(tabulate([d], headers="keys", tablefmt=tablefmt))
+    elif mode == "kv":
+        print(tabulate(d.items(), headers=["Clé", "Valeur"], tablefmt=tablefmt))
+    else:
+        raise ValueError("mode doit être 'row' ou 'kv'")
+
 def pmrTransitionWorker(app,transition,res):
     """!thread pmr Transition worker function"""
     s = json.loads(app.sendTransition(transition, {}))
@@ -46,6 +62,8 @@ class rc_control(rc_interface.daqControl):
                 self.pm_hosts.append(sh)
         ## Meta donnees
         self.metadata=json.loads(open("/usr/local/pmdaq/etc/rc_meta.json").read())
+        self.daq_params_file="UNKNOWN"
+        self.daq_params_set="UNKNOWN:UNKNOWN"
     # daq
     def process_transition(self,transition_name):
         rep={}
@@ -117,13 +135,13 @@ class rc_control(rc_interface.daqControl):
             return rep
         j_params=json.loads(open(self.daq_params_file).read())
         pset=self.daq_params_set.split(":")
-        if (not pset[0] in j_params["setup"].keys()):
-            print(f"Missing experiment {pset[0]} in file {self.daq_params_file} ({j_params['setup'].keys()})")
+        if (not pset[0] in j_params["setups"].keys()):
+            print(f"Missing experiment {pset[0]} in file {self.daq_params_file} ({j_params['setups'].keys()})")
             return rep
-        if (not pset[1] in j_params["setup"][pset[0]].keys()):
-            print(f"Missing parameters set {pset[1]} in {pset[0]} experiment in the file {self.daq_params_file} ({j_params['setup'].keys()})")
+        if (not pset[1] in j_params["setups"][pset[0]].keys()):
+            print(f"Missing parameters set {pset[1]} in {pset[0]} experiment in the file {self.daq_params_file} ({j_params['setups'].keys()})")
             return rep
-        p_apps=j_params["setup"][pset[0]][pset[1]]["apps"]
+        p_apps=j_params["setups"][pset[0]][pset[1]]["apps"]
         for x in p_apps:
             if not x["name"] in self.session.apps.keys():
                 continue
@@ -195,19 +213,20 @@ class rc_control(rc_interface.daqControl):
         if (not verbose):
             return json.dumps(mr)
         else:
-            print("""
+            print(colored("""
             \t \t *************************
             \t \t ** Trigger information **
             \t \t *************************
-            """)
+            """,'red'))
             for tk,tv in mr.items():
-                print("\t ",tk)
-                if ("COUNTERS" in tv):
-                    for k,v in tv["COUNTERS"].items():
-                        if (k =="version"):
-                            print("\t \t %s %x" % (k,v))
-                        else:
-                            print("\t \t ",k,v)
+                print(colored(tk,'blue'))
+                # if ("COUNTERS" in tv):
+                #     for k,v in tv["COUNTERS"].items():
+                #         if (k =="version"):
+                #             print("\t \t %s %x" % (k,v))
+                #         else:
+                #             print("\t \t ",k,v)
+                print_dict(tv["COUNTERS"],tablefmt="simple",mode="kv")
 
     def BuilderStatus(self, verbose=False,mqtt=True):
         """! Print out of event builder status
@@ -243,12 +262,13 @@ class rc_control(rc_interface.daqControl):
                 rep["%s%s" % (s.host, s.path)] = mr
         if (not verbose):
             return json.dumps(rep)
-        print("""
+        print(colored("""
         \t \t *************************
         \t \t ** Builder information **
         \t \t *************************
-        """)
+        """,'red'))
         #rep = json.loads(sr)
+        """
         for k, v in rep.items():
             print(k)
             for xk, xv in v.items():
@@ -258,7 +278,16 @@ class rc_control(rc_interface.daqControl):
                         if (xv != None):
                             for y in xv:
                                 print("\t \t ID %x => %d " % (int(y['id'].split('-')[2]), y['received']))
-
+        """
+        for k, v in rep.items():
+            print(colored(k,'blue'))
+            #print(v)
+            # db={}
+            # for xk, xv in v.items():
+            #     if (xv!=None):
+            #         db[xk]=xv
+            print_dict(v,tablefmt="simple")
+            #print(tabulate(db,headers="keys",tablefmt="simple"))
 
     def SourceStatus(self, verbose=False):
         """!
@@ -365,16 +394,25 @@ class rc_control(rc_interface.daqControl):
         if (not verbose):
             return json.dumps(rep)
         # Verbose Printout
-        print("""
+        print(colored("""
         \t \t ******************************
         \t \t ** Data sources information **
         \t \t ******************************
-        """)
+        """,'red'))
         for k, v in rep.items():
-            print(k)
-            if (v != None):
-                for x in v:
-                    print("\t \t", x)
+            print(colored(k,'blue'))
+            print(tabulate(v,headers='keys',tablefmt="simple"))
+
+        # print("""
+        # \t \t ******************************
+        # \t \t ** Data sources information **
+        # \t \t ******************************
+        # """)
+        # for k, v in rep.items():
+        #     print(k)
+        #     if (v != None):
+        #         for x in v:
+        #             print("\t \t", x) 
     def DataSourceStatus(self, verbose=False):
         """!
         Print out of data source status
@@ -400,15 +438,15 @@ class rc_control(rc_interface.daqControl):
         if (not verbose):
             return json.dumps(rep)
         # Verbose Printout
-        print("""
+        print(colored("""
         \t \t ******************************
         \t \t ** Data sources information **
         \t \t ******************************
-        """)
+        """,'red'))
         for k, v in rep.items():
-            print(k)
-            if (v != None):
-                print(tabulate(v,headers="keys",tablefmt="simple"))
+            print(colored(k,'blue'))
+            if (v!=None):
+                print(tabulate(v,headers='keys',tablefmt="simple"))
     # RESTART
     def restart(self,url=None):
         """!
