@@ -16,8 +16,10 @@ def create_session(config):
     if ('apps' in j_sess):
         for x in j_sess['apps']:
             a=sac.app_access(x['host'],x['port'],vsession,x['name'],x['instance'])
-            if (a.state=='VOID'):
+#            a.print()
+            if (a.state=='VOID' or a.state=='NOTREGISTERED'):
                 par={}
+                #print(x)
                 if ('params' in x):
                     par=x['params']
                 a.register(par)
@@ -42,7 +44,7 @@ class session_access:
         if ("REGISTERED" in pl):
             if ( pl["REGISTERED"]!=None):
                 for x in pl["REGISTERED"]:
-                    o =sac.strip_pns_string(x)
+                    o =rc_pns.strip_pns_string(x)
                     if (o.session!=self.session):
                         continue
                     #print( iho,ipo,ipa,ises,ina,iin)

@@ -1,4 +1,4 @@
-import rc_session
+import rc_sessions
 import rc_pns
 import json
 from transitions import Machine, State
@@ -23,7 +23,7 @@ class daqControl:
         # parse config file
         #print(self.config_file)
         ## session.sessionAccess 
-        self.session = rc_session.create_session(config_file)
+        self.session = rc_sessions.create_session(config_file)
         # DB access
         # DAQ PART
         self.pns=rc_pns.pns_access()
@@ -44,7 +44,7 @@ class daqControl:
         ## FSM state
         self.stored_state = self.get_stored_state()
 
-    
+
     def get_stored_state(self):
         """!
         Get the session state from the PNS/SESSION/LIST
@@ -52,7 +52,7 @@ class daqControl:
         If not known set it to CREATED and updates PNS/SESSION
         @return state name
         """
-        pl = self.session.session_list(req_session=self.session.name())
+        pl = self.pns.get_session_list(req_session=self.session.name())
         #print(pl)
         if ("REGISTERED" in pl):
             if (pl["REGISTERED"] !=None):

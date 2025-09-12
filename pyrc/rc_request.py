@@ -50,7 +50,7 @@ def executeCMD(host,port,path,params):
         myurl = "http://"+host+ ":%d" % (port)
 
         lq={}
-        for x,y in six.iteritems(params):
+        for x,y in params.items():
             if (type(y) is dict):
                 y=json.dumps(y).replace(" ","").encode("utf8")
                 #print("STRING ",y)

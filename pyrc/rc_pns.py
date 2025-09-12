@@ -68,12 +68,12 @@ class pns_access:
             #print(pns_list["REGISTERED"])
             if ( pns_list["REGISTERED"]!=None):
                 for x in pns_list["REGISTERED"]:
-                    o =self.strip_pns_string(x)
+                    o =strip_pns_string(x)
                     print("=>",o.host,o.port,o.path,o.session,o.name,o.instance,o.state)        
     def get_app_state(self,s_path):
         """! Find the current state of the service from a PNS/LIST request
         """
-        r_pns_list=rc_request.executeCMD(self.host,self.port,"/PNS/LIST",par)
+        r_pns_list=rc_request.executeCMD(self.host,self.port,"/PNS/LIST",{})
         if (type(r_pns_list) is bytes):
             r_pns_list=r_pns_list.decode("utf-8")
         pns_list=json.loads(r_pns_list)
@@ -84,12 +84,12 @@ class pns_access:
             #print(pns_list["REGISTERED"])
             if ( pns_list["REGISTERED"]!=None):
                 for x in pns_list["REGISTERED"]:
-                    o =self.strip_pns_string(x)
+                    o =strip_pns_string(x)
                     #print( iho,ipo,ipa,ises,ina,iin)
                     #st=x.split('?')[0].split(':')[2]
                     if (o.path==s_path):
                         return o.state
-        return "NOTREGISTERED"    
+        return "VOID"    
 
     def list(self,req_session="NONE"):
         """! Call PNS/LIST for a session name
@@ -105,7 +105,7 @@ class pns_access:
     def purge(self):
         pl=json.loads(rc_request.executeCMD(self.host,self.port,"/PNS/PURGE",{}))
         return pl
-    def session_list(self,req_session="NONE"):
+    def get_session_list(self,req_session="NONE"):
         """! Call PNS/SESSION/LIST for a session name
         @param req_session Session name
         @return Python object built from PNS/SESSION/LIST answer
@@ -167,7 +167,7 @@ class pns_access:
     def update_status(self,donotaccess=False):
         self.process_list= self.list()
         #print("process  list: ",self.process_list)
-        self.session_list=self.session_list()
+        self.session_list=self.get_session_list()
         #print("session  list: ",self.session_list)
         self.registered=[]
         if (self.process_list["REGISTERED"]!= None):

@@ -45,12 +45,12 @@ class rc_control(rc_interface.daqControl):
             if (not sh in self.pm_hosts):
                 self.pm_hosts.append(sh)
         ## Meta donnees
-        self.metadata=json.loads(open("/usr/local/pmdqa/etc/rc_meta.json").read())
+        self.metadata=json.loads(open("/usr/local/pmdaq/etc/rc_meta.json").read())
     # daq
     def process_transition(self,transition_name):
         rep={}
         if not transition_name in self.metadata["sequences"].keys():
-            print(f"{transition_name} is not in possibles kest {self.metadata["sequences"].keys()}")
+            print(f"{transition_name} is not in possibles kest {self.metadata['sequences'].keys()}")
             return rep
         app_list=self.metadata["sequences"][transition_name]
         for app_name in app_list:
@@ -58,15 +58,20 @@ class rc_control(rc_interface.daqControl):
                 continue
             if not app_name in self.metadata["apps"].keys():
                 continue
-            threaded=self.metadata["apps"][app_name].threaded==1
-            fsm_list=self.metadata["apps"][app_name][transition_name]["fsm"]
-            cmd_list=self.metadata["apps"][app_name][transition_name]["commands"]
+            #print(app_name)
+            #print(self.metadata["apps"][app_name])
+            threaded=self.metadata["apps"][app_name]['threaded']==1
+            fsm_list=self.metadata["apps"][app_name]["transitions"][transition_name]["fsm"]
+            cmd_list=self.metadata["apps"][app_name]["transitions"][transition_name]["commands"]
             for t in fsm_list:
+                lt=None
                 msg=self.build_message(app_name,transition_name)
+                print(app_name,transition_name,threaded,f" Message {msg}")
                 if not threaded:
                     for a in self.session.apps[app_name]:
                         s = json.loads(a.sendTransition(t,msg))
                         rep[f"{app_name}_{a.instance}"]=s
+                    continue
                 else:
                     lt=list()
                 for x in self.session.apps[app_name]:
@@ -91,7 +96,7 @@ class rc_control(rc_interface.daqControl):
                     rep[f"{app_name}_{a.instance}_{c}"]=s
 
         self.daq_answer = json.dumps(rep)
-        self.storeState()
+        self.store_state()
 
     def build_message(self,app_name,transition_name):
         m={}
@@ -113,10 +118,10 @@ class rc_control(rc_interface.daqControl):
         j_params=json.loads(open(self.daq_params_file).read())
         pset=self.daq_params_set.split(":")
         if (not pset[0] in j_params["setup"].keys()):
-            print(f"Missing experiment {pset[0]} in file {self.daq_params_file} ({j_params["setup"].keys()})")
+            print(f"Missing experiment {pset[0]} in file {self.daq_params_file} ({j_params['setup'].keys()})")
             return rep
         if (not pset[1] in j_params["setup"][pset[0]].keys()):
-            print(f"Missing parameters set {pset[1]} in {pset[0]} experiment in the file {self.daq_params_file} ({j_params["setup"].keys()})")
+            print(f"Missing parameters set {pset[1]} in {pset[0]} experiment in the file {self.daq_params_file} ({j_params['setup'].keys()})")
             return rep
         p_apps=j_params["setup"][pset[0]][pset[1]]["apps"]
         for x in p_apps:
@@ -127,7 +132,7 @@ class rc_control(rc_interface.daqControl):
                     par={}
                     par["params"]=x["params"]
                     s = json.loads(a.sendCommand("SETPARAMS",par))
-                    rep[f"{x["name"]}_{a.instance}"]=s
+                    rep[f"{x['name']}_{a.instance}"]=s
         return rep
         
 

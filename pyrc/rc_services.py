@@ -65,10 +65,13 @@ class app_access:
         Fill state, commands transitions and parameter with INFO and PARAMS commands
         """
         r_services=rc_request.executeCMD(self.host,self.port,"/SERVICES",{})
-        #print(r_services)
+        #print(self.host,self.port,r_services)
         if (type(r_services) is bytes):
             r_services=r_services.decode("utf-8")
         services=json.loads(r_services);
+        if (services==None):
+            return
+        #print(services)
         if ("http_error" in services):
             return
         #print(services)
@@ -218,7 +221,7 @@ class app_access:
         #print("New State is ",self.state)
         return rep
 
-    def print(self, vverb):
+    def print(self, vverb=True):
         """!
         Print out of all service informations
         @param vverb verbose printout tag
