@@ -165,7 +165,7 @@ class lfebv2_setup:
             trg=self.params["trigger"]
             if "n_bc0" in trg:
                 #self.fc7.configure_nBC0_trigger(trg["n_bc0"])
-                self.ax7325b.triggerBc0Configure(True, trg["n_bc0"])
+                self.ax7325b.triggerBc0Configure(int(trg["n_bc0"]) != 0 , trg["n_bc0"]) 
             #if "n_data" in trg:
             #    self.fc7.configure_ndata_trigger(trg["n_data"])
 
@@ -254,21 +254,38 @@ class lfebv2_setup:
         acq_ctrl[29] = 1
         acq_ctrl[15,0] = 0
         self.ax7325b.ipbWrite('ACQ_CTRL', acq_ctrl)
+        logging.debug(f"start_acquisition")
     def stop_acquisition(self):
         acq_ctrl = lightdaq.BitField()
         acq_ctrl[30] = 0
         acq_ctrl[29] = 1
         acq_ctrl[15,0] = 0
         self.ax7325b.ipbWrite('ACQ_CTRL', acq_ctrl)
+        logging.debug(f"stop_acquisition")
+
+    def hasTrigger(self):
+        acq_status = lightdaq.BitField(self.ax7325b.ipbRead('ACQ_STATUS'))
+        return (acq_status[31] == 0)
+    
     def getNFrames(self):
         acq_status = lightdaq.BitField(self.ax7325b.ipbRead('ACQ_STATUS'))
-        assert acq_status[31] == 0, "Not trigged => no data!"
+        istat=self.ax7325b.ipbRead('ACQ_STATUS')
+        logging.debug(f"Status {acq_status:08b} {bin(istat)[2:6]}")
+        try:
+            assert acq_status[31] == 0, "Not trigged => no data!"
+        except:
+            logging.warning("Bit 31 set")
+            return 0
         n = acq_status[15,0]
-        self.logger.info(f"Reading {n}+3 TDC frames")
+        #logging.info(f"Reading {n}+3 TDC frames")
         return n
     def readFrames(self,n):
-        self.logger.info(f"Reading {n+3} TDC frames")
-        rawdata = self.ipbReadBlock('FEBS_TDC_DATA_WORDS', (n+3)*8) # 3 tdcframes are stuck between ringbuffer and ipbreadout
+        logging.info(f"Reading {n+3} TDC frames")
+        try:
+            rawdata = self.ax7325b.ipbReadBlock('FEBS_TDC_DATA_WORDS', (n+3)*8) # 3 tdcframes are stuck between ringbuffer and ipbreadout
+        except:
+            logging.error("cannot read block {(n+3)*8} ")
+
         return rawdata
     def acquiring_data(self):
         """ Acquisition thread
@@ -281,7 +298,7 @@ class lfebv2_setup:
         self.logger.setLevel(logging.WARN)
         #self.feb.enable_tdc(True)
         for fpga in lightdaq.FPGA_ID:
-            self.feb0.fpga[fpga].tdcSetInjectionMode('trig_ext_resync')
+            self.feb0.fpga[fpga].tdcSetInjectionMode('standard')
             self.feb0.fpga[fpga].tdcEnable(True)
             self.feb0.fpga[fpga].tdcEnableChannel()       
 
@@ -308,8 +325,13 @@ class lfebv2_setup:
             nb_frame32=0
             nb_last=0
             nwait=0
+            logging.debug(f"{(nb_frame32==0 or nb_last!=nb_frame32) and self.running}")
             while (nb_frame32==0 or nb_last!=nb_frame32) and self.running:
+                if not self.hasTrigger():
+                    continue
                 nb_frame32 = self.getNFrames()
+                logging.debug(f"Read  getNFrames {nb_frame32}")
+
                 nb_last=nb_frame32
                 if (nwait%1000==999):
                     print(nwait)
@@ -325,7 +347,7 @@ class lfebv2_setup:
                 time.sleep(0.001)
             if not self.running:
                 break
-            #print(f"Found {nb_frame32}")
+            logging.info(f"Found {nb_frame32}")
             while nb_frame32!=0:
                 #ntdcf=0
                 #for tdc_frame in self.fc7.uplink.receive_tdc_frames(nb_frame=nb_frame32*8, timeout=0.01):
@@ -333,9 +355,14 @@ class lfebv2_setup:
                 #    ntdcf+=1
                 #time.sleep(0.01)
                 nb_frame32_1 = self.getNFrames()
-                if (nb_frame32%8!=0 or nb_frame32_1< nb_frame32):
-                    print("oops not x 8 %d et le second %d \n" % (nb_frame32,nb_frame32_1))
+                logging.debug(f"Found {nb_frame32_1}")
+
+                #if (nb_frame32%8!=0 or nb_frame32_1< nb_frame32):
+                if (nb_frame32_1< nb_frame32):
+                    logging.info("oops not x 8 %d et le second %d \n" % (nb_frame32,nb_frame32_1))
+                    time.sleep(5)
                     nb_frame32 = self.getNFrames()
+
                     continue
                 else:
                     nb_frame32=nb_frame32_1
@@ -348,7 +375,7 @@ class lfebv2_setup:
                     #sys.stdout.flush()
                     datas=self.readFrames(nb_frame32)
                 except:
-                    print("error")
+                    logging.error("error")
                 #self.fc7.fpga_registers.ipbus_device.ReadBlock("USER_OUTPUT_FIFO_TDC", nb_frame32)
                 # for i in range(0,len(datas),8):
                 #     fr="%d %d " % (nacq,ntdcf)
