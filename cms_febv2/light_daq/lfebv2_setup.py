@@ -328,6 +328,7 @@ class lfebv2_setup:
             logging.debug(f"{(nb_frame32==0 or nb_last!=nb_frame32) and self.running}")
             while (nb_frame32==0 or nb_last!=nb_frame32) and self.running:
                 if not self.hasTrigger():
+                    time.sleep(0.005)
                     continue
                 nb_frame32 = self.getNFrames()
                 logging.debug(f"Read  getNFrames {nb_frame32}")
@@ -405,6 +406,22 @@ class lfebv2_setup:
                 #    trig_output.write(str(self.writer.eventNumber()))             
             self.stop_acquisition()
             time.sleep(0.005)
+        for fpga in lightdaq.FPGA_ID:
+            self.feb0.fpga[fpga].tdcEnable(False) 
+        self.stop_acquisition()
+        time.sleep(0.005)
+        nb_frame32 = self.getNFrames()
+        if not nb_frame32==0:
+            try:
+                message= "Nb frames to be block read {}".format(nb_frame32)
+                logging.info(message)
+                nb_frame32 = min(4096+2048, nb_frame32)
+                #print("frames :%d %d\n"% (nb_frame32//8,nb_frame32))
+                #sys.stdout.flush()
+                datas=self.readFrames(nb_frame32)
+            except:
+                logging.warning(f"{nb_frame32} frames but no more data readable")
+
         logging.info("Thread %d: finishing", self.run)
     def stop(self):
         """ Stop the run
@@ -413,9 +430,7 @@ class lfebv2_setup:
         """
         self.running= False
         self.producer_thread.join()
-        for fpga in lightdaq.FPGA_ID:
-            self.feb0.fpga[fpga].tdcEnable(False) 
-        self.stop_acquisition()
+        
 
         nacq= 0
         ntrig = 0

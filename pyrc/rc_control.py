@@ -237,7 +237,7 @@ class rc_control(rc_interface.daqControl):
         if (not "evb_builder" in self.session.apps):
             print("No Event builder found in thi session ",self.session.name())
         rep = {}
-
+        repb={}
         for s in self.session.apps["evb_builder"]:
             r = {}
             r['run'] = -1
@@ -248,16 +248,18 @@ class rc_control(rc_interface.daqControl):
                 par={"mqtt":1}
 
             mr = json.loads(s.sendCommand("STATUS",par))
+            print(mr["answer"]["difs"])
             #print("Event Builder",mr)
             if (mr['status'] != "FAILED"):
                 r["run"] = mr["answer"]["run"]
                 r["event"] = mr["answer"]["event"]
-                r["builder"] = mr["answer"]["difs"]
+                #r["builder"] = mr["answer"]["difs"]
                 r["built"] = mr["answer"]["build"]
                 r["total"] = mr["answer"]["total"]
                 r["compressed"] = mr["answer"]["compressed"]
                 r["time"] = time.time()
                 rep["%s%s" % (s.host, s.path)] = r
+                repb["%s%s" % (s.host, s.path)] = mr["answer"]["difs"]
             else:
                 rep["%s%s" % (s.host, s.path)] = mr
         if (not verbose):
@@ -279,15 +281,16 @@ class rc_control(rc_interface.daqControl):
                             for y in xv:
                                 print("\t \t ID %x => %d " % (int(y['id'].split('-')[2]), y['received']))
         """
-        for k, v in rep.items():
+        for k in rep.keys():
             print(colored(k,'blue'))
             #print(v)
             # db={}
             # for xk, xv in v.items():
             #     if (xv!=None):
             #         db[xk]=xv
-            print_dict(v,tablefmt="simple")
-            #print(tabulate(db,headers="keys",tablefmt="simple"))
+            print_dict(rep[k],tablefmt="simple")
+            print(colored("\n \t Sources","magenta"))
+            print(tabulate(repb[k],headers="keys",tablefmt="simple"))
 
     def SourceStatus(self, verbose=False):
         """!
