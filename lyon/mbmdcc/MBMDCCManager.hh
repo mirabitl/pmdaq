@@ -21,7 +21,11 @@ public:
   void fsm_initialise(http_request m);
   void configure(http_request m);
   void destroy(http_request m);
-
+  /**
+     * @brief Parse Params and make corresponding action
+     * 
+  */
+  void parseParameters();
   uint32_t version();
   uint32_t id();
   uint32_t mask();
@@ -54,6 +58,8 @@ public:
   uint32_t triggerBusy();
   void setExternalTrigger(uint32_t nc);
   uint32_t externalTrigger();
+  void setLemoMask(uint32_t nc);
+  uint32_t lemoMask();
   void reloadCalibCount();
   void resetTDC(uint32_t b);
   void resetFSM(uint32_t b);

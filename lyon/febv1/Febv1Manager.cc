@@ -126,6 +126,32 @@ void Febv1Manager::c_status(http_request m)
   mqtt_publish("status",jl);
   Reply(status_codes::OK, par);
 }
+void Febv1Manager::c_dslist(http_request m)
+{
+  PM_INFO(_logFebv1, "DSLIST CMD called ");
+  auto par = json::value::object();
+
+  par["STATUS"] = json::value::string(U("DONE"));
+  /*
+  json::value jl;
+  uint32_t mb = 0;
+  for (auto x : _mpi->boards())
+  {
+
+    json::value jt;
+    jt["detid"] = json::value::number(x.second->data()->detectorId());
+    jt["sourceid"] = json::value::number(x.second->data()->difId());
+    jt["gtc"] = json::value::number(x.second->data()->gtc());
+    jt["abcid"] = json::value::number(x.second->data()->abcid());
+    jt["event"] = json::value::number(x.second->data()->event());
+    jt["triggers"] = json::value::number(x.second->data()->triggers());
+    jl[mb++] = jt;
+  }
+  */
+  auto jl=build_status();
+  par["DSLIST"] = jl;
+  Reply(status_codes::OK, par);
+}
 void Febv1Manager::c_diflist(http_request m)
 {
   PM_INFO(_logFebv1, "List of source id CMD called ");

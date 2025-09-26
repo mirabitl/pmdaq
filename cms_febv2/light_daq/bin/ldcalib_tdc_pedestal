@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+import logging
+import sys
+import time
+
+from pprint import pprint
+import numpy as np 
+from matplotlib import pyplot as plt
+
+
+import cms_irpc_feb_lightdaq as lightdaq
+
+import csv_register_access as cra
+import os
+import json
+import ROOT
+
+def make_time_pedestal(state,version,feb_id,nevt_max=200,c_upload=None):
+    #state="TEST_INSERTION"
+    #version=8
+    #feb_id=2
+    sdb=cra.instance()
+    sdb.download_setup(state,version)
+    sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",800)
+    sdb.setup.febs[0].fpga.set_parameter("DATA_PATH_CTRL.MAX_QUEUE_SIZE.NB_FRAMES",0x25,"MIDDLE")
+    sdb.setup.version=996
+
+    sdb.to_csv_files()
+
+    #do_fc7_gbt_init = len(sys.argv) == 1
+    lightdaq.configLogger(loglevel=logging.INFO)
+    logger = logging.getLogger('CMS_IRPC_FEB_LightDAQ')
+
+    try:
+        ax7325b = lightdaq.AX7325BBoard()
+        feb = lightdaq.FebV2Board(ax7325b, febid='FEB0', fpga_fw_ver='4.8')
+        ax7325b.init(feb0=True, feb1=False)
+        ### Test
+        sdb.setup.febs[0].fpga_version='4.8'
+        feb.init()
+        feb.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (state,996,feb_id))
+
+        for fpga in lightdaq.FPGA_ID:
+            feb.fpga[fpga].tdcSetInjectionMode('trig_ext_resync')
+            feb.fpga[fpga].tdcEnable(False)       
+
+        ax7325b.fastbitFsmConfigure(
+            s0_duration=int(89e-6/25e-9),
+            s1_duration=106,
+            s2_duration=10,
+            s3_duration=5,
+            s4_duration=5)
+        
+        ax7325b.fastbitResyncConfigure(external=False, after_bc0=True, delay=20)
+        #fc7.configure_resync_after_bc0(20) 
+        #fc7.reset_bc0_id()
+
+
+        
+        feb.tdcEnable(True)
+        #feb.enable_tdc(True,"right")
+
+        ax7325b.triggerBc0Configure(True, nevt_max)
+        ax7325b.fastbitResetBc0Id()
+
+        data = ax7325b.acquireToMemory(timeout=0.1)
+        feb.tdcEnable(False)
+
+
+        fpga_chan_offset = {}
+        fpga_chan_mu = {}
+        min_resync = 5000000000
+
+        for fpga in lightdaq.FPGA_ID:
+            chan_ts = [[] for _ in range(34)]
+            for chan, ts, *_ in data['FEB0'][fpga]:
+                #ts = round(ts*1e3/(256*400.79), 2) # ts in ns
+                chan_ts[chan].append(ts)
+            res={}
+            res["fpga"]=fpga
+            res["channels"]=chan_ts
+            print("Uploading FPGA")
+            print(res)
+            sdb1=cra.instance()
+            sdb1.upload_results(state,version,feb_id,"TIME_PEDESTAL",res,comment=c_upload)
+
+                
+    except NameError as e:
+        print(f"Test failed with message: {e}")
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    
+    # Arguments
+    parser.add_argument('--state', action='store', type=str,default=None, dest='state', help='DB State')
+    parser.add_argument('--version', action='store',type=int,default=None,dest='version',help='DB state version' )
+    parser.add_argument('--feb', action='store', type=int,default=None, dest='feb', help='FEB id')
+    parser.add_argument('--nevt', action='store', type=int,default=200, dest='nevt', help='Number of event')
+    parser.add_argument('--comment', action='store', type=str,default="TDC time pedestals", dest='comment', help='Comment for DB')
+    results = parser.parse_args()
+    print(results)
+
+    if (results.state==None):
+        print("--state should be specified")
+        exit(0)
+    if (results.version==None):
+        print("--version should be specified")
+        exit(0)
+    if (results.feb==None):
+        print("--feb should be specified")
+        exit(0)
+
+
+    state=results.state
+    version=results.version
+    feb_id=results.feb
+    make_time_pedestal(state,version,feb_id,results.nevt,results.comment)

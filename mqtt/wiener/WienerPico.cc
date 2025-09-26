@@ -217,7 +217,7 @@ int main()
   try
   {
     // Open the file stream
-    std::ifstream f("/etc/pico_settings.json");
+    std::ifstream f("/etc/pico_wiener.json");
     // String stream for holding the JSON file
     std::stringstream strStream;
 
@@ -231,7 +231,7 @@ int main()
   catch (web::json::json_exception excep)
   {
     output = web::json::value::null();
-    std::cout << "Needing /etc/pico_settings.json file\n";
+    std::cout << "Needing /etc/pico_wiener.json file\n";
     exit(0);
   }
   std::cout << output;

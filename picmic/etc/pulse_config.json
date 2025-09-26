@@ -1,0 +1,13 @@
+{
+    "ip": "134.158.138.199",
+    "voltage_low": 0,
+    "voltage_high": 0.150,
+    "width": 1e-07,
+    "delay": 120.0e-9,
+    "polarity": "INV",
+    "rise_time": 1e-09,
+    "fall_time": 1e-09,
+    "trigger_mode": "EXT",
+    "trigger_slope": "POS",
+    "trigger_level": 0.7
+}

@@ -1,0 +1,54 @@
+{
+    "setups":
+    {
+	"PULSALYS2021":{
+		"normal_2025":
+		{
+	    "comment":"Parameters tuned for 8 Tricots chambers at Dome in 2025. Auto-triggered",
+		 "apps":[
+		    {"name":"lyon_mdcc","params":{"spillon":20000000,"spilloff":10000,"spillregister":64,"external":0}},
+		    {"name":"lyon_gricv0","params":{"database":{"name":"PULSALYS_DOME","version":61},"thresholds":{"B0":200,"B1":200,"B2":200}}},
+		    {"name":"lyon_gricv1","params":{"database":{"name":"PULSALYS_DOME","version":61},"thresholds":{"B0":180,"B1":200,"B2":200}}}
+		 ]
+	    }
+	},
+	"TEL_CMS_1022":{
+		"normal_2025":
+		{
+	    "comment":"FEBV2+telescope setup at Dome in 2025. The mode=telescope correspond to Telescope only MbMdcc settings",
+	    "apps":[
+		    {"name":"lyon_mbmdcc","params":{"spillon":8000000,"spilloff":5000,"spillregister":4,"external":0,"channels":527,"lemomask":0}},
+		    {"name":"lyon_pmr","params":{"database":{"name":"PMRTEST_DOME","version":56},"thresholds":{"B0":160,"B1":500,"B2":350},"external":0}}
+		]	    
+		},
+		"telescope_2025":
+		{
+			"comment":"Telescope setup at Dome in 2025. It correspond to Telescope only MbMdcc settings",
+			"apps":[
+		    {"name":"lyon_mbmdcc","params":{"spillon":20000000,"spilloff":1000,"spillregister":4,"external":0,"channels":15,"lemomask":0}},
+		    {"name":"lyon_pmr","params":{"database":{"name":"PMRTEST_DOME","version":33},"thresholds":{"B0":110,"B1":500,"B2":350},"external":0}}	    
+			]
+
+	    }
+	},
+	"TESTMRPC2025":{
+		"normal_2025":
+		{
+		"comment":"Single MRPC with scintillator trigger in 2025",
+	    "apps":[
+		    {"name":"lyon_ipdcc","params":{"spillon":100000000,"spilloff":1000,"spillregister":4,"external":2,"busyenable":5,"lemomask":2}},
+		    {"name":"lyon_pmr","params":{"database":{"name":"TEST_DIF","version":25},"thresholds":{"B0":120,"B1":1000,"B2":1000},"external":1}}
+		]	    
+		},
+		"pedestal_2025":
+		{"comment":"Single MRPC , pedetal (2025)",
+	    "apps":[
+		    {"name":"lyon_ipdcc","params":{"spillon":100000000,"spilloff":1000,"spillregister":64,"external":0,"busyenable":5,"lemomask":0}},
+		    {"name":"lyon_pmr","params":{"database":{"name":"TEST_DIF","version":25},"thresholds":{"B0":120,"B1":1000,"B2":1000},"external":1}}	    
+		]
+		}
+
+	    }
+	}
+}
+

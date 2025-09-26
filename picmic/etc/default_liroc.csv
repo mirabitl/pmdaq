@@ -270,9 +270,9 @@
 "PP_bg",0
 "EN_10bDAC",1
 "PP_10bDAC",0
-"dac_threshold_msb","0b01"
-"dac_threshold_lsb","0b11011000"
-"EN-CLPS",2
+"dac_threshold_msb","0b10"
+"dac_threshold_lsb","0b110000"
+"EN-CLPS",0xf
 "EN-pE",0
 "PE-delay",0
 "EN_Rx",1

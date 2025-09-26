@@ -91,10 +91,10 @@ class pico_monitor:
             #r_m["timestamp"],r_m["ctime"],r_m["content"])
 
             
-    def on_connect(self,client, userdata, flags, rc):
+    def on_connect(self,client, userdata, flags, rc,properties=None):
         self.flag_connected = 1
 
-    def on_disconnect(self,client, userdata, rc):
+    def on_disconnect(self,client, userdata, rc,properties=None):
         self.flag_connected = 0
 
     def on_message(self,client, userdata, message):
@@ -196,9 +196,13 @@ class pico_monitor:
             del self.client
         id=random.randrange(1, 1000)
         self.cname="monitor-%d" % id
-        self.client= paho.Client(self.cname)
-        self.client.on_connect=self.on_connect
-        self.client.on_disconnect=self.on_disconnect
+        #self.client= paho.Client(self.cname)
+        self.client = paho.Client(client_id=self.cname)#, callback_api_version=1)
+        #self.client.on_connect=self.on_connect
+        self.client.on_connect = lambda client, userdata, flags, reasonCode, properties=None: self.on_connect(client, userdata, flags, reasonCode, properties)
+
+        #self.client.on_disconnect=self.on_disconnect
+        self.client.on_disconnect = lambda client, userdata, flags, reasonCode, properties=None: self.on_disconnect(client, userdata, flags, reasonCode, properties)
         ######Bind function to callback
        
 
@@ -206,7 +210,9 @@ class pico_monitor:
         self.client.connect(self.host,self.port,keepalive=600)#connect
         print("connected",file=self.fout);
     def ListTopics(self):
-        self.client.on_message=self.on_topics
+        #self.client.on_message=self.on_topics
+        self.client.on_message=lambda client, userdata, message: self.on_topics(client, userdata,message)
+
         self.client.loop_start() #start loop to process received messages
         print("subscribing all ",file=self.fout)
         self.client.subscribe("#")#subscribe
@@ -218,7 +224,9 @@ class pico_monitor:
         for s in self.topics:
             print("Registered topic %s \n",s,file=self.fout)
     def loop(self):
-        self.client.on_message=self.on_message
+        #self.client.on_message=self.on_message
+        self.client.on_message=lambda client, userdata, message: self.on_message(client, userdata,message)
+
         self.client.loop_start() #start loop to process received messages
 
         for x in self.topics:

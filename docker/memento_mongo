@@ -1,0 +1,26 @@
+
+# Mongosh installation
+wget https://repo.mongodb.org/apt/ubuntu/dists/noble/mongodb-org/8.0/multiverse/binary-amd64/mongodb-org-server_8.0.9_amd64.deb
+sudo apt install -y mongodb-mongosh
+wget -qO- https://www.mongodb.org/static/pgp/server-8.0.asc | sudo tee /etc/apt/trusted.gpg.d/server-8.0.asc
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+sudo apt install -y mongodb-mongosh
+
+# Exemple dans Mongosh
+mongosh -u root -p --host lyoilcdaq01 --port 27017
+##> use MONROC
+##> db.createUser({ user:'acqilc', pwd:'Rzzzzz8', roles: [{ role:'readWrite',db:'MONROC'}]})
+
+# Exemple de mongodump
+# Installer les tools (dump / restore)
+sudo apt install mongodb-database-tools
+
+# dump
+mongodump --forceTableScan --host lyoilcdaq01 --port 27017 --username acqilc --password Rzzzzz8 --db SLOW  --authenticationDatabase SLOW  --out /data/backup/
+
+# restore
+mongorestore --host lyoilcdaq01 --port 27017 -u acqilc --authenticationDatabase PICMIC --db PICMIC picmic/PICMIC
+
+## On peut meme changer le nom de la base avec
+mongodump --db ancienne_base
+mongorestore --nsFrom="ancienne_base.*" --nsTo="nouvelle_base.*" dump/

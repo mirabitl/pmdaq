@@ -1,0 +1,25 @@
+# On installe une version recente de snmp dans /usr/local
+cd /tmp
+sudo apt install libperl-dev
+tar zxvf net-snmp-5.9.4.tar.gz 
+cd net-snmp-5.9.4/
+./configure
+make
+sudo make install
+cd /opt/pmdaq/mqtt/wiener
+sudo cp WIENER-CRATE-MIB.txt /usr/local/share/snmp/mibs
+
+# On rajoute une ligne ENVIRONMENT dans le service
+[Unit]
+Description = Starting WienerPico  service
+After = network.target
+
+[Service]
+Environment="LD_LIBRARY_PATH=/usr/local/lib:/lib:/usr/lib:/usr/local/lib"
+ExecStart = /usr/local/paho/bin/WienerPico.exe
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy = multi-user.target
+

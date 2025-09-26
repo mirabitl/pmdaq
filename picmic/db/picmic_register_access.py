@@ -109,6 +109,17 @@ class picmic_parameters:
             self.data[name] = value
         self.set_modified()
 
+    def get_dac_threshold(self):
+        tlsb=self.get("dac_threshold_lsb")
+        tmsb=self.get("dac_threshold_msb")
+        return tmsb<<8 | tlsb
+    
+    def set_dac_threshold(self,target):
+        tlsb = target & 0xFF
+        tmsb = (target >> 8) & 0xFF
+        self.set("dac_threshold_lsb", tlsb)
+        self.set("dac_threshold_msb", tmsb)
+    
     def to_json(self, output_path,asic=None):
         if asic == None :
             dico=self.data

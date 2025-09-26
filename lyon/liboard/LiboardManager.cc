@@ -504,6 +504,35 @@ void LiboardManager::c_downloadDB(http_request m)
   Reply(status_codes::OK, par);
 }
 
+void LiboardManager::c_dslist(http_request m)
+{
+  auto par = json::value::object();
+  int32_t rc = 1;
+  std::map<uint32_t, LiboardInterface *> dm = this->getLiboardMap();
+  web::json::value array_slc;
+  uint32_t nd = 0;
+
+  for (std::map<uint32_t, LiboardInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
+  {
+
+    web::json::value ds;
+    ds["detid"] = json::value::number(it->second->detectorId());
+    ds["state"] = json::value::string(U(it->second->state()));
+    ds["id"] = json::value::number(it->second->status()->id);
+    ds["status"] = json::value::number(it->second->status()->status);
+    ds["slc"] = json::value::number(it->second->status()->slc);
+    ds["gtc"] = json::value::number(it->second->status()->gtc);
+    ds["bcid"] = json::value::number(it->second->status()->bcid);
+    ds["bytes"] = json::value::number(it->second->status()->bytes);
+    ds["host"] = json::value::string(U(std::string((it->second->status()->host))));
+    array_slc[nd++] = ds;
+  }
+  par["STATUS"] = web::json::value::string(U("DONE"));
+  par["DSLIST"] = array_slc;
+  Reply(status_codes::OK, par);
+
+  return;
+}
 void LiboardManager::c_status(http_request m)
 {
   auto par = json::value::object();
@@ -712,6 +741,7 @@ void LiboardManager::initialise()
   this->addTransition("DESTROY", "CONFIGURED", "CREATED", std::bind(&LiboardManager::destroy, this, std::placeholders::_1));
 
   this->addCommand("STATUS", std::bind(&LiboardManager::c_status, this, std::placeholders::_1));
+  this->addCommand("DSLIST", std::bind(&LiboardManager::c_dslist, this, std::placeholders::_1));
   this->addCommand("SETTHRESHOLD", std::bind(&LiboardManager::c_setthreshold, this, std::placeholders::_1));
   this->addCommand("SETDCPA", std::bind(&LiboardManager::c_setdcpa, this, std::placeholders::_1));
   this->addCommand("SETDACLOCAL", std::bind(&LiboardManager::c_setdaclocal, this, std::placeholders::_1));

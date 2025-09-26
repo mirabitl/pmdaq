@@ -1,9 +1,10 @@
 {
     "debug":1,
-    "id":"pico_test",
-    "subid":"dome_iseg",
+    "id":"pico_demo",
+    "subid":"dome_caen",
     "wiznet":{ "use":1,"dhcp":1,"ip":"192.168.12.2","gw":"192.168.12.1"},
-    "mqtt":{"server":"134.158.137.33","keepalive":120},
+    "mqtt":{"server":"134.158.139.152","keepalive":120},
+    "sy1527":{"account":"admin/admin@134.158.139.126","first":110,"last":29,"period":60,"list":[0,1,2,3,4,5,30,31,32,33,34,35]},
     "wiener":{"address":"lyoilchv01.ipnl.in2p3.fr","first":0,"last":15,"period":60},
     "rp2040":{"use":0,"period":30},
     "bme":{"use":0,"i2c":0,"sda":4,"scl":5,"period":10},

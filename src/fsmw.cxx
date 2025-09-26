@@ -263,7 +263,7 @@ void fsmw::setparams(http_request message)
       auto p = web::json::value::parse(std::string(it2->second), errorCode);
       for (auto iter = p.as_object().begin(); iter != p.as_object().end(); ++iter)
         _params[iter->first] = iter->second;
-      PM_DEBUG(_logFsm, "Parameters sets " << _params);
+      PM_INFO(_logFsm, "Parameters sets " << _params);
     }
 
   message.reply(status_codes::OK, _params);

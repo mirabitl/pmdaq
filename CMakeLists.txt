@@ -31,6 +31,18 @@ endif()
 
 include(CMake.defs)
 
+
+# Macro de debug pour afficher toutes les variables correspondant à un motif
+macro(debug_var pattern)
+    get_cmake_property(_vars VARIABLES)
+    foreach(var ${_vars})
+        if(var MATCHES "${pattern}")
+            message(STATUS "DEBUG: ${var} = ${${var}}")
+        endif()
+    endforeach()
+endmacro()
+
+
 message(${CMAKE_SYSTEM_PROCESSOR})
 add_subdirectory(pns)
 add_subdirectory(evb)
@@ -79,6 +91,7 @@ add_subdirectory(lyon/liboard)
 add_subdirectory(lyon/dbtool)
 add_subdirectory(lyon/febv2)
 add_subdirectory(lyon/shm_data_source)
+add_subdirectory(lyon/udp_data_source)
 add_subdirectory(lyon/picotdc)
 
 include(CPack)
@@ -138,6 +151,12 @@ target_link_libraries(scannet PRIVATE pmdaq ${PMDAQ_LIBS})
 file(GLOB SCRIPT_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/*.py"
      )
+file(GLOB PYRC_SCRIPT_TARGET
+     "${CMAKE_CURRENT_SOURCE_DIR}/pyrc/*.py"
+     )
+file(GLOB PYRC_TARGET
+     "${CMAKE_CURRENT_SOURCE_DIR}/pyrc/dqc"
+     )
 file(GLOB MG_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/mg*"
      )
@@ -154,9 +173,13 @@ file(GLOB DAEMON_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/bin/*daemon"
      )
    
+
 file(GLOB ETC_TARGET
-     "${CMAKE_CURRENT_SOURCE_DIR}/etc/*"
-     )
+    "${CMAKE_CURRENT_SOURCE_DIR}/etc/*.conf"
+    "${CMAKE_CURRENT_SOURCE_DIR}/etc/*.xml"
+    "${CMAKE_CURRENT_SOURCE_DIR}/etc/lyon/*.json"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pyrc/etc/*.json"
+)
 
 file(GLOB DAQJS_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/web/*"
@@ -165,11 +188,13 @@ file(GLOB PICOJS_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/mqtt/pico/web/*"
      )
 
+debug_var("ETC_TARGET")
+
 install(FILES ${DAQJS_TARGET}  DESTINATION htdocs/webdaq )
 install(FILES ${PICOJS_TARGET}  DESTINATION htdocs/pico )
-install(FILES ${SCRIPT_TARGET}  DESTINATION share )
+install(FILES ${SCRIPT_TARGET} ${PYRC_SCRIPT_TARGET} DESTINATION share )
 install(FILES ${ETC_TARGET} DESTINATION etc)
-install(FILES ${MG_TARGET} ${DAQWEB_TARGET} ${RC_TARGET} ${SC_TARGET} ${DAEMON_TARGET} DESTINATION bin)
+install(FILES ${MG_TARGET} ${DAQWEB_TARGET} ${RC_TARGET} ${PYRC_TARGET} ${SC_TARGET} ${DAEMON_TARGET} DESTINATION bin)
 
 
 install(TARGETS pmd scannet DESTINATION bin  ARCHIVE DESTINATION bin)
