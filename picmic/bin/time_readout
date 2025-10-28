@@ -288,7 +288,7 @@ def main(
         vhigh=[round(x,3) for x in np.arange(vmin,vmax+1E-3,vstep).tolist()]
         for vset in vhigh:
             thr=max(threshold,min(1022,int(round((vset-vmin)/2*1000*0.5626)+threshold)))
-            thr=threshold
+            #thr=threshold
             resv={}
             resv["threshold"]=thr
             resv["vmax"]=vset

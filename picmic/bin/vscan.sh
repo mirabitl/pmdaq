@@ -1,0 +1,12 @@
+./time_readout --state PICMIC_TEST_JUNE --feb 10 --vers 2 --delay 130 --threshold 577 --vmax 0.05 --first 45 --last 45 --rise 1.0
+./time_readout --state PICMIC_TEST_JUNE --feb 10 --vers 2 --delay 130 --threshold 605 --vmax 0.1 --first 45 --last 45 --rise 1.0
+./time_readout --state PICMIC_TEST_JUNE --feb 10 --vers 2 --delay 130 --threshold 625 --vmax 0.15 --first 45 --last 45 --rise 1.0
+./time_readout --state PICMIC_TEST_JUNE --feb 10 --vers 2 --delay 130 --threshold 650 --vmax 0.2 --first 45 --last 45 --rise 1.0
+./time_readout --state PICMIC_TEST_JUNE --feb 10 --vers 2 --delay 130 --threshold 700 --vmax 0.3 --first 45 --last 45 --rise 1.0
+./time_readout --state PICMIC_TEST_JUNE --feb 10 --vers 2 --delay 130 --threshold 730 --vmax 0.4 --first 45 --last 45 --rise 1.0
+./time_readout --state PICMIC_TEST_JUNE --feb 10 --vers 2 --delay 130 --threshold 750 --vmax 0.5 --first 45 --last 45 --rise 1.0
+./time_readout --state PICMIC_TEST_JUNE --feb 10 --vers 2 --delay 130 --threshold 780 --vmax 0.6 --first 45 --last 45 --rise 1.0
+./time_readout --state PICMIC_TEST_JUNE --feb 10 --vers 2 --delay 130 --threshold 810 --vmax 0.7 --first 45 --last 45 --rise 1.0
+./time_readout --state PICMIC_TEST_JUNE --feb 10 --vers 2 --delay 130 --threshold 850 --vmax 0.8 --first 45 --last 45 --rise 1.0
+./time_readout --state PICMIC_TEST_JUNE --feb 10 --vers 2 --delay 130 --threshold 880 --vmax 0.9 --first 45 --last 45 --rise 1.0
+./time_readout --state PICMIC_TEST_JUNE --feb 10 --vers 2 --delay 130 --threshold 900 --vmax 1.0 --first 45 --last 45 --rise 1.0

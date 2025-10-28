@@ -490,7 +490,17 @@ def make_pedestal_all_channels(state,version,feb_id,feb,asic_name,thmin,thmax,th
         print(f"Test failed with message: {e}")
 
 
-def main(state,version,feb_id,all_channels,gbt_init,upload_comment=None):
+def main(params):
+    state=params.state
+    version=params.version
+    feb_id=params.feb
+    all_channels=params.allchan
+    one_by_one=params.one
+    thi=params.thmin
+    tha=params.thmax
+    upload=params.upload
+    comment =params.comment
+    
     sdb=cra.instance()
     sdb.download_setup(state,version)
     sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",800)
@@ -499,12 +509,9 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment=None):
     sdb.setup.version=998
     sdb.to_csv_files()
 
-    
     print(sdb.setup.febs[0].fpga_version,sdb.setup.febs[0].petiroc_version)
-    do_fc7_gbt_init = gbt_init
     lightdaq.configLogger(loglevel=logging.INFO)
     logger = logging.getLogger('CMS_IRPC_FEB_LightDAQ')
-    upload=(upload_comment!=None)
     try:
         ax7325b = lightdaq.AX7325BBoard()
         feb = lightdaq.FebV2Board(ax7325b, febid='FEB0', fpga_fw_ver='4.8')
@@ -522,7 +529,12 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment=None):
 
             if (all_channels):
                 results=make_pedestal_all_channels(state,version,feb_id,feb,an,thi,tha,1)
-                sdb.upload_results(results["state"],results["version"],results["feb"],results["analysis"],results,upload_comment)
+                sdb.upload_results(results["state"],results["version"],results["feb"],results["analysis"],results,comment)
+                continue
+            if (one_by_one):
+                results=make_pedestal_one_by_one(state,version,feb_id,feb,an,thi,tha,1)
+                sdb.upload_results(results["state"],results["version"],results["feb"],results["analysis"],results,comment)
+                continue
             else:
                 _,_,used_chan =get_mapping(an,feb)
                 v6=sdb.setup.febs[0].petiroc.get_6b_dac(an)
@@ -600,7 +612,7 @@ def main(state,version,feb_id,all_channels,gbt_init,upload_comment=None):
                 
         
         if (upload):
-            cm=upload_comment
+            cm=comment
             sdb.setup.version=version
             sdb.upload_changes(cm)
         else:
@@ -620,7 +632,8 @@ if __name__ == '__main__':
     # configure all the actions
     grp_action = parser.add_mutually_exclusive_group()
     grp_action.add_argument('--allchan', dest='allchan', default=False, action='store_true',help="Make Scurve allchannels on")
-    grp_action.add_argument('--noinit', dest='noinit', default=False, action='store_true',help="Do not init GBT")
+    grp_action.add_argument('--one', dest='one', default=False, action='store_true',help="Make Scurve one by one")
+    grp_action.add_argument('--upload', dest='upload', default=False, action='store_true',help="Upload new state to DB")
     # Arguments
     parser.add_argument('--state', action='store', type=str,default=None, dest='state', help='DB State')
     parser.add_argument('--version', action='store',type=int,default=None,dest='version',help='DB state version' )
@@ -628,7 +641,7 @@ if __name__ == '__main__':
     parser.add_argument('--min', action='store', type=int,default=200, dest='thmin', help='Minimal 10b dac')
     parser.add_argument('--max', action='store', type=int,default=600, dest='thmax', help='Maximal 10b dac')
     
-    parser.add_argument('--upload', action='store', type=str,default=None, dest='upload', help='Upload comment')
+    parser.add_argument('--comment', action='store', type=str,default=None, dest='comment', help='Upload or test comment')
 
     results = parser.parse_args()
     print(results)
@@ -650,8 +663,8 @@ if __name__ == '__main__':
     all_channels=results.allchan
     thi=results.thmin
     tha=results.thmax
-    gbt_init=not results.noinit
     cm_up=None
     if (results.upload!=None):
         cm_up=results.upload
-    main(state,version,feb_id,all_channels,gbt_init,upload_comment=cm_up)
+    #main(state,version,feb_id,all_channels,gbt_init,upload_comment=cm_up)
+    main(results)
