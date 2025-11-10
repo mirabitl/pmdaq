@@ -547,7 +547,12 @@ class mg_picboard:
         for resa in res:
             sti = time.strftime('%Y-%m-%d %H:%M:%S',
                                 time.localtime(resa["ctime"]))
-            print(f'{sti}|{resa["state"]}/{resa["version"]}/{resa["analysis"]}|{resa["board"]}|{resa["comment"]}')
+            rid=-1
+            if ('run' in resa):
+                rid=resa['run']
+
+                
+            print(f'{sti}|{rid}|{resa["state"]}/{resa["version"]}/{resa["analysis"]}|{resa["board"]}|{resa["comment"]}')
             #print(f'{sti}|{resa["state"]}/{resa["version"]}/{resa["analysis"]}|{resa["board"]}|{resa["comment"]}')
                 
     def upload_results(self,runid,location,state,version,board,analysis,res,comment=None):
@@ -567,6 +572,7 @@ class mg_picboard:
         if not (analysis in analysisType):
             print(f"Analysis type is {analysis} not in {analysisType}")
             return
+        res["run"]=runid
         res["state"]=state
         res["version"]=version
         res["board"]=board
@@ -580,7 +586,7 @@ class mg_picboard:
 
         else:
             print(f"{res} cannot be included, comment is missing")
-    def get_scurve(self,state,version,board,analysis,channel=None):
+    def get_scurve(self,state,version,board,analysis,channel=None,runid=None):
         """
         Get the last stored test results of a SCURVE_1 or SCURVE_A analysis
 
@@ -593,8 +599,11 @@ class mg_picboard:
         Returns:
             The last scurves histograms inserted 
         """
-        res=self.db.picmic_tests.find({'state':state,'version':version,"board":board,"analysis":analysis})
-
+        res=None
+        if runid==None:
+            res=self.db.picmic_tests.find({'state':state,'version':version,"board":board,"analysis":analysis})
+        else:
+            res=self.db.picmic_tests.find({'state':state,'version':version,"board":board,"analysis":analysis,"run":runid})
         results=[]
         for resa in res:
             results.append(resa)

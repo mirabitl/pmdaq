@@ -12,7 +12,7 @@ import json
 
 class picmic_scurve:
 
-    def __init__(self,id,state,version,filtering=True,falling=False,val_evt=False,pol_neg=False,dc_pa=0):
+    def __init__(self,id,state,version,filtering=True,falling=False,val_evt=False,pol_neg=False,dc_pa=0,res_mode='coarse'):
         daq.configLogger(logging.DEBUG)
 
         self.feb_id=id
@@ -50,7 +50,7 @@ class picmic_scurve:
         # DC_PA
         for ch in range(64):
             if (dc_pa!=0):
-                self.setup.boards[0].picmic.set('DC_PA_ch',dc_pa,ch)
+                self.sdb.setup.boards[0].picmic.set('DC_PA_ch',dc_pa,ch)
         self.sdb.setup.version=998
         self.sdb.to_csv_files()
 
@@ -69,18 +69,22 @@ class picmic_scurve:
         self.feb.fpga.enableDownlinkFastControl()
         # disable all liroc channels
         for ch in range(64): self.feb.liroc.maskChannel(ch)
-        self.feb.ptdc.setResMode('fine')
+        self.feb.ptdc.setResMode(res_mode)
 
         self.feb.ptdc.powerup()
         
-        self.kc705.fastbitConfigure(mode='normal', flush_delay=100,
-            dig0_edge='rising', dig0_delay=0, 
-            dig1_edge='rising', dig1_delay=0)
+        # self.kc705.fastbitConfigure(mode='normal', flush_delay=100,
+            # dig0_edge='rising', dig0_delay=0, 
+            # dig1_edge='rising', dig1_delay=0)
+        self.kc705.fastbitConfigure(mode='normal',
+        dig2_edge='rising', dig2_delay=0 )
+        # generate a few windows to flush out the agilient patterns
         # generate a few windows to flush out the agilient patterns
         self.kc705.acqSetWindow(1, 1)
         for _ in range(5): 
-            self.kc705.ipbWrite('ACQ_CTRL_2', 1)
-            self.kc705.ipbWrite('ACQ_CTRL_2', 0)
+            self.kc705.ipbWrite('ACQ_CTRL.window_start', 1)
+            self.kc705.ipbWrite('ACQ_CTRL.window_start', 0)
+
             
     def sweep_dac10b(self,start,stop,step):
         scurves = [[] for _ in range(64)]
@@ -98,14 +102,25 @@ class picmic_scurve:
             if (dac_loc!=0):
                 self.feb.liroc.setChannelDac(ch, dac_loc)
             self.feb.liroc.maskChannel(ch, ch != lichan)
+            #self.feb.liroc.maskChannel(ch,False)
             #self.feb.liroc.setParam(f'DC_PA_ch{ch}',2)
+            """
+            if ch in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN:
+                if ch!=lichan:
+                    self.feb.ptdc.setParam(f'channel_enable_{daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[ch]}',0)
+                else:
+                    self.feb.ptdc.setParam(f'channel_enable_{daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[ch]}',1)
+            """
         scurve = self.sweep_dac10b(start, stop, step)[daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[lichan]]
         return scurve
 
     def scurve_all_channels(self,start=450,stop=750,step=1,dac_loc=32):
         for ch in range(64):
             if dac_loc!=0 : self.feb.liroc.setChannelDac(ch, dac_loc)
-            self.feb.liroc.maskChannel(ch,False)
+            if ch>-1:
+                self.feb.liroc.maskChannel(ch,False)
+            else:
+                self.feb.liroc.maskChannel(ch,True)
         scurves = self.sweep_dac10b(start, stop, step)
         return scurves
     def scurve_loop_one(self,start=450,stop=750,step=1,dac_loc=32):
@@ -163,7 +178,7 @@ class picmic_scurve:
         for idx in range(64):
             gc=v6[idx]
             if (turn_on[idx]!=0):
-                gc=v6[idx]+round((target-turn_on[idx])/1.8)
+                gc=v6[idx]+round((target-turn_on[idx])/2.0)
                 vexp[idx]=max(1,min(127,gc))
             else:
                 continue
@@ -200,7 +215,7 @@ class picmic_scurve:
         for idx in range(64):
             gc=v6[idx]
             if (turn_on[idx]!=0):
-                gc=v6[idx]+round((target-turn_on[idx])/1.8)
+                gc=v6[idx]+round((target-turn_on[idx])/2.0)
                 vexp[idx]=max(1,min(127,gc))
             else:
                 continue
@@ -214,16 +229,34 @@ class picmic_scurve:
         for idx in range(64):
             if idx not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
             dac_map={}
-            for gg in range(max(1,vexp[idx]-7),min(128,vexp[idx])):
+            """
+            for gg in range(max(1,vexp[idx]-10),min(128,vexp[idx]+10)):
                 self.feb.liroc.setParam(f'DAC_local_ch{idx}',gg)  
-                to_fine=self.scurve_one_channel(idx,target-20,target+20,thstep=1,dac_loc=0)
+                to_fine=self.scurve_one_channel(idx,target-35,target+35,thstep=1,dac_loc=0)
+                print(f"c {idx} TO {to_fine} {target-to_fine}")
                 dac_map[gg]=abs(target-to_fine)
+                
                 print(f"\t Channel {idx} target {target} dac {gg} turn on {to_fine} diff {dac_map[gg]}")
+            """
+            gg=vexp[idx]
+            for _ in range(10):
+                self.feb.liroc.setParam(f'DAC_local_ch{idx}',gg)  
+                to_fine=self.scurve_one_channel(idx,target-35,target+35,thstep=1,dac_loc=0)
+                print(f"DAC {gg} c {idx} TO {to_fine} {target-to_fine}")
+                dac_map[gg]=abs(target-to_fine)
+                ngg=gg+round((target-to_fine)/2.0)
+                if ngg<3: ngg=3
+                if ngg>125: ngg=125 
+                if abs(ngg-gg)<1: break
+                gg=ngg   
+            print(f"Channel scan {idx} -> {dac_map}")
             op_dac=min(dac_map, key = dac_map.get)
+            print(f"Channel scan {idx} -> {op_dac}")
+
             vexp[idx]=op_dac
         return target,vexp
-def main(state,version,feb_id,all_channels,loop_one,location=None,upload_comment=None,thmin=420,thmax=750):
-    pb=picmic_scurve(feb_id,state,version)
+def main(state,version,feb_id,all_channels,loop_one,location=None,upload_comment=None,thmin=420,thmax=750,dc_pa=0,res_mode='coarse'):
+    pb=picmic_scurve(feb_id,state,version,dc_pa=dc_pa,res_mode=res_mode)
    
     upload=(upload_comment!=None)
     if (all_channels):
@@ -243,7 +276,7 @@ def main(state,version,feb_id,all_channels,loop_one,location=None,upload_comment
             rc={}
             rc["prc"]=liroc_chan
             rc["tdc"]=daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]
-            rc["scurve"]=scurves[liroc_chan]
+            rc["scurve"]=scurves[daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]]
             res["channels"].append(rc)
             plt.plot(range(thmin, thmax,1), scurves[liroc_chan], '+-', label=f"ch{liroc_chan}")
         plt.grid()
@@ -348,9 +381,13 @@ if __name__ == '__main__':
     parser.add_argument('--feb', action='store', type=int,default=None, dest='feb', help='FEB id')
     parser.add_argument('--min', action='store', type=int,default=400, dest='thmin', help='Minimal 10b dac')
     parser.add_argument('--max', action='store', type=int,default=700, dest='thmax', help='Maximal 10b dac')
-    
+
+    parser.add_argument('--dcpa', action='store', type=int,default=0, dest='dcpa', help='DC_PA common value')
+
     parser.add_argument('--upload', action='store', type=str,default=None, dest='upload', help='Upload comment')
     parser.add_argument('--location', action='store', type=str,default=None, dest='location', help='Experiment name')
+    
+    parser.add_argument('--resolution', action='store', type=str,default='coarse', dest='resmode', help='Resolution mode')
 
     results = parser.parse_args()
     print(results)
@@ -376,4 +413,4 @@ if __name__ == '__main__':
     cm_up=None
     if (results.upload!=None):
         cm_up=results.upload
-    main(state,version,feb_id,all_channels,loop_one,location=results.location,upload_comment=cm_up,thmin=thi,thmax=tha)
+    main(state,version,feb_id,all_channels,loop_one,location=results.location,upload_comment=cm_up,thmin=thi,thmax=tha,dc_pa=results.dcpa,res_mode=results.resmode)

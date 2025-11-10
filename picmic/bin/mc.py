@@ -10,7 +10,7 @@ class pedcor:
     """
     Class to analyze DAC10 bit scan of PETIROC and calculate DAC6bit correction per channel and DAC10bits threshold per ASIC
     """
-    def __init__(self,state,version,feb,analysis):
+    def __init__(self,state,version,feb,analysis,runid=None):
         """ Initialise the analysis and download a test result
 
         Args:
@@ -24,7 +24,7 @@ class pedcor:
         self.sdb.download_setup(state,version)
         self.scurves={}
         print(f"Getting Scurves  from analysis {analysis} on {state}/{version}")
-        self.scurves=self.sdb.get_scurve(state,version,feb,analysis)
+        self.scurves=self.sdb.get_scurve(state,version,feb,analysis,runid=runid)
         self.full_done=False
     def draw_all(self,save=False,debug=False):
         """ Draw all Scurves of the test in ROOT TCanvas
@@ -43,6 +43,64 @@ class pedcor:
             debug(bool): Draw Scurves one by one (False by default)
         """
         self.draw_one_asic(self.scurves,title=title)
+
+    def analyse_scurve(self,ch,vals,thi,tha,fn,asic):
+        nval=len(vals)
+        print(ch)
+        print(vals)
+        if (ch<3):
+            cc=input()
+        # find maximum of scurve
+        vmax=max(vals)
+        indexes = [i for i, x in enumerate(vals) if x == vmax]
+        imax=indexes[len(indexes)-1]
+        # find first 0 of scurve after the max
+        imin=imax
+        for ith in range(imax,nval):
+            if (vals[ith]<1):
+                imin=ith
+                break
+        # Find maximum and minimum of diff
+        vdiff=[0 for _ in range(nval+1)]
+        for i in range(1,nval):
+            vdiff[i] =vals[i-1]-vals[i]
+        
+        vdmax=max(vdiff)
+        indexes = [i for i, x in enumerate(vdiff) if x == vdmax]
+        idmax=indexes[len(indexes)-1]
+        idmin=idmax
+        for ith in range(idmax,nval):
+            if ith<0:
+                continue
+            if ith>nval-1:
+                continue
+            print(ith,nval,len(vdiff))
+            if (vdiff[ith]<1):
+                idmin=ith
+                break
+        
+        print(f"Channel {ch} Max {imax} to {imin} delta Max {idmax} to {idmin}")
+        #cc=input()
+        #histograms of the Scurve and of the differences
+        shd="%s_%s_diff-c%d" % (fn,asic,ch)
+        shs="%s_%s_scurve-c%d" % (fn,asic,ch)
+        hd=ROOT.TH1F(shd,shd,tha-thi+1,thi,tha)
+        hs=ROOT.TH1F(shs,shs,tha-thi+1,thi,tha)
+        #diff=[0 for x in range(nval)]
+        vmax=max(vals)
+        ithmax=0
+        ithmin=9999
+        for ith in range(nval):
+            if (vals[ith]<0.8*vmax and ithmax==0):
+                ithmax=ith+thi
+            if (vals[ith]<0.2*vmax and ithmin==9999):
+                ithmin=ith+thi
+            hs.SetBinContent(ith+1,vals[ith])
+            if (ith-1>0):
+                if (vals[ith-1]-vals[ith]>-10):
+                    hd.SetBinContent(ith,vals[ith-1]-vals[ith])
+
+        return hs,hd,imax,imin,ithmax,ithmin,vmax
 
     def draw_scurves(self,d_sc,save,debug):
         """ Draw all Scurves of one asic in ROOT format
@@ -66,8 +124,8 @@ class pedcor:
         c2=ROOT.TCanvas("Fit")
         icol=1
         histos=[]
-        thrs=[]
-        thre=[]
+        thrs=[0 for _ in range(64)]
+        thre=[0 for _ in range(64)]
         thrm=[]
         thrr=[]
         v_thmax=[]
@@ -75,36 +133,16 @@ class pedcor:
         all_lines=[]
         scfit=ROOT.TF1("scfit","[0]*TMath::Erfc((x-[1])/[2])",thi+1,tha);
         ROOT.gStyle.SetOptStat(0)
-        hpmean=ROOT.TH1F("hpmean",f"Summary pedestal {fn} {asic} ",16,0.,16.0)
-        hpnoise=ROOT.TH1F("hpnoise",f"Summary Noise {fn} {asic} ",16,0.,16.0)
+        hpmean=ROOT.TH1F("hpmean",f"Summary pedestal {fn} {asic} ",64,0.,64.0)
+        hpnoise=ROOT.TH1F("hpnoise",f"Summary Noise {fn} {asic} ",64,0.,64.0)
         hpmean.GetYaxis().SetRangeUser(thi,tha)
         c1.Divide(1,3)
         c1.cd(1)
         for c in d_sc["channels"]:
             ch=c["prc"]
             vals=c["scurve"]
-            vmax=max(vals)
-            indexes = [i for i, x in enumerate(vals) if x == vmax]
-            imax=indexes[len(indexes)-1]
-            for i in range(imax-2): vals[i]=vals[imax-2]
-            nval=len(vals)
-            shd="%s_%s_diff-c%d" % (fn,asic,ch)
-            shs="%s_%s_scurve-c%d" % (fn,asic,ch)
-            hd=ROOT.TH1F(shd,shd,tha-thi+1,thi,tha)
-            hs=ROOT.TH1F(shs,shs,tha-thi+1,thi,tha)
-            diff=[0 for x in range(nval)]
-            vmax=max(vals)
-            ithmax=0
-            ithmin=9999
-            for ith in range(nval):
-                if (vals[ith]<0.8*vmax and ithmax==0):
-                    ithmax=ith+thi
-                if (vals[ith]<0.2*vmax and ithmin==9999):
-                    ithmin=ith+thi
-                hs.SetBinContent(ith+1,vals[ith])
-                if (ith-1>0):
-                    if (vals[ith-1]-vals[ith]>-10):
-                        hd.SetBinContent(ith,vals[ith-1]-vals[ith])
+            hs,hd,imax,imin,ithmax,ithmin,vmax =self.analyse_scurve(ch,vals,thi,tha,fn,asic)
+
             c1.cd(1)
             hs.SetLineColor(icol)
 
@@ -120,16 +158,19 @@ class pedcor:
             scfit.SetParameter(2,hd.GetRMS()/2.);
             c2.cd()
             hsc=hs.Clone()
-            hsc.Fit("scfit","","");
-            thrs.append(scfit.GetParameter(1))
-            thre.append(scfit.GetParameter(2))
+            #hsc.Fit("scfit","","");
+            #thrs.append(scfit.GetParameter(1))
+            #thre.append(scfit.GetParameter(2))
+            thrs[ch]=thi+imax+(imin-imax)/2.
+            thre[ch]=(imin-imax)/8.
+            
             thrm.append(hd.GetMean())
             thrr.append(hd.GetRMS())
             v_thmax.append(ithmax)
             v_thmin.append(ithmin)
             c2.Draw()
             c2.Update()
-            print(f"Pedestal {hd.GetMean()} Noise {hd.GetRMS()}")
+            #print(f"Pedestal {hd.GetMean()} Noise {hd.GetRMS()}")
             if (debug):
                 v=input()
                 
@@ -146,6 +187,7 @@ class pedcor:
         print(thre)
         hpmean.Reset()
         for i in range(len(thrs)):
+            """
             # Bad gaussian take 0.2-0.8 width
             if (thrr[i]>(v_thmin[i]-v_thmax[i]+1)):
                 thrr[i]=(v_thmin[i]-v_thmax[i]+1)
@@ -155,9 +197,12 @@ class pedcor:
                 thrs[i]=thrm[i]
                 thre[i]=thrr[i]
             thr=thrs[i]+5*thre[i]
+            """
+            print(f"channel {i}  ++ {thrs[i]:.1f} {thre[i]:.1f} ")
 
             hpmean.SetBinContent(i+1,thrs[i])
             hpnoise.SetBinContent(i+1,thre[i])
+            
         c2.Close()
         del c2
         if (save):
@@ -171,7 +216,7 @@ class pedcor:
             np_thrr=np.array(thre)
             seuil=np_thrm.max()+5*np_thrr.max()
             print(np_thrm.max(),np_thrr.max(),seuil,thi,tha)
-            tl=ROOT.TLine(0,seuil,16,seuil)
+            tl=ROOT.TLine(0,seuil,64,seuil)
             tl.SetLineColor(2)
             tl.Draw("SAME")
             tt=ROOT.TLatex()

@@ -15,7 +15,7 @@ import os
 import json
 
 def  main(r):
-    s=mc.pedcor(r.state,r.version,r.feb,r.analysis)
+    s=mc.pedcor(r.state,r.version,r.feb,r.analysis,runid=r.run)
     if (r.draw):
         s.draw_all(True,r.debug)
         return
@@ -43,6 +43,7 @@ if __name__ == '__main__':
     parser.add_argument('--asic', action='store', type=str,default=None, dest='asic', help='draw all scurves of an asic')
     parser.add_argument('--title', action='store', type=str,default=None, dest='title', help='title of asic plots')
 
+    parser.add_argument('--run', action='store', type=int,default=None, dest='run', help='run number')
     results = parser.parse_args()
     print(results)
 
