@@ -24,7 +24,12 @@ class pedcor:
         self.sdb.download_setup(state,version)
         self.scurves={}
         print(f"Getting Scurves  from analysis {analysis} on {state}/{version}")
-        self.scurves=self.sdb.get_scurve(state,version,feb,analysis,runid=runid)
+        if (analysis in ["SCURVE_1","SCURVE_A"]):
+            
+            self.scurves=self.sdb.get_scurve(state,version,feb,analysis,runid=runid)
+        if analysis == "CALIBRATION":
+            self.calib =self.sdb.get_calibration(state,version,feb,runid=runid)
+            print(self.calib)
         self.full_done=False
     def draw_all(self,save=False,debug=False):
         """ Draw all Scurves of the test in ROOT TCanvas

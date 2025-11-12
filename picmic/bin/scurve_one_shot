@@ -255,40 +255,45 @@ class picmic_scurve:
 
             vexp[idx]=op_dac
         return target,vexp
-def main(state,version,feb_id,all_channels,loop_one,location=None,upload_comment=None,thmin=420,thmax=750,dc_pa=0,res_mode='coarse'):
-    pb=picmic_scurve(feb_id,state,version,dc_pa=dc_pa,res_mode=res_mode)
+#def main(state,version,feb_id,all_channels,loop_one,location=None,upload_comment=None,thmin=420,thmax=750,dc_pa=0,res_mode='coarse'):
+def main(params):
+    pb=picmic_scurve(params.feb,params.state,params.version,dc_pa=params.dcpa,res_mode=params.resmode)
+    res={}
+    res["state"]=params.state
+    res["version"]=params.version
+    res["feb"]=params.feb
+    res["thmin"]=params.thmin
+    res["thmax"]=params.thmax
+    res["dcpa"]=params.dcpa
+    res["thstep"]=1
+    res["asic"]="LIROC"
+    res["ctime"]=time.time()
+    res["mode"]=params.resmode
+    if (params.location!=None):
+        res["location"]=params.location
    
-    upload=(upload_comment!=None)
+    upload=(params.upload!=None)
     if (all_channels):
-        res={}
-        res["state"]=state
-        res["version"]=version
-        res["feb"]=feb_id
-        res["thmin"]=thmin
-        res["thmax"]=thmax
-        res["thstep"]=1
-        res["asic"]="LIROC"
-        res["ctime"]=time.time()
         res["analysis"]="SCURVE_A"
         res["channels"]=[]
-        scurves=pb.scurve_all_channels(start=thmin,stop=thmax,step=1,dac_loc=0)
+        scurves=pb.scurve_all_channels(start=params.thmin,stop=params.thmax,step=1,dac_loc=0)
         for liroc_chan in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN.keys():
             rc={}
             rc["prc"]=liroc_chan
             rc["tdc"]=daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]
             rc["scurve"]=scurves[daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]]
             res["channels"].append(rc)
-            plt.plot(range(thmin, thmax,1), scurves[liroc_chan], '+-', label=f"ch{liroc_chan}")
+            plt.plot(range(params.thmin, params.thmax,1), scurves[liroc_chan], '+-', label=f"ch{liroc_chan}")
         plt.grid()
         plt.legend(loc="upper right")
         plt.show()
         runid=None
-        if upload_comment!=None:
-            runobj=pb.sdb.getRun(location,upload_comment)
+        if params.upload!=None and params.location!=None :
+            runobj=pb.sdb.getRun(params.location,params.upload)
             runid=runobj['run']
 
         # Store results in json
-        res_dir='results/%s_%d_f_%d' % (state,version,feb_id)
+        res_dir='results/%s_%d_f_%d' % (params.state,params.version,params.feb)
         if runid==None:
             runid=int(input("Enter a run number: "))
         os.system("mkdir -p %s" % res_dir)
@@ -296,38 +301,29 @@ def main(state,version,feb_id,all_channels,loop_one,location=None,upload_comment
         fout.write(json.dumps(res))
         fout.close
 
-        if upload_comment!=None:
-            pb.sdb.upload_results(runid,location,res["state"],res["version"],res["feb"],res["analysis"],res,upload_comment)
+        if params.upload!=None and params.location!=None :
+            pb.sdb.upload_results(runid,params.location,res["state"],res["version"],res["feb"],res["analysis"],res,params.upload)
 
     elif loop_one:
-        res={}
-        res["state"]=state
-        res["version"]=version
-        res["feb"]=feb_id
-        res["thmin"]=thmin
-        res["thmax"]=thmax
-        res["thstep"]=1
-        res["asic"]="LIROC"
-        res["ctime"]=time.time()
         res["analysis"]="SCURVE_1"
         res["channels"]=[]
-        scurves=pb.scurve_loop_one(start=thmin,stop=thmax,step=1,dac_loc=0)
+        scurves=pb.scurve_loop_one(start=params.thmin,stop=params.thmax,step=1,dac_loc=0)
         for liroc_chan in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN.keys():
             rc={}
             rc["prc"]=liroc_chan
             rc["tdc"]=daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]
             rc["scurve"]=scurves[liroc_chan]
             res["channels"].append(rc)
-            plt.plot(range(thmin, thmax,1), scurves[liroc_chan], '+-', label=f"ch{liroc_chan}")
+            plt.plot(range(params.thmin, params.thmax,1), scurves[liroc_chan], '+-', label=f"ch{liroc_chan}")
         plt.grid()
         plt.legend(loc="upper right")
         plt.show()
         runid=None
-        if upload_comment!=None:
-            runobj=pb.sdb.getRun(location,upload_comment)
+        if params.upload!=None and params.location!=None:
+            runobj=pb.sdb.getRun(params.location,params.upload)
             runid=runobj['run']
         # Store results in json
-        res_dir='results/%s_%d_f_%d' % (state,version,feb_id)
+        res_dir='results/%s_%d_f_%d' % (params.state,params.version,params.feb)
         if runid==None:
             runid=int(input("Enter a run number: "))
         os.system("mkdir -p %s" % res_dir)
@@ -335,11 +331,11 @@ def main(state,version,feb_id,all_channels,loop_one,location=None,upload_comment
         fout.write(json.dumps(res))
         fout.close
 
-        if upload_comment!=None:
-            pb.sdb.upload_results(runid,location,res["state"],res["version"],res["feb"],res["analysis"],res,upload_comment)
+        if params.upload!=None and params.location!=None:
+            pb.sdb.upload_results(runid,params.location,res["state"],res["version"],res["feb"],res["analysis"],res,params.upload)
             
     else:
-        target,v_dac_local=pb.calib_iterative_dac_local(thmin,thmax)
+        target,v_dac_local=pb.calib_iterative_dac_local(params.thmin,params.thmax)
         print(target)
         print(v_dac_local)
         # Upload to DB
@@ -354,9 +350,9 @@ def main(state,version,feb_id,all_channels,loop_one,location=None,upload_comment
         #val=input("Next ASIC ? ")
             
     
-        if (upload):
-            cm=upload_comment
-            pb.sdb.setup.version=version
+        if (params.upload!=None):
+            cm=params.upload
+            pb.sdb.setup.version=params.version
             pb.sdb.upload_changes(cm)
         else:
             pb.sdb.setup.version=999
@@ -413,4 +409,5 @@ if __name__ == '__main__':
     cm_up=None
     if (results.upload!=None):
         cm_up=results.upload
-    main(state,version,feb_id,all_channels,loop_one,location=results.location,upload_comment=cm_up,thmin=thi,thmax=tha,dc_pa=results.dcpa,res_mode=results.resmode)
+    #main(state,version,feb_id,all_channels,loop_one,location=results.location,upload_comment=cm_up,thmin=thi,thmax=tha,dc_pa=results.dcpa,res_mode=results.resmode)
+    main(results)
