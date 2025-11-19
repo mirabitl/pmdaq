@@ -6,7 +6,7 @@
     "delay": 120.0e-9,
     "polarity": "INV",
     "rise_time": 1e-09,
-    "fall_time": 1e-09,
+    "fall_time": 1e-06,
     "trigger_mode": "EXT",
     "trigger_slope": "POS",
     "trigger_level": 0.7

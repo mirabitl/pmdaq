@@ -24,6 +24,7 @@ def argHandler(res):
     if (res.configurations):
         _wdd.configurations()
         return
+    """
     if (res.picmic_info):
         if (res.state==None or res.version==None):
             print("State name (--state) and version (--version)  should be provided")
@@ -39,6 +40,7 @@ def argHandler(res):
                 os.system(cmd)
             print("The file can be found in ",_wdd.setup.boards[0].picmic.last_file)
         return
+    """
     if (res.download):
         if (res.state==None or res.version==None):
             print("State name (--state) and version (--version) should be provided")

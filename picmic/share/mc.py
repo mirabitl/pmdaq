@@ -27,6 +27,9 @@ class pedcor:
         if (analysis in ["SCURVE_1","SCURVE_A"]):
             
             self.scurves=self.sdb.get_scurve(state,version,feb,analysis,runid=runid)
+        else:
+            print("this code is only used for SCURVE")
+            exit(0)
         if analysis == "CALIBRATION":
             self.calib =self.sdb.get_calibration(state,version,feb,runid=runid)
             print(self.calib)
