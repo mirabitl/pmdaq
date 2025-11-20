@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+
+
 import sys, os
 import logging
 import time
@@ -70,7 +73,7 @@ def ev_handler(psi):
                     td= np.subtract(ts[pch],ts[0]).tolist()
                     mch=np.mean(td)
                     rch=np.std(td)
-                    print(f"Substracted ch{lch} nbhit={len(td)}, mean={mch:.8}, std={rch:.3}")
+                    psi.logger.debug(f"Substracted ch{lch} nbhit={len(td)}, mean={mch:.8}, std={rch:.3}")
                     ts[pch]=td
                     if (psi.new_run_header):
                         if hd[pch] == None:
