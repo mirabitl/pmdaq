@@ -14,20 +14,21 @@ import numpy as np
 import ROOT as R
 c1=R.TCanvas()
 def rh_handler(psi):
-    psi.logger.warn(f"Run {psi.run} {psi.runheader}")
+    psi.logger.warning(f"Run {psi.run} {psi.runheader}")
     print(psi.new_run_header)
 
 hd =[None for _ in range(64)]
 def ev_handler(psi):
-    psi.logger.debug(f"{psi.event} at {psi.date}")
-    psi.logger.debug(f"{psi.event} Number of blocks {len(psi.words)}")
+    psi.logger.info(f"{psi.event} at {psi.date}")
+    psi.logger.info(f"{psi.event} Number of blocks {len(psi.words)}")
     ts = [[] for _ in range(64)]
     diff = []
     first = [True]*64
     first_sample=True
     newwin=False
-  
+    t0=0
     for p in range(len(psi.words)):
+        psi.logger.info(f" words {len(psi.words[p])} at {p}")
         for word in psi.words[p]:
             word   = daq.BitField(word)
         
@@ -47,12 +48,12 @@ def ev_handler(psi):
                 coarse = word[25, 13]
                 fine   = word[12,0]
                 if (ch==0):
-                    #print(ch,coarse,fine,(coarse<<13 | fine)*3.0523E-3)
+                    print(ch,coarse,fine,(coarse<<13 | fine)*3.0523E-3)
                     ts[ch].append((coarse<<13 | fine)*3.0523E-3)
                     t0=(coarse<<13 | fine)*3.0523E-3
                     newwin=True
                 else:
-                    #print(t0,(coarse<<13 | fine)*3.0523E-3)
+                    print(ch,t0,(coarse<<13 | fine)*3.0523E-3)
                     if (first_sample):
                         if (newwin): # Keep only first signal in ACQ
                             ts[ch].append(((coarse<<13 | fine)*3.0523E-3))
@@ -68,12 +69,12 @@ def ev_handler(psi):
         if (lch!=0):
             pch=daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[lch]
             if (len(ts[pch])>0):
-                psi.logger.debug(f"{psi.event} ch{lch} nbhit={len(ts[pch])}, mean={np.mean(ts[pch]):.8}, std={np.std(ts[pch]):.3}")
+                psi.logger.info(f"{psi.event} ch{lch} nbhit={len(ts[pch])}, mean={np.mean(ts[pch]):.8}, std={np.std(ts[pch]):.3}")
                 if (len(ts[pch])==len(ts[0])):
                     td= np.subtract(ts[pch],ts[0]).tolist()
                     mch=np.mean(td)
                     rch=np.std(td)
-                    psi.logger.debug(f"Substracted ch{lch} nbhit={len(td)}, mean={mch:.8}, std={rch:.3}")
+                    psi.logger.info(f"Substracted ch{lch} nbhit={len(td)}, mean={mch:.8}, std={rch:.3}")
                     ts[pch]=td
                     if (psi.new_run_header):
                         if hd[pch] == None:
@@ -92,7 +93,7 @@ def ev_handler(psi):
                      psi.logger.error(f"Wromg length {len(ts[pch])}")
                     #input()
         else:
-            psi.logger.debug(f"ch{lch} nbhit={len(ts[lch])}, mean={np.mean(ts[lch]):.8}, std={np.std(ts[lch]):.3}") 
+            psi.logger.info(f"ch{lch} nbhit={len(ts[lch])}, mean={np.mean(ts[lch]):.8}, std={np.std(ts[lch]):.3}") 
     psi.new_run_header=False
 
 psr=ps.storage_manager()
