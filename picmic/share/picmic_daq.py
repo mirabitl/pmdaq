@@ -19,20 +19,23 @@ import picmic_register_access as cra
 import os
 import json
 import agilent81160 as agp
+import threading
 
 N_ACQ = 40
 N_WINDOW = 1
 
 class picmic_normal_run:
 
-    def __init__(self,board_id,state,version,filtering=True,falling=0,val_evt=0,pol_neg=0,dc_pa=0,mode='fine'):
+    def __init__(self):
         # Configure logger level
         daq.configLogger(logging.INFO)
 
         self._thread = None
         self._running = threading.Event()
         self._lock = threading.Lock()
-        
+        self.status = {"run": 0, "event": 0}
+        self.logger=logging.getLogger(__name__)
+        self.pulser=None
     def initialise(self,board_id,state,version,filtering=True,falling=0,val_evt=0,pol_neg=0,dc_pa=0,mode='fine'):
         # Down load DB state and patch it
         self.board_id = board_id
@@ -80,7 +83,7 @@ class picmic_normal_run:
         self.sdb.setup.version = 888
         self.sdb.to_csv_files()
 
-        print(self.sdb.setup.boards[0].picmic_version)
+        self.logger.info(f"Version {self.sdb.setup.boards[0].picmic_version}")
 
         # Open KC705
         self.kc705 = daq.KC705Board()
@@ -129,7 +132,11 @@ class picmic_normal_run:
         self.feb.liroc.set10bDac(threshold)
         self.feb.liroc.stopScClock()
 
-    def start_a_run(self,location,comment):
+    def start_a_run(self,location,comment,params={"type":"NORMAL"}):
+        if not "type" in params:
+            self.logger.error("Run type should be specified in params")
+            return
+                         
         runobj = self.sdb.getRun(location,comment)
         self.runid = runobj["run"]
         if self.runid == None:
@@ -137,19 +144,165 @@ class picmic_normal_run:
 
         # Store results in json
         self.storage.open(f"run_{self.runid}_{self.state}_{self.version}_{self.board_id}_{self.threshold}")
-        self.run_type=0x1
-        rh=np.array([self.run_type,threshold],dtype='int64')
-        self.storage.writeRunHeader(self.runid,rh)
 
-    def setup_injection(self,pulser,vout,rise=1.0E-9,delay=120E-9,use_ctest=False):
+        self.run_type=1
+        rh=np.array([self.run_type,self.threshold],dtype='int64')
+        self.storage.writeRunHeader(self.runid,rh)
+        if params["type"] == "NORMAL":
+            self.normal_run()
+        if params["type"] == "TIMELOOP":
+            self.timeloop_run(params)
+    def normal_run(self,params=None):
+        with self._lock:
+            if self._thread and self._thread.is_alive():
+                self.logger.warning("Acquisition déjà en cours")
+                return False
+            self._running.set()
+            self._thread = threading.Thread(target=self.normal_loop, args=(params,), daemon=True)
+            self._thread.start()
+            return True
+    
+    def normal_loop(self, params=None):
+        self.logger.info("Acquisition thread démarré")
+        while self._running.is_set():
+            # simulate acquisition tick
+            with self._lock:
+                self.status["run"] = self.storage.run
+                self.status["event"] = self.storage.event
+                self.acquire_and_store(N_ACQ)
+            if self.storage.event%100 == 0: 
+                self.logger.info(f"Acquisition {self.storage.run} {self.storage.event}")
+            time.sleep(0.001)
+        self.logger.info("Acquisition thread arrêté")
+
+        
+    def timeloop_run(self,params=None):
+        with self._lock:
+            if self._thread and self._thread.is_alive():
+                self.logger.warning("Acquisition déjà en cours please use stop before")
+                return False
+            self._running.set()
+            self._thread = threading.Thread(target=self.time_loop, args=(params,), daemon=True)
+            self._thread.start()
+            return True
+    def init_pulser(self,fname="/opt/pmdaq/picmic/etc/pulse_config.json"):
+        self.pulser=agp.mod81160(fname)
+        #agp.print_status()
+        if self.pulser.inst!=None:
+            self.pulser.print_status()
+            self.pulser.configure_pulse()
+            self.pulser.configure_trigger()
+            self.pulser.setOFF(1)
+            self.pulser.setOFF(2)
+            self.pulser.print_status()
+            #exit(0)
+            input()
+        else:
+            self.logger.error("No agilent pulser")
+            return
+    def time_loop(self, params=None):
+        self.logger.info("Acquisition thread démarré")
+        if params == None:
+            self.logger.error("Timeloop thread needs parameters exiting")
+            return
+
+        # Check pulser
+        if self.pulser==None:
+            self.logger.error("Timeloop thread needs pulser to be defined (call init_pulser before) exiting")
+            return
+        # Check parameters
+        vmin=None
+        if not "vmin" in params:
+            self.logger.error("Timeloop thread needs 'vmin' parameter exiting")
+            return
+        else:
+            vmin=params["vmin"]
+        vmax=None
+        if not "vmax" in params:
+            self.logger.error("Timeloop thread needs 'vmax' parameter exiting")
+            return
+        else:
+            vmax=params["vmax"]
+        rise=None
+        if not "rise" in params:
+            self.logger.error("Timeloop thread needs 'rise' parameter exiting")
+            return
+        else:
+            rise=params["rise"]*1.0E-9
+        delay=None
+        if not "delay" in params:
+            self.logger.error("Timeloop thread needs 'delay' parameter exiting")
+            return
+        else:
+            delay=params["delay"]*1.0E-9
+        nstep=None
+        if not "nstep" in params:
+            self.logger.error("Timeloop thread needs 'nstep' parameter exiting")
+            return
+        else:
+            nstep=params["nstep"]
+        use_ctest=False
+        if "ctest" in params:
+            use_ctest=(params["ctest"]==1)
+        nacq=N_ACQ
+        if "nacq" in params:
+            nacq=params["nacq"]
+        # Now loop
+        while self._running.is_set():
+            # Set the pulser
+            if (vmax>1.0 and use_ctest):
+                self.logger.error(f"No automatic scan with High V {vmax} greater than 1.0 V")
+            if nstep == 0:
+                self.logger.error(f"nstep is 0 , only one acquistion of {nacq} event with {vmax} settings")
+                self.setup_injection(vmax,rise,delay,use_ctest)
+                self.acquire_and_store(nacq)
+                self.status["run"] = self.storage.run
+                self.status["event"] = self.storage.event
+                self.pulser.setOFF(1)
+                self.pulser.setOFF(2)
+                break
+            else:
+                vstep=(vmax-vmin)/nstep
+                vhigh=[round(x,3) for x in np.arange(vmin,vmax+1E-3,vstep).tolist()]
+                for vset in vhigh:
+                    self.logger.info(f"Step {vset}  acquistion of {nacq} events")
+                    self.setup_injection(vset,rise,delay,use_ctest)
+                    self.acquire_and_store(nacq)
+                    self.status["run"] = self.storage.run
+                    self.status["event"] = self.storage.event
+                self.pulser.setOFF(1)
+                self.pulser.setOFF(2)
+                break
+        self.logger.info("TimeLoop Acquisition thread arrêté")
+
+    def stop(self, params=None):
+        with self._lock:
+            if not (self._thread and self._thread.is_alive()):
+                self.logger.warning("Acquisition non démarrée")
+                return False
+            self._running.clear()
+            # join optionnel court
+            self._thread.join(timeout=2)
+            return True
+        self.storage.close()
+    def running(self):
+        return self._running.is_set()
+
+    def get_status(self):
+        with self._lock:
+            return dict(self.status, running=self.running())
+
+    def setup_injection(self,vout,rise=1.0E-9,delay=120E-9,use_ctest=False):
         if (vout>1.0 and use_ctest):
-            print(f"No automatic scan with High V {vout} greater than 1.0 V")
-            exit(0)
-        pulser.setVoltage(1,0,vout)
-        pulser.setRiseTime(1,rise)
-        pulser.setDelay(1,delay)
-        pulser.setON(1)
-        pulser.setON(2)
+            self.logger.error(f"No automatic scan with High V {vout} greater than 1.0 V")
+            self.pulser.setOFF(1)
+            self.pulser.setOFF(2)
+            return
+        self.pulser.setVoltage(1,0,vout)
+        self.pulser.setRiseTime(1,rise)
+        self.pulser.setDelay(1,delay)
+        self.pulser.setON(1)
+        self.pulser.setON(2)
         self.run_type=0x10
         rh=np.array([self.run_type,int(vout*1000),int(rise*1E10),int(delay*1E9)],dtype='int64')
         self.storage.writeRunHeader(self.runid,rh)
@@ -162,244 +315,3 @@ class picmic_normal_run:
             self.storage.writeEvent(words)
         return
     
-    
-        
-def main(
-    state,
-    version,
-    board_id,
-    first_c,
-    last_c,
-    vmax=0.9,
-    threshold=600,
-    delay=120E-9,
-    rising=1.0E-9,
-    vmin=None    
-):
-    pulser=agp.mod81160("/opt/pmdaq/picmic/etc/pulse_config.json")
-    #agp.print_status()
-    if pulser.inst!=None:
-        pulser.print_status()
-        pulser.configure_pulse()
-        pulser.configure_trigger()
-        pulser.setOFF(1)
-        pulser.setOFF(2)
-        pulser.print_status()
-        #exit(0)
-        input()
-    else:
-        print("No agilent pulser")
-        exit(0)
-    pb = picmic_time(board_id, state, version)
-    if (vmin==None):
-        res={}
-        res["threshold"]=threshold
-        res["vmax"]=vmax
-        res["rise"]=rise
-        res["delay"]=delay
-        res["channels"]=[]
-        for lch in range(first_c,last_c+1):
-            if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
-            tos=pb.check_time_one(pulser,lch,0,vmax,threshold=threshold,nacq=N_ACQ,rise=rising,delay=delay)
-            res["channels"].append({"channel":lch,"timing":tos})
-        print(res)
-        # Serializing json
-        json_object = json.dumps(res)
-
-        # Writing to sample.json
-        with open(f"timing_f{first_c}_l{last_c}_v{vmax}_t{threshold}_d{round(delay*1E12)}_r{round(rising*1E12)}.json", "w") as outfile:
-            outfile.write(json_object)
-    else:
-        # Threshold send should be the one of lower point
-        res={}
-        res["points"]=[]
-        res["rise"]=rise
-        res["delay"]=delay 
-        vstep=(vmax-vmin)/40
-        vhigh=[round(x,3) for x in np.arange(vmin,vmax+1E-3,vstep).tolist()]
-        for vset in vhigh:
-            thr=max(threshold,min(1022,int(round((vset-vmin)/2*1000*0.5626)+threshold)))
-            thr=threshold
-            resv={}
-            resv["threshold"]=thr
-            resv["vmax"]=vset
-            
-            resv["channels"]=[]
-            for lch in range(first_c,last_c+1):
-                if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
-                tos=pb.check_time_one(pulser,lch,0,vset,threshold=thr,nacq=N_ACQ,rise=rising,delay=delay,display=False)
-                resv["channels"].append({"channel":lch,"timing":tos})
-            print(resv)
-            res["points"].append(resv)
-        # Serializing json
-        json_object = json.dumps(res)
-
-        # Writing to sample.json
-        with open(f"timing_vscan_f{first_c}_l{last_c}_v{vmax}_t{threshold}_d{round(delay*1E12)}_r{round(rising*1E12)}.json", "w") as outfile:
-            outfile.write(json_object)
-    pulser.setOFF(1)
-    pulser.setOFF(2)
-    pulser.close()
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-
-    # configure all the actions
-    grp_action = parser.add_mutually_exclusive_group()
-    grp_action.add_argument(
-        "--noinj",
-        dest="noinj",
-        default=False,
-        action="store_true",
-        help="Make Scurve allchannels on",
-    )
-    # Arguments
-    parser.add_argument(
-        "--state", action="store", type=str, default=None, dest="state", help="DB State"
-    )
-    parser.add_argument(
-        "--version",
-        action="store",
-        type=int,
-        default=None,
-        dest="version",
-        help="DB state version",
-    )
-    parser.add_argument(
-        "--feb", action="store", type=int, default=None, dest="feb", help="FEB id"
-    )
-    parser.add_argument(
-        "--first", action="store", type=int, default=None, dest="first", help="LIROC first channel"
-    )
-    parser.add_argument(
-        "--last", action="store", type=int, default=None, dest="last", help="LIROC last channel"
-    )
-    parser.add_argument(
-        "--vmax",
-        action="store",
-        type=float,
-        default=0.9,
-        dest="vmax",
-        help="Maximal pulser injection",
-    )
-    parser.add_argument(
-        "--vmin",
-        action="store",
-        type=float,
-        default=None,
-        dest="vmin",
-        help="Minimal pulser injection for a scan",
-    )
-    parser.add_argument(
-        "--threshold",
-        action="store",
-        type=int,
-        default=400,
-        dest="threshold",
-        help="Minimal 10b dac",
-    )
-    parser.add_argument(
-        "--rise",
-        action="store",
-        type=float,
-        default=1.0,
-        dest="rise",
-        help="Rising time (ns)",
-    )
-    parser.add_argument(
-        "--delay",
-        action="store",
-        type=float,
-        default=120.0,
-        dest="delay",
-        help="Delay time (ns)",
-    )
-
-    
-    results = parser.parse_args()
-    print(results)
-
-    if results.state == None:
-        print("--state should be specified")
-        exit(0)
-    if results.version == None:
-        print("--version should be specified")
-        exit(0)
-    if results.feb == None:
-        print("--feb should be specified")
-        exit(0)
-    if results.first == None:
-        print("--first should be specified")
-        exit(0)
-    if results.last == None:
-        print("--last should be specified")
-        exit(0)
-    state = results.state
-    version = results.version
-    board_id = results.feb
-    firstchannel=results.first 
-    lastchannel=results.last 
-    threshold = results.threshold
-    vha=results.vmax
-    rise=results.rise*1.0E-9
-    delay=results.delay*1.0E-9
-    main(
-        state,
-        version,
-        board_id,
-        firstchannel,
-        lastchannel,
-        vmax=vha,
-        threshold=threshold,
-        rising=rise,
-        delay=delay,
-        vmin=results.vmin
-    )
-"""    
-if __name__ == '__main__':
-    daq.configLogger(logging.INFO)
-    
-    kc705 = daq.KC705Board()
-    kc705.init()
-    feb = daq.FebBoard(kc705)
-    feb.init()
-    
-    
-    feb.loadConfigFromCsv(folder=f"..{os.sep}febconfig", config_name='loup_config.csv')
-    feb.fpga.enableDownlinkFastControl()
-    feb.fpga.disableUplink()
-    # disable all liroc channels
-    # ~ for ch in range(64): feb.liroc.maskChannel(ch)
-    feb.liroc.set10bDac(600)
-    feb.liroc.stopScClock()
-    
-    # disable all ptdc channels except ch0 and ch1
-    # ~ for ch in range(2, 64):
-        # ~ feb.ptdc.setParam(f'channel_enable_{ch}', 0)
-
-    feb.ptdc.setResMode('coarse')
-    
-    # ~ feb.ptdc.setParam('hrx_top_en_r', 0)
-    # ~ feb.ptdc.setParam('hrx_bot_en_r', 0)
-    # ~ feb.ptdc.setParam('disable_ro_reject', 0)
-    # ~ feb.ptdc.setParam('falling_en', 1)
-    # ~ feb.ptdc.setParam('falling_en_tm_0', 1)
-    # ~ feb.ptdc.setParam('falling_en_tm_1', 1)
-    
-    feb.ptdc.powerup()
-
-    kc705.fastbitConfigure(mode='normal',
-        dig2_edge='rising', dig2_delay=1)
-    
-    # generate a few windows to flush out the agilient patterns
-    kc705.acqSetWindow(1, 1)
-    for _ in range(10): 
-        kc705.ipbWrite('ACQ_CTRL_2', 1)
-        kc705.ipbWrite('ACQ_CTRL_2', 0)
-    
-
-    
-    # ~ plt.figlegend()
-    plt.show()
-"""

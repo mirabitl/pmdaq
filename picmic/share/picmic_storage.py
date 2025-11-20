@@ -32,7 +32,7 @@ class storage_manager:
         self.index_file_name = fname+".idx"
         self.f_data=open(self.data_file_name, "wb")
         self.f_idx=open(self.index_file_name, "wb")
-
+        self.event=0
     def writeRunHeader(self,run_number,payload):
         self.run=run_number
         self.logger.info(f"New run header {self.run} payload {payload} ")
@@ -51,7 +51,7 @@ class storage_manager:
         self.f_data.write(struct.pack("<IIIQ",b_type,self.event,len(payloads),int(time.time_ns())))
         e_offset+=3*4+8
         idx=0
-        self.logger.info(f"Write {self.event} # Payloads {len(payloads)} ")
+        self.logger.debug(f"Write {self.event} # Payloads {len(payloads)} ")
         for payload in payloads:
             self.logger.debug(len(payload))
 
@@ -71,7 +71,7 @@ class storage_manager:
     def close(self):
         self.f_data.close()
         self.f_idx.close()
-                          
+        
 
     def read(self,fname):
         self.f_data=open(fname, "rb")
