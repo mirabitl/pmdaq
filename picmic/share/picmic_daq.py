@@ -24,6 +24,12 @@ import threading
 N_ACQ = 40
 N_WINDOW = 1
 
+def load_from_file(f_config):
+    c=json.loads(open(f_config).read())
+    print(c)
+    p=picmic_normal_run()
+    p.set_configuration(c)
+    return p
 class picmic_normal_run:
 
     def __init__(self):
@@ -36,7 +42,17 @@ class picmic_normal_run:
         self.status = {"run": 0, "event": 0}
         self.logger=logging.getLogger(__name__)
         self.pulser=None
-    def initialise(self,board_id,state,version,filtering=True,falling=0,val_evt=0,pol_neg=0,dc_pa=0,mode='fine'):
+        self.conf=None
+    def set_configuration(self,c):
+        self.conf=c
+        
+    def initialise(self,board_id=0,state=None,version=0,filtering=True,falling=0,val_evt=0,pol_neg=0,dc_pa=0,mode='fine'):
+        # Try to use config value
+        if self.conf !=None and board_id==0:
+            board_id=self.conf["db"]["board"]
+            state=self.conf["db"]["state"]
+            version=self.conf["db"]["version"]
+            mode=self.conf["mode"]
         # Down load DB state and patch it
         self.board_id = board_id
         self.state = state
@@ -112,27 +128,43 @@ class picmic_normal_run:
             self.kc705.ipbWrite('ACQ_CTRL.window_start', 1)
             self.kc705.ipbWrite('ACQ_CTRL.window_start', 0)
         # files
-        self.storage=ps.storage_manager()
+        if self.conf!=None:
+            self.storage=ps.storage_manager(self.conf["storage"]["directory"])
         #self.storage.open("unessai")
         self.runid=None
 
-    def prepare_run(self,threshold,channel_list=[i for i in range(64)],ctest_list=[]):
+    def prepare_run(self,threshold=0,channel_list=[i for i in range(64)],ctest_list=[]):
+        if self.conf!=None and threshold==0:
+                threshold=self.conf["threshold"]
+                channel_list=self.conf["channel_list"]
+                ctest_list=self.conf["ctest_list"]
         self.threshold=threshold
         for ch in range(64):
             if ch in channel_list:
+                self.logger.info(f"{ch} is unmasked")
                 self.feb.liroc.maskChannel(ch, False)
             else:
                 self.feb.liroc.maskChannel(ch, True)
             if ch in ctest_list:
+                self.logger.info(f"{ch} is CTest")
                 self.feb.liroc.setParam(f"Ctest_ch{ch}",True)
             else:
-                self.feb.liroc.setParam(f"Ctest_ch{ch}",True)
-                self.feb.liroc.maskChannel(ch, True)
+                self.feb.liroc.setParam(f"Ctest_ch{ch}",False)
+                #self.feb.liroc.maskChannel(ch, True)
         # Set the threshold
         self.feb.liroc.set10bDac(threshold)
         self.feb.liroc.stopScClock()
-
-    def start_a_run(self,location,comment,params={"type":"NORMAL"}):
+        input("Hit return to continue..")
+    def start_a_run(self,location=None,comment=None,params={"type":"NORMAL"}):
+        if self.conf!=None and location ==None:
+            r_vers=self.conf["run"]["version"]
+            location=self.conf["location"]
+            params=self.conf["run"][r_vers]
+            #print(params)
+            #exit(0)
+            comment=params["comment"]
+            if "use_pulser" in self.conf:
+                self.init_pulser(self.conf["use_pulser"])
         if not "type" in params:
             self.logger.error("Run type should be specified in params")
             return
@@ -146,8 +178,11 @@ class picmic_normal_run:
         self.storage.open(f"run_{self.runid}_{self.state}_{self.version}_{self.board_id}_{self.threshold}")
 
         self.run_type=1
-        rh=np.array([self.run_type,self.threshold],dtype='int64')
-        self.storage.writeRunHeader(self.runid,rh)
+        if self.conf==None:
+            rh=np.array([self.run_type,self.threshold],dtype='int64')
+            self.storage.writeRunHeader(self.runid,rh)
+        else:
+            self.storage.writeRunHeaderDict(self.runid,self.conf)
         if params["type"] == "NORMAL":
             self.normal_run()
         if params["type"] == "TIMELOOP":
@@ -279,12 +314,15 @@ class picmic_normal_run:
         with self._lock:
             if not (self._thread and self._thread.is_alive()):
                 self.logger.warning("Acquisition non démarrée")
+                self.storage.close()
+                self._running.clear()
                 return False
             self._running.clear()
             # join optionnel court
             self._thread.join(timeout=2)
+            self.storage.close()
             return True
-        self.storage.close()
+        
     def running(self):
         return self._running.is_set()
 

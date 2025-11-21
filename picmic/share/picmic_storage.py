@@ -10,12 +10,13 @@ import sys, os
 import logging
 import time
 import json
-
+import base64
 
 class storage_manager:
-    def __init__(self):
-        self.data_file_name = "acq_compressed.bin"
-        self.index_file_name = "acq_compressed.idx"
+    def __init__(self,fdir='./'):
+        self.fdir=fdir
+        self.data_file_name = self.fdir+"acq_compressed.bin"
+        self.index_file_name = self.fdir+"acq_compressed.idx"
         self.compressor = zstd.ZstdCompressor(level=3)
         self.decompressor = zstd.ZstdDecompressor()
 
@@ -28,8 +29,8 @@ class storage_manager:
         self.new_run_header=False
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
     def open(self,fname):
-        self.data_file_name = fname+".bin"
-        self.index_file_name = fname+".idx"
+        self.data_file_name = self.fdir+fname+".bin"
+        self.index_file_name = self.fdir+fname+".idx"
         self.f_data=open(self.data_file_name, "wb")
         self.f_idx=open(self.index_file_name, "wb")
         self.event=0
@@ -39,6 +40,20 @@ class storage_manager:
         b_type=0
         raw_bytes =payload.tobytes()
         compressed = self.compressor.compress(raw_bytes)
+        comp_size = len(compressed)
+        self.f_data.write(struct.pack("<IIIQ",b_type,self.run,comp_size,int(time.time_ns())))
+        self.f_data.write(compressed)
+        self.f_idx.write(struct.pack("<IQ", b_type,self.offset))
+        self.offset+=3*4+8+comp_size
+    def writeRunHeaderDict(self,run_number,input_dict):
+        self.run=run_number
+        self.logger.info(f"New run header {self.run} payload {input_dict}")
+        b_type=2
+        message = str(input_dict)
+        ascii_message = message.encode('ascii')
+        output_byte = base64.b64encode(ascii_message)
+
+        compressed = self.compressor.compress(output_byte)
         comp_size = len(compressed)
         self.f_data.write(struct.pack("<IIIQ",b_type,self.run,comp_size,int(time.time_ns())))
         self.f_data.write(compressed)
@@ -94,6 +109,23 @@ class storage_manager:
                 compressed=self.f_data.read(length)
                 raw_bytes = self.decompressor.decompress(compressed)
                 self.runheader = np.frombuffer(raw_bytes, dtype=np.uint32).copy()
+                self.logger.debug(f"new run header {self.run} : {self.runheader}")
+                self.new_run_header=True
+                # Call the run header handler
+                if self.run_handler != None:
+                    self.run_handler(self)
+                continue
+            if (b_type == 2):
+                self.run = number
+                compressed=self.f_data.read(length)
+                raw_bytes = self.decompressor.decompress(compressed)
+                msg_bytes = base64.b64decode(raw_bytes)
+                ascii_msg = msg_bytes.decode('ascii')
+                # Json library convert stirng dictionary to real dictionary type.
+                # Double quotes is standard format for json
+                ascii_msg = ascii_msg.replace("'", "\"")
+                self.runheader = json.loads(ascii_msg)
+                #self.runheader = np.frombuffer(raw_bytes, dtype=np.uint32).copy()
                 self.logger.debug(f"new run header {self.run} : {self.runheader}")
                 self.new_run_header=True
                 # Call the run header handler
