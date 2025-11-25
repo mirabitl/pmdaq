@@ -20,6 +20,17 @@ import os
 import json
 import agilent81160 as agp
 import threading
+from transitions import Machine, State
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler("/tmp/daq.log", mode='w')  # ,
+        # logging.StreamHandler()
+    ]
+)
 
 N_ACQ = 40
 N_WINDOW = 1
@@ -40,30 +51,55 @@ class picmic_normal_run:
         self._running = threading.Event()
         self._lock = threading.Lock()
         self.status = {"run": 0, "event": 0}
-        fh = logging.FileHandler('/tmp/daq.log')
-        fh.setLevel(logging.INFO)
         self.logger=logging.getLogger(__name__)
-        self.logger.addHandler(fh)
-        logging.getLogger('LIROC_PTDC_DAQ').addHandler(fh)
-        #logging.basicConfig(filename='/tmp/daq.log', encoding='utf-8', level=logging.INFO)
         self.pulser=None
         self.conf=None
+        self.daqfsm = Machine(model=self, states=['CREATED', 'INITIALISED', 'CONFIGURED', 'RUNNING','CONFIGURED'], initial='CREATED')
+        self.daqfsm.add_transition(
+            'initialise', 'CREATED', 'INITIALISED', after='daq_initialising')
+        self.daqfsm.add_transition(
+            'configure', ['INITIALISED', 'CONFIGURED'], 'CONFIGURED', after='daq_configuring')
+        self.daqfsm.add_transition(
+            'configure', ['CONFIGURED', 'CONFIGURED'], 'CONFIGURED', after='daq_configuring')
+        self.daqfsm.add_transition('start', 'CONFIGURED',
+                                   'RUNNING',     after='daq_starting', conditions='isConfigured')
+        self.daqfsm.add_transition('stop', 'RUNNING',
+                                   'CONFIGURED',  after='daq_stopping', conditions='isConfigured')
+        self.daqfsm.add_transition(
+            'destroy', ['INITIALISED', 'CONFIGURED'], 'CREATED',after='daq_destroying')
+
+        # Setup DB access
+        self.sdb = cra.instance()
+
     def set_configuration(self,c):
         self.conf=c
-        
-    def initialise(self,board_id=0,state=None,version=0,filtering=True,falling=0,val_evt=0,pol_neg=0,dc_pa=0,mode='fine'):
+    def set_db_configuration(self,name,version):
+        self.sdb.download_configuration(name,version)
+        c=json.loads(open(f"/dev/shm/config/{name}_{version}.json").read())
+        print(c)
+        self.set_configuration(c)
+    def store_configuration(self,name,version,comment="Comment is missing"):
+        self.conf["name"]=name
+        self.conf["version"]=version
+        fname="/tmp/%s_%s.json" % (name,version)
+        f=open(fname,"w+")
+        f.write(json.dumps(self.conf, indent=2, sort_keys=True))
+        f.close()
+        self.sdb.upload_configuration(fname,comment)
+    def daq_destroying(self):
+        return True
+    def daq_initialising(self,board_id=0,dbstate=None,dbversion=0,filtering=True,falling=0,val_evt=0,pol_neg=0,dc_pa=0,mode='fine'):
         # Try to use config value
         if self.conf !=None and board_id==0:
             board_id=self.conf["db"]["board"]
-            state=self.conf["db"]["state"]
-            version=self.conf["db"]["version"]
+            dbstate=self.conf["db"]["state"]
+            dbversion=self.conf["db"]["version"]
             mode=self.conf["mode"]
         # Down load DB state and patch it
         self.board_id = board_id
-        self.state = state
-        self.version = version
-        self.sdb = cra.instance()
-        self.sdb.download_setup(state, version)
+        self.dbstate = dbstate
+        self.dbversion = dbversion
+        self.sdb.download_setup(self.dbstate, dbversion)
         self.sdb.to_csv_files()
 
         # Default threshold set at 800
@@ -114,7 +150,7 @@ class picmic_normal_run:
         self.feb.init()
         self.feb.loadConfigFromCsv(
             folder="/dev/shm/board_csv",
-            config_name="%s_%d_f_%d_config_picmic.csv" % (self.state, 888, self.board_id),
+            config_name="%s_%d_f_%d_config_picmic.csv" % (self.dbstate, 888, self.board_id),
         )
         self.feb.fpga.enableDownlinkFastControl()
         # disable all liroc channels
@@ -138,7 +174,7 @@ class picmic_normal_run:
         #self.storage.open("unessai")
         self.runid=None
 
-    def prepare_run(self,threshold=0,channel_list=[i for i in range(64)],ctest_list=[]):
+    def daq_configuring(self,threshold=0,channel_list=[i for i in range(64)],ctest_list=[]):
         if self.conf!=None and threshold==0:
                 threshold=self.conf["threshold"]
                 channel_list=self.conf["channel_list"]
@@ -160,7 +196,15 @@ class picmic_normal_run:
         self.feb.liroc.set10bDac(threshold)
         self.feb.liroc.stopScClock()
         #input("Hit return to continue..")
-    def start_a_run(self,location=None,comment=None,params={"type":"NORMAL"}):
+        self.configured=True
+    def isConfigured(self):
+        """ Check the configuration
+        Returns:
+            True is configured
+        """
+        return self.configured
+
+    def daq_starting(self,location=None,comment=None,params={"type":"NORMAL"}):
         if self.conf!=None and location ==None:
             r_vers=self.conf["run"]["version"]
             location=self.conf["location"]
@@ -180,7 +224,7 @@ class picmic_normal_run:
             self.runid = int(input("Enter a run number: "))
 
         # Store results in json
-        self.storage.open(f"run_{self.runid}_{self.state}_{self.version}_{self.board_id}_{self.threshold}")
+        self.storage.open(f"run_{self.runid}_{self.dbstate}_{self.dbversion}_{self.board_id}_{self.threshold}")
 
         self.run_type=1
         if self.conf==None:
@@ -315,7 +359,7 @@ class picmic_normal_run:
                 break
         self.logger.info("TimeLoop Acquisition thread arrêté")
 
-    def stop(self, params=None):
+    def daq_stopping(self, params=None):
         with self._lock:
             if not (self._thread and self._thread.is_alive()):
                 self.logger.warning("Acquisition non démarrée")

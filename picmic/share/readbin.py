@@ -16,7 +16,7 @@ c1=R.TCanvas()
 def rh_handler(psi):
     psi.logger.warning(f"Run {psi.run} {psi.runheader}")
     print(psi.new_run_header)
-
+    #input("New run header found , hit return")
 hd =[None for _ in range(64)]
 def ev_handler(psi):
     psi.logger.debug(f"{psi.event} at {psi.date}")
@@ -74,7 +74,7 @@ def ev_handler(psi):
                     td= np.subtract(ts[pch],ts[0]).tolist()
                     mch=np.mean(td)
                     rch=np.std(td)
-                    psi.logger.info(f"Substracted ch{lch} nbhit={len(td)}, mean={mch:.8}, std={rch:.3}")
+                    psi.logger.debug(f"Substracted ch{lch} nbhit={len(td)}, mean={mch:.8}, std={rch:.3}")
                     ts[pch]=td
                     if (psi.new_run_header):
                         if hd[pch] == None:
