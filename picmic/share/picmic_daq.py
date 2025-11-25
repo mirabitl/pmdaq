@@ -34,13 +34,18 @@ class picmic_normal_run:
 
     def __init__(self):
         # Configure logger level
-        daq.configLogger(logging.INFO)
+        daq.configLogger(logging.DEBUG)
 
         self._thread = None
         self._running = threading.Event()
         self._lock = threading.Lock()
         self.status = {"run": 0, "event": 0}
+        fh = logging.FileHandler('/tmp/daq.log')
+        fh.setLevel(logging.INFO)
         self.logger=logging.getLogger(__name__)
+        self.logger.addHandler(fh)
+        logging.getLogger('LIROC_PTDC_DAQ').addHandler(fh)
+        #logging.basicConfig(filename='/tmp/daq.log', encoding='utf-8', level=logging.INFO)
         self.pulser=None
         self.conf=None
     def set_configuration(self,c):
@@ -154,7 +159,7 @@ class picmic_normal_run:
         # Set the threshold
         self.feb.liroc.set10bDac(threshold)
         self.feb.liroc.stopScClock()
-        input("Hit return to continue..")
+        #input("Hit return to continue..")
     def start_a_run(self,location=None,comment=None,params={"type":"NORMAL"}):
         if self.conf!=None and location ==None:
             r_vers=self.conf["run"]["version"]
@@ -231,7 +236,7 @@ class picmic_normal_run:
             self.pulser.setOFF(2)
             self.pulser.print_status()
             #exit(0)
-            input()
+            #input()
         else:
             self.logger.error("No agilent pulser")
             return
