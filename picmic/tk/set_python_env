@@ -2,4 +2,4 @@
 sudo apt install python3-tk	
 python3 -m venv testtkenv
 source testtkenv/bin/activate
-pip3 install ttkbootstrap matplotlib numpy zstd zstandard pymongo pyvisa pyvisa_py requests termcolor
+pip3 install ttkbootstrap matplotlib numpy zstd zstandard pymongo pyvisa pyvisa_py requests termcolor transitions
