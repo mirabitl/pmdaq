@@ -1,0 +1,250 @@
+#!/usr/bin/env python3
+
+
+import os
+import json
+import time
+import argparse
+import rc_control as crc
+import rc_services as sac
+import rc_request
+import rc_pns 
+import MongoJob as mg
+import sys
+
+
+parser = argparse.ArgumentParser()
+
+# configure all the actions
+grp_action = parser.add_mutually_exclusive_group()
+# JOB Control
+
+grp_action.add_argument('--pns-destroy', action='store_true',
+                        help='delete all registered services and the session (--name for a given application)')
+grp_action.add_argument('--pns-remove', action='store_true',
+                        help='remove all registered services(--name for a given application)')
+grp_action.add_argument('--pns-info', action='store_true',
+                        help='List all services and parameters')
+grp_action.add_argument('--pns-list', action='store_true',
+                        help='List all services in PNS (--name session for a given session)')
+grp_action.add_argument('--pns-session', action='store_true',
+                        help='List all session in PNS ')
+# DAQ preparation
+# Running
+grp_action.add_argument('--daq-restart', action='store_true',
+                        help='Restart all PMDAQ daemons')
+grp_action.add_argument('--daq-initialise', action='store_true',
+                        help='Initialise DAQ, data source discovery and Builder final configuration')
+grp_action.add_argument('--daq-register', action='store_true',
+                        help='Ensure registration of all services and Print them')
+grp_action.add_argument('--daq-view', action='store_true',
+                        help='Ensure registration of all services and Print them')
+grp_action.add_argument('--daq-configure', action='store_true',
+                        help=' Configure FDAQ, front end ASICs configuration')
+grp_action.add_argument('--daq-startrun', action='store_true',
+                        help=' start the run')
+grp_action.add_argument('--daq-stoprun', action='store_true',
+                        help=' stop the run')
+grp_action.add_argument('--daq-destroy', action='store_true',
+                        help='destroy the readout, back to the CREATED state')
+# Status
+grp_action.add_argument('--daq-status', action='store_true',
+                        help=' display DAQ status of all processes')
+grp_action.add_argument('--source-status', action='store_true',
+                        help=' display Data source status')
+grp_action.add_argument('--builder-status', action='store_true',
+                        help=' display event builder status')
+grp_action.add_argument('--trigger-status', action='store_true',
+                        help=' display trigger board status')
+# TRIGGER
+grp_action.add_argument('--trigger-reset', action='store_true',
+                        help=' reset trigger (MDCC) counter')
+grp_action.add_argument('--trigger-pause', action='store_true',
+                        help=' trigger (MDCC) soft veto')
+grp_action.add_argument('--trigger-resume', action='store_true',
+                        help=' release trigger (MDCC) soft veto ')
+
+
+
+# Arguments
+parser.add_argument('--config', action='store', dest='config',
+                    default=None, help='json config file')
+parser.add_argument('--name', action='store', dest='name',
+                    default=None, help='session or app name')
+
+parser.add_argument('--dead', action='store', type=int,
+                    dest='dead', default=None, help='dead time of Petiroc')
+
+parser.add_argument('-v', '--verbose', action='store_true', dest='verbose',
+                    default=False, help='Raw Json output')
+
+parser.add_argument('--comment', action='store', default=None,
+                    dest='comment', help=' Comment for start run')
+parser.add_argument('-M', '--Method', action='store', dest='method',
+                    default=None, help='Command name')
+parser.add_argument('-A', '--Application', action='store', dest='application',
+                    default=None, help='Application name')
+parser.add_argument('-P', '--Parameter', action='store', dest='parameter',
+                    default=None, help='parameter set')
+parser.add_argument('-u', '--url', action='store', dest='url',
+                    default=None, help='url for daq-restart command')
+
+account = os.getenv("MGDBLOGIN", "NONE")
+if (account == "NONE"):
+    print("The ENV varaible MGDBLOGIN=user/pwd@host:port@dbname mut be set")
+    exit(0)
+
+config = os.getenv("DAQMONGO", "NONE")
+file_config=None
+session_name=None
+pm_hosts=[]
+
+if (config == "NONE"):
+    print("The ENV varaible DAQMONGO=name:version must be set")
+    exit(0)
+else:
+    w=mg.instance()
+    #print(config.split(':')[0],config.split(':')[1],True)
+    w.downloadConfig(config.split(':')[0],int(config.split(':')[1]),True)
+    file_config="/dev/shm/mgjob/%s_%s.json" % (config.split(':')[0],config.split(':')[1])
+    #exit(0)
+    session_name=config.split(':')[0]
+    j_sess=json.loads(open(file_config).read())
+    for x in j_sess["apps"]:
+        sh="http://%s:%d" % (x["host"],x["port"])
+        if (not sh in pm_hosts):
+            pm_hosts.append(sh)
+
+if len(sys.argv) == 1:
+    parser.print_help(sys.stderr)
+    sys.exit(1)
+results = parser.parse_args()
+
+if(results.daq_restart):
+    if (results.url==None):
+        for x in pm_hosts:
+            print(x+"/EXIT will be called")
+            rc_request.executeRequest(x+"/EXIT")
+        # clear PNS
+        pns_host=os.getenv("PNS_NAME","NONE")
+        if (pns_host == "NONE"):
+            print("The ENV varaible PNS_NAME mut be set")
+            exit(0)
+        pnsurl="http://"+pns_host+":8888/PNS/CLEAR"
+        rc_request.executeRequest(pnsurl)
+    else:
+        print(results.url+"/EXIT will be called")
+        rc_request.executeRequest(results.url+"/EXIT")
+
+    time.sleep(10)
+    
+    exit(0)
+
+
+# PNS access
+fpns=rc_pns.pns_access()
+
+
+# fdc.updateInfo(True,True)
+
+
+# analyse the command
+lcgi = {}
+r_cmd = None
+
+if (results.pns_remove):
+    fpns.update_status()
+    if (results.name!=None):
+        fpns.remove(results.name)
+    else:
+        fpns.remove(session_name)
+    exit(0)
+elif(results.pns_list):
+    fpns.update_status()
+    if (results.name!=None):
+        rep=fpns.list(results.name)
+        print(rep)
+    else:
+        print(session_name)
+        rep=fpns.list(session_name)
+        print(rep)
+    exit(0)
+elif(results.pns_session):
+    fpns.update_status()
+    if (results.name!=None):
+        rep=fpns.get_session_list(results.name)
+        print(rep)
+    else:
+        print(session_name)
+        rep=fpns.get_session_list(session_name)
+        print(rep)
+    exit(0)
+elif(results.pns_info):
+    fpns.update_status()
+    #fpns.Print(session_name,True)
+    fpns.print_app_registered()
+    exit(0)
+# DAQ
+fdc = crc.rc_control(file_config)
+if(results.daq_register or results.daq_view):
+    fdc.session.Print(True)
+    exit(0)
+elif(results.daq_initialise):
+    delay=0
+    if (results.dead!=None):
+        fdc.reset=results.dead
+        fdc.initialise()
+    else:
+        fdc.initialise()
+    exit(0)
+elif(results.daq_configure):
+    fdc.configure()
+    exit(0)
+elif(results.daq_status):
+    if (fdc.state!="CREATED"):
+        fdc.BuilderStatus(True)
+        fdc.SourceStatus(True)
+        fdc.TriggerStatus(True)
+    exit(0)
+elif(results.source_status):
+    if (fdc.state!="CREATED"):
+        fdc.DataSourceStatus(True)
+    exit(0)
+elif(results.builder_status):
+    if (fdc.state!="CREATED"):
+        fdc.BuilderStatus(True)
+    exit(0)
+elif(results.trigger_status):
+    if (fdc.state!="CREATED"):
+        fdc.TriggerStatus(True)
+    exit(0)
+elif(results.daq_startrun):
+    if (results.comment != None):
+        fdc.comment=results.comment
+        fdc.start()
+    else:
+        fdc.start()
+    exit(0)
+elif(results.daq_stoprun):
+    fdc.stop()
+    exit(0)
+elif(results.daq_destroy):
+    fdc.destroy()
+    exit(0)
+
+elif(results.trigger_reset):
+    fdc.TriggerCommand("RESET")
+    exit(0)
+elif(results.trigger_pause):
+    fdc.TriggerCommand("PAUSE")
+    exit(0)
+elif(results.trigger_resume):
+    fdc.TriggerCommand("RESUME")
+    exit(0)
+elif (results.method!=None):
+    param=json.loads(results.parameter)
+    rep =fdc.processCommand(results.method,results.application,param)
+    if (results.verbose):
+        print(rep)
+    exit(0)
+

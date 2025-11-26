@@ -109,6 +109,17 @@ class picmic_parameters:
             self.data[name] = value
         self.set_modified()
 
+    def get_dac_threshold(self):
+        tlsb=self.get("dac_threshold_lsb")
+        tmsb=self.get("dac_threshold_msb")
+        return tmsb<<8 | tlsb
+    
+    def set_dac_threshold(self,target):
+        tlsb = target & 0xFF
+        tmsb = (target >> 8) & 0xFF
+        self.set("dac_threshold_lsb", tlsb)
+        self.set("dac_threshold_msb", tmsb)
+    
     def to_json(self, output_path,asic=None):
         if asic == None :
             dico=self.data
@@ -536,7 +547,15 @@ class mg_picboard:
         for resa in res:
             sti = time.strftime('%Y-%m-%d %H:%M:%S',
                                 time.localtime(resa["ctime"]))
-            print(f'{sti}|{resa["state"]}/{resa["version"]}/{resa["analysis"]}|{resa["board"]}|{resa["comment"]}')
+            rid=-1
+            if ('run' in resa):
+                rid=resa['run']
+            #print(resa)
+            location="UNKWON"
+            if ('location' in resa):
+                location=resa["location"]
+                
+            print(f'{sti}|{location}|{rid}|{resa["state"]}/{resa["version"]}/{resa["analysis"]}|{resa["board"]}|{resa["comment"]}')
             #print(f'{sti}|{resa["state"]}/{resa["version"]}/{resa["analysis"]}|{resa["board"]}|{resa["comment"]}')
                 
     def upload_results(self,runid,location,state,version,board,analysis,res,comment=None):
@@ -552,10 +571,11 @@ class mg_picboard:
             analysis (str): the analysis type (SCURVE_1,SCURVE_A or TIME_PEDESTAL)
             res: An dictionnary conatining test results (histograms)       
         """
-        analysisType=["SCURVE_1","SCURVE_A","TIME_PEDESTAL","NOISE"]
+        analysisType=["SCURVE_1","SCURVE_A","TIME_PEDESTAL","NOISE","CALIBRATION"]
         if not (analysis in analysisType):
             print(f"Analysis type is {analysis} not in {analysisType}")
             return
+        res["run"]=runid
         res["state"]=state
         res["version"]=version
         res["board"]=board
@@ -569,7 +589,7 @@ class mg_picboard:
 
         else:
             print(f"{res} cannot be included, comment is missing")
-    def get_scurve(self,state,version,board,analysis,channel=None):
+    def get_scurve(self,state,version,board,analysis,channel=None,runid=None):
         """
         Get the last stored test results of a SCURVE_1 or SCURVE_A analysis
 
@@ -582,8 +602,11 @@ class mg_picboard:
         Returns:
             The last scurves histograms inserted 
         """
-        res=self.db.picmic_tests.find({'state':state,'version':version,"board":board,"analysis":analysis})
-
+        res=None
+        if runid==None:
+            res=self.db.picmic_tests.find({'state':state,'version':version,"board":board,"analysis":analysis})
+        else:
+            res=self.db.picmic_tests.find({'state':state,'version':version,"board":board,"analysis":analysis,"run":runid})
         results=[]
         for resa in res:
             results.append(resa)
@@ -593,6 +616,30 @@ class mg_picboard:
             for x in results[len(results)-1]["channels"]:
                 if (x["prc"]==channel):
                     return x
+    
+    def get_calibration(self,state,version,board,runid=None):
+        """
+        Get the last stored test results of a CALIBRATION analysis
+
+        Args:
+            state (str): DB state used for the test
+            version (int): DB version used for the test
+            board (int): PICMIC id
+            analysis (str): the analysis type (SCURVE_1 or SCURVE_A)
+            runid (int): Optionnal , run used 
+        Returns:
+            The last calibration data inserted 
+        """
+        res=None
+        if runid==None:
+            res=self.db.picmic_tests.find({'state':state,'version':version,"board":board,"analysis":"CALIBRATION"})
+        else:
+            res=self.db.picmic_tests.find({'state':state,'version':version,"board":board,"analysis":"CALIBRATION","run":runid})
+        results=[]
+        for resa in res:
+            results.append(resa)
+
+        return results[len(results)-1]
     
     def getRun(self,location,comment="Not set"):
         """

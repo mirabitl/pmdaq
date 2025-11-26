@@ -35,6 +35,8 @@ public:
   void c_status(http_request m );
   /// DIFLIST Command handler
   void c_diflist(http_request m );
+  /// DSLIST Command handler
+  void c_dslist(http_request m );
   /// SET6BDAC Command handler
   void c_cal6bdac(http_request m );
   void c_set6bdac(http_request m );

@@ -91,7 +91,7 @@ class picmic_time:
         # disable all liroc channels
         for ch in range(64):
             self.feb.liroc.maskChannel(ch)
-        self.feb.ptdc.setResMode("fine")
+        self.feb.ptdc.setResMode("coarse")
 
         self.feb.ptdc.powerup()
 
@@ -108,11 +108,10 @@ class picmic_time:
         #)
         # generate a few windows to flush out the agilient patterns
         self.kc705.acqSetWindow(1, 1)
-        for _ in range(10):
-            self.kc705.ipbWrite("ACQ_CTRL_2", 1)
-            self.kc705.ipbWrite("ACQ_CTRL_2", 0)
-
-    def Acquire(self,n_acq,window_size=4000,dead_time=500,n_window=1000):
+        for _ in range(5): 
+            self.kc705.ipbWrite('ACQ_CTRL.window_start', 1)
+            self.kc705.ipbWrite('ACQ_CTRL.window_start', 0)
+    def Acquire(self,n_acq,window_size=400,dead_time=50,n_window=1000,first_sample=True):
         ts = [[] for _ in range(64)]
         diff = []
         coarsecount = 0
@@ -123,6 +122,7 @@ class picmic_time:
             if i%100 == 0: print(i)
             print('.', end='', flush=True)
             t0=0.0
+            newwin=False
             for p in range(4):
                 
                 # ~ print(f'--------------{p}-------------')
@@ -154,9 +154,15 @@ class picmic_time:
                         if (ch==0):
                             ts[ch].append((coarse<<13 | fine)*3.0523E-3)
                             t0=(coarse<<13 | fine)*3.0523E-3
+                            newwin=True
                         else:
                             #print(t0,(coarse<<13 | fine)*3.0523E-3)
-                            ts[ch].append(((coarse<<13 | fine)*3.0523E-3)) 
+                            if (first_sample):
+                                if (newwin): # Keep only first signal in ACQ
+                                    ts[ch].append(((coarse<<13 | fine)*3.0523E-3))
+                                    newwin=False
+                            else:
+                                ts[ch].append(((coarse<<13 | fine)*3.0523E-3))
         print('')
         tdiff=[]
         for lch in range(64):
@@ -169,6 +175,9 @@ class picmic_time:
                         td= np.subtract(ts[pch],ts[0]).tolist()
                         print(f"Substracted ch{lch} nbhit={len(td)}, mean={np.mean(td):.8}, std={np.std(td):.3}")
                         ts[pch]=td
+                    else:
+                        print(len(ts[pch]))
+                        #input()
             else:
                 print(f"ch{lch} nbhit={len(ts[lch])}, mean={np.mean(ts[lch]):.8}, std={np.std(ts[lch]):.3}") 
          
@@ -225,11 +234,21 @@ class picmic_time:
         rms=np.std(ts[pch])
         print(f"ch{channel} nbhit={len(ts[pch])}, mean={np.mean(ts[pch]):.8}, std={np.std(ts[pch]):.3}") 
         tch=[]
+
         for x in ts[pch]:
-            if abs(x-mean)<5*rms and abs(x-mean)<5: tch.append(x)
+            #if abs(x-mean)<5*rms and abs(x-mean)<5:
+            #    tch.append(x)
+            tch.append(x)
+
+        
+        #print(tch)
+        #input()
         print(f"ch{channel} nbhit={len(tch)}, mean={np.mean(tch):.8}, std={np.std(tch):.3}") 
         mean1=np.mean(tch)
         rms1=np.std(tch)
+        print(mean1)
+        print(rms1)
+        #bb=input()
         #plt.plot(range(len(ts[pch])), ts[pch], 'r+')
         #plt.figure()
         if (display):
@@ -255,7 +274,9 @@ def main(
         pulser.configure_pulse()
         pulser.configure_trigger()
         pulser.setOFF(1)
+        pulser.setOFF(2)
         pulser.print_status()
+        #exit(0)
     else:
         print("No agilent pulser")
         exit(0)
@@ -284,7 +305,7 @@ def main(
         res["points"]=[]
         res["rise"]=rise
         res["delay"]=delay 
-        vstep=(vmax-vmin)/20
+        vstep=(vmax-vmin)/40
         vhigh=[round(x,3) for x in np.arange(vmin,vmax+1E-3,vstep).tolist()]
         for vset in vhigh:
             thr=max(threshold,min(1022,int(round((vset-vmin)/2*1000*0.5626)+threshold)))

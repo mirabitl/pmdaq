@@ -16,9 +16,11 @@ public:
   ~Gricv1Manager(){;}
   virtual void initialise();
   virtual void end();
+  void parseParameters();
 
   
   void c_status(http_request m);
+  void c_dslist(http_request m);
   void c_reset(http_request m);
   void c_setthresholds(http_request m);
   void c_shiftthresholds(http_request m);

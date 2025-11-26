@@ -104,7 +104,101 @@ void PmrManager::scan(http_request m)
   par["devices"] = array;
   Reply(status_codes::OK, par);
 }
+void PmrManager::parseParameters()
+{
+  // First check if there is a new data base  state/version
+  PMF_INFO(_logPmr, "Parse parameters:--->\n " << params());
+    // External trigger?
 
+  if (utils::isMember(params(), "database"))
+  {
+    auto dbname=params()["database"]["name"].as_string();
+    auto dbversion=params()["database"]["version"].as_integer();
+   
+    _hca.clear();
+
+    _hca.parseMongoDb2(dbname,dbversion);
+
+  }
+  // Threshold set ?
+  if (utils::isMember(params(), "thresholds"))
+  {
+    auto jthr=params()["thresholds"];
+    if (utils::isMember(jthr, "dif") && 
+	utils::isMember(jthr, "B0") &&
+	utils::isMember(jthr, "B1") &&
+	utils::isMember(jthr, "B2") )
+      {
+	auto idif=jthr["dif"].as_integer();
+	auto b0=jthr["B0"].as_integer();
+	auto b1=jthr["B1"].as_integer();
+	auto b2=jthr["B2"].as_integer();
+	fprintf(stderr,"in thresholds %d %d %d %d\n",b0,b1,b2,idif);
+	for (auto it = _hca.asicMap().begin(); it != _hca.asicMap().end(); it++)
+	  {
+	    if (idif != 0)
+	      {
+	        uint32_t ip1 = (((it->first) >> 32) & 0XFFFFFFFF);
+	        uint32_t ip = (ip1>>24);
+	        if (idif != ip)
+	          continue;
+		printf("%x %d %d %lu \n",ip1, ip, idif,it->first & 0xFF);
+	      }
+	    it->second.setB0(b0);
+	    it->second.setB1(b1);
+	    it->second.setB2(b2);
+	  }
+      }
+    else
+      PMF_ERROR(_logPmr, "Missing parameters (dif,B0,B1,B2) in thresholds tag:" << jthr);
+  }
+  // Threshold shift ?
+  if (utils::isMember(params(), "shifts"))
+  {
+    auto jthr=params()["shifts"];
+    if (utils::isMember(jthr, "dif") && 
+	utils::isMember(jthr, "B0") &&
+	utils::isMember(jthr, "B1") &&
+	utils::isMember(jthr, "B2") )
+      {
+	auto idif=jthr["dif"].as_integer();
+	auto b0=jthr["B0"].as_integer();
+	auto b1=jthr["B1"].as_integer();
+	auto b2=jthr["B2"].as_integer();
+    
+	for (auto it = _hca.asicMap().begin(); it != _hca.asicMap().end(); it++)
+	  {
+	    if (idif != 0)
+	      {
+	        uint32_t ip1 = (((it->first) >> 32) & 0XFFFFFFFF);
+	        uint32_t ip = (ip1>>24);
+	        if (idif != ip)
+	          continue;
+		printf("%x %d %d %lu \n",ip1, ip, idif,it->first & 0xFF);
+	      }
+	    uint16_t nb0=b0+ it->second.getB0();
+	    uint16_t nb1=b1+ it->second.getB1();
+	    uint16_t nb2=b2+ it->second.getB2();
+	    it->second.setB0(nb0);
+	    it->second.setB1(nb1);
+	    it->second.setB2(nb2);
+	  }
+      }
+    else
+      PMF_ERROR(_logPmr, "Missing parameters (dif,B0,B1,B2) in shifts tag:" << jthr);
+    
+  }
+   if (utils::isMember(params(), "external"))
+   {
+     
+    auto external=params()["external"].as_integer();
+    fprintf(stderr,"in external %d \n",external);
+    std::map<uint32_t, PmrInterface *> dm = this->getPmrMap();
+    for (std::map<uint32_t, PmrInterface *>::iterator it = dm.begin(); it != dm.end(); it++)
+      it->second->setExternalTrigger((external == 1));
+   }
+
+}
 void PmrManager::fsm_initialise(http_request m)
 {
 
@@ -516,6 +610,18 @@ web::json::value PmrManager::build_status()
     }
   return array_slc;
 }
+void  PmrManager::c_dslist(http_request m)
+{
+  auto par = json::value::object();
+  int32_t rc = 1;
+
+  web::json::value array_slc=build_status();
+  par["STATUS"] = web::json::value::string(U("DONE"));
+  par["DSLIST"] = array_slc;
+  Reply(status_codes::OK, par);
+
+  return;
+}
 void PmrManager::c_status(http_request m)
 {
   auto par = json::value::object();
@@ -603,9 +709,10 @@ void PmrManager::configure(http_request m)
   PMF_INFO(_logPmr, " CMD: Configuring");
 
   int32_t rc = 1;
-
+  this->parseParameters();
+  PMF_INFO(_logPmr, " Now calling configureHR2");
   web::json::value array_slc = this->configureHR2();
-
+  PMF_INFO(_logPmr,array_slc);
   par["status"] = json::value::string(U("done"));
   par["devices"] = array_slc;
   Reply(status_codes::OK, par);
@@ -710,6 +817,7 @@ void PmrManager::initialise()
   this->addTransition("DESTROY", "CONFIGURED", "CREATED", std::bind(&PmrManager::destroy, this, std::placeholders::_1));
 
   this->addCommand("STATUS", std::bind(&PmrManager::c_status, this, std::placeholders::_1));
+  this->addCommand("DSLIST", std::bind(&PmrManager::c_dslist, this, std::placeholders::_1));
   this->addCommand("SETTHRESHOLDS", std::bind(&PmrManager::c_setthresholds, this, std::placeholders::_1));
   this->addCommand("SHIFTTHRESHOLDS", std::bind(&PmrManager::c_shiftthresholds, this, std::placeholders::_1));
   this->addCommand("SETPAGAIN", std::bind(&PmrManager::c_setpagain, this, std::placeholders::_1));

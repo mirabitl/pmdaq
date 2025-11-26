@@ -50,6 +50,7 @@ class lfebv2_setup:
         self.writer=None
         self.last_paccomp=None
         self.last_delay_reset_trigger=None
+        self.buf_size=config["config"]["buf_size"]
         lightdaq.configLogger(loglevel=logging.INFO)
         self.logger = logging.getLogger('CMS_IRPC_FEB_LightDAQ')
 
@@ -70,10 +71,10 @@ class lfebv2_setup:
         try:
 
             self.ax7325b = lightdaq.AX7325BBoard()
-            self.ax7325b.init(feb0=True, feb1=False)
+            self.feb0 = lightdaq.FebV2Board(self.ax7325b, febid='FEB0', fpga_fw_ver='4.8')
+            self.ax7325b.init(feb0=True, feb1=False,mapping_mode=self.params["config"]["mapping"])
             ### Test
             self.sdb.setup.febs[0].fpga_version='4.8'
-            self.feb0 = lightdaq.FebV2Board(self.ax7325b, febid='FEB0', fpga_fw_ver='4.8')
             self.feb0.init()
             #fmc_mapping="dome"
             #if "mapping" in self.params["config"]:
@@ -81,7 +82,7 @@ class lfebv2_setup:
             #self.fc7.init(init_gbt=True,mapping=fmc_mapping)
             #self.feb.boot(app_fw=False)
 
-        except TestError as e:
+        except NameError as e:
             print(f"Test failed with message: {e}")
 
     def change_vth_shift(self,shift):
@@ -137,12 +138,12 @@ class lfebv2_setup:
 
         It configures the FEB and prepare the FC7 for a run setting the orbit and trigger definition
         """
-        self.feb0.load_config_from_csv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.params["db_state"],self.params["db_version"],self.params["feb_id"]))
+        self.feb0.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.params["db_state"],self.params["db_version"],self.params["feb_id"]))
         #enableforces2=True
         if ("disable_force_s2" in self.params):
             enableforces2=not (self.params["disable_force_s2"]==1)
         for fpga in lightdaq.FPGA_ID:
-            self.feb0.fpga[fpga].tdcSetInjectionMode('trig_ext_resync')
+            self.feb0.fpga[fpga].tdcSetInjectionMode('standard')
             self.feb0.fpga[fpga].tdcEnable(False)       
 
         
@@ -154,7 +155,8 @@ class lfebv2_setup:
             s4_duration=self.params["orbit_fsm"]["s4"],
             enable_force_s2=enableforces2)
 
-        self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=False, delay=100)
+        self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=False, delay=self.params["config"]["resync_delay"])
+        #self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=True, delay=100)
     
         self.ax7325b.fastbitResetBc0Id()
         #self.fc7.configure_resync_external(100)
@@ -164,13 +166,11 @@ class lfebv2_setup:
             trg=self.params["trigger"]
             if "n_bc0" in trg:
                 #self.fc7.configure_nBC0_trigger(trg["n_bc0"])
-                self.ax7325b.triggerBc0Configure(True, trg["n_bc0"])
-            #if "n_data" in trg:
-            #    self.fc7.configure_ndata_trigger(trg["n_data"])
+                self.ax7325b.triggerBc0Configure(int(trg["n_bc0"]) != 0 , trg["n_bc0"]) 
 
             if "external" in trg:
                 #self.fc7.configure_external_trigger(trg["external"])
-                self.ax7325b.triggerExternalConfigure(True, trg["external"])                
+                self.ax7325b.triggerExternalConfigure(int(trg["external"]) != 0 , trg["external"])                
             #if "periodic" in trg:
             #    self.fc7.configure_periodic_trigger(trg["periodic"])
 
@@ -190,7 +190,8 @@ class lfebv2_setup:
             logging.fatal("no writer defined")
             return
         runHeaderWordList=[]
-        runHeaderWordList.append(int(self.fc7.fpga_registers.get_general_register())) #[0]
+        #runHeaderWordList.append(int(self.ax7325b.ipbRead('GENERAL')) #[0]
+        runHeaderWordList.append(int(0))                         
         # self.feb.feb_ctrl_and_status.get_temperature()
         # temperatures=self.feb.feb_ctrl_and_status.temperature_value
         # temperatures_int_values=[]
@@ -247,28 +248,45 @@ class lfebv2_setup:
             r["event"]=-1
         return r
     def start_acquisition(self):
-        acq_ctrl = BitField()
+        acq_ctrl =  lightdaq.BitField(self.ax7325b.ipbRead('ACQ_CTRL'))
         acq_ctrl[30] = 1
         acq_ctrl[29] = 1
-        acq_ctrl[15,0] = 0
+        acq_ctrl[15,0] = self.buf_size
         self.ax7325b.ipbWrite('ACQ_CTRL', acq_ctrl)
+        logging.debug(f"start_acquisition")
     def stop_acquisition(self):
-        acq_ctrl = BitField()
+        acq_ctrl =  lightdaq.BitField(self.ax7325b.ipbRead('ACQ_CTRL'))
         acq_ctrl[30] = 0
         acq_ctrl[29] = 1
         acq_ctrl[15,0] = 0
         self.ax7325b.ipbWrite('ACQ_CTRL', acq_ctrl)
+        logging.debug(f"stop_acquisition")
+
+    def hasTrigger(self):
+        acq_status = lightdaq.BitField(self.ax7325b.ipbRead('ACQ_STATUS'))
+        return (acq_status[31] == 0)
+    
     def getNFrames(self):
-        acq_status = BitField(self.ax7325b.ipbRead('ACQ_STATUS'))
-        assert acq_status[31] == 0, "Not trigged => no data!"
+        acq_status = lightdaq.BitField(self.ax7325b.ipbRead('ACQ_STATUS'))
+        istat=self.ax7325b.ipbRead('ACQ_STATUS')
+        logging.debug(f"Status {acq_status:08b} {bin(istat)[2:6]}")
+        try:
+            assert acq_status[31] == 0, "Not trigged => no data!"
+        except:
+            logging.warning("Bit 31 set")
+            return 0
         n = acq_status[15,0]
-        self.logger.info(f"Reading {n}+3 TDC frames")
+        #logging.info(f"Reading {n}+3 TDC frames")
         return n
     def readFrames(self,n):
-        self.logger.info(f"Reading {n+3} TDC frames")
-        rawdata = self.ipbReadBlock('FEBS_TDC_DATA_WORDS', (n+3)*8) # 3 tdcframes are stuck between ringbuffer and ipbreadout
+        logging.info(f"Reading {n+3} TDC frames")
+        try:
+            rawdata = self.ax7325b.ipbReadBlock('FEBS_TDC_DATA_WORDS', (n+3)*8) # 3 tdcframes are stuck between ringbuffer and ipbreadout
+        except:
+            logging.error("cannot read block {(n+3)*8} ")
+
         return rawdata
-    def acquiring_data(self):
+    def acquiring_data_old(self):
         """ Acquisition thread
 
         While running, it loops continously and spy data in the FC7 readout fifo
@@ -279,7 +297,7 @@ class lfebv2_setup:
         self.logger.setLevel(logging.WARN)
         #self.feb.enable_tdc(True)
         for fpga in lightdaq.FPGA_ID:
-            self.feb0.fpga[fpga].tdcSetInjectionMode('trig_ext_resync')
+            self.feb0.fpga[fpga].tdcSetInjectionMode('standard')
             self.feb0.fpga[fpga].tdcEnable(True)
             self.feb0.fpga[fpga].tdcEnableChannel()       
 
@@ -306,24 +324,30 @@ class lfebv2_setup:
             nb_frame32=0
             nb_last=0
             nwait=0
+            logging.debug(f"{(nb_frame32==0 or nb_last!=nb_frame32) and self.running}")
             while (nb_frame32==0 or nb_last!=nb_frame32) and self.running:
+                if not self.hasTrigger():
+                    time.sleep(0.005)
+                    continue
                 nb_frame32 = self.getNFrames()
+                logging.debug(f"Read  getNFrames {nb_frame32}")
+
                 nb_last=nb_frame32
                 if (nwait%1000==999):
                     print(nwait)
                 nwait+=1
-                if (nwait>5E4):
+                if (nwait>1E4):
                     message= "Resetting BC0 and restart DAQ after number {}, event {}.".format(nacq, self.writer.eventNumber())
                     logging.error(message)
                     self.stop_acquisition()
                     time.sleep(10)
-                    self.fc7.reset_bc0_id()
+                    self.ax7325b.fastbitResetBc0Id()
                     self.start_acquisition()
                     nwait=0
                 time.sleep(0.001)
             if not self.running:
                 break
-            #print(f"Found {nb_frame32}")
+            logging.info(f"Found {nb_frame32}")
             while nb_frame32!=0:
                 #ntdcf=0
                 #for tdc_frame in self.fc7.uplink.receive_tdc_frames(nb_frame=nb_frame32*8, timeout=0.01):
@@ -331,9 +355,14 @@ class lfebv2_setup:
                 #    ntdcf+=1
                 #time.sleep(0.01)
                 nb_frame32_1 = self.getNFrames()
-                if (nb_frame32%8!=0 or nb_frame32_1< nb_frame32):
-                    print("oops not x 8 %d et le second %d \n" % (nb_frame32,nb_frame32_1))
+                logging.debug(f"Found {nb_frame32_1}")
+
+                #if (nb_frame32%8!=0 or nb_frame32_1< nb_frame32):
+                if (nb_frame32_1< nb_frame32):
+                    logging.info("oops not x 8 %d et le second %d \n" % (nb_frame32,nb_frame32_1))
+                    time.sleep(5)
                     nb_frame32 = self.getNFrames()
+
                     continue
                 else:
                     nb_frame32=nb_frame32_1
@@ -346,7 +375,7 @@ class lfebv2_setup:
                     #sys.stdout.flush()
                     datas=self.readFrames(nb_frame32)
                 except:
-                    print("error")
+                    logging.error("error")
                 #self.fc7.fpga_registers.ipbus_device.ReadBlock("USER_OUTPUT_FIFO_TDC", nb_frame32)
                 # for i in range(0,len(datas),8):
                 #     fr="%d %d " % (nacq,ntdcf)
@@ -376,21 +405,23 @@ class lfebv2_setup:
                 #    trig_output.write(str(self.writer.eventNumber()))             
             self.stop_acquisition()
             time.sleep(0.005)
-        logging.info("Thread %d: finishing", self.run)
-    def stop(self):
-        """ Stop the run
-
-        It sets running to false, wait for the thread to stop and disable FEB and FC7  acquisition
-        """
-        self.running= False
-        self.producer_thread.join()
+        for fpga in lightdaq.FPGA_ID:
+            self.feb0.fpga[fpga].tdcEnable(False) 
         self.stop_acquisition()
-        self.feb.enable_tdc(False)
-                acq_ctrl = BitField()
-        acq_ctrl[30] = 0
-        acq_ctrl[29] = 1
-        acq_ctrl[15,0] = 0
-        self.ax7325b.ipbWrite('ACQ_CTRL', acq_ctrl)
+        time.sleep(0.005)
+        nb_frame32 = self.getNFrames()
+        if not nb_frame32==0:
+            try:
+                message= "Nb frames to be block read {}".format(nb_frame32)
+                logging.info(message)
+                nb_frame32 = min(4096+2048, nb_frame32)
+                #print("frames :%d %d\n"% (nb_frame32//8,nb_frame32))
+                #sys.stdout.flush()
+                datas=self.readFrames(nb_frame32)
+            except:
+                logging.warning(f"{nb_frame32} frames but no more data readable")
+
+        logging.info("Thread %d: finishing", self.run)
     def acquiring_data(self):
         """ Acquisition thread
 
@@ -398,14 +429,78 @@ class lfebv2_setup:
         It writes data to disk or shared memory until running is false and the run stopped. 
         """
         nacq= 0
-        ntrig = 0
-        lightdaq.configLogger(loglevel=logging.WARN)
-        logger = logging.getLogger('FEB_minidaq')
-        logger.setLevel(logging.WARN)
+        nbt = 0
+        self.logger.setLevel(logging.WARN)
         #self.feb.enable_tdc(True)
         for fpga in lightdaq.FPGA_ID:
-            self.feb0.fpga[fpga].tdcEnable(False)
+            self.feb0.fpga[fpga].tdcSetInjectionMode('standard')
+            self.feb0.fpga[fpga].tdcEnable(True)
+            self.feb0.fpga[fpga].tdcEnableChannel()       
 
+        fout=open("debug.out","w")
+
+        while (self.running):
+            self.writer.newEvent()
+            self.ax7325b.fastbitResetBc0Id()
+            self.start_acquisition()
+            nb_frames=0
+            while (nb_frames==0 and self.running):
+                if not self.hasTrigger():
+                    time.sleep(0.005)
+                    continue
+                nb_frames = self.getNFrames()
+                logging.debug(f"Read  getNFrames {nb_frames}")
+            if not self.running:
+                break
+            logging.info(f"Found {nb_frames}")
+            while nb_frames!=0:
+                try:
+                    message= "Nb frames to be block read {}".format(nb_frames)
+                    logging.info(message)
+                    datas=self.readFrames(nb_frames)
+                except:
+                    logging.error("error")
+                self.writer.appendEventData(datas)
+                nbt+=nb_frames
+                nb_frames = self.getNFrames()
+                
+            if nbt == 0:
+                message= "problem at frames readout number {}, event written {}.".format(nacq, self.writer.eventNumber())
+                logging.error(message)
+                time.sleep(0.01)
+            else:
+                nacq+=1
+                if not self.dummy:
+                    self.writer.writeEvent()
+           
+            if (nacq % 1 == 0):
+                message= "Info : Event {} (acquisition number {}) have read {} words = {} potential TDC frames.".format(self.writer.eventNumber(), nacq, nbt, nbt/8)
+                logging.info(message)
+
+                #with open("/data/trigger_count.txt", "w") as trig_output:
+                #    trig_output.write(str(self.writer.eventNumber()))             
+            self.stop_acquisition()
+            self.ax7325b.flushDataflow()
+            time.sleep(0.005)
+            
+        for fpga in lightdaq.FPGA_ID:
+            self.feb0.fpga[fpga].tdcEnable(False) 
+        self.stop_acquisition()
+        nb_frames = self.getNFrames()
+        if not nb_frames==0:
+            self.ax7325b.flushDataflow();
+        time.sleep(0.005)
+        logging.info("Thread %d: finishing", self.run)
+
+    def stop(self):
+        """ Stop the run
+
+        It sets running to false, wait for the thread to stop and disable FEB and FC7  acquisition
+        """
+        self.running= False
+        self.producer_thread.join()
+        lightdaq.configLogger(loglevel=logging.WARN)
+        logger = logging.getLogger('FEB_minidaq')        
         lightdaq.configLogger(logging.INFO)
         self.writer.endRun()
         logging.info("Daq is stopped")

@@ -54,6 +54,8 @@ class lfebv2_fsm:
             'initialise', 'CREATED', 'INITIALISED', after='daq_initialising')
         self.daqfsm.add_transition(
             'configure', ['INITIALISED', 'CONFIGURED'], 'CONFIGURED', after='daq_configuring')
+        self.daqfsm.add_transition(
+            'configure', ['CONFIGURED', 'CONFIGURED'], 'CONFIGURED', after='daq_configuring')
         self.daqfsm.add_transition('start', 'CONFIGURED',
                                    'RUNNING',     after='daq_starting', conditions='isConfigured')
         self.daqfsm.add_transition('stop', 'RUNNING',
@@ -240,7 +242,7 @@ class lfebv2_fsm:
         """
         self.configured = False
         del self.setup
-        self.setup=febv2_setup(self.config["daq"])
+        self.setup=lfebv2_setup(self.config["daq"])
 
         # debug printout
         self.EDAQ_debug = False

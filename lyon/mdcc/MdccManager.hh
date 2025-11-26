@@ -95,6 +95,12 @@ class MdccManager : public fsmw
      * 
      * @param m The http request containing the transition command, parameters and answer
      */
+    void configure(http_request m);
+    /**
+     * @brief CONFIGURE transition
+     * 
+     * @param m The http request containing the transition command, parameters and answer
+     */
     void fsm_initialise(http_request m);
     /**
      * @brief DESTROY transition
@@ -109,6 +115,11 @@ class MdccManager : public fsmw
      * @param s Ftdi device name
      */
     void doOpen(std::string s);
+    /**
+     * @brief Parse Params and make corresponding action
+     * 
+     */
+    void parseParameters();
     /**
      * @brief Get the Mdcc Handler object
      * 

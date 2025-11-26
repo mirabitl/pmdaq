@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+import logging
+import sys
+import time
+import mc
+
+import numpy as np 
+from matplotlib import pyplot as plt
+
+#from minidaq.fc7 import fc7_board
+#from minidaq.feb import feb_v2_cycloneV
+#from minidaq.tools import bf, configFEBMinidaqLogger, TestError
+
+import os
+import json
+
+def  main(r):
+    s=mc.pedcor(r.state,r.version,r.feb,r.analysis,runid=r.run)
+    if (r.draw):
+        s.draw_all(True,r.debug)
+        return
+    if (r.pedestal):
+        s.full_threshold(r.upload)
+        return
+    if (r.asic):
+        s.draw_asic(asic=r.asic,title=r.title)
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    
+    # configure all the actions
+    grp_action = parser.add_mutually_exclusive_group()
+    grp_action.add_argument('--draw', dest='draw', default=False, action='store_true',help="Draw summary histos")
+    grp_action.add_argument('--pedestal', dest='pedestal', default=False, action='store_true',help="Do pedestal analysis")
+
+    # Arguments
+    parser.add_argument('--state', action='store', type=str,default=None, dest='state', help='DB State')
+    parser.add_argument('--version', action='store',type=int,default=None,dest='version',help='DB state version' )
+    parser.add_argument('--feb', action='store', type=int,default=None, dest='feb', help='FEB id')
+    parser.add_argument('--analysis', action='store', type=str,default=None, dest='analysis', help='Analysis (SCURVE_1,SCURVE_A)')
+    parser.add_argument('--upload', action='store', type=str,default=None, dest='upload', help='upload comment for the new version')
+    parser.add_argument('--debug', dest='debug', default=False, action='store_true',help="Step by step display")
+    parser.add_argument('--asic', action='store', type=str,default=None, dest='asic', help='draw all scurves of an asic')
+    parser.add_argument('--title', action='store', type=str,default=None, dest='title', help='title of asic plots')
+
+    parser.add_argument('--run', action='store', type=int,default=None, dest='run', help='run number')
+    results = parser.parse_args()
+    print(results)
+
+    if (results.state==None):
+        print("--state should be specified")
+        exit(0)
+    if (results.version==None):
+        print("--version should be specified")
+        exit(0)
+    if (results.feb==None):
+        print("--feb should be specified")
+        exit(0)
+    if (results.analysis==None):
+        print("--analysis should be specified")
+        exit(0)
+
+
+    main(results)

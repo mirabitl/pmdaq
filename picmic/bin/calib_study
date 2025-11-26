@@ -23,6 +23,7 @@ class picmic_calib:
         val_evt=0,
         pol_neg=0,
         dc_pa=0,
+        resolution='coarse'
     ):
         daq.configLogger(logging.DEBUG)
 
@@ -81,7 +82,7 @@ class picmic_calib:
         # disable all liroc channels
         for ch in range(64):
             self.feb.liroc.maskChannel(ch)
-        self.feb.ptdc.setResMode("fine")
+        self.feb.ptdc.setResMode(resolution)
 
         self.feb.ptdc.powerup()
 
@@ -89,8 +90,8 @@ class picmic_calib:
         # generate a few windows to flush out the agilient patterns
         self.kc705.acqSetWindow(1, 1)
         for _ in range(10):
-            self.kc705.ipbWrite("ACQ_CTRL_2", 1)
-            self.kc705.ipbWrite("ACQ_CTRL_2", 0)
+            self.kc705.ipbWrite("ACQ_CTRL.window_start", 1)
+            self.kc705.ipbWrite("ACQ_CTRL.window_start", 0)
 
     def sweep_dac10b(self, start, stop, step):
         """
@@ -115,7 +116,7 @@ class picmic_calib:
         scurves = self.sweep_dac10b(start, stop, step)
         return scurves
 
-    def scan_charge_one(self,pulser,channel,vmin,vmax,pedestal=566,nstep=20,rise=1.0E-9,delay=120E-9,use_ctest=False):
+    def scan_charge_one(self,pulser,channel,vmin,vmax,pedestal=507,nstep=30,rise=1.0E-9,delay=120E-9,use_ctest=False):
         #turn_on = [0 for i in range(64)]
         print(f"Scanning channel {channel}")
         if (vmax>1.0 and use_ctest):
@@ -142,7 +143,7 @@ class picmic_calib:
         for v in vhigh:
             pulser.setVoltage(1,0,v)
             print(v)
-            scurves=self.sweep_dac10b(pedestal+5,1000,1)
+            scurves=self.sweep_dac10b(pedestal+5,700,1)
             for lch in range(64):
                 if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
                 sch=scurves[daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[lch]]
@@ -159,26 +160,27 @@ class picmic_calib:
                 i_on=(i_high+i_low)//2
                 t_on = pedestal+5+i_on
                 print(f"Channel {lch} Pico {daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[lch]} Index {i_on} Turn on {t_on} DAC {i_on+5} Charge {v}")
-                turn_on[lch].append([v,i_on,t_on])
+                turn_on[lch].append([v,i_on,t_on,sch])
         print(turn_on[channel])
         return turn_on[channel]
 
-def main(
-    state,
-    version,
-    feb_id,
-    first_channel,
-    last_channel,
-    no_injection=False,
-    location=None,
-    upload_comment=None,
-    vmin=0.05,
-    vmax=0.9,
-    thmin=450,
-    thmax=700,
-    rising=1.0E-9,
-    ctest=False    
-):
+#def main(state,version,feb_id,first_channel,last_channel,no_injection=False,location=None,upload_comment=None,vmin=0.05,vmax=0.9,thmin=450,thmax=700,rising=1.0E-9,ctest=False,resolution='coarse'):
+def main(p):
+    res={}
+    res["state"]=p.state
+    res["version"]=p.version
+    res["feb"]=p.feb
+    res["thmin"]=p.thmin
+    res["thmax"]=p.thmax
+    res["vmin"]=p.vmin
+    res["vmax"]=p.vmax
+    res["thstep"]=1
+    res["asic"]="LIROC"
+    res["ctime"]=time.time()
+    res["mode"]=p.resolution
+    res["rise"]=p.rise
+    if (p.location!=None):
+        res["location"]=p.location
     pulser=agp.mod81160("../etc/pulse_config.json")
     #agp.print_status()
     if pulser.inst!=None:
@@ -187,25 +189,16 @@ def main(
         pulser.configure_trigger()
         pulser.setOFF(1)
         pulser.print_status()
+        #exit(0)
     else:
         print("No agilent pulser")
         exit(0)
-    pb = picmic_calib(feb_id, state, version)
+    pb = picmic_calib(p.feb, p.state, p.version,resolution=p.resolution)
 
-    upload = upload_comment != None
-    if no_injection:
-        res = {}
-        res["state"] = state
-        res["version"] = version
-        res["feb"] = feb_id
-        res["thmin"] = thmin
-        res["thmax"] = thmax
-        res["thstep"] = 1
-        res["asic"] = "LIROC"
-        res["ctime"] = time.time()
-        res["analysis"] = "SCURVE_A"
+    upload = p.upload != None
+    if p.noinj:
         res["channels"] = []
-        scurves = pb.scurve_all_channels(start=thmin, stop=thmax, step=1, dac_loc=0)
+        scurves = pb.scurve_all_channels(start=p.thmin, stop=p.thmax, step=1, dac_loc=0)
         for liroc_chan in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN.keys():
             rc = {}
             rc["prc"] = liroc_chan
@@ -222,12 +215,12 @@ def main(
         plt.legend(loc="upper right")
         plt.show()
         runid = None
-        if upload_comment != None:
-            runobj = pb.sdb.getRun(location, upload_comment)
+        if upload_comment != None and p.location!=None:
+            runobj = pb.sdb.getRun(p.location, p.upload)
             runid = runobj["run"]
 
         # Store results in json
-        res_dir = "results/%s_%d_f_%d" % (state, version, feb_id)
+        res_dir = "results/%s_%d_f_%d" % (p.state, p.version, p.feb)
         if runid == None:
             runid = int(input("Enter a run number: "))
         os.system("mkdir -p %s" % res_dir)
@@ -235,36 +228,58 @@ def main(
         fout.write(json.dumps(res))
         fout.close
 
-        if upload_comment != None:
+
+        if p.upload != None and p.location!=None:
             pb.sdb.upload_results(
                 runid,
-                location,
+                p.location,
                 res["state"],
                 res["version"],
                 res["feb"],
                 res["analysis"],
                 res,
-                upload_comment,
+                p.upload
             )
 
     else:
-        res={}
-        res["vmin"]=vmin
-        res["vmax"]=vmax
-        res["rise"]=rise
+        res["analysis"]="CALIBRATION"
         res["channels"]=[]
-        for lch in range(first_channel,last_channel+1):
+
+        for lch in range(p.firstchannel,p.lastchannel+1):
             if lch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
-            tos=pb.scan_charge_one(pulser,lch,vmin,vmax,rise=rising,use_ctest=ctest)
+            tos=pb.scan_charge_one(pulser,lch,p.vmin,p.vmax,rise=p.rise*1.e-9,use_ctest=p.ctest,pedestal=p.thmin)
             res["channels"].append({"channel":lch,"turn_on":tos})
     print(res)
-    # Serializing json
-    json_object = json.dumps(res)
+    #input("on est la")
 
-    # Writing to sample.json
-    with open(f"calib_{first_channel}_{last_channel}_{vmax}.json", "w") as outfile:
-        outfile.write(json_object)
 
+    runid = None
+    if p.upload != None and p.location!=None:
+        runobj = pb.sdb.getRun(p.location,p.upload)
+        runid = runobj["run"]
+    if runid == None:
+        # Serializing json
+        json_object = json.dumps(res)
+
+
+    
+        # Writing to sample.json
+        rns=round(p.rise,1)
+        with open(f"calib_{p.firstchannel}_{p.lastchannel}_{p.vmax}_{p.state}_V{p.version}_{rns}ns_{p.resolution}.json", "w") as outfile:
+            outfile.write(json_object)
+    else:
+        pb.sdb.upload_results(
+            runid,
+            p.location,
+            res["state"],
+            res["version"],
+            res["feb"],
+            res["analysis"],
+            res,
+            p.upload
+        )
+ 
+    # Finally close the pulser
     pulser.setOFF(1)
     pulser.close()
 if __name__ == "__main__":
@@ -344,6 +359,14 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--resolution",
+        action="store",
+        type=str,
+        default="coarse",
+        dest="resolution",
+        help="Resolution fine or coarse->default",
+    )
+    parser.add_argument(
         "--upload",
         action="store",
         type=str,
@@ -393,6 +416,7 @@ if __name__ == "__main__":
     cm_up = None
     if results.upload != None:
         cm_up = results.upload
+    """
     main(
         state,
         version,
@@ -407,5 +431,9 @@ if __name__ == "__main__":
         thmin=thi,
         thmax=tha,
         rising=rise,
-        ctest=results.ctest
+        ctest=results.ctest,
+        resolution=results.resolution
+        
     )
+    """
+    main(results)

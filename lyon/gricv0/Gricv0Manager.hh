@@ -19,6 +19,7 @@ public:
   virtual void end(); 
   
   void c_status(http_request m);
+  void c_dslist(http_request m);
   void c_reset(http_request m);
   void c_setthresholds(http_request m);
   void c_shiftthresholds(http_request m);
@@ -40,6 +41,7 @@ public:
   void c_close(http_request m);
 
   void fsm_initialise(http_request m);
+  void parseParameters();
   void configureHR2();
   void configure(http_request m);
   void setThresholds(uint16_t b0,uint16_t b1,uint16_t b2,uint32_t idif=0);
