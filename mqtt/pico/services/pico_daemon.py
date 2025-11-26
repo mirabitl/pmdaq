@@ -252,7 +252,7 @@ class pico_monitor:
 #while (True):
 #    time.sleep(1)
 if __name__ == "__main__":
-    s=pico_monitor("lyoilc07",1883,"/etc/pico_mon.json")
+    s=pico_monitor("lyoilcdaq01",1883,"/etc/pico_mon.json")
     s.Connect()
     s.ListTopics()
     s.loop()
