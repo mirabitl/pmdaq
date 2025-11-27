@@ -88,7 +88,16 @@ class picmic_normal_run:
         self.sdb.upload_configuration(fname,comment)
     def daq_destroying(self):
         return True
-    def daq_initialising(self,board_id=0,dbstate=None,dbversion=0,filtering=True,falling=0,val_evt=0,pol_neg=0,dc_pa=0,mode='fine'):
+
+    def daq_initialising(self):
+        # Open KC705
+        self.kc705 = daq.KC705Board()
+        self.kc705.init()
+
+        self.feb = daq.FebBoard(self.kc705)
+        self.feb.init()
+
+    def daq_configuring(self,board_id=0,dbstate=None,dbversion=0,filtering=True,falling=0,val_evt=0,pol_neg=0,dc_pa=0,mode='fine',threshold=0,channel_list=[i for i in range(64)],ctest_list=[]):
         # Try to use config value
         if self.conf !=None and board_id==0:
             board_id=self.conf["db"]["board"]
@@ -142,12 +151,7 @@ class picmic_normal_run:
 
         self.logger.info(f"Version {self.sdb.setup.boards[0].picmic_version}")
 
-        # Open KC705
-        self.kc705 = daq.KC705Board()
-        self.kc705.init()
 
-        self.feb = daq.FebBoard(self.kc705)
-        self.feb.init()
         self.feb.loadConfigFromCsv(
             folder="/dev/shm/board_csv",
             config_name="%s_%d_f_%d_config_picmic.csv" % (self.dbstate, 888, self.board_id),
@@ -163,23 +167,15 @@ class picmic_normal_run:
         self.kc705.fastbitConfigure(mode='normal',
         dig2_edge='rising', dig2_delay=1)
 
-        # generate a few windows to flush out the agilient patterns
-        self.kc705.acqSetWindow(1, 1)
-        for _ in range(5): 
-            self.kc705.ipbWrite('ACQ_CTRL.window_start', 1)
-            self.kc705.ipbWrite('ACQ_CTRL.window_start', 0)
-        # files
-        if self.conf!=None:
-            self.storage=ps.storage_manager(self.conf["storage"]["directory"])
-        #self.storage.open("unessai")
-        self.runid=None
 
-    def daq_configuring(self,threshold=0,channel_list=[i for i in range(64)],ctest_list=[]):
+    #def daq_configuring(self,threshold=0,channel_list=[i for i in range(64)],ctest_list=[]):
         if self.conf!=None and threshold==0:
-                threshold=self.conf["threshold"]
-                channel_list=self.conf["channel_list"]
-                ctest_list=self.conf["ctest_list"]
+            threshold=self.conf["threshold"]
+            channel_list=self.conf["channel_list"]
+            ctest_list=self.conf["ctest_list"]
         self.threshold=threshold
+        #print(channel_list)
+        #input()
         for ch in range(64):
             if ch in channel_list:
                 self.logger.info(f"{ch} is unmasked")
@@ -196,6 +192,19 @@ class picmic_normal_run:
         self.feb.liroc.set10bDac(threshold)
         self.feb.liroc.stopScClock()
         #input("Hit return to continue..")
+        # generate a few windows to flush out the agilient patterns
+        self.kc705.acqSetWindow(1, 1)
+        for _ in range(5): 
+            self.kc705.ipbWrite('ACQ_CTRL.window_start', 1)
+            self.kc705.ipbWrite('ACQ_CTRL.window_start', 0)
+        # files
+        if self.conf!=None:
+            self.storage=ps.storage_manager(self.conf["storage"]["directory"])
+        #self.storage.open("unessai")
+        self.runid=None
+
+
+
         self.configured=True
     def isConfigured(self):
         """ Check the configuration
@@ -209,7 +218,7 @@ class picmic_normal_run:
             r_vers=self.conf["run"]["version"]
             location=self.conf["location"]
             params=self.conf["run"][r_vers]
-            #print(params)
+            self.logger.info(f"DAQ parameter {params}")
             #exit(0)
             comment=params["comment"]
             if "use_pulser" in self.conf:
@@ -232,9 +241,13 @@ class picmic_normal_run:
             self.storage.writeRunHeader(self.runid,rh)
         else:
             self.storage.writeRunHeaderDict(self.runid,self.conf)
+        print(f"Now we start with {params['type']} \n {params}")
+        
         if params["type"] == "NORMAL":
+            self.logger.info("Normal run")
             self.normal_run()
         if params["type"] == "TIMELOOP":
+            self.logger.info("Timeloop run")
             self.timeloop_run(params)
     def normal_run(self,params=None):
         with self._lock:
@@ -247,7 +260,7 @@ class picmic_normal_run:
             return True
     
     def normal_loop(self, params=None):
-        self.logger.info("Acquisition thread démarré")
+        self.logger.info("NORMAL Acquisition thread démarré")
         while self._running.is_set():
             # simulate acquisition tick
             with self._lock:
@@ -285,7 +298,7 @@ class picmic_normal_run:
             self.logger.error("No agilent pulser")
             return
     def time_loop(self, params=None):
-        self.logger.info("Acquisition thread démarré")
+        self.logger.info("TIMELOOP Acquisition thread démarré")
         if params == None:
             self.logger.error("Timeloop thread needs parameters exiting")
             return
@@ -349,6 +362,8 @@ class picmic_normal_run:
                 vstep=(vmax-vmin)/nstep
                 vhigh=[round(x,3) for x in np.arange(vmin,vmax+1E-3,vstep).tolist()]
                 for vset in vhigh:
+                    if not self._running.is_set():
+                        break
                     self.logger.info(f"Step {vset}  acquistion of {nacq} events")
                     self.setup_injection(vset,rise,delay,use_ctest)
                     self.acquire_and_store(nacq)
@@ -368,7 +383,7 @@ class picmic_normal_run:
                 return False
             self._running.clear()
             # join optionnel court
-            self._thread.join(timeout=2)
+            self._thread.join(timeout=10)
             self.storage.close()
             return True
         

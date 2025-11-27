@@ -7,6 +7,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import picmic_daq as pd
 import picmic_register_access as cra
+import transitions
 
 data = {}
 current_file = None
@@ -14,11 +15,13 @@ config_list = []
 sdb=cra.instance()
 
 daq=None
+
 def update_daq_info():
     global daq
     
     if daq!=None:
         st=daq.get_status()
+        state_var.set(f"State: {daq.state}")
         run_var.set(f"Run: {st['run']}")
         event_var.set(f"Evt: {st['event']}")
         status_var.set("Status: RUNNING" if st['running'] else "Status: IDLE")
@@ -107,10 +110,24 @@ def popup_liste(path, liste):
     popup = tk.Toplevel(root)
     popup.title("Modifier une liste")
     popup.geometry("400x300")
+    #popup.pack(expand="True")
+    tab_list = ttk.Frame(popup)
+    tab_list.pack(fill="both", expand=True)
 
-    ttk.Label(popup, text=f"Liste : {path[-1]}").pack()
+    # On définit un layout en grille 2 colonnes
+    tab_list.columnconfigure(0, weight=0)  # Colonne gauche : fixe
+    tab_list.columnconfigure(1, weight=0)  # Colonne droite : prend l'espace
+    tab_list.rowconfigure(0, weight=1)
+    #
+    # === 1. LabelFrame de boutons 1 (haut gauche) ===
+    frame_list = ttk.LabelFrame(tab_list, text="Values")
+    frame_list.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+    frame_act = ttk.LabelFrame(tab_list, text="Actions")
+    frame_act.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
 
-    listbox = tk.Listbox(popup)
+    #ttk.Label(popup, text=f"Liste : {path[-1]}").pack()
+
+    listbox = tk.Listbox(frame_list)
     listbox.pack(fill="both", expand=True, padx=10, pady=10)
 
     def refresh():
@@ -124,16 +141,16 @@ def popup_liste(path, liste):
     for item in liste:
         listbox.insert(tk.END, str(item))
 
-    entry = ttk.Entry(popup)
+    entry = ttk.Entry(frame_list)
     entry.pack(fill="x", padx=10, pady=5)
 
-    ttk.Button(popup, text="Ajouter", bootstyle=SUCCESS,
+    ttk.Button(frame_act, text="Ajouter", bootstyle=SUCCESS,
                command=lambda: (liste.append(convert_type(entry.get())),
                                 entry.delete(0, tk.END), refresh())).pack(pady=5)
-    ttk.Button(popup, text="Modifier",
+    ttk.Button(frame_act, text="Modifier",
                command=lambda: (liste.__setitem__(listbox.curselection()[0], convert_type(entry.get())),
                                 entry.delete(0, tk.END), refresh())).pack(pady=5)
-    ttk.Button(popup, text="Supprimer",
+    ttk.Button(frame_act, text="Supprimer",
                command=lambda: (liste.pop(listbox.curselection()[0]), refresh())).pack(pady=5)
 
 # -------- EDIT POPUP -------- #
@@ -201,9 +218,13 @@ def appliquer_modifs():
     global daq
     with open("/tmp/currentdaq.json", "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
-    daq=pd.load_from_file("/tmp/currentdaq.json")
+    #daq=pd.load_from_file("/tmp/currentdaq.json")
+    if (daq==None):
+        daq=pd.picmic_normal_run()
+    daq.set_configuration(data)
     messagebox.showinfo("OK", "Tree view dat used,\n new picmic_daq set ✔")
     log(f"DAQ settings applied and saved in  →/tmp/currentdaq.json")
+    
 
 def ouvrir_json():
     global data, current_file
@@ -213,7 +234,7 @@ def ouvrir_json():
             data = json.load(f)
         current_file = fichier
         afficher_treeview()
-        maj_visualisation("JSON chargé")
+        #maj_visualisation("JSON chargé")
         log(f"Chargé : {fichier}")
 def ouvrir_json_file(fichier):
     global data, current_file
@@ -223,7 +244,7 @@ def ouvrir_json_file(fichier):
             data = json.load(f)
         current_file = fichier
         afficher_treeview()
-        maj_visualisation("JSON chargé")
+        #maj_visualisation("JSON chargé")
         log(f"Chargé : {fichier}")
 # ----------------- TREEVIEW ----------------- #
 def remplir_tree(parent, element):
@@ -290,29 +311,57 @@ def bouton_initialise():
     global daq
     txt = f"Initialise send"
     if daq!=None:
-        daq.initialise()
-    log(txt)
+        try:
+            daq.initialise()
+            log(txt)
+        except transitions.core.MachineError as e:
+            messagebox.showerror("Wrong transition", f"{e} ✔")  
+    else:
+        messagebox.showerror("NO daq","DAQ is not created\n Please choose,load a configuration and Apply first✔")  
+        log("initialise failed")
 
 def bouton_configure():
     global daq
     txt = f"Configure, i.e prepare_run send"
     if daq!=None:
-        daq.configure()
-    log(txt)
+        try:
+            daq.configure()
+            log(txt)
+        except transitions.core.MachineError as e:
+            messagebox.showerror("Wrong transition", f"{e} ✔")  
+    else:
+        messagebox.showerror("NO daq","DAQ is not created\n Please choose,load a configuration and Apply first✔")
+        log("configure failed")
+
 
 def bouton_start():
     global daq
     txt = f"Start send"
     if daq!=None:
-        daq.start()
-    log(txt)
+        try:
+            daq.start()
+            log(txt)
+        except transitions.core.MachineError as e:
+            messagebox.showerror("Wrong transition", f"{e} ✔")  
+
+    else:
+        messagebox.showerror("NO daq","DAQ is not created\n Please choose,load a configuration and Apply first✔")  
+        log("start failed")
     
 def bouton_stop():
     global daq
-    txt = f"Start send"
+    txt = f"Stop send"
     if daq!=None:
-        daq.stop()
-    log(txt)
+        try:
+            daq.stop()
+            log(txt)
+        except transitions.core.MachineError as e:
+           messagebox.showerror("Wrong transition", f"{e} ✔")  
+        
+    else:
+        messagebox.showerror("NO daq","DAQ is not created\n Please choose,load a configuration and Apply first✔")  
+        log("stop failed")
+        
 
 def charger_config_mongo():
     global config_list
@@ -352,9 +401,9 @@ def telecharger_config_selectionnee():
     ouvrir_json_file(temp_file)
 
 # ----------------- UI ----------------- #
-root = tb.Window(themename="cyborg")
+root = tb.Window()#themename="cyborg")
 root.title("DAQ LIROC-PICOTDC 🧩")
-root.geometry("1100x650")
+root.geometry("800x650")
 
 notebook = ttk.Notebook(root)
 notebook.pack(fill="both", expand=True)
@@ -379,7 +428,7 @@ ttk.Button(frame_file, text="📂 Choisir la configuration JSON", bootstyle=PRIM
 ttk.Button(frame_file, text="💾 Sauver dans un fichier", bootstyle=SUCCESS,
            command=enregistrer_modifs).pack(side="bottom", padx=5)
 
-ttk.Button(tab_json, text="Appliquer", bootstyle=SUCCESS,
+ttk.Button(tab_json, text="Apply and Create DAQ access(if needed)", bootstyle=SUCCESS,
            command=appliquer_modifs).grid(row=2,column=0, sticky="nsew",padx=10, pady=10)
 #pack(side="bottom", padx=5)
 ### LabelFrame de boutons 2 (bas gauche) 
@@ -447,31 +496,33 @@ ttk.Button(frame_btns, text=f"Stop", bootstyle=WARNING,
 daq_frame = ttk.LabelFrame(tab_visu, text="DAQ Info")
 daq_frame.pack(side="left", fill="both", padx=10, pady=10)
 
+state_var=tk.StringVar(value="State: Unknown")
 run_var = tk.StringVar(value="Run: 0")
 event_var = tk.StringVar(value="Evt: 0")
 status_var = tk.StringVar(value="Status: WAIT")
 
-ttk.Label(daq_frame, textvariable=run_var, font=("Arial", 13, "bold")).pack(anchor="w", padx=8, pady=2)
+ttk.Label(daq_frame, textvariable=state_var, font=("Arial", 15, "bold")).pack(anchor="w", padx=8, pady=2)
+ttk.Label(daq_frame, textvariable=run_var, font=("Arial", 12)).pack(anchor="w", padx=8, pady=2)
 ttk.Label(daq_frame, textvariable=event_var, font=("Arial", 12)).pack(anchor="w", padx=8)
-ttk.Label(daq_frame, textvariable=status_var, font=("Arial", 11, "italic")).pack(anchor="w", padx=8)
+ttk.Label(daq_frame, textvariable=status_var, font=("Arial", 12, "italic")).pack(anchor="w", padx=8)
 
 visu_frame = ttk.LabelFrame(tab_visu, text="Affichage")
 visu_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-visu_label = ttk.Label(visu_frame, text="En attente d'une action...",
-                       font=("Arial", 16))
-visu_label.pack(expand=True)
+#visu_label = ttk.Label(visu_frame, text="En attente d'une action...",
+#                       font=("Arial", 16))
+#visu_label.pack(expand=True)
 
 # --- Onglet Logs --- #
-tab_logs = ttk.Frame(notebook)
-notebook.add(tab_logs, text="Logs")
-log_text = tk.Text(tab_logs)
+#tab_logs = ttk.Frame(notebook)
+#notebook.add(tab_logs, text="Logs")
+log_text = tk.Text(visu_frame)#tab_logs)
 log_text.pack(fill="both", expand=True)
 
 log("Application prête 🚀")
 # Log apps
 tab_tail = ttk.Frame(notebook)
-notebook.add(tab_tail, text="Tail File")
+notebook.add(tab_tail, text="DAQ log file")
 
 # Sélection du fichier
 #file_path = filedialog.askopenfilename(title="Choisir un fichier à suivre")
