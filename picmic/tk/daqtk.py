@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+
+
 import json
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
