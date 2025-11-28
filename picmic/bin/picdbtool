@@ -24,23 +24,6 @@ def argHandler(res):
     if (res.configurations):
         _wdd.configurations()
         return
-    """
-    if (res.picmic_info):
-        if (res.state==None or res.version==None):
-            print("State name (--state) and version (--version)  should be provided")
-        else:
-            _wdd.download_setup(res.state,res.version)
-            _wdd.to_csv_files()
-            cmd="column -s\; -t <%s" %_wdd.setup.boards[0].picmic.last_file
-            if (res.param!=None):
-                cmd=cmd+"| grep -i %s" % res.param
-                os.system(cmd)
-            else:
-                cmd=cmd+"|less"
-                os.system(cmd)
-            print("The file can be found in ",_wdd.setup.boards[0].picmic.last_file)
-        return
-    """
     if (res.download):
         if (res.state==None or res.version==None):
             print("State name (--state) and version (--version) should be provided")
