@@ -9,6 +9,103 @@ import os
 import json
 
 
+
+class scurve_processor:
+    def __init__(self,params):
+        resmode=None
+        if "mode" in params:
+            resmode=params["mode"]
+        self.pb=picmic_scurve(params["db"]["board"],
+                              params["db"]["state"],
+                              params["db"]["version"],
+                              dc_pa=params["dc_pa"],
+                              res_mode=resmode)
+                       
+        self.res={}
+        self.res["state"]=params["db"]["state"]
+        self.res["version"]=params["db"]["version"]
+        self.res["feb"]=params["db"]["board"]
+        self.res["thmin"]=params["thmin"]
+        self.res["thmax"]=params["thmax"]
+        self.res["dcpa"]=params["dc_pa"]
+        self.res["thstep"]=params["thstep"]
+        self.res["asic"]="LIROC"
+        self.res["ctime"]=time.time()
+        if "mode" in params:
+            self.res["mode"]=params["mode"]
+        if "location" in params:
+            self.res["location"]=params["location"]
+
+        self.conf=params
+
+    def align(self):
+        target,v_dac_local=self.pb.calib_iterative_dac_local(self.conf["thmin"],self.conf["thmax"])
+        print(target)
+        print(v_dac_local)
+        # Update the DB
+        for  ich in range(len(v_dac_local)):
+            self.pb.sdb.setup.boards[0].picmic.set("DAC_local_ch",v_dac_local[ich],ich)
+            print(f"DAC_local_ch{ich}",v_dac_local[ich])
+        tlsb=target&0xFF
+        tmsb=(target>>8)&0xFF
+        self.pb.sdb.setup.boards[0].picmic.set("dac_threshold_lsb",tlsb)
+        self.pb.sdb.setup.boards[0].picmic.set("dac_threshold_msb",tmsb)
+        #results=make_pedestal_all_channels(state,version,feb_id,feb,an,thi,tha,1,v6=v6_cor)
+        #val=input("Next ASIC ? ")
+            
+        if "location" in self.conf and "comment" in self.conf:
+            self.pb.sdb.setup.version=self.conf["db"]["version"]
+            self.pb.sdb.upload_changes(self.conf["comment"])
+        else:
+            self.pb.sdb.setup.version=999
+            self.pb.sdb.setup.to_csv_files()
+                
+        
+        
+    def get_scurves(self,analysis="SCURVE_A"):
+        self.res["analysis"]=analysis
+        self.res["channels"]=[]
+        scurves=None
+        if analysis == "SCURVE_A":
+            print(f'start={self.conf["thmin"]},stop={self.conf["thmax"]},step={self.conf["thstep"]},dac_loc=0')
+            input()
+            scurves=self.pb.scurve_all_channels(start=self.conf["thmin"],stop=self.conf["thmax"],step=self.conf["thstep"],dac_loc=0)
+            print(scurves)
+            input()
+        elif analysis == "SCURVE_1":
+            scurves=self.pb.scurve_loop_one(start=self.conf["thmin"],stop=self.conf["thmax"],step=self.conf["thstep"],dac_loc=0)
+        else:
+            return False
+        for liroc_chan in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN.keys():
+            rc={}
+            rc["prc"]=liroc_chan
+            rc["tdc"]=daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]
+            rc["scurve"]=scurves[daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]]
+            self.res["channels"].append(rc)
+            plt.plot(range(self.conf["thmin"], self.conf["thmax"],1), scurves[liroc_chan], '+-', label=f"ch{liroc_chan}")
+        plt.grid()
+        plt.legend(loc="upper right")
+        plt.show()
+        # Now get a run id
+        runid=None
+        if "location" in self.conf and "comment" in self.conf:
+            runobj=self.pb.sdb.getRun(self.conf["location"],self.conf["comment"])
+            runid=runobj['run']
+                                      
+        # Store results in json
+        res_dir='/tmp/results/%s_%d_f_%d' % (self.conf["db"]["state"],self.conf["db"]["version"],self.conf["db"]["board"])
+        if runid==None:
+            runid=int(input("Enter a run number: "))
+        os.system("mkdir -p %s" % res_dir)
+        fout=open(f"{res_dir}/scurves_all_channels_{runid}.json","w")
+        fout.write(json.dumps(self.res))
+        fout.close()
+        
+        if "location" in self.conf and "comment" in self.conf:
+            self.pb.sdb.upload_results(runid,self.conf["location"],self.res["state"],self.res["version"],self.res["feb"],self.res["analysis"],self.res,self.conf["comment"])
+        return True                              
+        
+            
 class picmic_scurve:
 
     def __init__(self,id,state,version,filtering=True,falling=False,val_evt=False,pol_neg=False,dc_pa=0,res_mode=None):

@@ -9,9 +9,11 @@ import picmic_register_access as cra
 import os
 import json
 
+import picmic_scurve as ps
+
 #def main(state,version,feb_id,all_channels,loop_one,location=None,upload_comment=None,thmin=420,thmax=750,dc_pa=0,res_mode='coarse'):
 def main(params):
-    pb=picmic_scurve(params.feb,params.state,params.version,dc_pa=params.dcpa,res_mode=params.resmode)
+    pb=ps.picmic_scurve(params.feb,params.state,params.version,dc_pa=params.dcpa,res_mode=params.resmode)
     res={}
     res["state"]=params.state
     res["version"]=params.version
@@ -53,7 +55,7 @@ def main(params):
         os.system("mkdir -p %s" % res_dir)
         fout=open(f"{res_dir}/scurves_all_channels_{runid}.json","w")
         fout.write(json.dumps(res))
-        fout.close
+        fout.close()
 
         if params.upload!=None and params.location!=None :
             pb.sdb.upload_results(runid,params.location,res["state"],res["version"],res["feb"],res["analysis"],res,params.upload)

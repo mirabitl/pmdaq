@@ -1,0 +1,15 @@
+{
+  "db": {
+    "board": 10,
+    "state": "PICMIC_TEST_JUNE",
+    "version": 9
+  },
+    "location": "EDAQLAB_NOV2025",
+    "name": "PICMIC_NOV2025_CALIB",
+    "version": 1,
+    "comment":" yet another alignement (from 8)",
+    "thmin":450,
+    "thmax":580,
+    "thstep":1,
+    "dc_pa":0
+}
