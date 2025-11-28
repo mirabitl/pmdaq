@@ -119,7 +119,29 @@ class picmic_parameters:
         tmsb = (target >> 8) & 0xFF
         self.set("dac_threshold_lsb", tlsb)
         self.set("dac_threshold_msb", tmsb)
-    
+
+    def setResMode(self, res):
+        if res == 'low' or res == 'coarse':
+            
+            # set to low res mode
+            self.set('tg_bot_nen_fine', 1)
+            self.set('tg_bot_nen_coarse', 0)
+            self.set('tg_top_nen_fine', 1)
+            self.set('tg_top_nen_coarse', 0)
+            self.set('highres_en', 0)
+            for ch in range(64): self.set('highres_en_tm_', 0,ch)
+            
+        elif res == 'high' or res == 'fine':
+            # set to high res mode
+            self.set('tg_bot_nen_fine', 0)
+            self.set('tg_bot_nen_coarse', 0)
+            self.set('tg_top_nen_fine', 0)
+            self.set('tg_top_nen_coarse', 0)
+            self.set('highres_en', 1)
+            for ch in range(64): self.set('highres_en_tm_', 1,ch)
+#        else:
+#            raise LirocPtdcDaqError(f"Ptdc resolution can only be 'high'/'fine) or 'low'/'coarse' (not {res})")
+
     def to_json(self, output_path,asic=None):
         if asic == None :
             dico=self.data

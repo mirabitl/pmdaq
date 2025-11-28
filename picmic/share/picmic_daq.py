@@ -97,13 +97,14 @@ class picmic_normal_run:
         self.feb = daq.FebBoard(self.kc705)
         self.feb.init()
 
-    def daq_configuring(self,board_id=0,dbstate=None,dbversion=0,filtering=True,falling=0,val_evt=0,pol_neg=0,dc_pa=0,mode='fine',threshold=0,channel_list=[i for i in range(64)],ctest_list=[]):
+    def daq_configuring(self,board_id=0,dbstate=None,dbversion=0,filtering=True,falling=0,val_evt=0,pol_neg=0,dc_pa=0,mode=None,threshold=0,channel_list=[i for i in range(64)],ctest_list=[]):
         # Try to use config value
         if self.conf !=None and board_id==0:
             board_id=self.conf["db"]["board"]
             dbstate=self.conf["db"]["state"]
             dbversion=self.conf["db"]["version"]
-            mode=self.conf["mode"]
+            if "mode" in self.conf:
+                mode=self.conf["mode"]
         # Down load DB state and patch it
         self.board_id = board_id
         self.dbstate = dbstate
@@ -160,7 +161,8 @@ class picmic_normal_run:
         # disable all liroc channels
         for ch in range(64):
             self.feb.liroc.maskChannel(ch)
-        self.feb.ptdc.setResMode(mode)
+        if mode!=None:
+            self.feb.ptdc.setResMode(mode)
 
         self.feb.ptdc.powerup()
 
