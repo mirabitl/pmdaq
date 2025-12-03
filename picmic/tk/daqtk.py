@@ -85,8 +85,8 @@ def get_item_path(item):
         item = tree.parent(item)
     return path
 
-def get_json_ref(path,data_root=data):
-    ref = data_root
+def get_json_ref(path):
+    ref = data
     for key in path:
         if key.startswith("[") and key.endswith("]"):
             ref = ref[int(key[1:-1])]
