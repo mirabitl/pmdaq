@@ -403,6 +403,78 @@ def telecharger_config_selectionnee():
     log(f"→ Configuration Mongo téléchargée : {config_name}")
     ouvrir_json_file(temp_file)
 
+def remplir_tree_calib(parent, element):
+    if isinstance(element, dict):
+        for k, v in element.items():
+            item = tree_calib.insert(parent, "end", text=k)
+            remplir_tree_calib(item, v)
+    elif isinstance(element, list):
+        for i, v in enumerate(element):
+            item = tree_calib.insert(parent, "end", text=f"[{i}]")
+            remplir_tree_calib(item, v)
+    else:
+        tree_calib.insert(parent, "end", text=str(element))
+
+def afficher_treeview_calib():
+    tree_calib.delete(*tree_calib.get_children())
+    remplir_tree_calib("", data)
+
+def edit_popup_calib(event):
+    selected = tree_calib.selection()
+    if not selected:
+        return
+    item = selected[0]
+    path = get_item_path_calib(item)
+    current = get_json_ref(path)
+    
+    if isinstance(current, list):
+        popup_liste(path, current)
+        return
+    if isinstance(current, dict):
+        messagebox.showinfo("Info", "Edition dictionnaire bientôt disponible 😄")
+        return
+    
+    popup = tk.Toplevel(root)
+    popup.title("Modification")
+    popup.geometry("350x150")
+    
+    ttk.Label(popup, text=f"Modifier {path[-1]}").pack(pady=10)
+    entry = ttk.Entry(popup)
+    entry.insert(0, str(current))
+    entry.pack()
+    
+    def ok():
+        set_json_value(path, convert_type(entry.get()))
+        afficher_treeview_calib()
+        log(f"Valeur modifiée : {path}")
+        popup.destroy()
+    
+    ttk.Button(popup, text="OK", bootstyle=INFO, command=ok).pack(pady=10)
+
+def get_item_path_calib(item):
+    path = []
+    while item:
+        path.insert(0, tree_calib.item(item, "text"))
+        item = tree_calib.parent(item)
+    return path
+
+def telecharger_config_selectionnee_calib():
+    if not config_combo_calib.get():
+        return
+    
+    index = config_combo_calib.current()
+    if index < 0:
+        return
+    
+    config_name = config_list[index][0]
+    config_version = int(config_list[index][1])
+    
+    temp_file = f"/dev/shm/config/{config_name}_{config_version}.json"
+    sdb.download_configuration(config_name, config_version)
+    
+    log(f"→ Configuration Mongo téléchargée (Calibration) : {config_name}")
+    ouvrir_json_file(temp_file)
+    afficher_treeview_calib()
 # ----------------- UI ----------------- #
 root = tb.Window()#themename="cyborg")
 root.title("DAQ LIROC-PICOTDC 🧩")
@@ -532,6 +604,65 @@ notebook.add(tab_tail, text="DAQ log file")
 file_path="/tmp/daq.log"
 if file_path:
     tail_panel = TailFPanel(tab_tail, file_path, update_interval=1000)
+
+# --- Onglet CALIBRATION (identique à Configuration) --- #
+tab_calibration = ttk.Frame(notebook)
+tab_calibration.pack(fill="both", expand=True)
+notebook.add(tab_calibration, text="Calibration")
+
+# On définit un layout en grille 2 colonnes
+tab_calibration.columnconfigure(0, weight=0)  # Colonne gauche : fixe
+tab_calibration.columnconfigure(1, weight=1)  # Colonne droite : prend l'espace
+tab_calibration.rowconfigure(0, weight=1)
+
+# === 1. LabelFrame de boutons 1 (haut gauche) ===
+frame_file_calib = ttk.LabelFrame(tab_calibration, text="Files")
+frame_file_calib.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+
+ttk.Button(frame_file_calib, text="📂 Choisir la configuration JSON", bootstyle=PRIMARY,
+           command=ouvrir_json).pack(side="bottom", padx=5, pady=5)
+ttk.Button(frame_file_calib, text="💾 Sauver dans un fichier", bootstyle=SUCCESS,
+           command=enregistrer_modifs).pack(side="bottom", padx=5)
+
+ttk.Button(tab_calibration, text="Apply and Create DAQ access(if needed)", bootstyle=SUCCESS,
+           command=appliquer_modifs).grid(row=2, column=0, sticky="nsew", padx=10, pady=10)
+
+# LabelFrame de boutons 2 (bas gauche) 
+frame_db_calib = ttk.LabelFrame(tab_calibration, text="DB")
+frame_db_calib.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+
+btn_mongo_calib = ttk.Button(frame_db_calib, text="Liste Configurations", bootstyle=INFO,
+                       command=lambda: charger_config_mongo())
+btn_mongo_calib.pack(side="top", padx=5)
+
+# Donne un minimum de hauteur aux frames de gauche
+tab_calibration.rowconfigure(0, weight=0)
+tab_calibration.rowconfigure(1, weight=0)
+tab_calibration.rowconfigure(2, weight=0)
+
+# === 3. LabelFrame droite : Treeview ===
+lf_tree_calib = ttk.LabelFrame(tab_calibration, text="Données JSON")
+lf_tree_calib.grid(row=0, column=1, rowspan=2, sticky="nsew", padx=5, pady=5)
+
+tree_calib = ttk.Treeview(lf_tree_calib, columns=("value",), show="tree headings")
+tree_calib.heading("#0", text="Clé")
+tree_calib.heading("value", text="Valeur")
+tree_calib.pack(fill="both", expand=True)
+tree_calib.bind("<Double-1>", lambda e: edit_popup_calib(e))
+
+ttk.Label(frame_db_calib, text="Configurations Mongo :").pack(side="top", padx=5)
+
+config_var_calib = tk.StringVar()
+config_combo_calib = ttk.Combobox(frame_db_calib, textvariable=config_var_calib, state="disabled")
+config_combo_calib.pack(side="top", fill="x", expand=True, padx=5)
+
+btn_load_cfg_calib = ttk.Button(frame_db_calib, text="Charger",
+                          bootstyle=INFO,
+                          command=lambda: telecharger_config_selectionnee_calib())
+btn_load_cfg_calib.pack(side="top", padx=5)
+
+
+
 
 update_daq_info()
 root.mainloop()
