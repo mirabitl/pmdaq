@@ -13,6 +13,7 @@ import picmic_register_access as cra
 import transitions
 
 data = {}
+data_calib= {}
 current_file = None
 config_list = []
 sdb=cra.instance()
@@ -239,6 +240,17 @@ def ouvrir_json():
         afficher_treeview()
         #maj_visualisation("JSON chargé")
         log(f"Chargé : {fichier}")
+
+def ouvrir_json_calib():
+    global data_calib, current_file
+    fichier = filedialog.askopenfilename(filetypes=[("JSON", "*.json")])
+    if fichier:
+        with open(fichier, "r", encoding="utf-8") as f:
+            data_calib = json.load(f)
+        current_file = fichier
+        afficher_treeview_calib()
+        #maj_visualisation("JSON chargé")
+        log(f"Chargé : {fichier}")
 def ouvrir_json_file(fichier):
     global data, current_file
 
@@ -247,6 +259,16 @@ def ouvrir_json_file(fichier):
             data = json.load(f)
         current_file = fichier
         afficher_treeview()
+        #maj_visualisation("JSON chargé")
+        log(f"Chargé : {fichier}")
+def ouvrir_json_file_calib(fichier):
+    global data, current_file
+
+    if fichier:
+        with open(fichier, "r", encoding="utf-8") as f:
+            data_calib = json.load(f)
+        current_file = fichier
+        afficher_treeview_calib()
         #maj_visualisation("JSON chargé")
         log(f"Chargé : {fichier}")
 # ----------------- TREEVIEW ----------------- #
@@ -417,7 +439,7 @@ def remplir_tree_calib(parent, element):
 
 def afficher_treeview_calib():
     tree_calib.delete(*tree_calib.get_children())
-    remplir_tree_calib("", data)
+    remplir_tree_calib("", data_calib)
 
 def edit_popup_calib(event):
     selected = tree_calib.selection()
@@ -473,7 +495,7 @@ def telecharger_config_selectionnee_calib():
     sdb.download_configuration(config_name, config_version)
     
     log(f"→ Configuration Mongo téléchargée (Calibration) : {config_name}")
-    ouvrir_json_file(temp_file)
+    ouvrir_json_file_calib(temp_file)
     afficher_treeview_calib()
 # ----------------- UI ----------------- #
 root = tb.Window()#themename="cyborg")
@@ -620,9 +642,9 @@ frame_file_calib = ttk.LabelFrame(tab_calibration, text="Files")
 frame_file_calib.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
 
 ttk.Button(frame_file_calib, text="📂 Choisir la configuration JSON", bootstyle=PRIMARY,
-           command=ouvrir_json).pack(side="bottom", padx=5, pady=5)
+           command=ouvrir_json_calib).pack(side="bottom", padx=5, pady=5)
 ttk.Button(frame_file_calib, text="💾 Sauver dans un fichier", bootstyle=SUCCESS,
-           command=enregistrer_modifs).pack(side="bottom", padx=5)
+           command=enregistrer_modifs_calib).pack(side="bottom", padx=5)
 
 ttk.Button(tab_calibration, text="Apply and Create DAQ access(if needed)", bootstyle=SUCCESS,
            command=appliquer_modifs).grid(row=2, column=0, sticky="nsew", padx=10, pady=10)
