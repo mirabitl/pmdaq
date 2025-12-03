@@ -86,8 +86,8 @@ def get_item_path(item):
         item = tree.parent(item)
     return path
 
-def get_json_ref(path):
-    ref = data
+def get_json_ref(path,data_root=data):
+    ref = data_root
     for key in path:
         if key.startswith("[") and key.endswith("]"):
             ref = ref[int(key[1:-1])]
@@ -471,7 +471,7 @@ def edit_popup_calib(event):
         return
     item = selected[0]
     path = get_item_path_calib(item)
-    current = get_json_ref(path)
+    current = get_json_ref(path,data_root=data_calib)
     
     if isinstance(current, list):
         popup_liste(path, current)
