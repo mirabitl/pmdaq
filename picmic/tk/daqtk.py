@@ -11,6 +11,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import picmic_daq as pd
 import picmic_register_access as cra
 import transitions
+import picmic_scurve as ps
 
 data = {}
 current_file = None
@@ -18,6 +19,7 @@ config_list = []
 sdb=cra.instance()
 
 daq=None
+calib_daq=None
 
 def update_daq_info():
     global daq
@@ -220,15 +222,20 @@ def enregistrer_modifs():
 def appliquer_modifs():
     global current_file
     global daq
+    global calib_daq
     with open("/tmp/currentdaq.json", "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
     #daq=pd.load_from_file("/tmp/currentdaq.json")
-    if (daq==None):
-        daq=pd.picmic_normal_run()
-    daq.set_configuration(data)
-    messagebox.showinfo("OK", "Tree view dat used,\n new picmic_daq set ✔")
-    log(f"DAQ settings applied and saved in  →/tmp/currentdaq.json")
-    
+    if not "calibration" in data
+        if (daq==None): 
+            daq=pd.picmic_normal_run()
+        daq.set_configuration(data)
+        messagebox.showinfo("OK", "Tree view dat used,\n new picmic_daq set ✔")
+        log(f"DAQ settings applied and saved in  →/tmp/currentdaq.json")
+    else:
+        calib_daq=ps.scurve_processor(data)
+        messagebox.showinfo("OK", "Tree view dat used,\n new calib_scurve set ✔")
+        log(f"Calibration settings applied and saved in  →/tmp/currentdaq.json")
 
 def ouvrir_json():
     global data, current_file
