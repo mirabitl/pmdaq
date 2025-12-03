@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+import logging
+import sys
+import time
+import matplotlib.pyplot as plt
+import liroc_ptdc_daq as daq
+import numpy as np 
+import picmic_register_access as cra
+import os
+import json
+
+import picmic_scurve as ps
+from datetime import datetime
+
+#def main(state,version,feb_id,all_channels,loop_one,location=None,upload_comment=None,thmin=420,thmax=750,dc_pa=0,res_mode='coarse'):
+def main(par):
+    par["time"]=datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    with open(f'calib{par["time"]}.json', 'w') as fp:
+        json.dump(par, fp,indent=2)
+
+    sp=ps.scurve_processor(par)
+    if par["calibration"] == "ALIGN":
+        sp.align()
+    else:
+        sp.get_scurves(par["calibration"])
+        
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    
+    # configure all the actions
+    grp_action = parser.add_mutually_exclusive_group()
+    grp_action.add_argument('--allchan', dest='allchan', default=False, action='store_true',help="Make Scurve allchannels on")
+    grp_action.add_argument('--one', dest='one', default=False, action='store_true',help="Make Scurve one by one")
+    # Arguments
+    parser.add_argument('--state', action='store', type=str,default=None, dest='state', help='DB State')
+    parser.add_argument('--version', action='store',type=int,default=None,dest='version',help='DB state version' )
+    parser.add_argument('--feb', action='store', type=int,default=None, dest='feb', help='FEB id')
+    parser.add_argument('--min', action='store', type=int,default=400, dest='thmin', help='Minimal 10b dac')
+    parser.add_argument('--max', action='store', type=int,default=700, dest='thmax', help='Maximal 10b dac')
+    parser.add_argument('--step', action='store', type=int,default=1, dest='thstep', help='Step 10b dac')
+
+    parser.add_argument('--dcpa', action='store', type=int,default=0, dest='dcpa', help='DC_PA common value')
+
+    parser.add_argument('--upload', action='store', type=str,default=None, dest='upload', help='Upload comment')
+    parser.add_argument('--location', action='store', type=str,default=None, dest='location', help='Experiment name')
+
+    
+    
+    parser.add_argument('--resolution', action='store', type=str,default=None, dest='resmode', help='Resolution mode')
+
+    parser.add_argument('--file', action='store', type=str,default=None, dest='file', help='Calibration configuration file')
+    results = parser.parse_args()
+    print(results)
+    if results.file!=None:
+        par=json.loads(open(results.file).read())
+        main(par)
+        exit(0)
+    if (results.state==None):
+        print("--state should be specified")
+        exit(0)
+    if (results.version==None):
+        print("--version should be specified")
+        exit(0)
+    if (results.feb==None):
+        print("--feb should be specified")
+        exit(0)
+
+    # Create the dictionnary
+    par={}
+    par["db"]={}
+    par["db"]["state"]=results.state
+    par["db"]["version"]=results.version
+    par["db"]["board"]=results.feb
+    par["thmin"]=results.thmin
+    par["thmax"]=results.thmax
+    par["thstep"]=results.thstep
+    par["location"]=results.location
+    par["dc_pa"]=results.dcpa
+    if (results.upload!=None):
+        par["comment"]=results.upload
+    if results.resmode!=None:
+        par["mode"]=results.resmode
+
+    par["calibration"]="ALIGN"
+    if results.one:
+        par["calibration"]="SCURVE_1"
+    if results.allchan:
+        par["calibration"]="SCURVE_A"
+    
+    main(par)

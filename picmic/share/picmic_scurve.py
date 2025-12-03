@@ -68,10 +68,10 @@ class scurve_processor:
         scurves=None
         if analysis == "SCURVE_A":
             print(f'start={self.conf["thmin"]},stop={self.conf["thmax"]},step={self.conf["thstep"]},dac_loc=0')
-            input()
+            #input()
             scurves=self.pb.scurve_all_channels(start=self.conf["thmin"],stop=self.conf["thmax"],step=self.conf["thstep"],dac_loc=0)
             print(scurves)
-            input()
+            #input()
         elif analysis == "SCURVE_1":
             scurves=self.pb.scurve_loop_one(start=self.conf["thmin"],stop=self.conf["thmax"],step=self.conf["thstep"],dac_loc=0)
         else:
