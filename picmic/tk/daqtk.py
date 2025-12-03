@@ -226,7 +226,7 @@ def appliquer_modifs():
     with open("/tmp/currentdaq.json", "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
     #daq=pd.load_from_file("/tmp/currentdaq.json")
-    if not "calibration" in data
+    if not "calibration" in data:
         if (daq==None): 
             daq=pd.picmic_normal_run()
         daq.set_configuration(data)
