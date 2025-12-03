@@ -217,6 +217,30 @@ def enregistrer_modifs():
     with open(current_file, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
 
+def enregistrer_modifs_calib():
+    global current_file
+    global daq_calib
+    if current_file:
+        rep = messagebox.askyesnocancel("Sauvegarder",
+                                        "Sauver dans le même fichier ?")
+        if rep is None:
+            return
+        if rep is False:
+            current_file = filedialog.asksaveasfilename(
+                defaultextension=".json",
+                filetypes=[("JSON", "*.json")]
+            )
+    else:
+        current_file = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("JSON", "*.json")]
+        )
+
+    if not current_file:
+        return
+
+    with open(current_file, "w", encoding="utf-8") as f:
+        json.dump(data_calib, f, indent=4, ensure_ascii=False)
 def appliquer_modifs():
     global current_file
     global daq
