@@ -12,6 +12,8 @@ import picmic_daq as pd
 import picmic_register_access as cra
 import transitions
 import picmic_scurve as ps
+from datetime import datetime
+
 # -------- TYPE CONVERSION -------- #
 def convert_type(value: str):
     if value.isdigit():
@@ -63,6 +65,7 @@ class daq_widget:
         self.daq=None
         self.calib_daq=None
         self.canvas_graph = None  # référence globale
+        self.plot_canvas=None
     def get_json_ref(self,path):
         ref = self.data
         for key in path:
@@ -209,7 +212,7 @@ class daq_widget:
             messagebox.showinfo("OK", "Tree view dat used,\n new picmic_daq set ✔")
             self.log(f"DAQ settings applied and saved in  →/tmp/currentdaq.json")
         else:
-            self.calib_daq=ps.scurve_processor(data)
+            #self.calib_daq=ps.scurve_processor(self.data)
             messagebox.showinfo("OK", "Tree view dat used,\n new calib_scurve set ✔")
             self.log(f"Calibration settings applied and saved in  →/tmp/currentdaq.json")
 
@@ -318,13 +321,23 @@ class daq_widget:
         self.tab_visu = ttk.Frame(self.notebook)
         self.notebook.add(self.tab_visu, text="RUN PANEL")
 
+
+        # 3 colonnes : boutons (fixe) | daq (fixe) | visu/plot (expand)
+        self.tab_visu.columnconfigure(0, weight=0)
+        self.tab_visu.columnconfigure(1, weight=0)
+        self.tab_visu.columnconfigure(2, weight=1)
+
+        # 2 lignes pour visu_frame et plot_frame
+        self.tab_visu.rowconfigure(0, weight=1)
+        self.tab_visu.rowconfigure(1, weight=1)
+        #
         self.frame_btns = ttk.Frame(self.tab_visu)
-        self.frame_btns.pack(side="left", fill="y", padx=10, pady=10)
-
-        for i in range(1, 1):
-            ttk.Button(self.frame_btns, text=f"Bouton {i}", bootstyle=WARNING,
-                       command=lambda i=i: self.bouton_action(i)).pack(pady=5)
-
+        #self.frame_btns.pack(side="left", fill="y", padx=10, pady=10)
+        self.frame_btns.grid(row=0, column=0, rowspan=2, sticky="ns", padx=10, pady=10)
+        #for i in range(1, 1):
+        ttk.Button(self.frame_btns, text=f"Calibration", bootstyle=WARNING,
+                       command=lambda : self.bouton_calibration()).pack(pady=5)
+        ttk.Label(self.frame_btns, text="Normal DAQ", font=("Arial", 15, "bold")).pack(pady=5)
         ttk.Button(self.frame_btns, text=f"Initialise", bootstyle=WARNING,
                    command= lambda :self.bouton_initialise() ).pack(pady=5)
         ttk.Button(self.frame_btns, text=f"Configure", bootstyle=WARNING,
@@ -336,8 +349,8 @@ class daq_widget:
 
         # --- Encart informations DAQ --- #
         self.daq_frame = ttk.LabelFrame(self.tab_visu, text="DAQ Info")
-        self.daq_frame.pack(side="left", fill="both", padx=10, pady=10)
-
+        #self.daq_frame.pack(side="left", fill="both", padx=10, pady=10)
+        self.daq_frame.grid(row=0, column=1, rowspan=2, sticky="ns", padx=10, pady=10)
         self.state_var=tk.StringVar(value="State: Unknown")
         self.run_var = tk.StringVar(value="Run: 0")
         self.event_var = tk.StringVar(value="Evt: 0")
@@ -348,53 +361,80 @@ class daq_widget:
         ttk.Label(self.daq_frame, textvariable=self.event_var, font=("Arial", 12)).pack(anchor="w", padx=8)
         ttk.Label(self.daq_frame, textvariable=self.status_var, font=("Arial", 12, "italic")).pack(anchor="w", padx=8)
 
-        self.visu_frame = ttk.LabelFrame(self.tab_visu, text="Affichage")
-        self.visu_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        self.visu_frame = ttk.LabelFrame(self.tab_visu, text="Commandes")
+        self.visu_frame.grid(row=0, column=2, sticky="nsew", padx=10, pady=10)
 
-        #visu_label = ttk.Label(visu_frame, text="En attente d'une action...",
-        #                       font=("Arial", 16))
-        #visu_label.pack(expand=True)
+        self.visu_frame.columnconfigure(0, weight=1)
+        self.visu_frame.rowconfigure(0, weight=1)
+        #self.visu_frame.pack(side="top",fill="both", expand=True, padx=10, pady=10)
+        #self.visu_frame.columnconfigure(0, weight=0)  # Colonne droite : prend l'espace
+        #self.visu_frame.rowconfigure(0, weight=0)
+        self.log_text = tk.Text(self.visu_frame,height=5)#tab_logs)
+        self.log_text.grid(row=0, column=0, sticky="nesw")
+
+        self.plot_frame = ttk.LabelFrame(self.tab_visu, text="Plots")
+        #self.plot_frame.pack(side="bottom",fill="both", expand=True, padx=10, pady=10)
+
+        self.plot_frame.grid(row=1, column=2, sticky="nsew", padx=10, pady=10)
+        self.plot_frame.grid_propagate(False)
+        self.plot_frame.configure(height=400)
 
         # --- Onglet Logs --- #
         #tab_logs = ttk.Frame(notebook)
         #notebook.add(tab_logs, text="Logs")
-        self.log_text = tk.Text(self.visu_frame)#tab_logs)
-        self.log_text.pack(fill="both", expand=True)
+        #self.log_text.pack(anchor="n", expand=False)
 
         self.log("Application prête 🚀")
     # ----------------- VISU / BUTTONS ----------------- #
     def maj_visualisation(self,txt):
         self.visu_label.config(text=txt)
 
-    def clear_visuself(self):
-        if self.canvas_graph:
-            self.canvas_graph.get_tk_widget().destroy()
-            self.canvas_graph = None
-        self.visu_label.config(text="")
+    def clear_visu(self):
+        if self.plot_canvas:
+            self.plot_canvas.get_tk_widget().destroy()
+            self.plot_canvas = None
+
 
     def afficher_graphique(self):
         self.clear_visu()  # on efface avant d'afficher un graph
 
         self.fig = Figure(figsize=(5, 4))
-        ax = fig.add_subplot(111)
+        ax = self.fig.add_subplot(111)
         ax.plot([1, 3, 2, 4, 6, 5])  # exemple
         ax.set_title("Graphique Matplotlib")
 
-        self.canvas_graph = FigureCanvasTkAgg(self.fig, master=self.visu_frame)
+        self.canvas_graph = FigureCanvasTkAgg(self.fig, master=self.plot_frame)
         self.canvas_graph.draw()
         self.canvas_graph.get_tk_widget().pack(expand=True, fill="both")
 
         self.log("→ Affichage d'un graphique matplotlib")
 
-    def bouton_action(self,i):
-        if i == 1:  # Exemple → bouton 1 affiche un graphique
-            self.afficher_graphique()
-        else:
-            self.clear_visu()
-            txt = f"Clic sur bouton {i}"
-            self.visu_label.config(text=txt)
-            self.log(txt)
+    def bouton_calibration(self):
+        #reinit plots
+        self.clear_visu()
+        self.plot_fig = Figure(figsize=(5,4), dpi=100)
+        self.plot_canvas = FigureCanvasTkAgg(self.plot_fig, master=self.plot_frame)
+        self.plot_canvas_widget = self.plot_canvas.get_tk_widget()
+        self.plot_canvas_widget.pack(fill="both", expand=True)
+        # Do calibration
+        par=self.data
+        if not "calibration" in par:
+            messagebox.showerror("No calibration parameters", "Cannot call calibration ✔")
+            return
 
+        par["time"]=datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        with open(f'calib{par["time"]}.json', 'w') as fp:
+            json.dump(par, fp,indent=2)
+
+        sp=ps.scurve_processor(par)
+        if par["calibration"] == "ALIGN":
+            sp.align()
+        else:
+            sp.get_scurves(par["calibration"],plot_fig=self.plot_fig)
+        
+
+        #self.afficher_graphique()
+        
 
     def bouton_initialise(self):
 

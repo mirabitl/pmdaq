@@ -62,10 +62,18 @@ class scurve_processor:
                 
         
         
-    def get_scurves(self,analysis="SCURVE_A"):
+    def get_scurves(self,analysis="SCURVE_A",plot_fig=None):
         self.res["analysis"]=analysis
         self.res["channels"]=[]
         scurves=None
+
+        # Plots
+        ax=None
+        if plot_fig!=None:
+            # Efface l'ancienne figure
+            plot_fig.clear()
+            ax=plot_fig.add_subplot(111)
+        # Check the analysis
         if analysis == "SCURVE_A":
             print(f'start={self.conf["thmin"]},stop={self.conf["thmax"]},step={self.conf["thstep"]},dac_loc=0')
             #input()
@@ -82,10 +90,23 @@ class scurve_processor:
             rc["tdc"]=daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]
             rc["scurve"]=scurves[daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]]
             self.res["channels"].append(rc)
-            plt.plot(range(self.conf["thmin"], self.conf["thmax"],1), scurves[liroc_chan], '+-', label=f"ch{liroc_chan}")
-        plt.grid()
-        plt.legend(loc="upper right")
-        plt.show()
+            if plot_fig==None:
+                plt.plot(range(self.conf["thmin"], self.conf["thmax"],1), scurves[liroc_chan], '+-', label=f"ch{liroc_chan}")
+            else:
+               ax.plot(
+                   range(self.conf["thmin"], self.conf["thmax"], 1),
+                   scurves[liroc_chan],
+                   '+-',
+                   label=f"ch{liroc_chan}"
+               ) 
+        if plot_fig==None:
+            plt.grid()
+            plt.legend(loc="upper right")
+            plt.show()
+        else:
+            ax.grid()
+            ax.legend(loc="upper right")
+            
         # Now get a run id
         runid=None
         if "location" in self.conf and "comment" in self.conf:
