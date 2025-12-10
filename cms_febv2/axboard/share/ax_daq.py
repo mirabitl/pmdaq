@@ -242,33 +242,61 @@ class febv2_light:
         message="runHeader Word List : {}".format(runHeaderWordList)
         logging.debug(message)
         self.writer.writeRunHeader(runHeaderWordList)
-
-    def start(self,run=0):
-        """ Start a run.
-
-        It launches a thread that spy the data in the readout FIFO of the FEB
-        If run is different from 0, it creates a new run (file) and writes the run header
-        Args:
-            run (int): By default it's 0 and shared memory is used. 
-            
-        """
-        if (self.writer==None):
-            logging.fatal("no writer defined")
+    def daq_starting(self,location=None,comment=None,params={"type":"NORMAL"}):
+        if self.conf!=None and location ==None:
+            r_vers=self.conf["run"]["version"]
+            location=self.conf["location"]
+            params=self.conf["run"][r_vers]
+            self.logger.info(f"DAQ parameter {params}")
+            #exit(0)
+            comment=params["comment"]
+        if not "type" in params:
+            self.logger.error("Run type should be specified in params")
             return
-        daq.configLogger(logging.WARN)
-        self.writer.setIds(self.detectorId, self.sourceId)
-        if (run != 0):
-            self.run= run
-            self.writer.newRun(self.run)
-            logging.info("Data are written in file %s." %
-                       self.writer.file_name())
-            self.writeRunHeader()
-        self.running= True
-        self.producer_thread = threading.Thread(target=self.acquiring_data)
-        self.producer_thread.start()
-        logging.info("Daq is started")
-        message = "Run number : "+str(self.run)
-        logging.info(message)
+                         
+        runobj = self.sdb.getRun(location,comment)
+        self.runid = runobj["run"]
+        if self.runid == None:
+            self.runid = int(input("Enter a run number: "))
+
+        # Store results in json
+        self.storage.open(f"run_{self.runid}_{self.conf["dbstate"]}_{self.conf["dbversion"]}_{self.conf["feb_id"]}_{self.conf["vth_shift"]}")
+
+        self.run_type=1
+        if self.conf==None:
+            rh=np.array([self.run_type,self.threshold],dtype='int64')
+            self.storage.writeRunHeader(self.runid,rh)
+        else:
+            self.storage.writeRunHeaderDict(self.runid,self.conf)
+        print(f"Now we start with {params['type']} \n {params}")
+        
+        if params["type"] == "NORMAL":
+            self.logger.info("Normal run")
+            self.normal_run()
+        
+    def normal_run(self,params=None):
+        with self._lock:
+            if self._thread and self._thread.is_alive():
+                self.logger.warning("Acquisition déjà en cours")
+                return False
+            self._running.set()
+            self._thread = threading.Thread(target=self.normal_loop, args=(params,), daemon=True)
+            self._thread.start()
+            return True
+    
+    def normal_loop(self, params=None):
+        self.logger.info("NORMAL Acquisition thread démarré")
+        while self._running.is_set():
+            # simulate acquisition tick
+            with self._lock:
+                self.status["run"] = self.storage.run
+                self.status["event"] = self.storage.event
+                self.acquiring_data()
+            if self.storage.event%100 == 0: 
+                self.logger.info(f"Acquisition {self.storage.run} {self.storage.event}")
+            time.sleep(0.001)
+        self.logger.info("Acquisition thread arrêté")
+
 
     def status(self):
         """ returns the status of the acquisition
@@ -276,11 +304,11 @@ class febv2_light:
             A dictionnary object with status and event number
         """
         r={}
-        if (self.writer!=None):
-            r["state"]="running"
-            r["event"]=self.writer.eventNumber()
+        if (self._running.is_set()):
+            r["state"]=self.state
+            r["event"]=self.storage.event
         else:
-            r["state"]="not_running"
+            r["state"]=self.state
             r["event"]=-1
         return r
     def start_acquisition(self):
@@ -322,142 +350,7 @@ class febv2_light:
             logging.error("cannot read block {(n+3)*8} ")
 
         return rawdata
-    def acquiring_data_old(self):
-        """ Acquisition thread
 
-        While running, it loops continously and spy data in the FC7 readout fifo
-        It writes data to disk or shared memory until running is false and the run stopped. 
-        """
-        nacq= 0
-        ntrig = 0
-        self.logger.setLevel(logging.WARN)
-        #self.feb.enable_tdc(True)
-        for fpga in daq.FPGA_ID:
-            self.feb0.fpga[fpga].tdcSetInjectionMode('standard')
-            self.feb0.fpga[fpga].tdcEnable(True)
-            self.feb0.fpga[fpga].tdcEnableChannel()       
-
-        fout=open("debug.out","w")
-
-        while (self.running):
-            self.writer.newEvent()
-            
-            #self.fc7.configure_resync_external(2) 
-            #self.fc7.reset_bc0_id()
-            self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=False, delay=2)
-    
-            self.ax7325b.fastbitResetBc0Id()
-            """ 
-            self.fc7.configure_acquisition(buf_size=self.conf["config"]["buf_size"],
-                                           triggerless=(self.conf["config"]["triggerless"]==1),
-                                           single=(self.conf["config"]["single"]==1),
-                                           keep=(self.conf["config"]["keep"]==1),
-                                           external_window=(self.conf["config"]["external_window"]==1))
-            """
-            self.start_acquisition()
-            nbt=0
-            datawait=0
-            nb_frame32=0
-            nb_last=0
-            nwait=0
-            logging.debug(f"{(nb_frame32==0 or nb_last!=nb_frame32) and self.running}")
-            while (nb_frame32==0 or nb_last!=nb_frame32) and self.running:
-                if not self.hasTrigger():
-                    time.sleep(0.005)
-                    continue
-                nb_frame32 = self.getNFrames()
-                logging.debug(f"Read  getNFrames {nb_frame32}")
-
-                nb_last=nb_frame32
-                if (nwait%1000==999):
-                    print(nwait)
-                nwait+=1
-                if (nwait>1E4):
-                    message= "Resetting BC0 and restart DAQ after number {}, event {}.".format(nacq, self.writer.eventNumber())
-                    logging.error(message)
-                    self.stop_acquisition()
-                    time.sleep(10)
-                    self.ax7325b.fastbitResetBc0Id()
-                    self.start_acquisition()
-                    nwait=0
-                time.sleep(0.001)
-            if not self.running:
-                break
-            logging.info(f"Found {nb_frame32}")
-            while nb_frame32!=0:
-                #ntdcf=0
-                #for tdc_frame in self.fc7.uplink.receive_tdc_frames(nb_frame=nb_frame32*8, timeout=0.01):
-                #    print(f"{nacq} {ntdcf} {tdc_frame.raw:032X} ", file=fout)
-                #    ntdcf+=1
-                #time.sleep(0.01)
-                nb_frame32_1 = self.getNFrames()
-                logging.debug(f"Found {nb_frame32_1}")
-
-                #if (nb_frame32%8!=0 or nb_frame32_1< nb_frame32):
-                if (nb_frame32_1< nb_frame32):
-                    logging.info("oops not x 8 %d et le second %d \n" % (nb_frame32,nb_frame32_1))
-                    time.sleep(5)
-                    nb_frame32 = self.getNFrames()
-
-                    continue
-                else:
-                    nb_frame32=nb_frame32_1
-
-                try:
-                    message= "Nb frames to be block read {}".format(nb_frame32)
-                    logging.info(message)
-                    nb_frame32 = min(4096+2048, nb_frame32)
-                    #print("frames :%d %d\n"% (nb_frame32//8,nb_frame32))
-                    #sys.stdout.flush()
-                    datas=self.readFrames(nb_frame32)
-                except:
-                    logging.error("error")
-                #self.fc7.fpga_registers.ipbus_device.ReadBlock("USER_OUTPUT_FIFO_TDC", nb_frame32)
-                # for i in range(0,len(datas),8):
-                #     fr="%d %d " % (nacq,ntdcf)
-                #     for j in range(8):
-                #         fr=fr+"%.8x" % datas[i+j]  
-                #     print(fr,file=fout)
-                #     ntdcf+=1
-                self.writer.appendEventData(datas)
-                #print(f"{nb_frame32} read",flush=True)
-                nbt+=nb_frame32
-                #time.sleep(0.01)
-                nb_frame32 = self.getNFrames()
-            if nbt == 0:
-                message= "problem at fifo readout number {}, event written {}.".format(nacq, self.writer.eventNumber())
-                logging.error(message)
-                time.sleep(0.01)
-            else:
-                nacq+=1
-                if not self.dummy:
-                    self.writer.writeEvent()
-           
-            if (nacq % 1 == 0):
-                message= "Info : Event {} (acquisition number {}) have read {} words = {} potential TDC frames.".format(self.writer.eventNumber(), nacq, nbt, nbt/8)
-                logging.info(message)
-
-                #with open("/data/trigger_count.txt", "w") as trig_output:
-                #    trig_output.write(str(self.writer.eventNumber()))             
-            self.stop_acquisition()
-            time.sleep(0.005)
-        for fpga in daq.FPGA_ID:
-            self.feb0.fpga[fpga].tdcEnable(False) 
-        self.stop_acquisition()
-        time.sleep(0.005)
-        nb_frame32 = self.getNFrames()
-        if not nb_frame32==0:
-            try:
-                message= "Nb frames to be block read {}".format(nb_frame32)
-                logging.info(message)
-                nb_frame32 = min(4096+2048, nb_frame32)
-                #print("frames :%d %d\n"% (nb_frame32//8,nb_frame32))
-                #sys.stdout.flush()
-                datas=self.readFrames(nb_frame32)
-            except:
-                logging.warning(f"{nb_frame32} frames but no more data readable")
-
-        logging.info("Thread %d: finishing", self.run)
     def acquiring_data(self):
         """ Acquisition thread
 
@@ -474,9 +367,8 @@ class febv2_light:
             self.feb0.fpga[fpga].tdcEnableChannel()       
 
         fout=open("debug.out","w")
-
-        while (self.running):
-            self.writer.newEvent()
+        words=[]
+        while (self._running.is_set()):
             self.ax7325b.fastbitResetBc0Id()
             self.start_acquisition()
             nb_frames=0
@@ -493,10 +385,10 @@ class febv2_light:
                 try:
                     message= "Nb frames to be block read {}".format(nb_frames)
                     logging.info(message)
-                    datas=self.readFrames(nb_frames)
+                    words+=self.readFrames(nb_frames)
                 except:
                     logging.error("error")
-                self.writer.appendEventData(datas)
+                #self.writer.appendEventData(datas)
                 nbt+=nb_frames
                 nb_frames = self.getNFrames()
                 
@@ -507,10 +399,11 @@ class febv2_light:
             else:
                 nacq+=1
                 if not self.dummy:
-                    self.writer.writeEvent()
+                    self.storage.writeEvent(words)
+                    #self.writer.writeEvent()
            
             if (nacq % 1 == 0):
-                message= "Info : Event {} (acquisition number {}) have read {} words = {} potential TDC frames.".format(self.writer.eventNumber(), nacq, nbt, nbt/8)
+                message= "Info : Event {} (acquisition number {}) have read {} words = {} potential TDC frames.".format(self.event, nacq, nbt, nbt/8)
                 logging.info(message)
 
                 #with open("/data/trigger_count.txt", "w") as trig_output:
@@ -528,17 +421,23 @@ class febv2_light:
         time.sleep(0.005)
         logging.info("Thread %d: finishing", self.run)
 
-    def stop(self):
-        """ Stop the run
+    def daq_stopping(self, params=None):
+        with self._lock:
+            if not (self._thread and self._thread.is_alive()):
+                self.logger.warning("Acquisition non démarrée")
+                self.storage.close()
+                self._running.clear()
+                return False
+            self._running.clear()
+            # join optionnel court
+            self._thread.join(timeout=10)
+            self.storage.close()
+            return True
+        
+    def running(self):
+        return self._running.is_set()
 
-        It sets running to false, wait for the thread to stop and disable FEB and FC7  acquisition
-        """
-        self.running= False
-        self.producer_thread.join()
-        daq.configLogger(loglevel=logging.WARN)
-        logger = logging.getLogger('FEB_minidaq')        
-        daq.configLogger(logging.INFO)
-        self.writer.endRun()
-        logging.info("Daq is stopped")
-
+    def get_status(self):
+        with self._lock:
+            return dict(self.status, running=self.running())
     
