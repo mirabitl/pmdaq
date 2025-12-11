@@ -3,26 +3,18 @@
 import threading
 import time
 import logging
-import sys,os
 import time
-
-from pprint import pprint
 import numpy as np
-import datetime
-import struct
-import zstandard as zstd
-
 import ax_storage as ps
-from matplotlib import pyplot as plt
 
-import cms_irpc_feb_lightdaq as daq
+import cms_irpc_feb_lightdaq as daq # pyright: ignore[reportMissingImports]
 
-import csv_register_access as cra
+import csv_register_access as cra # pyright: ignore[reportMissingImports]
 import os
 import json
 
 import threading
-from transitions import Machine, State
+from transitions import Machine, State # pyright: ignore[reportMissingImports]
 
 logging.basicConfig(
     level=logging.INFO,
@@ -53,7 +45,7 @@ class febv2_light:
             config: a python object conatining the daq configuration
             verbose (bool): False by default, tune to true for debug printout
         """
-         daq.configLogger(logging.DEBUG)
+        daq.configLogger(logging.DEBUG)
 
         self._thread = None
         self._running = threading.Event()
@@ -79,9 +71,12 @@ class febv2_light:
         self.last_paccomp=None
         self.last_delay_reset_trigger=None
         self.buf_size=config["config"]["buf_size"]
+        self.params=None
+
 
     def set_configuration(self,c):
         self.conf=c
+        self.params=c["daq"]
     def set_db_configuration(self,name,version):
         self.sdb.download_configuration(name,version)
         c=json.loads(open(f"/dev/shm/config/{name}_{version}.json").read())
@@ -102,7 +97,7 @@ class febv2_light:
         try:
             self.ax7325b = daq.AX7325BBoard()
             self.feb0 = daq.FebV2Board(self.ax7325b, febid='FEB0', fpga_fw_ver='4.8')
-            self.ax7325b.init(feb0=True, feb1=False,mapping_mode=self.conf["config"]["mapping"])
+            self.ax7325b.init(feb0=True, feb1=False,mapping_mode=self.params["daq"]["config"]["mapping"])
             ### Test
             #self.sdb.setup.febs[0].fpga_version='4.8'
             self.feb0.init()
@@ -115,40 +110,40 @@ class febv2_light:
         It configures the FEB and prepare the FC7 for a run setting the orbit and trigger definition
         """
         self.sdb=cra.instance()
-        self.sdb.download_setup(self.conf["db_state"],self.conf["db_version"])
+        self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
         self.sdb.setup.febs[0].fpga_version='4.8'
-        if "vth_shift" in self.conf:
-            self.sdb.setup.febs[0].petiroc.shift_10b_dac(self.conf["vth_shift"])
+        if "vth_shift" in self.params:
+            self.sdb.setup.febs[0].petiroc.shift_10b_dac(self.params["vth_shift"])
         
         self.sdb.to_csv_files()
         daq.configLogger(logging.INFO)
         
-        self.feb0.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.conf["db_state"],self.conf["db_version"],self.conf["feb_id"]))
+        self.feb0.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.params["db_state"],self.params["db_version"],self.params["feb_id"]))
         #enableforces2=True
-        if ("disable_force_s2" in self.conf):
-            enableforces2=not (self.conf["disable_force_s2"]==1)
+        if ("disable_force_s2" in self.params):
+            enableforces2=not (self.params["disable_force_s2"]==1)
         for fpga in daq.FPGA_ID:
             self.feb0.fpga[fpga].tdcSetInjectionMode('standard')
             self.feb0.fpga[fpga].tdcEnable(False)       
 
         
         self.ax7325b.fastbitFsmConfigure(
-            s0_duration=self.conf["orbit_fsm"]["s0"],
-            s1_duration=self.conf["orbit_fsm"]["s1"],
-            s2_duration=self.conf["orbit_fsm"]["s2"],
-            s3_duration=self.conf["orbit_fsm"]["s3"],
-            s4_duration=self.conf["orbit_fsm"]["s4"],
+            s0_duration=self.params["orbit_fsm"]["s0"],
+            s1_duration=self.params["orbit_fsm"]["s1"],
+            s2_duration=self.params["orbit_fsm"]["s2"],
+            s3_duration=self.params["orbit_fsm"]["s3"],
+            s4_duration=self.params["orbit_fsm"]["s4"],
             enable_force_s2=enableforces2)
 
-        self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=False, delay=self.conf["config"]["resync_delay"])
+        self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=False, delay=self.params["config"]["resync_delay"])
         #self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=True, delay=100)
     
         self.ax7325b.fastbitResetBc0Id()
         #self.fc7.configure_resync_external(100)
         #self.fc7.reset_bc0_id()
 
-        if ("trigger" in self.conf):
-            trg=self.conf["trigger"]
+        if ("trigger" in self.params):
+            trg=self.params["trigger"]
             if "n_bc0" in trg:
                 #self.fc7.configure_nBC0_trigger(trg["n_bc0"])
                 self.ax7325b.triggerBc0Configure(int(trg["n_bc0"]) != 0 , trg["n_bc0"]) 
@@ -158,8 +153,8 @@ class febv2_light:
                 self.ax7325b.triggerExternalConfigure(int(trg["external"]) != 0 , trg["external"])                
             #if "periodic" in trg:
             #    self.fc7.configure_periodic_trigger(trg["periodic"])
-        if self.conf!=None:
-            self.storage=ps.storage_manager(self.conf["storage"]["directory"])
+        if self.params!=None:
+            self.storage=ps.storage_manager(self.params["writer"]["file_directory"])
         #self.storage.open("unessai")
         self.runid=None
 
@@ -169,13 +164,7 @@ class febv2_light:
         Args:
             shift (int): Shift to add to VTH_TIME DAC10 bits taken in the DB
         """
-        self.sdb.download_setup(self.conf["db_state"],self.conf["db_version"])
         self.sdb.setup.febs[0].petiroc.shift_10b_dac(shift)
-        if (self.last_paccomp!=None):
-            self.sdb.setup.febs[0].petiroc.set_parameter("pa_ccomp",self.last_paccomp&0XF,asic=None)
-        if (self.last_delay_reset_trigger!=None):
-            self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",self.last_delay_trigger&0XF,asic=None)
-
         self.sdb.to_csv_files()
     def change_paccomp(self,value):
         """ Change the PETIROC PACCOMP
@@ -183,19 +172,16 @@ class febv2_light:
         Args:
             value (int): PACCOMP to all asics
         """
-        self.sdb.download_setup(self.conf["db_state"],self.conf["db_version"])
         self.sdb.setup.febs[0].petiroc.set_parameter("pa_ccomp",value&0XF,asic=None)
-        self.last_paccomp=value
         self.sdb.to_csv_files()
+
     def change_delay_reset_trigger(self,value):
         """ Change the PETIROC delay_reset_trigger value
             The PETIROC parameters to be used are modified but not load (configure needed)
         Args:
             value (int): DELAY_RESET_TRIGGER VALUE
         """
-        self.sdb.download_setup(self.conf["db_state"],self.conf["db_version"])
         self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",value&0XF,asic=None)
-        self.last_delay_reset_trigger=value
         self.sdb.to_csv_files()
     
     def change_db(self,state_name,version):
@@ -205,54 +191,18 @@ class febv2_light:
             state_name (str): name of the state
             version (int)" version number
         """
-        self.conf["db_state"]=state_name
-        self.conf["db_version"]=version
+        self.params["db_state"]=state_name
+        self.params["db_version"]=version
         
-        self.sdb.download_setup(self.conf["db_state"],self.conf["db_version"])
+        self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
         self.sdb.to_csv_files()
 
-    def setWriter(self,fw):
-        """ Set the FEBWriter object to be used
-
-        Args:
-            fw: The FebWriter object
-        """
-        self.writer=fw
-    def writeRunHeader(self):
-        """  Create and write the run header using the FebWriter object
-
-        """
-        if (self.writer==None):
-            logging.fatal("no writer defined")
-            return
-        runHeaderWordList=[]
-        #runHeaderWordList.append(int(self.ax7325b.ipbRead('GENERAL')) #[0]
-        runHeaderWordList.append(int(0))                         
-        # self.feb.feb_ctrl_and_status.get_temperature()
-        # temperatures=self.feb.feb_ctrl_and_status.temperature_value
-        # temperatures_int_values=[]
-        # for i in range(1,6):
-        #     key = "LM75_SENSOR"+str(i)
-        #     temperatures_int_values.append(int(2*temperatures[key][0])) # this should be a 9 bit word
-        # runHeaderWordList.append(( (temperatures_int_values[0]<<18)+(temperatures_int_values[1]<<9)+temperatures_int_values[2])) #[5]
-        # runHeaderWordList.append(( (temperatures_int_values[3]<<9)+temperatures_int_values[4]))  #[6]
-        # #reading back channel enabled word for TDC
-        # message="Information on potential enabled channel : {}".format(chanset)
-        #logging.info(message)
-        message="runHeader Word List : {}".format(runHeaderWordList)
-        logging.debug(message)
-        self.writer.writeRunHeader(runHeaderWordList)
     def daq_starting(self,location=None,comment=None,params={"type":"NORMAL"}):
-        if self.conf!=None and location ==None:
-            r_vers=self.conf["run"]["version"]
-            location=self.conf["location"]
-            params=self.conf["run"][r_vers]
-            self.logger.info(f"DAQ parameter {params}")
+        if self.params!=None and location ==None:
+            location=self.params["location"]
+            self.logger.info(f"DAQ parameter {self.params}")
             #exit(0)
-            comment=params["comment"]
-        if not "type" in params:
-            self.logger.error("Run type should be specified in params")
-            return
+            comment=params["comment"] if "comment" in params else "No comment set"
                          
         runobj = self.sdb.getRun(location,comment)
         self.runid = runobj["run"]
@@ -260,19 +210,18 @@ class febv2_light:
             self.runid = int(input("Enter a run number: "))
 
         # Store results in json
-        self.storage.open(f"run_{self.runid}_{self.conf["dbstate"]}_{self.conf["dbversion"]}_{self.conf["feb_id"]}_{self.conf["vth_shift"]}")
+        self.storage.open(f"run_{self.runid}_{self.params["db_state"]}_{self.params["db_version"]}_{self.params["feb_id"]}_{self.params["vth_shift"]}")
 
         self.run_type=1
-        if self.conf==None:
-            rh=np.array([self.run_type,self.threshold],dtype='int64')
+        if self.params==None:
+            rh=np.array([self.run_type,self.params["vth_shift"]],dtype='int64')
             self.storage.writeRunHeader(self.runid,rh)
         else:
-            self.storage.writeRunHeaderDict(self.runid,self.conf)
-        print(f"Now we start with {params['type']} \n {params}")
+            self.storage.writeRunHeaderDict(self.runid,self.params)
+        print(f"Now we start with \n {params}")
         
-        if params["type"] == "NORMAL":
-            self.logger.info("Normal run")
-            self.normal_run()
+        self.logger.info("Normal run")
+        self.normal_run()
         
     def normal_run(self,params=None):
         with self._lock:
@@ -289,8 +238,7 @@ class febv2_light:
         while self._running.is_set():
             # simulate acquisition tick
             with self._lock:
-                self.status["run"] = self.storage.run
-                self.status["event"] = self.storage.event
+                self.status=self.acq_status()
                 self.acquiring_data()
             if self.storage.event%100 == 0: 
                 self.logger.info(f"Acquisition {self.storage.run} {self.storage.event}")
@@ -298,16 +246,18 @@ class febv2_light:
         self.logger.info("Acquisition thread arrêté")
 
 
-    def status(self):
+    def acq_status(self):
         """ returns the status of the acquisition
         Returns:
             A dictionnary object with status and event number
         """
         r={}
         if (self._running.is_set()):
+            r["run"] = self.storage.run
             r["state"]=self.state
             r["event"]=self.storage.event
         else:
+            r["run"] =-1
             r["state"]=self.state
             r["event"]=-1
         return r
@@ -366,7 +316,6 @@ class febv2_light:
             self.feb0.fpga[fpga].tdcEnable(True)
             self.feb0.fpga[fpga].tdcEnableChannel()       
 
-        fout=open("debug.out","w")
         words=[]
         while (self._running.is_set()):
             self.ax7325b.fastbitResetBc0Id()
@@ -387,8 +336,7 @@ class febv2_light:
                     logging.info(message)
                     words+=self.readFrames(nb_frames)
                 except:
-                    logging.error("error")
-                #self.writer.appendEventData(datas)
+                    logging.error("error in readFrames")
                 nbt+=nb_frames
                 nb_frames = self.getNFrames()
                 
@@ -400,14 +348,11 @@ class febv2_light:
                 nacq+=1
                 if not self.dummy:
                     self.storage.writeEvent(words)
-                    #self.writer.writeEvent()
            
             if (nacq % 1 == 0):
                 message= "Info : Event {} (acquisition number {}) have read {} words = {} potential TDC frames.".format(self.event, nacq, nbt, nbt/8)
                 logging.info(message)
-
-                #with open("/data/trigger_count.txt", "w") as trig_output:
-                #    trig_output.write(str(self.writer.eventNumber()))             
+      
             self.stop_acquisition()
             self.ax7325b.flushDataflow()
             time.sleep(0.005)
