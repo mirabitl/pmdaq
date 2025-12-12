@@ -20,7 +20,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler("/tmp/febv2debug%d.log" % os.getpid(), mode='w')  # ,
+        logging.FileHandler("/tmp/febv2debug.log", mode='w')  # ,
         # logging.StreamHandler()
     ]
 )
@@ -45,7 +45,7 @@ class febv2_light:
             config: a python object conatining the daq configuration
             verbose (bool): False by default, tune to true for debug printout
         """
-        daq.configLogger(logging.DEBUG)
+        daq.configLogger(logging.WARN)
 
         self._thread = None
         self._running = threading.Event()
@@ -70,13 +70,15 @@ class febv2_light:
         self.storage=None
         self.last_paccomp=None
         self.last_delay_reset_trigger=None
-        self.buf_size=config["config"]["buf_size"]
+        
         self.params=None
-
+        self.configured=False
+        self.dummy=False
 
     def set_configuration(self,c):
         self.conf=c
         self.params=c["daq"]
+        self.buf_size=self.params["config"]["buf_size"]
     def set_db_configuration(self,name,version):
         self.sdb.download_configuration(name,version)
         c=json.loads(open(f"/dev/shm/config/{name}_{version}.json").read())
@@ -97,7 +99,7 @@ class febv2_light:
         try:
             self.ax7325b = daq.AX7325BBoard()
             self.feb0 = daq.FebV2Board(self.ax7325b, febid='FEB0', fpga_fw_ver='4.8')
-            self.ax7325b.init(feb0=True, feb1=False,mapping_mode=self.params["daq"]["config"]["mapping"])
+            self.ax7325b.init(feb0=True, feb1=False,mapping_mode=self.params["config"]["mapping"])
             ### Test
             #self.sdb.setup.febs[0].fpga_version='4.8'
             self.feb0.init()
@@ -116,7 +118,7 @@ class febv2_light:
             self.sdb.setup.febs[0].petiroc.shift_10b_dac(self.params["vth_shift"])
         
         self.sdb.to_csv_files()
-        daq.configLogger(logging.INFO)
+        daq.configLogger(logging.WARN)
         
         self.feb0.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.params["db_state"],self.params["db_version"],self.params["feb_id"]))
         #enableforces2=True
@@ -157,7 +159,14 @@ class febv2_light:
             self.storage=ps.storage_manager(self.params["writer"]["file_directory"])
         #self.storage.open("unessai")
         self.runid=None
+        self.configured=True
 
+    def isConfigured(self):
+        """ Check the configuration
+        Returns:
+            True is configured
+        """
+        return self.configured
     def change_vth_shift(self,shift):
         """ Change the PETIROC VTH_TIME threshold
             The PETIROC parameters to be used are modified but not load (configure needed)
@@ -210,7 +219,7 @@ class febv2_light:
             self.runid = int(input("Enter a run number: "))
 
         # Store results in json
-        self.storage.open(f"run_{self.runid}_{self.params["db_state"]}_{self.params["db_version"]}_{self.params["feb_id"]}_{self.params["vth_shift"]}")
+        self.storage.open(f'run_{self.runid}_{self.params["db_state"]}_{self.params["db_version"]}_{self.params["feb_id"]}_{self.params["vth_shift"]}')
 
         self.run_type=1
         if self.params==None:
@@ -218,28 +227,28 @@ class febv2_light:
             self.storage.writeRunHeader(self.runid,rh)
         else:
             self.storage.writeRunHeaderDict(self.runid,self.params)
+            self.logger.info("Run header writen")
         print(f"Now we start with \n {params}")
         
         self.logger.info("Normal run")
         self.normal_run()
         
     def normal_run(self,params=None):
-        with self._lock:
-            if self._thread and self._thread.is_alive():
-                self.logger.warning("Acquisition déjà en cours")
-                return False
-            self._running.set()
-            self._thread = threading.Thread(target=self.normal_loop, args=(params,), daemon=True)
-            self._thread.start()
-            return True
+        if self._thread and self._thread.is_alive():
+            self.logger.warning("Acquisition déjà en cours")
+            return False
+        self._running.set()
+        self._thread = threading.Thread(target=self.normal_loop, args=(params,), daemon=True)
+        self._thread.start()
+        return True
     
     def normal_loop(self, params=None):
         self.logger.info("NORMAL Acquisition thread démarré")
         while self._running.is_set():
             # simulate acquisition tick
-            with self._lock:
-                self.status=self.acq_status()
-                self.acquiring_data()
+            
+            self.status=self.acq_status()
+            self.acquiring_data()
             if self.storage.event%100 == 0: 
                 self.logger.info(f"Acquisition {self.storage.run} {self.storage.event}")
             time.sleep(0.001)
@@ -267,14 +276,14 @@ class febv2_light:
         acq_ctrl[29] = 1
         acq_ctrl[15,0] = self.buf_size
         self.ax7325b.ipbWrite('ACQ_CTRL', acq_ctrl)
-        logging.debug(f"start_acquisition")
+        self.logger.debug(f"start_acquisition")
     def stop_acquisition(self):
         acq_ctrl =  daq.BitField(self.ax7325b.ipbRead('ACQ_CTRL'))
         acq_ctrl[30] = 0
         acq_ctrl[29] = 1
         acq_ctrl[15,0] = 0
         self.ax7325b.ipbWrite('ACQ_CTRL', acq_ctrl)
-        logging.debug(f"stop_acquisition")
+        self.logger.debug(f"stop_acquisition")
 
     def hasTrigger(self):
         acq_status = daq.BitField(self.ax7325b.ipbRead('ACQ_STATUS'))
@@ -283,21 +292,21 @@ class febv2_light:
     def getNFrames(self):
         acq_status = daq.BitField(self.ax7325b.ipbRead('ACQ_STATUS'))
         istat=self.ax7325b.ipbRead('ACQ_STATUS')
-        logging.debug(f"Status {acq_status:08b} {bin(istat)[2:6]}")
+        self.logger.debug(f"Status {acq_status:08b} {bin(istat)[2:6]}")
         try:
             assert acq_status[31] == 0, "Not trigged => no data!"
         except:
-            logging.warning("Bit 31 set")
+            self.logger.warning("Bit 31 set")
             return 0
         n = acq_status[15,0]
-        #logging.info(f"Reading {n}+3 TDC frames")
+        #self.logger.info(f"Reading {n}+3 TDC frames")
         return n
     def readFrames(self,n):
-        logging.info(f"Reading {n+3} TDC frames")
+        self.logger.info(f"Reading {n+3} TDC frames")
         try:
             rawdata = self.ax7325b.ipbReadBlock('FEBS_TDC_DATA_WORDS', (n+3)*8) # 3 tdcframes are stuck between ringbuffer and ipbreadout
         except:
-            logging.error("cannot read block {(n+3)*8} ")
+            self.logger.error("cannot read block {(n+3)*8} ")
 
         return rawdata
 
@@ -309,7 +318,7 @@ class febv2_light:
         """
         nacq= 0
         nbt = 0
-        self.logger.setLevel(logging.WARN)
+        self.logger.setLevel(logging.INFO)
         #self.feb.enable_tdc(True)
         for fpga in daq.FPGA_ID:
             self.feb0.fpga[fpga].tdcSetInjectionMode('standard')
@@ -318,41 +327,52 @@ class febv2_light:
 
         words=[]
         while (self._running.is_set()):
+            self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=False, delay=2)
+            #print(f"Running {self.running()}")
             self.ax7325b.fastbitResetBc0Id()
             self.start_acquisition()
             nb_frames=0
-            while (nb_frames==0 and self.running):
+            while (nb_frames==0 and self._running.is_set()):
                 if not self.hasTrigger():
                     time.sleep(0.005)
                     continue
-                nb_frames = self.getNFrames()
-                logging.debug(f"Read  getNFrames {nb_frames}")
-            if not self.running:
+                try:
+                    nb_frames = self.getNFrames()
+                except: 
+                    self.logger.info(f"Cannot read nframes")
+                    nb_frames=0  
+                self.logger.info(f"Read  getNFrames {nb_frames}")
+            if not self._running.is_set():
                 break
-            logging.info(f"Found {nb_frames}")
+            self.logger.info(f"Found {nb_frames}")
             while nb_frames!=0:
                 try:
                     message= "Nb frames to be block read {}".format(nb_frames)
-                    logging.info(message)
+                    self.logger.info(message)
                     words+=self.readFrames(nb_frames)
                 except:
-                    logging.error("error in readFrames")
+                    self.logger.error("error in readFrames")
                 nbt+=nb_frames
                 nb_frames = self.getNFrames()
-                
+                    
             if nbt == 0:
                 message= "problem at frames readout number {}, event written {}.".format(nacq, self.writer.eventNumber())
-                logging.error(message)
+                self.logger.error(message)
                 time.sleep(0.01)
             else:
                 nacq+=1
                 if not self.dummy:
-                    self.storage.writeEvent(words)
-           
+                    #self.logger.info(f'Data {words}')
+                    self.storage.writeEvent([words])
+        
             if (nacq % 1 == 0):
-                message= "Info : Event {} (acquisition number {}) have read {} words = {} potential TDC frames.".format(self.event, nacq, nbt, nbt/8)
-                logging.info(message)
-      
+                message= "Info : Event {} (acquisition number {}) have read {} words = {} potential TDC frames.".format(self.storage.event, nacq, nbt, nbt/8)
+                self.logger.info(message)
+                if not self._running.is_set():
+                    self.logger.info("running lock is cleared")
+                    self.stop_acquisition()
+                    self.ax7325b.flushDataflow()
+                    break
             self.stop_acquisition()
             self.ax7325b.flushDataflow()
             time.sleep(0.005)
@@ -364,25 +384,25 @@ class febv2_light:
         if not nb_frames==0:
             self.ax7325b.flushDataflow();
         time.sleep(0.005)
-        logging.info("Thread %d: finishing", self.run)
+        self.logger.info("Thread %d: finishing", self.storage.run)
 
     def daq_stopping(self, params=None):
-        with self._lock:
-            if not (self._thread and self._thread.is_alive()):
-                self.logger.warning("Acquisition non démarrée")
-                self.storage.close()
-                self._running.clear()
-                return False
-            self._running.clear()
-            # join optionnel court
-            self._thread.join(timeout=10)
+       
+        if not (self._thread and self._thread.is_alive()):
+            self.logger.warning("Acquisition non démarrée")
             self.storage.close()
-            return True
+            self._running.clear()
+            return False
+        self._running.clear()
+        # join optionnel court
+        self._thread.join(timeout=10)
+        self.storage.close()
+        return True
         
     def running(self):
         return self._running.is_set()
 
     def get_status(self):
-        with self._lock:
-            return dict(self.status, running=self.running())
+        self.acq_status()
+        return dict(self.status, running=self.running())
     

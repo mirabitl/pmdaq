@@ -1,16 +1,16 @@
 {
     "daq": {
 	"config": {
-	    "mapping":"dome",
-	    "buf_size": 65535,
-	    "external_window": 1,
-	    "keep": 1,
-	    "single": 1,
+	    "mapping":"lemo",
+	    "buf_size":30000,
+	    "external_window": 0,
+	    "keep": 0,
+	    "single": 0,
 	    "triggerless": 0,
-	    "resync_delay":100
+	    "resync_delay":5
 	},
 	"db_state": "FEBV330_V48",
-	"db_version": 9,
+	"db_version": 11,
 	"feb_id": 30,
 	"gbt_init": 1,
 	"location": "dome_cms",
@@ -24,17 +24,15 @@
 	},
 	"disable_force_s2":0,
 	"trigger": {
-	    "external": 1,
-	    "n_bc0": 0,
-	    "n_data": 32700,
-	    "periodic": 0
+	    "external": 3500,
+	    "n_bc0": 0
 	},
-	"vth_shift": 11,
+	"vth_shift": 21,
 	"writer": {
 	    "detector_id": 191,
-	    "file_directory": "/home/acqilc/data",
+	    "file_directory": "/home/acqilc/data/",
 	    "location": "dome_cms",
-	    "shm_directory": "/dev/shm/feb_data",
+	    "shm_directory": "/dev/shm/feb_data/",
 	    "source_id": 10
 	}
     },
