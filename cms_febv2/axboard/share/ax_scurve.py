@@ -18,27 +18,303 @@ import json
 
 
 class ax_scurves:
-    def __init__(self):
-        sdb=cra.instance()
-        sdb.download_setup(state,version)
-        sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",800)
-        for i in range(16):
-            sdb.setup.febs[0].fpga.set_pair_filtering_en(i,0)
-        sdb.setup.version=998
-        sdb.to_csv_files()
+    def __init__(self,feb_id,state,version):
 
-        print(sdb.setup.febs[0].fpga_version,sdb.setup.febs[0].petiroc_version)
+        self.dbstate=state
+        self.dbversion=version
+        self.feb_id=feb_id
+        self.sdb=cra.instance()
+        self.sdb.download_setup(state,version)
+        self.sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",800)
+        for i in range(16):
+            self.sdb.setup.febs[0].fpga.set_pair_filtering_en(i,0)
+        self.sdb.setup.version=998
+        self.sdb.to_csv_files()
+
+        print(self.sdb.setup.febs[0].fpga_version,self.sdb.setup.febs[0].petiroc_version)
         lightdaq.configLogger(loglevel=logging.INFO)
-        logger = logging.getLogger('CMS_IRPC_FEB_LightDAQ')
+        self.logger = logging.getLogger('CMS_IRPC_FEB_LightDAQ')
         try:
-            ax7325b = lightdaq.AX7325BBoard()
-            feb = lightdaq.FebV2Board(ax7325b, febid='FEB0', fpga_fw_ver='4.8')
-            ax7325b.init(feb0=True, feb1=False)
+            self.ax7325b = lightdaq.AX7325BBoard()
+            self.feb = lightdaq.FebV2Board(self.ax7325b, febid='FEB0', fpga_fw_ver='4.8')
+            self.ax7325b.init(feb0=True, feb1=False)
             ### Test
-            sdb.setup.febs[0].fpga_version='4.8'
-            feb.init()
+            self.sdb.setup.febs[0].fpga_version='4.8'
+            self.feb.init()
+            self.feb.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (state,998,feb_id))
         except NameError as e:
             print(f"Test failed with message: {e}")
+
+        self.asicl=["left_top","left_bot","middle_top","middle_bot","right_top","right_bot"]
+
+    def get_mapping(self,asic_name):
+        try:
+
+            used_chan = [  
+                (5  , 0),
+                (6  , 1),
+                (7  , 2),
+                (8  , 3),
+                (9  , 4),
+                (10 , 5),
+                (11 , 6),
+                (12 , 7),
+                (19 , 8),
+                (20 , 9),
+                (21 , 10),
+                (22 , 11),
+                (23 , 12),
+                (24 , 13),
+                (25 , 14),
+                (26 , 15)
+            ]
+            used_chan_top = [
+                (5  , 0),
+                (6  , 1),
+                (7  , 2),
+                (8  , 3),
+                (9  , 4),
+                (10 , 5),
+                (11 , 6),
+                (12 , 7),
+                (19 , 8),
+                (20 , 9),
+                (21 , 10),
+                (22 , 11),
+                (23 , 12),
+                (24 , 13),
+                (25 , 14),
+                (26 , 15)
+
+            ]
+            used_chan_bot = [  
+                (5  , 16),
+                (6  , 17),
+                (7  , 18),
+                (8  , 19),
+                (9  , 20),
+                (10 , 21),
+                (11 , 22),
+                (12 , 23),
+                (19 , 24),
+                (20 , 25),
+                (21 , 26),
+                (22 , 27),
+                (23 , 28),
+                (24 , 29),
+                (25 , 30),
+                (26 , 31)
+            ]
+            
+
+            f_tdc=None
+            f_asic=None
+            used_chan=used_chan_top
+            if (asic_name=='left_top'):
+                f_tdc=self.feb.fpga_left
+                f_asic=self.feb.asic_left_top
+            if (asic_name=='left_bot'):
+                f_tdc=self.feb.fpga_left
+                f_asic=self.feb.asic_left_bot
+                used_chan=used_chan_bot
+            if (asic_name=='middle_top'):
+                f_tdc=self.feb.fpga_middle
+                f_asic=self.feb.asic_middle_top
+            if (asic_name=='middle_bot'):
+                f_tdc=self.feb.fpga_middle
+                f_asic=self.feb.asic_middle_bot
+                used_chan=used_chan_bot
+            if (asic_name=='right_bot'):
+                f_tdc=self.feb.fpga_right
+                f_asic=self.feb.asic_right_bot
+                used_chan=used_chan_bot
+            if (asic_name=='right_top'):
+                f_tdc=self.feb.fpga_right
+                f_asic=self.feb.asic_right_top
+
+            return (f_tdc,f_asic,used_chan)
+        except NameError as e:
+            print(f"Test failed with message: {e}")
+
+    def make_pedestal_all_channels(self,asic_name,thmin,thmax,thstep,v6=None):
+        try:
+            f_tdc,f_asic,used_chan =self.get_mapping(asic_name)
+
+            used_petiroc_chan = [x[0] for x in used_chan]
+            for petiroc_chan in range(32):
+                en = petiroc_chan not in used_petiroc_chan
+                f_asic.set(f"mask_discri_time_ch{petiroc_chan}", en)
+                #self.feb.asic_right_top.set(f"6b_dac_ch{petiroc_chan}", 32)
+            if (v6!=None):
+                for o_chan in range(32):
+                    f_asic.set(f"6b_dac_ch{o_chan}", v6[o_chan])
+            f_tdc.tdcSetInjectionMode('standard')
+            f_tdc.tdcEnable(False)
+            f_tdc.tdcSetCounterTimeWindow(int(1e-3/8.33e-9)) # 1ms
+
+
+            scurves = [ [] for _ in range(32) ]
+            for dac10b_val in range(thmin, thmax, thstep):
+                f_asic.set('10b_dac_vth_discri_time', dac10b_val)
+                self.feb.sendPetirocConfig(asic_name)
+                f_tdc.tdcEnable()
+                f_tdc.tdcStartCounter()
+                time.sleep(0.001)
+                f_tdc.tdcEnable(False)
+                counters = f_tdc.tdcGetCounterData()
+                for _, tdc_ch in used_chan:
+                    scurves[tdc_ch].append(counters[tdc_ch])
+                print(f"{dac10b_val} / {2**10}", counters)
+            return scurves
+        except NameError as e:
+            print(f"Test failed with message: {e}")
+
+    def make_pedestal_one_by_one(self,asic_name,thmin,thmax,thstep,v6=None):
+        try:
+            f_tdc,f_asic,used_chan =self.get_mapping(asic_name)
+
+            scurves = [ [] for _ in range(32) ]         
+            for petiroc_chan,tdc_ch in used_chan:
+                en=1
+                for o_chan in range(32):
+
+                    if (o_chan==petiroc_chan):
+                        en = 0
+                    else:
+                        en=1
+                    f_asic.set(f"mask_discri_time_ch{o_chan}", en)
+                if (v6!=None):
+                    for o_chan in range(32):
+
+                        if (o_chan==petiroc_chan):
+                            en = v6[o_chan]
+                        else:
+                            en=1
+                        f_asic.set(f"6b_dac_ch{o_chan}", en)
+                                    
+                f_tdc.tdcSetInjectionMode('standard')
+                f_tdc.tdcEnable(False)
+                f_tdc.tdcSetCounterTimeWindow(int(1e-3/8.33e-9)) # 1ms
+
+                for dac10b_val in range(thmin, thmax, thstep):
+    #            for dac10b_val in range(thmax, thmin, -1*thstep):
+                    f_asic.set('10b_dac_vth_discri_time', dac10b_val)
+                    self.feb.sendPetirocConfig(asic_name)
+                    f_tdc.tdcEnable()
+                    f_tdc.tdcStartCounter()
+                    time.sleep(0.001)
+                    f_tdc.tdcEnable(False)
+                    counters = f_tdc.tdcGetCounterData()
+                    
+                    scurves[tdc_ch].append(counters[tdc_ch])
+                    print(f"{dac10b_val} / {2**10}", counters)               
+            return scurves
+
+
+        except TestError as e:
+            print(f"Test failed with message: {e}")
+            
+    def pedestal_one_channel(self,asic_name,index,thmin,thmax,v6=None,two_steps=True,dac6=32):
+        f_tdc,f_asic,used_chan =self.get_mapping(asic_name)
+        petiroc_chan,tdc_ch =used_chan[index]
+        
+        en=1
+        for o_chan in range(32):
+
+            if (o_chan==petiroc_chan):
+                en = 0
+            else:
+                en=1
+            f_asic.set(f"mask_discri_time_ch{o_chan}", en)
+        if (v6!=None):
+            p_chans=[]
+            for ic in range(len(used_chan)):
+                p_chans.append(used_chan[ic][0])
+            for ic in range(32):
+                if not (ic in p_chans):
+                    v6[ic]=dac6
+                f_asic.set(f"6b_dac_ch{ic}",v6[ic])
+    #        for o_chan in range(32):
+    #            if (o_chan==petiroc_chan):
+    #                en = v6[o_chan]
+    #            else:
+    #                en=1
+    #            f_asic.set(f"6b_dac_ch{o_chan}", en)
+                    
+        f_tdc.tdcSetInjectionMode('standard')
+        f_tdc.tdcEnable(False)
+        f_tdc.tdcSetCounterTimeWindow(int(1e-3/8.33e-9)) # 1ms
+
+
+        # First round thstep=5
+        ti=thmin
+        ta=thmax
+        to_0=(thmax+thmin)//2
+        if (two_steps):
+            thstep=5
+            scurve1_th=[]
+            scurve1=[]
+            for dac10b_val in range(thmin, thmax, thstep):
+    #            for dac10b_val in range(thmax, thmin, -1*thstep):
+                f_asic.set('10b_dac_vth_discri_time', dac10b_val)
+                self.feb.sendPetirocConfig(asic_name)
+                f_tdc.tdcEnable()
+                f_tdc.tdcStartCounter()
+                time.sleep(0.001)
+                f_tdc.tdcEnable(False)
+                counters = f_tdc.tdcGetCounterData()
+                    
+                scurve1.append(counters[tdc_ch])
+                scurve1_th.append(dac10b_val)
+                #print(f"{dac10b_val} / {2**10}", counters)
+                # Now find the transition
+            cmax=max(scurve1)
+            #print(scurve1)
+            #print(cmax)
+            to_0=(thmax-thmin+1)//2
+            for t in range(len(scurve1)):
+                if (scurve1[t]<0.7*cmax):
+                    to_0=scurve1_th[t]
+                    break
+            # now repeat scan between to_0-10 and to_0+10
+            ti=round(max(to_0-15,thmin))
+            ta=round(min(to_0+15,thmax))
+            
+        scurve2=[]
+        scurve2_th=[]
+
+        thstep=1
+        for dac10b_val in range(int(ti), int(ta), thstep):
+    #            for dac10b_val in range(thmax, thmin, -1*thstep):
+            f_asic.set('10b_dac_vth_discri_time', dac10b_val)
+            self.feb.sendPetirocConfig(asic_name)
+            f_tdc.tdcEnable()
+            f_tdc.tdcStartCounter()
+            time.sleep(0.001)
+            f_tdc.tdcEnable(False)
+            counters = f_tdc.tdcGetCounterData()
+                    
+            scurve2.append(counters[tdc_ch])
+            scurve2_th.append(dac10b_val)
+            #print(f"{dac10b_val} / {2**10}", counters)    
+    # Now find the transition
+        cmax1=max(scurve2)
+        to_1i=to_0
+        for t in range(len(scurve2)):
+            if (scurve2[t]<0.7*cmax1):
+                to_1i=scurve2_th[t]
+                break
+        to_1a=to_1i
+        for t in range(len(scurve2)):
+            if (scurve2[t]<0.3*cmax1):
+                to_1a=scurve2_th[t]
+                break
+        to_1=(to_1a+to_1i)//2
+        print(f"Seuil raw {to_0}")
+        print(f"Scan {ti}-{ta}  {scurve2}")
+        print(f"Seuil fin {to_1}")
+        #val=input("Next channel? ")
+        return to_1
 
         
 def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None,two_steps=True,dac6=32):
@@ -84,7 +360,7 @@ def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None,two_steps=True,
         for dac10b_val in range(thmin, thmax, thstep):
 #            for dac10b_val in range(thmax, thmin, -1*thstep):
             f_asic.set('10b_dac_vth_discri_time', dac10b_val)
-            feb.sendPetirocConfig(asic_name)
+            self.feb.sendPetirocConfig(asic_name)
             f_tdc.tdcEnable()
             f_tdc.tdcStartCounter()
             time.sleep(0.001)
@@ -114,7 +390,7 @@ def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None,two_steps=True,
     for dac10b_val in range(int(ti), int(ta), thstep):
 #            for dac10b_val in range(thmax, thmin, -1*thstep):
         f_asic.set('10b_dac_vth_discri_time', dac10b_val)
-        feb.sendPetirocConfig(asic_name)
+        self.feb.sendPetirocConfig(asic_name)
         f_tdc.tdcEnable()
         f_tdc.tdcStartCounter()
         time.sleep(0.001)
@@ -142,94 +418,6 @@ def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None,two_steps=True,
     print(f"Seuil fin {to_1}")
     #val=input("Next channel? ")
     return to_1
-def get_mapping(asic_name,feb):
-    try:
-
-        used_chan = [  
-            (5  , 0),
-            (6  , 1),
-            (7  , 2),
-            (8  , 3),
-            (9  , 4),
-            (10 , 5),
-            (11 , 6),
-            (12 , 7),
-            (19 , 8),
-            (20 , 9),
-            (21 , 10),
-            (22 , 11),
-            (23 , 12),
-            (24 , 13),
-            (25 , 14),
-            (26 , 15)
-        ]
-        used_chan_top = [
-            (5  , 0),
-            (6  , 1),
-            (7  , 2),
-            (8  , 3),
-            (9  , 4),
-            (10 , 5),
-            (11 , 6),
-            (12 , 7),
-            (19 , 8),
-            (20 , 9),
-            (21 , 10),
-            (22 , 11),
-            (23 , 12),
-            (24 , 13),
-            (25 , 14),
-            (26 , 15)
-
-        ]
-        used_chan_bot = [  
-            (5  , 16),
-            (6  , 17),
-            (7  , 18),
-            (8  , 19),
-            (9  , 20),
-            (10 , 21),
-            (11 , 22),
-            (12 , 23),
-            (19 , 24),
-            (20 , 25),
-            (21 , 26),
-            (22 , 27),
-            (23 , 28),
-            (24 , 29),
-            (25 , 30),
-            (26 , 31)
-        ]
-        
-
-        f_tdc=None
-        f_asic=None
-        used_chan=used_chan_top
-        if (asic_name=='left_top'):
-            f_tdc=feb.fpga_left
-            f_asic=feb.asic_left_top
-        if (asic_name=='left_bot'):
-            f_tdc=feb.fpga_left
-            f_asic=feb.asic_left_bot
-            used_chan=used_chan_bot
-        if (asic_name=='middle_top'):
-            f_tdc=feb.fpga_middle
-            f_asic=feb.asic_middle_top
-        if (asic_name=='middle_bot'):
-            f_tdc=feb.fpga_middle
-            f_asic=feb.asic_middle_bot
-            used_chan=used_chan_bot
-        if (asic_name=='right_bot'):
-            f_tdc=feb.fpga_right
-            f_asic=feb.asic_right_bot
-            used_chan=used_chan_bot
-        if (asic_name=='right_top'):
-            f_tdc=feb.fpga_right
-            f_asic=feb.asic_right_top
-
-        return (f_tdc,f_asic,used_chan)
-    except NameError as e:
-        print(f"Test failed with message: {e}")
 
 def make_pedestal_one_by_one(state,version,feb_id,feb,asic_name,thmin,thmax,thstep,v6=None):
     try:
@@ -295,26 +483,26 @@ def make_pedestal_one_by_one(state,version,feb_id,feb,asic_name,thmin,thmax,thst
         f_asic=None
         used_chan=used_chan_top
         if (asic_name=='left_top'):
-            f_tdc=feb.fpga_left
-            f_asic=feb.asic_left_top
+            f_tdc=self.feb.fpga_left
+            f_asic=self.feb.asic_left_top
         if (asic_name=='left_bot'):
-            f_tdc=feb.fpga_left
-            f_asic=feb.asic_left_bot
+            f_tdc=self.feb.fpga_left
+            f_asic=self.feb.asic_left_bot
             used_chan=used_chan_bot
         if (asic_name=='middle_top'):
-            f_tdc=feb.fpga_middle
-            f_asic=feb.asic_middle_top
+            f_tdc=self.feb.fpga_middle
+            f_asic=self.feb.asic_middle_top
         if (asic_name=='middle_bot'):
-            f_tdc=feb.fpga_middle
-            f_asic=feb.asic_middle_bot
+            f_tdc=self.feb.fpga_middle
+            f_asic=self.feb.asic_middle_bot
             used_chan=used_chan_bot
         if (asic_name=='right_bot'):
-            f_tdc=feb.fpga_right
-            f_asic=feb.asic_right_bot
+            f_tdc=self.feb.fpga_right
+            f_asic=self.feb.asic_right_bot
             used_chan=used_chan_bot
         if (asic_name=='right_top'):
-            f_tdc=feb.fpga_right
-            f_asic=feb.asic_right_top
+            f_tdc=self.feb.fpga_right
+            f_asic=self.feb.asic_right_top
 
 
         used_petiroc_chan = [x[0] for x in used_chan]
@@ -359,7 +547,7 @@ def make_pedestal_one_by_one(state,version,feb_id,feb,asic_name,thmin,thmax,thst
             for dac10b_val in range(thmin, thmax, thstep):
 #            for dac10b_val in range(thmax, thmin, -1*thstep):
                 f_asic.set('10b_dac_vth_discri_time', dac10b_val)
-                feb.sendPetirocConfig(asic_name)
+                self.feb.sendPetirocConfig(asic_name)
                 f_tdc.tdcEnable()
                 f_tdc.tdcStartCounter()
                 time.sleep(0.001)
@@ -390,6 +578,10 @@ def make_pedestal_one_by_one(state,version,feb_id,feb,asic_name,thmin,thmax,thst
 
     except TestError as e:
         print(f"Test failed with message: {e}")
+
+
+
+
 def make_pedestal_all_channels(state,version,feb_id,feb,asic_name,thmin,thmax,thstep,v6=None):
     try:
         used_chan_top = [
@@ -435,32 +627,32 @@ def make_pedestal_all_channels(state,version,feb_id,feb,asic_name,thmin,thmax,th
         f_asic=None
         used_chan=used_chan_top
         if (asic_name=='left_top'):
-            f_tdc=feb.fpga_left
-            f_asic=feb.asic_left_top
+            f_tdc=self.feb.fpga_left
+            f_asic=self.feb.asic_left_top
         if (asic_name=='left_bot'):
-            f_tdc=feb.fpga_left
-            f_asic=feb.asic_left_bot
+            f_tdc=self.feb.fpga_left
+            f_asic=self.feb.asic_left_bot
             used_chan=used_chan_bot
         if (asic_name=='middle_top'):
-            f_tdc=feb.fpga_middle
-            f_asic=feb.asic_middle_top
+            f_tdc=self.feb.fpga_middle
+            f_asic=self.feb.asic_middle_top
         if (asic_name=='middle_bot'):
-            f_tdc=feb.fpga_middle
-            f_asic=feb.asic_middle_bot
+            f_tdc=self.feb.fpga_middle
+            f_asic=self.feb.asic_middle_bot
             used_chan=used_chan_bot
         if (asic_name=='right_bot'):
-            f_tdc=feb.fpga_right
-            f_asic=feb.asic_right_bot
+            f_tdc=self.feb.fpga_right
+            f_asic=self.feb.asic_right_bot
             used_chan=used_chan_bot
         if (asic_name=='right_top'):
-            f_tdc=feb.fpga_right
-            f_asic=feb.asic_right_top
+            f_tdc=self.feb.fpga_right
+            f_asic=self.feb.asic_right_top
 
         used_petiroc_chan = [x[0] for x in used_chan]
         for petiroc_chan in range(32):
             en = petiroc_chan not in used_petiroc_chan
             f_asic.set(f"mask_discri_time_ch{petiroc_chan}", en)
-            #feb.asic_right_top.set(f"6b_dac_ch{petiroc_chan}", 32)
+            #self.feb.asic_right_top.set(f"6b_dac_ch{petiroc_chan}", 32)
         if (v6!=None):
             for o_chan in range(32):
                 f_asic.set(f"6b_dac_ch{o_chan}", v6[o_chan])
@@ -472,7 +664,7 @@ def make_pedestal_all_channels(state,version,feb_id,feb,asic_name,thmin,thmax,th
         scurves = [ [] for _ in range(32) ]
         for dac10b_val in range(thmin, thmax, thstep):
             f_asic.set('10b_dac_vth_discri_time', dac10b_val)
-            feb.sendPetirocConfig(asic_name)
+            self.feb.sendPetirocConfig(asic_name)
             f_tdc.tdcEnable()
             f_tdc.tdcStartCounter()
             time.sleep(0.001)
@@ -528,42 +720,42 @@ def main(params):
     comment =params.comment
     
     sdb=cra.instance()
-    sdb.download_setup(state,version)
-    sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",800)
+    self.sdb.download_setup(state,version)
+    self.sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",800)
     for i in range(16):
-        sdb.setup.febs[0].fpga.set_pair_filtering_en(i,0)
-    sdb.setup.version=998
-    sdb.to_csv_files()
+        self.sdb.setup.febs[0].fpga.set_pair_filtering_en(i,0)
+    self.sdb.setup.version=998
+    self.sdb.to_csv_files()
 
-    print(sdb.setup.febs[0].fpga_version,sdb.setup.febs[0].petiroc_version)
+    print(self.sdb.setup.febs[0].fpga_version,self.sdb.setup.febs[0].petiroc_version)
     lightdaq.configLogger(loglevel=logging.INFO)
     logger = logging.getLogger('CMS_IRPC_FEB_LightDAQ')
     try:
         ax7325b = lightdaq.AX7325BBoard()
         feb = lightdaq.FebV2Board(ax7325b, febid='FEB0', fpga_fw_ver='4.8')
-        ax7325b.init(feb0=True, feb1=False)
+        self.ax7325b.init(feb0=True, feb1=False)
         ### Test
-        sdb.setup.febs[0].fpga_version='4.8'
-        feb.init()
+        self.sdb.setup.febs[0].fpga_version='4.8'
+        self.feb.init()
         
-        feb.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (state,998,feb_id))
+        self.feb.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (state,998,feb_id))
         asicl=["left_top","left_bot","middle_top","middle_bot","right_top","right_bot"]
         #asicl=["middle_bot"]
         for an in asicl:
             print(an)
-            feb.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (state,998,feb_id))
+            self.feb.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (state,998,feb_id))
 
             if (all_channels):
                 results=make_pedestal_all_channels(state,version,feb_id,feb,an,thi,tha,1)
-                sdb.upload_results(results["state"],results["version"],results["feb"],results["analysis"],results,comment)
+                self.sdb.upload_results(results["state"],results["version"],results["feb"],results["analysis"],results,comment)
                 continue
             if (one_by_one):
                 results=make_pedestal_one_by_one(state,version,feb_id,feb,an,thi,tha,1)
-                sdb.upload_results(results["state"],results["version"],results["feb"],results["analysis"],results,comment)
+                self.sdb.upload_results(results["state"],results["version"],results["feb"],results["analysis"],results,comment)
                 continue
             else:
                 _,_,used_chan =get_mapping(an,feb)
-                v6=sdb.setup.febs[0].petiroc.get_6b_dac(an)
+                v6=self.sdb.setup.febs[0].petiroc.get_6b_dac(an)
                 turn_on=[]
                 for idx in range(16):
                     to=pedestal_one_channel(feb,an,idx,thi,tha,v6)
@@ -631,19 +823,19 @@ def main(params):
                 #v_stop=input()
                 # Upload to DB
                 for  ich in range(len(v6_cor)):
-                   sdb.setup.febs[0].petiroc.set_6b_dac(ich,v6_cor[ich],an.upper())
-                sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",target1,an.upper())
+                   self.sdb.setup.febs[0].petiroc.set_6b_dac(ich,v6_cor[ich],an.upper())
+                self.sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",target1,an.upper())
                 results=make_pedestal_all_channels(state,version,feb_id,feb,an,thi,tha,1,v6=v6_cor)
                 #val=input("Next ASIC ? ")
                 
         
         if (upload):
             cm=comment
-            sdb.setup.version=version
-            sdb.upload_changes(cm)
+            self.sdb.setup.version=version
+            self.sdb.upload_changes(cm)
         else:
-            sdb.setup.version=999
-            sdb.setup.to_csv_files()
+            self.sdb.setup.version=999
+            self.sdb.setup.to_csv_files()
                 
                 
 
