@@ -19,7 +19,28 @@ import json
 
 class ax_scurves:
     def __init__(self):
-        pass
+        sdb=cra.instance()
+        sdb.download_setup(state,version)
+        sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",800)
+        for i in range(16):
+            sdb.setup.febs[0].fpga.set_pair_filtering_en(i,0)
+        sdb.setup.version=998
+        sdb.to_csv_files()
+
+        print(sdb.setup.febs[0].fpga_version,sdb.setup.febs[0].petiroc_version)
+        lightdaq.configLogger(loglevel=logging.INFO)
+        logger = logging.getLogger('CMS_IRPC_FEB_LightDAQ')
+        try:
+            ax7325b = lightdaq.AX7325BBoard()
+            feb = lightdaq.FebV2Board(ax7325b, febid='FEB0', fpga_fw_ver='4.8')
+            ax7325b.init(feb0=True, feb1=False)
+            ### Test
+            sdb.setup.febs[0].fpga_version='4.8'
+            feb.init()
+        except NameError as e:
+            print(f"Test failed with message: {e}")
+
+        
 def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None,two_steps=True,dac6=32):
     f_tdc,f_asic,used_chan =get_mapping(asic_name,feb)
     petiroc_chan,tdc_ch =used_chan[index]
