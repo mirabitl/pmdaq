@@ -15,7 +15,169 @@ import os
 import json
 
 
+class scurve_processor:
+    def __init__(self,params):
+        resmode=None
+        if "mode" in params:
+            resmode=params["mode"]
+        self.pb=ax_scurves(params["db"]["board"],
+                              params["db"]["state"],
+                              params["db"]["version"],
+                              )
+                       
+        self.res={}
+        self.res["state"]=params["db"]["state"]
+        self.res["version"]=params["db"]["version"]
+        self.res["feb"]=params["db"]["board"]
+        self.res["thmin"]=params["thmin"]
+        self.res["thmax"]=params["thmax"]
+        self.res["dcpa"]=params["dc_pa"]
+        self.res["thstep"]=params["thstep"]
+        self.res["asic"]="LIROC"
+        self.res["ctime"]=time.time()
+        if "mode" in params:
+            self.res["mode"]=params["mode"]
+        if "location" in params:
+            self.res["location"]=params["location"]
 
+        self.conf=params
+
+    def align_asic(self,asic_name):
+        _,_,used_chan =self.pb.get_mapping(asic_name)
+        v6=self.pb.sdb.setup.febs[0].petiroc.get_6b_dac(asic_name)
+        turn_on=[]
+        for idx in range(16):
+            to=self.pb.pedestal_one_channel(asic_name,idx,self.params["thmin"],self.params["thmax"],v6)
+            turn_on.append(to)
+        print(f" Turn ON {turn_on}")
+        nto=np.array(turn_on)
+        # Target
+        target=round(np.median(nto))
+        print(f"Median target {target}")
+        ## Check minimal gain value
+        too_low=False
+        too_high=False
+        vexp=[]
+        for idx in range(16):
+            petiroc_chan,_ =used_chan[idx]
+            gc=v6[ petiroc_chan]+round((target-turn_on[idx])/3.9)
+            vexp.append(gc)
+            too_low=too_low or (gc<3)
+            too_high=too_high or (gc>61)
+        if (too_low):
+            target=target+10
+        if (too_high):
+            target=target-10
+        print(f"Median target final {target} dac6b {vexp}")
+        #val=input("Second round ? ")
+        v6_cor=v6
+        turn_on_cor=[]
+        for idx in range(16):
+            petiroc_chan,tdc_ch =used_chan[idx]
+            gc=v6[ petiroc_chan]+round((target-turn_on[idx])/3.9)
+            td=[]
+            for ig in range(5):
+                g=gc-2+ig
+                vc=v6
+                if (g<=1):
+                    g=1
+                if (g>=63):
+                    g=63
+                vc[ petiroc_chan]=int(g)
+                
+                to=self.pb.pedestal_one_channel(asic_name,idx,target-15,target+15,vc,two_steps=False)
+                td.append(to)
+            #print(gc)
+            #print(td)
+            # find best value
+            mindist=1000
+            imin=2
+            for ig in range(5):
+                if (abs(td[ig]-target)<mindist):
+                    mindist=abs(td[ig]-target)
+                    imin=ig
+            turn_on_cor.append(td[imin])
+            newdac=int(gc-2+imin)
+            if (newdac<1):
+                newdac=1
+            if (newdac>63):
+                newdac=63
+            v6_cor[petiroc_chan]=newdac
+        print(f" Turn ON {turn_on_cor}")
+        ntoc=np.array(turn_on_cor)
+        # Target
+        target1=int(round(np.median(ntoc)))
+        print(f"Median target {target1}")
+        print(v6_cor)
+        return target1,v6_cor
+       
+        
+    def get_scurves(self,analysis="SCURVE_A",plot_fig=None):
+        self.res["analysis"]=analysis
+        self.res["channels"]=[]
+        scurves=None
+
+        # Plots
+        ax=None
+        if plot_fig!=None:
+            # Efface l'ancienne figure
+            plot_fig.clear()
+            ax=plot_fig.add_subplot(111)
+        # Check the analysis
+        if analysis == "SCURVE_A":
+            print(f'start={self.conf["thmin"]},stop={self.conf["thmax"]},step={self.conf["thstep"]},dac_loc=0')
+            #input()
+            scurves=self.pb.scurve_all_channels(start=self.conf["thmin"],stop=self.conf["thmax"],step=self.conf["thstep"],dac_loc=0)
+            print(scurves)
+            #input()
+        elif analysis == "SCURVE_1":
+            scurves=self.pb.scurve_loop_one(start=self.conf["thmin"],stop=self.conf["thmax"],step=self.conf["thstep"],dac_loc=0)
+        else:
+            return False
+        return True
+        for liroc_chan in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN.keys():
+            rc={}
+            rc["prc"]=liroc_chan
+            rc["tdc"]=daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]
+            rc["scurve"]=scurves[daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]]
+            self.res["channels"].append(rc)
+            if plot_fig==None:
+                plt.plot(range(self.conf["thmin"], self.conf["thmax"],1), scurves[liroc_chan], '+-', label=f"ch{liroc_chan}")
+            else:
+               ax.plot(
+                   range(self.conf["thmin"], self.conf["thmax"], 1),
+                   scurves[liroc_chan],
+                   '+-',
+                   label=f"ch{liroc_chan}"
+               ) 
+        if plot_fig==None:
+            plt.grid()
+            plt.legend(loc="upper right")
+            plt.show()
+        else:
+            ax.grid()
+            ax.legend(loc="upper right")
+            
+        # Now get a run id
+        runid=None
+        if "location" in self.conf and "comment" in self.conf:
+            runobj=self.pb.sdb.getRun(self.conf["location"],self.conf["comment"])
+            runid=runobj['run']
+                                      
+        # Store results in json
+        res_dir='/tmp/results/%s_%d_f_%d' % (self.conf["db"]["state"],self.conf["db"]["version"],self.conf["db"]["board"])
+        if runid==None:
+            runid=int(input("Enter a run number: "))
+        os.system("mkdir -p %s" % res_dir)
+        fout=open(f"{res_dir}/scurves_all_channels_{runid}.json","w")
+        fout.write(json.dumps(self.res))
+        fout.close()
+        
+        if "location" in self.conf and "comment" in self.conf:
+            self.pb.sdb.upload_results(runid,self.conf["location"],self.res["state"],self.res["version"],self.res["feb"],self.res["analysis"],self.res,self.conf["comment"])
+        return True                              
+        
+    
 
 class ax_scurves:
     def __init__(self,feb_id,state,version):
@@ -213,7 +375,7 @@ class ax_scurves:
 
         except TestError as e:
             print(f"Test failed with message: {e}")
-            
+
     def pedestal_one_channel(self,asic_name,index,thmin,thmax,v6=None,two_steps=True,dac6=32):
         f_tdc,f_asic,used_chan =self.get_mapping(asic_name)
         petiroc_chan,tdc_ch =used_chan[index]
