@@ -17,9 +17,7 @@ import json
 
 class scurve_processor:
     def __init__(self,params):
-        resmode=None
-        if "mode" in params:
-            resmode=params["mode"]
+       
         self.pb=ax_scurves(params["db"]["board"],
                               params["db"]["state"],
                               params["db"]["version"],
@@ -31,12 +29,8 @@ class scurve_processor:
         self.res["feb"]=params["db"]["board"]
         self.res["thmin"]=params["thmin"]
         self.res["thmax"]=params["thmax"]
-        self.res["dcpa"]=params["dc_pa"]
         self.res["thstep"]=params["thstep"]
-        self.res["asic"]="LIROC"
         self.res["ctime"]=time.time()
-        if "mode" in params:
-            self.res["mode"]=params["mode"]
         if "location" in params:
             self.res["location"]=params["location"]
 
@@ -113,70 +107,70 @@ class scurve_processor:
        
         
     def get_scurves(self,analysis="SCURVE_A",plot_fig=None):
-        self.res["analysis"]=analysis
-        self.res["channels"]=[]
-        scurves=None
-
-        # Plots
-        ax=None
-        if plot_fig!=None:
-            # Efface l'ancienne figure
-            plot_fig.clear()
-            ax=plot_fig.add_subplot(111)
-        # Check the analysis
-        if analysis == "SCURVE_A":
-            print(f'start={self.conf["thmin"]},stop={self.conf["thmax"]},step={self.conf["thstep"]},dac_loc=0')
-            #input()
-            scurves=self.pb.scurve_all_channels(start=self.conf["thmin"],stop=self.conf["thmax"],step=self.conf["thstep"],dac_loc=0)
-            print(scurves)
-            #input()
-        elif analysis == "SCURVE_1":
-            scurves=self.pb.scurve_loop_one(start=self.conf["thmin"],stop=self.conf["thmax"],step=self.conf["thstep"],dac_loc=0)
-        else:
-            return False
-        return True
-        for liroc_chan in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN.keys():
-            rc={}
-            rc["prc"]=liroc_chan
-            rc["tdc"]=daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]
-            rc["scurve"]=scurves[daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]]
-            self.res["channels"].append(rc)
-            if plot_fig==None:
-                plt.plot(range(self.conf["thmin"], self.conf["thmax"],1), scurves[liroc_chan], '+-', label=f"ch{liroc_chan}")
-            else:
-               ax.plot(
-                   range(self.conf["thmin"], self.conf["thmax"], 1),
-                   scurves[liroc_chan],
-                   '+-',
-                   label=f"ch{liroc_chan}"
-               ) 
-        if plot_fig==None:
-            plt.grid()
-            plt.legend(loc="upper right")
-            plt.show()
-        else:
-            ax.grid()
-            ax.legend(loc="upper right")
-            
         # Now get a run id
         runid=None
         if "location" in self.conf and "comment" in self.conf:
             runobj=self.pb.sdb.getRun(self.conf["location"],self.conf["comment"])
             runid=runobj['run']
                                       
-        # Store results in json
-        res_dir='/tmp/results/%s_%d_f_%d' % (self.conf["db"]["state"],self.conf["db"]["version"],self.conf["db"]["board"])
-        if runid==None:
-            runid=int(input("Enter a run number: "))
-        os.system("mkdir -p %s" % res_dir)
-        fout=open(f"{res_dir}/scurves_all_channels_{runid}.json","w")
-        fout.write(json.dumps(self.res))
-        fout.close()
-        
-        if "location" in self.conf and "comment" in self.conf:
-            self.pb.sdb.upload_results(runid,self.conf["location"],self.res["state"],self.res["version"],self.res["feb"],self.res["analysis"],self.res,self.conf["comment"])
-        return True                              
-        
+        for an in self.pb.asicl:
+            _,_,used_chan =self.pb.get_mapping(an)
+            self.res["analysis"]=analysis
+            self.res["channels"]=[]
+            scurves=None
+
+            # Plots
+            ax=None
+            if plot_fig!=None:
+                # Efface l'ancienne figure
+                plot_fig.clear()
+                ax=plot_fig.add_subplot(111)
+            # Check the analysis
+            if analysis == "SCURVE_A":
+                print(f'start={self.conf["thmin"]},stop={self.conf["thmax"]},step={self.conf["thstep"]},dac_loc=0')
+                #input()
+                scurves=self.pb.make_pedestal_all_channels(asic_name=an,thmin=self.conf["thmin"],thmax=self.conf["thmax"],thstep=self.conf["thstep"],v6=None)
+                print(scurves)
+            elif analysis == "SCURVE_1":
+                scurves=self.pb.make_pedestal_one_by_one(asic_name=an,thmin=self.conf["thmin"],thmax=self.conf["thmax"],thstep=self.conf["thstep"],v6=None)
+            else:
+                return False
+            for petiroc_chan, tdc_chan in used_chan:
+                rc={}
+                rc["prc"]=petiroc_chan
+                rc["tdc"]=tdc_chan
+                rc["scurve"]=scurves[tdc_chan]
+                self.res["channels"].append(rc)
+                if plot_fig==None:
+                    plt.plot(range(self.conf["thmin"], self.conf["thmax"],1), scurves[tdc_chan], '+-', label=f"ch{tdc_chan}")
+                else:
+                    ax.plot(
+                    range(self.conf["thmin"], self.conf["thmax"], 1),
+                        scurves[tdc_chan],
+                        '+-',
+                        label=f"ch{tdc_chan}"
+                ) 
+            if plot_fig==None:
+                plt.grid()
+                plt.legend(loc="upper right")
+                plt.show()
+            else:
+                ax.grid()
+                ax.legend(loc="upper right")
+            # Store results in json
+            res_dir='/tmp/results/%s_%d_f_%d' % (self.conf["db"]["state"],self.conf["db"]["version"],self.conf["db"]["board"])
+            if runid==None:
+                runid=int(input("Enter a run number: "))
+            os.system("mkdir -p %s" % res_dir)
+            fout=open(f"{res_dir}/{an}_scurves_all_channels_{runid}.json","w")
+            fout.write(json.dumps(self.res))
+            fout.close()
+            
+            if "location" in self.conf and "comment" in self.conf:
+                self.pb.sdb.upload_results(runid,self.conf["location"],self.res["state"],self.res["version"],
+                                            self.res["feb"],self.res["analysis"],self.res,self.conf["comment"])            
+        return True
+                
     
 
 class ax_scurves:
