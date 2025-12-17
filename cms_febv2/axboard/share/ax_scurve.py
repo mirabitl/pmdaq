@@ -36,6 +36,22 @@ class scurve_processor:
 
         self.conf=params
 
+
+    def align(self):
+        for an in self.pb.asicl:
+            print(f"Aligning ASIC {an}")
+            target,v6_cor=self.align_asic(an)
+            
+            for  ich in range(len(v6_cor)):
+                self.pb.sdb.setup.febs[0].petiroc.set_6b_dac(ich,v6_cor[ich],an.upper()) 
+                self.pb.sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",target,an.upper())
+            print(f"ASIC {an} aligned to target {target}")
+            print(f"New DAC6b values set {v6_cor}")
+            # Save to DB
+              
+            if "comment" in self.conf:
+                self.sdb.setup.version=self.conf["db"]["version"]
+                self.pb.sdb.upload_changes(self.conf["comment"])
     def align_asic(self,asic_name):
         _,_,used_chan =self.pb.get_mapping(asic_name)
         v6=self.pb.sdb.setup.febs[0].petiroc.get_6b_dac(asic_name)
