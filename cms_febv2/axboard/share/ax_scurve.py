@@ -62,9 +62,9 @@ class scurve_processor:
             print(f"New DAC6b values set {v6_cor}")
             # Save to DB
               
-            if "comment" in self.conf:
-                self.pb.sdb.setup.version=self.conf["db"]["version"]
-                self.pb.sdb.upload_changes(self.conf["comment"])
+        if "comment" in self.conf:
+            self.pb.sdb.setup.version=self.conf["db"]["version"]
+            self.pb.sdb.upload_changes(self.conf["comment"])
     def align_asic(self,asic_name):
         _,_,used_chan =self.pb.get_mapping(asic_name)
         v6=self.pb.sdb.setup.febs[0].petiroc.get_6b_dac(asic_name)
@@ -146,6 +146,7 @@ class scurve_processor:
             self.reset_results()
             _,_,used_chan =self.pb.get_mapping(an)
             self.res["analysis"]=analysis
+            self.res["asic"]=an.upper()
             self.res["channels"]=[]
             scurves=None
 
@@ -197,8 +198,10 @@ class scurve_processor:
             fout.close()
             
             if "location" in self.conf and "comment" in self.conf:
-                self.pb.sdb.upload_results(self.res["state"],self.res["version"],
-                                            self.res["feb"],self.res["analysis"],self.res,comment=self.conf["comment"],runid=runid)            
+                self.pb.sdb.upload_results(self.res["state"],self.res["version"],self.res["feb"],self.res["analysis"],self.res,comment=self.conf["comment"],runid=runid)
+                print("Upload done",self.res["state"],self.res["version"],
+                      self.res["feb"],self.res["analysis"],self.conf["comment"],runid)
+                #input("Next asic ?")
         return True
                 
     

@@ -899,10 +899,17 @@ class mgdb_feb:
         for resa in res:
             sti = time.strftime('%Y-%m-%d %H:%M:%S',
                                 time.localtime(resa["ctime"]))
+            tl=f'{sti}|'
+            if "run" in resa:
+                tl=tl+f'{resa["run"]}|'
+            tl=tl+f'{resa["state"]}/{resa["version"]}/{resa["analysis"]}|{resa["feb"]}|'
             if "asic" in resa:
-                print(f'{sti}|{resa["state"]}/{resa["version"]}/{resa["analysis"]}|{resa["feb"]}|{resa["asic"]}|{resa["comment"]}')
+                tl=tl+f'{resa["asic"]}|{resa["comment"]}'
+                #print(f'{sti}|{resa["state"]}/{resa["version"]}/{resa["analysis"]}|{resa["feb"]}|{resa["asic"]}|{resa["comment"]}')
             if "fpga" in resa:
-                print(f'{sti}|{resa["state"]}/{resa["version"]}/{resa["analysis"]}|{resa["feb"]}|{resa["fpga"]}|{resa["comment"]}')
+                tl=tl+f'{resa["fpga"]}|{resa["comment"]}'
+                #print(f'{sti}|{resa["state"]}/{resa["version"]}/{resa["analysis"]}|{resa["feb"]}|{resa["fpga"]}|{resa["comment"]}')
+            print(tl)
             #print(f'{sti}|{resa["state"]}/{resa["version"]}/{resa["analysis"]}|{resa["feb"]}|{resa["comment"]}')
                 
     def upload_results(self,state,version,feb,analysis,res,comment=None,runid=None):
@@ -932,7 +939,7 @@ class mgdb_feb:
             res["ctime"]=time.time()
 
             result=self.db.febv2_tests.insert_one(res)
-
+            #print("Result insertion done",result)
         else:
             print(res)
     def get_scurve(self,state,version,feb,analysis,asic,channel=None):
