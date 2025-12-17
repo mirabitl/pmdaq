@@ -403,6 +403,6 @@ class febv2_light:
         return self._running.is_set()
 
     def get_status(self):
-        self.acq_status()
+        self.status=self.acq_status()
         return dict(self.status, running=self.running())
     
