@@ -905,7 +905,7 @@ class mgdb_feb:
                 print(f'{sti}|{resa["state"]}/{resa["version"]}/{resa["analysis"]}|{resa["feb"]}|{resa["fpga"]}|{resa["comment"]}')
             #print(f'{sti}|{resa["state"]}/{resa["version"]}/{resa["analysis"]}|{resa["feb"]}|{resa["comment"]}')
                 
-    def upload_results(self,state,version,feb,analysis,res,comment=None):
+    def upload_results(self,state,version,feb,analysis,res,comment=None,runid=None):
         """
         Store test results for a given analysis in febv2_test collection
 
@@ -924,6 +924,8 @@ class mgdb_feb:
         res["version"]=version
         res["feb"]=feb
         res["analysis"]=analysis
+        if runid!=None:
+            res["run"]=runid
         if (comment!=None):
             
             res["comment"]=comment

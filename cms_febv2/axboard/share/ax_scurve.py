@@ -36,7 +36,20 @@ class scurve_processor:
 
         self.conf=params
 
+    def reset_results(self):
+        params=self.conf
+        self.res={}
+        self.res["state"]=params["db"]["state"]
+        self.res["version"]=params["db"]["version"]
+        self.res["feb"]=params["db"]["board"]
+        self.res["thmin"]=params["thmin"]
+        self.res["thmax"]=params["thmax"]
+        self.res["thstep"]=params["thstep"]
+        self.res["ctime"]=time.time()
+        if "location" in params:
+            self.res["location"]=params["location"]
 
+        
     def align(self):
         for an in self.pb.asicl:
             print(f"Aligning ASIC {an}")
@@ -50,14 +63,14 @@ class scurve_processor:
             # Save to DB
               
             if "comment" in self.conf:
-                self.sdb.setup.version=self.conf["db"]["version"]
+                self.pb.sdb.setup.version=self.conf["db"]["version"]
                 self.pb.sdb.upload_changes(self.conf["comment"])
     def align_asic(self,asic_name):
         _,_,used_chan =self.pb.get_mapping(asic_name)
         v6=self.pb.sdb.setup.febs[0].petiroc.get_6b_dac(asic_name)
         turn_on=[]
         for idx in range(16):
-            to=self.pb.pedestal_one_channel(asic_name,idx,self.params["thmin"],self.params["thmax"],v6)
+            to=self.pb.pedestal_one_channel(asic_name,idx,self.conf["thmin"],self.conf["thmax"],v6)
             turn_on.append(to)
         print(f" Turn ON {turn_on}")
         nto=np.array(turn_on)
@@ -130,6 +143,7 @@ class scurve_processor:
             runid=runobj['run']
                                       
         for an in self.pb.asicl:
+            self.reset_results()
             _,_,used_chan =self.pb.get_mapping(an)
             self.res["analysis"]=analysis
             self.res["channels"]=[]
@@ -183,8 +197,8 @@ class scurve_processor:
             fout.close()
             
             if "location" in self.conf and "comment" in self.conf:
-                self.pb.sdb.upload_results(runid,self.conf["location"],self.res["state"],self.res["version"],
-                                            self.res["feb"],self.res["analysis"],self.res,self.conf["comment"])            
+                self.pb.sdb.upload_results(self.res["state"],self.res["version"],
+                                            self.res["feb"],self.res["analysis"],self.res,comment=self.conf["comment"],runid=runid)            
         return True
                 
     
