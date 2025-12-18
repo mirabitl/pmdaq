@@ -27,7 +27,7 @@
 	    "external": 3500,
 	    "n_bc0": 0
 	},
-	"vth_shift": 21,
+	"vth_shift": 11,
 	"writer": {
 	    "detector_id": 191,
 	    "file_directory": "/home/acqilc/data/",

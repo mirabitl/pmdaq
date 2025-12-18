@@ -207,9 +207,9 @@ class daq_widget:
         #daq=pd.load_from_file("/tmp/currentdaq.json")
         if not "calibration" in self.data:
             if (self.daq==None): 
-                self.daq=pd.picmic_normal_run()
+                self.daq=pd.febv2_light()
             self.daq.set_configuration(self.data)
-            messagebox.showinfo("OK", "Tree view dat used,\n new picmic_daq set ✔")
+            messagebox.showinfo("OK", "Tree view dat used,\n new febv2_daq set ✔")
             self.log(f"DAQ settings applied and saved in  →/tmp/currentdaq.json")
         else:
             #self.calib_daq=ps.scurve_processor(self.data)

@@ -325,11 +325,12 @@ class febv2_light:
             self.feb0.fpga[fpga].tdcEnable(True)
             self.feb0.fpga[fpga].tdcEnableChannel()       
 
-        words=[]
+
         while (self._running.is_set()):
             self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=False, delay=2)
             #print(f"Running {self.running()}")
             self.ax7325b.fastbitResetBc0Id()
+            words=[]
             self.start_acquisition()
             nb_frames=0
             while (nb_frames==0 and self._running.is_set()):

@@ -45,20 +45,41 @@ class storage_manager:
         self.f_data.write(compressed)
         self.f_idx.write(struct.pack("<IQ", b_type,self.offset))
         self.offset+=3*4+8+comp_size
-    def writeRunHeaderDict(self,run_number,input_dict):
+    def writeRunHeaderDict(self,run_number,input_dict,usebase64=False):
         self.run=run_number
         self.logger.info(f"New run header {self.run} payload {input_dict}")
         b_type=2
-        message = str(input_dict)
-        ascii_message = message.encode('ascii')
-        output_byte = base64.b64encode(ascii_message)
+        
+        if usebase64:
+            message = str(input_dict)
+            ascii_message = message.encode('ascii')
+            output_byte = base64.b64encode(ascii_message)
+            
+            compressed = self.compressor.compress(output_byte)
+            comp_size = len(compressed)
+            self.f_data.write(struct.pack("<IIIQ",b_type,self.run,comp_size,int(time.time_ns())))
+            self.f_data.write(compressed)
+            self.f_idx.write(struct.pack("<IQ", b_type,self.offset))
+            self.offset+=3*4+8+comp_size
+        else:
+            timestamp = int(time.time_ns())
 
-        compressed = self.compressor.compress(output_byte)
-        comp_size = len(compressed)
-        self.f_data.write(struct.pack("<IIIQ",b_type,self.run,comp_size,int(time.time_ns())))
-        self.f_data.write(compressed)
-        self.f_idx.write(struct.pack("<IQ", b_type,self.offset))
-        self.offset+=3*4+8+comp_size
+            # JSON canonique, portable
+            json_bytes = json.dumps(
+                input_dict,
+                separators=(",", ":"),  # compact
+                sort_keys=True           # déterministe
+            ).encode("utf-8")
+
+            compressed = self.compressor.compress(json_bytes)
+            comp_size = len(compressed)
+
+            # Header binaire
+            self.f_data.write(
+                struct.pack("<IIIQ", b_type, self.run, comp_size, timestamp)
+            )
+            self.f_data.write(compressed)
+            
     def writeEvent(self,payloads):
 
         b_type=1
@@ -88,7 +109,7 @@ class storage_manager:
         self.f_idx.close()
         
 
-    def read(self,fname):
+    def read(self,fname,usebase64=False):
         self.f_data=open(fname, "rb")
         while True:
             try:
@@ -117,15 +138,27 @@ class storage_manager:
                 continue
             if (b_type == 2):
                 self.run = number
-                compressed=self.f_data.read(length)
-                raw_bytes = self.decompressor.decompress(compressed)
-                msg_bytes = base64.b64decode(raw_bytes)
-                ascii_msg = msg_bytes.decode('ascii')
-                # Json library convert stirng dictionary to real dictionary type.
-                # Double quotes is standard format for json
-                ascii_msg = ascii_msg.replace("'", "\"")
-                self.runheader = json.loads(ascii_msg)
-                #self.runheader = np.frombuffer(raw_bytes, dtype=np.uint32).copy()
+                if usebase64:
+                    compressed=self.f_data.read(length)
+                    raw_bytes = self.decompressor.decompress(compressed)
+                    msg_bytes = base64.b64decode(raw_bytes)
+                    ascii_msg = msg_bytes.decode('ascii')
+                    # Json library convert stirng dictionary to real dictionary type.
+                    # Double quotes is standard format for json
+                    ascii_msg = ascii_msg.replace("'", "\"")
+                    self.runheader = json.loads(ascii_msg)
+                    #self.runheader = np.frombuffer(raw_bytes, dtype=np.uint32).copy()
+                else:
+                    compressed = self.f_data.read(length)
+                    if len(compressed) != length:
+                        raise IOError("Payload incomplet")
+
+                    # Décompression
+                    json_bytes = self.decompressor.decompress(compressed)
+                    print(json_bytes)
+                    input()
+                    # Décodage JSON
+                    self.runheader = json.loads(json_bytes.decode("utf-8"))
                 self.logger.debug(f"new run header {self.run} : {self.runheader}")
                 self.new_run_header=True
                 # Call the run header handler
