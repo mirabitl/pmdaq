@@ -93,20 +93,23 @@ def ev_handler(psi):
             if frame.feb1_dvalid_2:
                 fpga_id = frame.feb1_devaddr_2
                 tdcdata['FEB1'][FPGA_NAME[fpga_id]].append(TdcData(chan=frame.feb1_chanid_2, val=frame.feb1_tdc_data_2, diff=None, bc0id=frame.bc0id))
+        ORB_LEN=92175.00
         for fpga in daq.FPGA_ID:
             chan_ts = [[] for _ in range(34)]
-            for chan, ts, diff,*_ in tdcdata['FEB0'][fpga]:
-                chan_ts[chan].append(ts)
+            for chan, ts, diff,_bc0_id in tdcdata['FEB0'][fpga]:
+                #chan_ts[chan].append(ts)
+                tc=(_bc0_id-1)*ORB_LEN+ts*2.5/256
+                chan_ts[chan].append(tc)
             t0=chan_ts[33][0]
-            tmin = -965.
-            tmax = -910.;
+            tmax = -665.0
+            tmin = -1065.;0
             for ch in range(34):
                 if (len(chan_ts[ch])==0):
                     continue
                 if (ch<32):
                     for t in chan_ts[ch]:
                         d = t-t0
-                        print(t,t0,d)
+                        #print(t,t0,d,tmin,tmax)
                         if d>tmin and d<tmax:
                             print(f"Found {fpga} {ch} {t} {d}")
                             input("alors")
