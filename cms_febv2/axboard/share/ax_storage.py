@@ -25,6 +25,8 @@ class storage_manager:
         self.run=0
         self.run_handler=None
         self.event_handler=None
+        self.init_handler=None
+        self.end_handler=None
         self.logger=logging.getLogger(__name__)
         self.new_run_header=False
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
@@ -181,3 +183,5 @@ class storage_manager:
                 # Call the event handler
                 if self.event_handler != None:
                     self.event_handler(self)
+        if self.end_handler != None:
+            self.end_handler()

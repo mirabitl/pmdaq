@@ -18,16 +18,22 @@ import numpy as np
 import ROOT as R
 c1=R.TCanvas()
 t=TdcUplinkFrame([])
+nfound=0
 def rh_handler(psi):
     psi.logger.warning(f"Run {psi.run} {psi.runheader}")
     print(psi.new_run_header)
     input("New run header found , hit return")
 hd =[None for _ in range(64)]
+htm=[R.TH1F(f"dt{lch}",f"dt{lch}",3000,-3000.,0.) for lch in range(32)]
+html=[R.TH1F(f"dtl{lch}",f"dtl{lch}",3000,-300000.,0.) for lch in range(32)]
 def ev_handler(psi):
-    psi.logger.info(f"{psi.event} at {psi.date}")
-    psi.logger.info(f"{psi.event} Number of blocks {len(psi.words)}")
+    global nfound,htm
+    
+    if psi.event%100==0:
+        psi.logger.info(f"===============> {psi.event} at {psi.date}")
+    psi.logger.debug(f"{psi.event} Number of blocks {len(psi.words)}")
     for p in range(len(psi.words)):
-        psi.logger.info(f"Block {p} Number of  words {len(psi.words[p])} at {p}")
+        psi.logger.debug(f"Block {p} Number of  words {len(psi.words[p])} at {p}")
         tdcframes = []
         restored_payload = np.frombuffer(psi.words[p], dtype=np.uint64)
         for frame_32 in batched_it(restored_payload, 8):
@@ -59,7 +65,7 @@ def ev_handler(psi):
                 'RIGHT'  : []
             }
         }
-        psi.logger.info(f"{psi.event} Number of frames found {len(tdcframes)}")
+        psi.logger.debug(f"{psi.event} Number of frames found {len(tdcframes)}")
         for frame in tdcframes:
             if frame.feb0_scframe or frame.feb1_scframe:
                 psi.logger.error("Not TDC frame")
@@ -94,15 +100,19 @@ def ev_handler(psi):
                 fpga_id = frame.feb1_devaddr_2
                 tdcdata['FEB1'][FPGA_NAME[fpga_id]].append(TdcData(chan=frame.feb1_chanid_2, val=frame.feb1_tdc_data_2, diff=None, bc0id=frame.bc0id))
         ORB_LEN=92175.00
+        found=False
         for fpga in daq.FPGA_ID:
             chan_ts = [[] for _ in range(34)]
             for chan, ts, diff,_bc0_id in tdcdata['FEB0'][fpga]:
                 #chan_ts[chan].append(ts)
                 tc=(_bc0_id-1)*ORB_LEN+ts*2.5/256
                 chan_ts[chan].append(tc)
+            if (len(chan_ts[33])==0):
+                continue
             t0=chan_ts[33][0]
-            tmax = -665.0
-            tmin = -1065.;0
+            tmax = -785.0
+            tmin = -825.;0
+            #tmin = -855;tmax = -805
             for ch in range(34):
                 if (len(chan_ts[ch])==0):
                     continue
@@ -110,15 +120,19 @@ def ev_handler(psi):
                     for t in chan_ts[ch]:
                         d = t-t0
                         #print(t,t0,d,tmin,tmax)
+                        if fpga=="MIDDLE":
+                            htm[ch].Fill(d)
+                            html[ch].Fill(d)
                         if d>tmin and d<tmax:
-                            print(f"Found {fpga} {ch} {t} {d}")
-                            input("alors")
+                            psi.logger.debug(f"Found {fpga} {ch} {t} {d}")
+                            found=True
                 mu = np.mean(chan_ts[ch])
                 sigma = np.std(chan_ts[ch])
-                print(f"FPGA {fpga} TDC channel {ch}: {len(chan_ts[ch])} timestamps, mean={mu:.8}, std={sigma:.3}")
+                psi.logger.debug(f"FPGA {fpga} TDC channel {ch}: {len(chan_ts[ch])} timestamps, mean={mu:.8}, std={sigma:.3}")
 
-
-    input("New Event found  , hit return")
+    if found:
+        nfound=nfound+1
+    psi.logger.info(f"New Event {psi.event} found  In Time {found} # {nfound} Eps  {nfound/(psi.event+1)*100:.2f}")
     return
     ts = [[] for _ in range(64)]
     diff = []
@@ -196,8 +210,22 @@ def ev_handler(psi):
             psi.logger.debug(f"ch{lch} nbhit={len(ts[lch])}, mean={np.mean(ts[lch]):.8}, std={np.std(ts[lch]):.3}") 
     psi.new_run_header=False
 
+def end_handler():
+    for ch in range(32):
+        c1.cd()
+        htm[ch].Draw()
+        c1.Update()
+        c1.Draw()
+        input()
+        c1.cd()
+        html[ch].Draw()
+        c1.Update()
+        c1.Draw()
+        input()
+
 psr=ps.storage_manager()
 psr.run_handler=rh_handler
 psr.event_handler=ev_handler
+psr.end_handler=end_handler
 
 psr.read(sys.argv[1]) #"/home/acqilc/unessai.bin")
