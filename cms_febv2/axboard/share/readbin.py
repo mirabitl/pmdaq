@@ -43,6 +43,22 @@ class febEvent:
                     'RIGHT'  : []
                 }
             }
+        s=json.loads(open("/home/acqilc/rocanalysis/lmana/etc/dome_mar2025/FEBV2_R3_1.json").read())["content"]
+
+        self.mf={"LEFT":[None for _ in range(32)],"MIDDLE":[None for _ in range(32)],"RIGHT":[None for _ in range(32)]}
+        for x in s.keys():
+            y=s[x]
+            fp=y[0].upper()
+            sn=x.split("_")[0]
+            ns=int(x.split("_")[1])
+            side=0
+            if sn=="strip":
+                side=1
+            ch=y[3]
+            pch=y[2]
+            self.mf[fp][ch]=(ch,pch,side,ns,x)
+        print(self.mf)
+        input()
     def clear(self):
         self.tdcframes.clear()
         for feb in ['FEB0','FEB1']:
