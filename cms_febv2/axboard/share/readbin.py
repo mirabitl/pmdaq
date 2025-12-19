@@ -16,6 +16,10 @@ from cms_irpc_feb_lightdaq.AX7325BBoard import TdcUplinkFrame,TdcData
 
 import numpy as np
 import ROOT as R
+from collections import namedtuple
+
+# Définition du namedtuple
+TdcChannel = namedtuple('TdcChannel', ['chan', 'raw', 'diff', 'bc0id','time','strip','side'])
 
 c1=R.TCanvas()
 
