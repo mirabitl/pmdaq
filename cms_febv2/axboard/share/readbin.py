@@ -34,6 +34,8 @@ class febEvent:
                 #tmin = -855;t
         self.htm=[R.TH1F(f"dt{lch}",f"dt{lch}",50,self.tmin-5,self.tmax+5) for lch in range(32)]
         self.html=[R.TH1F(f"dtl{lch}",f"dtl{lch}",3000,-300000.,0.) for lch in range(32)]
+        self.hpos=R.TH2F("hpos","DT vs strip",50,0.,50.,400,0.,40.)
+        self.hstrip=R.TH1F("hstrip","strip",50,0.,50.)
         self.nfound=0
         self.tdcdata = {
                 'FEB0' : {
@@ -73,6 +75,7 @@ class febEvent:
         print(psi.new_run_header)
         input("New run header found , hit return")
     def ev_handler(self,psi):
+        ORB_LEN=92175.00
         self.clear()
         self.nread+=1
         if psi.event%100==0:
@@ -110,16 +113,21 @@ class febEvent:
                 if frame.feb0_dvalid_0:
                     fpga_id = frame.feb0_devaddr_0
                     diff = frame.feb0_diff_0 if frame.feb0_strip_0 else None
-                    self.tdcdata['FEB0'][FPGA_NAME[fpga_id]].append(TdcData(chan=frame.feb0_chanid_0, val=frame.feb0_tdc_data_0, diff=diff, bc0id=frame.bc0id))
+                    self.tdcdata['FEB0'][FPGA_NAME[fpga_id]].append(
+                        TdcData(chan=frame.feb0_chanid_0, val=frame.feb0_tdc_data_0, diff=diff, bc0id=frame.bc0id))
 
                 if frame.feb0_dvalid_1:
                     fpga_id = frame.feb0_devaddr_1
                     diff = frame.feb0_diff_1 if frame.feb0_strip_1 else None
-                    self.tdcdata['FEB0'][FPGA_NAME[fpga_id]].append(TdcData(chan=frame.feb0_chanid_1, val=frame.feb0_tdc_data_1, diff=diff, bc0id=frame.bc0id))
+                    
+                    self.tdcdata['FEB0'][FPGA_NAME[fpga_id]].append(
+                        TdcData(chan=frame.feb0_chanid_1, val=frame.feb0_tdc_data_1, diff=diff, bc0id=frame.bc0id))
 
                 if frame.feb0_dvalid_2:
                     fpga_id = frame.feb0_devaddr_2
-                    self.tdcdata['FEB0'][FPGA_NAME[fpga_id]].append(TdcData(chan=frame.feb0_chanid_2, val=frame.feb0_tdc_data_2, diff=None, bc0id=frame.bc0id))
+                   
+                    self.tdcdata['FEB0'][FPGA_NAME[fpga_id]].append(
+                        TdcData(chan=frame.feb0_chanid_2, val=frame.feb0_tdc_data_2, diff=None, bc0id=frame.bc0id))
 
                 if frame.feb1_dvalid_0:
                     fpga_id = frame.feb1_devaddr_0
@@ -134,10 +142,13 @@ class febEvent:
                 if frame.feb1_dvalid_2:
                     fpga_id = frame.feb1_devaddr_2
                     self.tdcdata['FEB1'][FPGA_NAME[fpga_id]].append(TdcData(chan=frame.feb1_chanid_2, val=frame.feb1_tdc_data_2, diff=None, bc0id=frame.bc0id))
-            ORB_LEN=92175.00
+            
             found=False
+            self.channels=[]
+            t0=0
             for fpga in daq.FPGA_ID:
                 self.chan_ts = [[] for _ in range(34)]
+                
                 for chan, ts, diff,_bc0_id in self.tdcdata['FEB0'][fpga]:
                     #self.chan_ts[chan].append(ts)
                     tc=(_bc0_id-1)*ORB_LEN+ts*2.5/256
@@ -145,6 +156,20 @@ class febEvent:
                 if (len(self.chan_ts[33])==0):
                     continue
                 t0=self.chan_ts[33][0]
+            for fpga in daq.FPGA_ID:
+                self.chan_ts = [[] for _ in range(34)]
+
+                for chan, ts, diff,_bc0_id in self.tdcdata['FEB0'][fpga]:
+                    #self.chan_ts[chan].append(ts)
+                    c_time=(_bc0_id-1)*ORB_LEN+ts*2.5/256
+                    self.chan_ts[chan].append(c_time)
+                    if chan<32:
+                        c_strip=self.mf[fpga][chan][3]
+                        c_side=self.mf[fpga][chan][2]
+                    else:
+                        c_strip=49
+                        c_side=0
+                    self.channels.append(TdcChannel(chan=chan,raw=ts,diff=c_time-t0,bc0id=_bc0_id,time=c_time,side=c_side,strip=c_strip))
                 
                 #tmin = -855;tmax = -805
                 for ch in range(34):
@@ -167,9 +192,46 @@ class febEvent:
         if found:
             self.nfound=self.nfound+1
         psi.logger.info(f"New Event {psi.event} found  In Time {found} # {self.nfound} Eps  {self.nfound/(psi.event+1)*100:.2f}")
+        self.sorted_channels=sorted(self.channels, key=lambda x: (x.strip, -x.diff))
+        # for x in self.sorted_channels:
+        #     if x.strip<49 and x.diff>self.tmin-100 and x.diff<self.tmax+100:
+        #         print(x)
+        # input()
+        for i in range(len(self.sorted_channels)-1):
+            if (self.sorted_channels[i].strip>48):
+                continue
+            if (self.sorted_channels[i].side!=0):
+                continue
+            if (self.sorted_channels[i].diff<self.tmin):
+                continue
+            if (self.sorted_channels[i].diff>self.tmax):
+                continue
+            for j in range(i+1,len(self.sorted_channels)):
+                if (self.sorted_channels[j].strip!=self.sorted_channels[i].strip):
+                    break
+                if (self.sorted_channels[j].side!=1):
+                    continue
+                if (self.sorted_channels[i].diff-self.sorted_channels[j].diff)>30:
+                    continue
+                # print(f"----------------------------> Strip {self.sorted_channels[j].strip}")
+                # print(self.sorted_channels[i])
+                # print(self.sorted_channels[j])
+                self.hpos.Fill(self.sorted_channels[j].strip,self.sorted_channels[i].diff-self.sorted_channels[j].diff)
+                self.hstrip.Fill(self.sorted_channels[j].strip)
+        #input()        
         return
 
     def end_handler(self):
+        c1.cd()
+        self.hpos.Draw("COLZ")
+        c1.Update()
+        c1.Draw()
+        input()
+        c1.cd()
+        self.hstrip.Draw()
+        c1.Update()
+        c1.Draw()
+        input()
         for ch in range(32):
             c1.cd()
             self.htm[ch].Draw()
