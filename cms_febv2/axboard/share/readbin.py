@@ -17,7 +17,7 @@ from cms_irpc_feb_lightdaq.AX7325BBoard import TdcUplinkFrame,TdcData
 import numpy as np
 import ROOT as R
 from collections import namedtuple
-
+import irpcGeometry as irg
 # Définition du namedtuple
 TdcChannel = namedtuple('TdcChannel', ['chan', 'raw', 'diff', 'bc0id','time','strip','side'])
 
@@ -35,6 +35,8 @@ class febEvent:
         self.htm=[R.TH1F(f"dt{lch}",f"dt{lch}",50,self.tmin-5,self.tmax+5) for lch in range(32)]
         self.html=[R.TH1F(f"dtl{lch}",f"dtl{lch}",3000,-300000.,0.) for lch in range(32)]
         self.hpos=R.TH2F("hpos","DT vs strip",50,0.,50.,400,0.,40.)
+
+        self.hxy=R.TH2F("hxy","Y vs X",200,0.,50.,400,0.,200.)
         self.hstrip=R.TH1F("hstrip","strip",50,0.,50.)
         self.nfound=0
         self.tdcdata = {
@@ -65,6 +67,10 @@ class febEvent:
             self.mf[fp][ch]=(ch,pch,side,ns,x)
         print(self.mf)
         input()
+        self.geo=irg.IrpcGeometry()
+        sg=json.loads(open("/opt/pmdaq/cms_febv2/axboard/etc/RE31_1.json").read())["content"]
+        self.geo.initialize_from_json("RE31_LEFT",sg["LEFT"])
+
     def clear(self):
         self.tdcframes.clear()
         for feb in ['FEB0','FEB1']:
@@ -213,15 +219,24 @@ class febEvent:
                     continue
                 if (self.sorted_channels[i].diff-self.sorted_channels[j].diff)>30:
                     continue
-                # print(f"----------------------------> Strip {self.sorted_channels[j].strip}")
-                # print(self.sorted_channels[i])
-                # print(self.sorted_channels[j])
+                #print(f"----------------------------> Strip {self.sorted_channels[j].strip}")
+                #print(self.sorted_channels[i])
+                #print(self.sorted_channels[j])
                 self.hpos.Fill(self.sorted_channels[j].strip,self.sorted_channels[i].diff-self.sorted_channels[j].diff)
                 self.hstrip.Fill(self.sorted_channels[j].strip)
+                zs, xloc, yloc = self.geo.local_position(self.sorted_channels[j].strip,self.sorted_channels[i].diff,self.sorted_channels[j].diff)
+                #print(zs,xloc,yloc)
+                self.hxy.Fill(xloc,yloc)
+                #input()
         #input()        
         return
 
     def end_handler(self):
+        c1.cd()
+        self.hxy.Draw("COLZ")
+        c1.Update()
+        c1.Draw()
+        input()
         c1.cd()
         self.hpos.Draw("COLZ")
         c1.Update()
