@@ -428,9 +428,9 @@ class daq_widget:
 
         sp=ps.scurve_processor(par)
         if par["calibration"] == "ALIGN":
-            sp.align()
+            sp.start_align()
         else:
-            sp.get_scurves(par["calibration"],plot_fig=self.plot_fig)
+            sp.start_scurves(params={"analysis":par["calibration"],"plot_fig":self.plot_fig})
         
 
         #self.afficher_graphique()

@@ -1,5 +1,6 @@
 import logging
 import sys
+import threading
 import time
 import matplotlib.pyplot as plt
 import liroc_ptdc_daq as daq
@@ -8,7 +9,14 @@ import picmic_register_access as cra
 import os
 import json
 
-
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler("/tmp/daq.log", mode='w')  # ,
+        # logging.StreamHandler()
+    ]
+)
 
 class scurve_processor:
     def __init__(self,params):
@@ -37,8 +45,25 @@ class scurve_processor:
             self.res["location"]=params["location"]
 
         self.conf=params
+        self.logger=logging.getLogger(__name__)
+        self._thread = None
+        self._running = threading.Event()
+        self._lock = threading.Lock()
 
-    def align(self):
+    def start_align(self,params=None):
+        if not self._running.is_set():
+            self.logger.info("running lock is cleared") 
+        if self._thread:
+            self._thread.join(timeout=10)
+        if self._thread and self._thread.is_alive():
+            self.logger.warning("Calibration déjà en cours")
+            return False
+        self._running.set()
+        self._thread = threading.Thread(target=self.align, args=(params,), daemon=True)
+        self._thread.start()
+        return True
+        
+    def align(self,params=None):
         target,v_dac_local=self.pb.calib_iterative_dac_local(self.conf["thmin"],self.conf["thmax"])
         print(target)
         print(v_dac_local)
@@ -61,8 +86,23 @@ class scurve_processor:
             self.pb.sdb.setup.to_csv_files()
                 
         
-        
-    def get_scurves(self,analysis="SCURVE_A",plot_fig=None):
+    def start_scurves(self,params={"analysis":"SCURVE_A","plot_fig":None}):
+        if not self._running.is_set():
+            self.logger.info("running lock is cleared") 
+        if self._thread:
+            self._thread.join(timeout=10)
+        if self._thread and self._thread.is_alive():
+            self.logger.warning("Calibration déjà en cours")
+            return False
+        self._running.set()
+        self._thread = threading.Thread(target=self.get_scurves, args=(params,), daemon=True)
+        self._thread.start()
+        return True            
+    #def get_scurves(self,analysis="SCURVE_A",plot_fig=None):
+    def get_scurves(self,params):
+        # Now get a run id
+        analysis=params.get("analysis","SCURVE_A")
+        plot_fig=params.get("plot_fig",None)    
         self.res["analysis"]=analysis
         self.res["channels"]=[]
         scurves=None
