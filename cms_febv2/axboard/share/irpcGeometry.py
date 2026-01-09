@@ -105,7 +105,7 @@ class IrpcGeometry:
             self._side = 0
         else:
             self._side = 1
-
+        ###self._side=1
     def local_position(self, strip, t0, t1, dzs=0.0):
         strip_nb = strip
         if self._side == 0:
@@ -114,6 +114,10 @@ class IrpcGeometry:
         Lr = self._clr[strip_nb] / 10.
         Ls = self._cls[strip_nb] / 10.
         Lc = self._clc[strip_nb] / 10.
+        # Adapter COMET
+        Lr=Lr+30
+        Lc=Lc+31
+        #
         vp, vr = 17.148, 14.090
         zs = (Ls - vp / vr * (Lc - Lr) + vp * (t1 - t0)) / 2.
         zs -= dzs

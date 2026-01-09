@@ -32,12 +32,19 @@ class febEvent:
         self.tmax = -785.0
         self.tmin = -825.;0
                 #tmin = -855;t
+        self.hfile = R.gROOT.FindObject( 'hreadbin.root' )
+        if self.hfile:
+            hfile.Close()
+        self.hfile = R.TFile( 'hreadbin.root', 'RECREATE', 'Demo ROOT file with histograms' )
+ 
         self.htm=[R.TH1F(f"dt{lch}",f"dt{lch}",50,self.tmin-5,self.tmax+5) for lch in range(32)]
         self.html=[R.TH1F(f"dtl{lch}",f"dtl{lch}",3000,-300000.,0.) for lch in range(32)]
         self.hpos=R.TH2F("hpos","DT vs strip",50,0.,50.,400,0.,40.)
 
-        self.hxy=R.TH2F("hxy","Y vs X",200,0.,50.,400,0.,200.)
+        self.hxy=R.TH2F("hxy","Y vs X",100,0.,50.,50,0.,200.)
         self.hstrip=R.TH1F("hstrip","strip",50,0.,50.)
+        self.hzs=R.TH1F("hzs","zs",200,-50.,150.)
+        self.hdiff=R.TH1F("hdiff","[D] T",200,-50.,150.)
         self.nfound=0
         self.tdcdata = {
                 'FEB0' : {
@@ -51,7 +58,7 @@ class febEvent:
                     'RIGHT'  : []
                 }
             }
-        s=json.loads(open("/home/acqilc/rocanalysis/lmana/etc/dome_mar2025/FEBV2_R3_1.json").read())["content"]
+        s=json.loads(open("/opt/pmdaq/cms_febv2/axboard/etc/FEBV2_R3_1.json").read())["content"]
 
         self.mf={"LEFT":[None for _ in range(32)],"MIDDLE":[None for _ in range(32)],"RIGHT":[None for _ in range(32)]}
         for x in s.keys():
@@ -65,12 +72,11 @@ class febEvent:
             ch=y[3]
             pch=y[2]
             self.mf[fp][ch]=(ch,pch,side,ns,x)
-        print(self.mf)
-        input()
+        #print(self.mf)
         self.geo=irg.IrpcGeometry()
         sg=json.loads(open("/opt/pmdaq/cms_febv2/axboard/etc/RE31_1.json").read())["content"]
         self.geo.initialize_from_json("RE31_LEFT",sg["LEFT"])
-
+        
     def clear(self):
         self.tdcframes.clear()
         for feb in ['FEB0','FEB1']:
@@ -79,7 +85,7 @@ class febEvent:
     def rh_handler(self,psi):
         psi.logger.warning(f"Run {psi.run} {psi.runheader}")
         print(psi.new_run_header)
-        input("New run header found , hit return")
+        #input("New run header found , hit return")
     def ev_handler(self,psi):
         ORB_LEN=92175.00
         self.clear()
@@ -223,15 +229,28 @@ class febEvent:
                 #print(self.sorted_channels[i])
                 #print(self.sorted_channels[j])
                 self.hpos.Fill(self.sorted_channels[j].strip,self.sorted_channels[i].diff-self.sorted_channels[j].diff)
+                self.hdiff.Fill(self.sorted_channels[i].diff-self.sorted_channels[j].diff)
                 self.hstrip.Fill(self.sorted_channels[j].strip)
                 zs, xloc, yloc = self.geo.local_position(self.sorted_channels[j].strip,self.sorted_channels[i].diff,self.sorted_channels[j].diff)
                 #print(zs,xloc,yloc)
-                self.hxy.Fill(xloc,yloc)
+                self.hxy.Fill(self.sorted_channels[j].strip,zs)
+                self.hzs.Fill(zs)
                 #input()
         #input()        
         return
 
     def end_handler(self):
+        """
+        c1.cd()
+        self.hzs.Draw()
+        c1.Update()
+        c1.Draw()
+        input()
+        c1.cd()
+        self.hdiff.Draw()
+        c1.Update()
+        c1.Draw()
+        input()
         c1.cd()
         self.hxy.Draw("COLZ")
         c1.Update()
@@ -258,7 +277,8 @@ class febEvent:
             c1.Update()
             c1.Draw()
             input()
-
+        """
+        self.hfile.Write()
 psr=ps.storage_manager()
 evh=febEvent()
 psr.run_handler=evh.rh_handler
