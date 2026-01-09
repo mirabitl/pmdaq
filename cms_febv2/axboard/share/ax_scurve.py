@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import logging
 import sys
+import threading
 import time
 
 
@@ -14,6 +15,14 @@ import csv_register_access as cra
 import os
 import json
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler("/tmp/febv2debug.log", mode='w')  # ,
+        # logging.StreamHandler()
+    ]
+)
 
 class scurve_processor:
     def __init__(self,params):
@@ -35,7 +44,10 @@ class scurve_processor:
             self.res["location"]=params["location"]
 
         self.conf=params
-
+        self.logger=logging.getLogger(__name__)
+        self._thread = None
+        self._running = threading.Event()
+        self._lock = threading.Lock()
     def reset_results(self):
         params=self.conf
         self.res={}
@@ -49,22 +61,34 @@ class scurve_processor:
         if "location" in params:
             self.res["location"]=params["location"]
 
-        
-    def align(self):
+    def start_align(self,params=None):
+        if not self._running.is_set():
+            self.logger.info("running lock is cleared") 
+        if self._thread:
+            self._thread.join(timeout=10)
+        if self._thread and self._thread.is_alive():
+            self.logger.warning("Calibration déjà en cours")
+            return False
+        self._running.set()
+        self._thread = threading.Thread(target=self.align, args=(params,), daemon=True)
+        self._thread.start()
+        return True    
+    def align(self,params=None):
         for an in self.pb.asicl:
-            print(f"Aligning ASIC {an}")
+            self.logger.info(f"Aligning ASIC {an}")
             target,v6_cor=self.align_asic(an)
             
             for  ich in range(len(v6_cor)):
                 self.pb.sdb.setup.febs[0].petiroc.set_6b_dac(ich,v6_cor[ich],an.upper()) 
                 self.pb.sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",target,an.upper())
-            print(f"ASIC {an} aligned to target {target}")
-            print(f"New DAC6b values set {v6_cor}")
+            self.logger.info(f"ASIC {an} aligned to target {target}")
+            self.logger.info(f"New DAC6b values set {v6_cor}")
             # Save to DB
               
         if "comment" in self.conf:
             self.pb.sdb.setup.version=self.conf["db"]["version"]
             self.pb.sdb.upload_changes(self.conf["comment"])
+        self._running.clear()
     def align_asic(self,asic_name):
         _,_,used_chan =self.pb.get_mapping(asic_name)
         v6=self.pb.sdb.setup.febs[0].petiroc.get_6b_dac(asic_name)
@@ -72,11 +96,11 @@ class scurve_processor:
         for idx in range(16):
             to=self.pb.pedestal_one_channel(asic_name,idx,self.conf["thmin"],self.conf["thmax"],v6)
             turn_on.append(to)
-        print(f" Turn ON {turn_on}")
+        self.logger.info(f" Turn ON {turn_on}")
         nto=np.array(turn_on)
         # Target
         target=round(np.median(nto))
-        print(f"Median target {target}")
+        self.logger.info(f"Median target {target}")
         ## Check minimal gain value
         too_low=False
         too_high=False
@@ -91,7 +115,7 @@ class scurve_processor:
             target=target+10
         if (too_high):
             target=target-10
-        print(f"Median target final {target} dac6b {vexp}")
+        self.logger.info(f"Median target final {target} dac6b {vexp}")
         #val=input("Second round ? ")
         v6_cor=v6
         turn_on_cor=[]
@@ -126,17 +150,31 @@ class scurve_processor:
             if (newdac>63):
                 newdac=63
             v6_cor[petiroc_chan]=newdac
-        print(f" Turn ON {turn_on_cor}")
+        self.logger.info(f" Turn ON {turn_on_cor}")
         ntoc=np.array(turn_on_cor)
         # Target
         target1=int(round(np.median(ntoc)))
-        print(f"Median target {target1}")
-        print(v6_cor)
+        self.logger.info(f"Median target {target1}")
+        self.logger.info(v6_cor)
         return target1,v6_cor
        
-        
-    def get_scurves(self,analysis="SCURVE_A",plot_fig=None):
+    def start_scurves(self,params={"analysis":"SCURVE_A","plot_fig":None}):
+        if not self._running.is_set():
+            self.logger.info("running lock is cleared") 
+        if self._thread:
+            self._thread.join(timeout=10)
+        if self._thread and self._thread.is_alive():
+            self.logger.warning("Calibration déjà en cours")
+            return False
+        self._running.set()
+        self._thread = threading.Thread(target=self.get_scurves, args=(params,), daemon=True)
+        self._thread.start()
+        return True            
+    #def get_scurves(self,analysis="SCURVE_A",plot_fig=None):
+    def get_scurves(self,params):
         # Now get a run id
+        analysis=params.get("analysis","SCURVE_A")
+        plot_fig=params.get("plot_fig",None)
         runid=None
         if "location" in self.conf and "comment" in self.conf:
             runobj=self.pb.sdb.getRun(self.conf["location"],self.conf["comment"])
@@ -158,10 +196,10 @@ class scurve_processor:
                 ax=plot_fig.add_subplot(111)
             # Check the analysis
             if analysis == "SCURVE_A":
-                print(f'start={self.conf["thmin"]},stop={self.conf["thmax"]},step={self.conf["thstep"]},dac_loc=0')
+                self.logger.info(f'start={self.conf["thmin"]},stop={self.conf["thmax"]},step={self.conf["thstep"]},dac_loc=0')
                 #input()
                 scurves=self.pb.make_pedestal_all_channels(asic_name=an,thmin=self.conf["thmin"],thmax=self.conf["thmax"],thstep=self.conf["thstep"],v6=None)
-                print(scurves)
+                self.logger.info(scurves)
             elif analysis == "SCURVE_1":
                 scurves=self.pb.make_pedestal_one_by_one(asic_name=an,thmin=self.conf["thmin"],thmax=self.conf["thmax"],thstep=self.conf["thstep"],v6=None)
             else:
@@ -199,7 +237,7 @@ class scurve_processor:
             
             if "location" in self.conf and "comment" in self.conf:
                 self.pb.sdb.upload_results(self.res["state"],self.res["version"],self.res["feb"],self.res["analysis"],self.res,comment=self.conf["comment"],runid=runid)
-                print("Upload done",self.res["state"],self.res["version"],
+                self.logger.info("Upload done",self.res["state"],self.res["version"],
                       self.res["feb"],self.res["analysis"],self.conf["comment"],runid)
                 #input("Next asic ?")
         return True
@@ -220,7 +258,7 @@ class ax_scurves:
         self.sdb.setup.version=998
         self.sdb.to_csv_files()
 
-        print(self.sdb.setup.febs[0].fpga_version,self.sdb.setup.febs[0].petiroc_version)
+        self.logger.info(self.sdb.setup.febs[0].fpga_version,self.sdb.setup.febs[0].petiroc_version)
         lightdaq.configLogger(loglevel=logging.INFO)
         self.logger = logging.getLogger('CMS_IRPC_FEB_LightDAQ')
         try:
@@ -232,7 +270,7 @@ class ax_scurves:
             self.feb.init()
             self.feb.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (state,998,feb_id))
         except NameError as e:
-            print(f"Test failed with message: {e}")
+            self.logger.info(f"Test failed with message: {e}")
 
         self.asicl=["left_top","left_bot","middle_top","middle_bot","right_top","right_bot"]
 
@@ -323,7 +361,7 @@ class ax_scurves:
 
             return (f_tdc,f_asic,used_chan)
         except NameError as e:
-            print(f"Test failed with message: {e}")
+            self.logger.info(f"Test failed with message: {e}")
 
     def make_pedestal_all_channels(self,asic_name,thmin,thmax,thstep,v6=None):
         try:
@@ -353,10 +391,10 @@ class ax_scurves:
                 counters = f_tdc.tdcGetCounterData()
                 for _, tdc_ch in used_chan:
                     scurves[tdc_ch].append(counters[tdc_ch])
-                print(f"{dac10b_val} / {2**10}", counters)
+                self.logger.info(f"{dac10b_val} / {2**10}", counters)
             return scurves
         except NameError as e:
-            print(f"Test failed with message: {e}")
+            self.logger.info(f"Test failed with message: {e}")
 
     def make_pedestal_one_by_one(self,asic_name,thmin,thmax,thstep,v6=None):
         try:
@@ -396,12 +434,12 @@ class ax_scurves:
                     counters = f_tdc.tdcGetCounterData()
                     
                     scurves[tdc_ch].append(counters[tdc_ch])
-                    print(f"{dac10b_val} / {2**10}", counters)               
+                    self.logger.info(f"{dac10b_val} / {2**10}", counters)               
             return scurves
 
 
         except TestError as e:
-            print(f"Test failed with message: {e}")
+            self.logger.info(f"Test failed with message: {e}")
 
     def pedestal_one_channel(self,asic_name,index,thmin,thmax,v6=None,two_steps=True,dac6=32):
         f_tdc,f_asic,used_chan =self.get_mapping(asic_name)
@@ -499,9 +537,9 @@ class ax_scurves:
                 to_1a=scurve2_th[t]
                 break
         to_1=(to_1a+to_1i)//2
-        print(f"Seuil raw {to_0}")
-        print(f"Scan {ti}-{ta}  {scurve2}")
-        print(f"Seuil fin {to_1}")
+        self.logger.info(f"Seuil raw {to_0}")
+        self.logger.info(f"Scan {ti}-{ta}  {scurve2}")
+        self.logger.info(f"Seuil fin {to_1}")
         #val=input("Next channel? ")
         return to_1
 
@@ -602,9 +640,9 @@ def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None,two_steps=True,
             to_1a=scurve2_th[t]
             break
     to_1=(to_1a+to_1i)//2
-    print(f"Seuil raw {to_0}")
-    print(f"Scan {ti}-{ta}  {scurve2}")
-    print(f"Seuil fin {to_1}")
+    self.logger.info(f"Seuil raw {to_0}")
+    self.logger.info(f"Scan {ti}-{ta}  {scurve2}")
+    self.logger.info(f"Seuil fin {to_1}")
     #val=input("Next channel? ")
     return to_1
 
@@ -744,7 +782,7 @@ def make_pedestal_one_by_one(state,version,feb_id,feb,asic_name,thmin,thmax,thst
                 counters = f_tdc.tdcGetCounterData()
                 
                 scurves[tdc_ch].append(counters[tdc_ch])
-                print(f"{dac10b_val} / {2**10}", counters)
+                self.logger.info(f"{dac10b_val} / {2**10}", counters)
 
 
             rc={}
@@ -766,7 +804,7 @@ def make_pedestal_one_by_one(state,version,feb_id,feb,asic_name,thmin,thmax,thst
 
 
     except TestError as e:
-        print(f"Test failed with message: {e}")
+        self.logger.info(f"Test failed with message: {e}")
 
 
 
@@ -861,7 +899,7 @@ def make_pedestal_all_channels(state,version,feb_id,feb,asic_name,thmin,thmax,th
             counters = f_tdc.tdcGetCounterData()
             for _, tdc_ch in used_chan:
                 scurves[tdc_ch].append(counters[tdc_ch])
-            print(f"{dac10b_val} / {2**10}", counters)
+            self.logger.info(f"{dac10b_val} / {2**10}", counters)
 
         res={}
         res["state"]=state
@@ -894,7 +932,7 @@ def make_pedestal_all_channels(state,version,feb_id,feb,asic_name,thmin,thmax,th
 
 
     except NameError as e:
-        print(f"Test failed with message: {e}")
+        self.logger.info(f"Test failed with message: {e}")
 
 
 def main(params):
@@ -916,7 +954,7 @@ def main(params):
     self.sdb.setup.version=998
     self.sdb.to_csv_files()
 
-    print(self.sdb.setup.febs[0].fpga_version,self.sdb.setup.febs[0].petiroc_version)
+    self.logger.info(self.sdb.setup.febs[0].fpga_version,self.sdb.setup.febs[0].petiroc_version)
     lightdaq.configLogger(loglevel=logging.INFO)
     logger = logging.getLogger('CMS_IRPC_FEB_LightDAQ')
     try:
@@ -949,11 +987,11 @@ def main(params):
                 for idx in range(16):
                     to=pedestal_one_channel(feb,an,idx,thi,tha,v6)
                     turn_on.append(to)
-                print(f" Turn ON {turn_on}")
+                self.logger.info(f" Turn ON {turn_on}")
                 nto=np.array(turn_on)
                 # Target
                 target=round(np.median(nto))
-                print(f"Median target {target}")
+                self.logger.info(f"Median target {target}")
                 ## Check minimal gain value
                 too_low=False
                 too_high=False
@@ -968,7 +1006,7 @@ def main(params):
                     target=target+10
                 if (too_high):
                     target=target-10
-                print(f"Median target final {target} dac6b {vexp}")
+                self.logger.info(f"Median target final {target} dac6b {vexp}")
                 #val=input("Second round ? ")
                 v6_cor=v6
                 turn_on_cor=[]
@@ -1003,12 +1041,12 @@ def main(params):
                     if (newdac>63):
                         newdac=63
                     v6_cor[petiroc_chan]=newdac
-                print(f" Turn ON {turn_on_cor}")
+                self.logger.info(f" Turn ON {turn_on_cor}")
                 ntoc=np.array(turn_on_cor)
                 # Target
                 target1=int(round(np.median(ntoc)))
-                print(f"Median target {target1}")
-                print(v6_cor)
+                self.logger.info(f"Median target {target1}")
+                self.logger.info(v6_cor)
                 #v_stop=input()
                 # Upload to DB
                 for  ich in range(len(v6_cor)):
@@ -1029,7 +1067,7 @@ def main(params):
                 
 
     except NameError as e:
-        print(f"Test failed with message: {e}")
+        self.logger.info(f"Test failed with message: {e}")
 
     
 if __name__ == '__main__':
