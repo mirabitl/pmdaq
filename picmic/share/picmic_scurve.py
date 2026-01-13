@@ -8,7 +8,7 @@ import numpy as np
 import picmic_register_access as cra
 import os
 import json
-
+import queue
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -20,6 +20,7 @@ logging.basicConfig(
 
 class scurve_processor:
     def __init__(self,params):
+        #self.queue=None
         resmode=None
         if "mode" in params:
             resmode=params["mode"]
@@ -102,7 +103,8 @@ class scurve_processor:
     def get_scurves(self,params):
         # Now get a run id
         analysis=params.get("analysis","SCURVE_A")
-        plot_fig=params.get("plot_fig",None)    
+        plot_fig=params.get("plot_fig",None)
+        self.logger.info(f"Plot fig set to {plot_fig}")
         self.res["analysis"]=analysis
         self.res["channels"]=[]
         scurves=None
@@ -146,7 +148,10 @@ class scurve_processor:
         else:
             ax.grid()
             ax.legend(loc="upper right")
-            
+            self.logger.info(f"Plot fig set to {plot_fig}")
+            # Envoyer un message pour mettre à jour le plot dans le thread principal
+            if hasattr(self, 'queue'):
+                self.queue.put("update_plot")
         # Now get a run id
         runid=None
         if "location" in self.conf and "comment" in self.conf:

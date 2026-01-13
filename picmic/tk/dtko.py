@@ -13,7 +13,7 @@ import picmic_register_access as cra
 import transitions
 import picmic_scurve as ps
 from datetime import datetime
-
+import queue
 # -------- TYPE CONVERSION -------- #
 def convert_type(value: str):
     if value.isdigit():
@@ -66,6 +66,7 @@ class daq_widget:
         self.calib_daq=None
         self.canvas_graph = None  # référence globale
         self.plot_canvas=None
+        self.queue=queue.Queue()
     def get_json_ref(self,path):
         ref = self.data
         for key in path:
@@ -396,6 +397,7 @@ class daq_widget:
 
 
     def afficher_graphique(self):
+        pass
         self.clear_visu()  # on efface avant d'afficher un graph
 
         self.fig = Figure(figsize=(5, 4))
@@ -427,6 +429,7 @@ class daq_widget:
             json.dump(par, fp,indent=2)
 
         sp=ps.scurve_processor(par)
+        sp.queue = self.queue
         if par["calibration"] == "ALIGN":
             sp.start_align()
         else:
@@ -523,6 +526,10 @@ class daq_widget:
             self.run_var.set(f"Run: {st['run']}")
             self.event_var.set(f"Evt: {st['event']}")
             self.status_var.set("Status: RUNNING" if st['running'] else "Status: IDLE")
+        while not self.queue.empty():
+            message = self.queue.get()
+            if message == "update_plot":
+                self.plot_canvas.draw_idle()  # Mettre à jour le plot dans le thread principal
 
         # Mise à jour toutes les 500 ms
         self.root.after(500, self.update_daq_info)
