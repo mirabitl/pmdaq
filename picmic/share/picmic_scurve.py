@@ -51,6 +51,10 @@ class scurve_processor:
         self._running = threading.Event()
         self._lock = threading.Lock()
 
+    def get_status(self):
+        with self._lock:
+            status_copy = self.pb.status.copy()
+        return status_copy
     def start_align(self,params=None):
         if not self._running.is_set():
             self.logger.info("running lock is cleared") 
@@ -65,6 +69,7 @@ class scurve_processor:
         return True
         
     def align(self,params=None):
+        self.pb.status["method"]="aligning"
         target,v_dac_local=self.pb.calib_iterative_dac_local(self.conf["thmin"],self.conf["thmax"])
         print(target)
         print(v_dac_local)
@@ -105,6 +110,7 @@ class scurve_processor:
         analysis=params.get("analysis","SCURVE_A")
         plot_fig=params.get("plot_fig",None)
         self.logger.info(f"Plot fig set to {plot_fig}")
+        self.pb.status["method"]=f"scurve {analysis}"
         self.res["analysis"]=analysis
         self.res["channels"]=[]
         scurves=None
@@ -176,7 +182,7 @@ class picmic_scurve:
 
     def __init__(self,id,state,version,filtering=True,falling=False,val_evt=False,pol_neg=False,dc_pa=0,res_mode=None):
         daq.configLogger(logging.DEBUG)
-
+        self.status={}
         self.feb_id=id
         self.state=state
         self.version=version
@@ -292,6 +298,8 @@ class picmic_scurve:
             if ch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
             scurves[ch]=self.scurve_single_chan(ch,start,stop,step,dac_loc)
             print(f"Channel {ch} {scurves[ch]}")
+            self.status[f"scurve_ch{ch}"]=scurves[ch]
+            #self.status["current"]=ch
         return scurves
     def scurve_one_channel(self,index,thmin,thmax,thstep=1,dac_loc=64):
         
@@ -356,7 +364,7 @@ class picmic_scurve:
     def calib_iterative_dac_local(self,thi,tha):
         turn_on=[0 for i in range(64)]
         v6=[0 for i in range(64)]
-        
+        self.status["raw_turnon"]=[0 for i in range(64)]
         for idx in range(64):
             v6[idx]=self.feb.liroc.getParam(f'DAC_local_ch{idx}')
             if idx not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
@@ -366,11 +374,14 @@ class picmic_scurve:
             ta0=round(min(to_0+15,tha))
             to_1=self.scurve_one_channel(idx,ti0,ta0,thstep=1,dac_loc=0)
             turn_on[idx]=to_1
+            self.status["raw_turnon"][idx]=to_1
+            
         print(f" Turn ON {turn_on}")
         nto=np.array(turn_on)
         # Target
         target=round(np.median(nto))
         print(f"Median target {target}")
+        self.status["target"]=target
         ## Check minimal gain value
         too_low=False
         too_high=False
@@ -389,6 +400,8 @@ class picmic_scurve:
         if (too_high):
             target=target-10
         print(f"Median target final {target} \n v6 {v6} \n vexp {vexp}")
+        self.status["target"]=target
+        self.status["dac_local"]=[0 for i in range(64)]
         for idx in range(64):
             if idx not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
             dac_map={}
@@ -415,6 +428,6 @@ class picmic_scurve:
             print(f"Channel scan {idx} -> {dac_map}")
             op_dac=min(dac_map, key = dac_map.get)
             print(f"Channel scan {idx} -> {op_dac}")
-
+            self.status["dac_local"][idx]=op_dac
             vexp[idx]=op_dac
         return target,vexp
