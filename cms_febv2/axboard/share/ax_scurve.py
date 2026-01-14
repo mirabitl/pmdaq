@@ -14,6 +14,7 @@ import cms_irpc_feb_lightdaq as lightdaq
 import csv_register_access as cra
 import os
 import json
+import queue
 
 logging.basicConfig(
     level=logging.INFO,
@@ -226,6 +227,8 @@ class scurve_processor:
             else:
                 ax.grid()
                 ax.legend(loc="upper right")
+                if hasattr(self, 'queue'):
+                    self.queue.put("update_plot")
             # Store results in json
             res_dir='/tmp/results/%s_%d_f_%d' % (self.conf["db"]["state"],self.conf["db"]["version"],self.conf["db"]["board"])
             if runid==None:
