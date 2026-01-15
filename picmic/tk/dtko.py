@@ -338,6 +338,8 @@ class daq_widget:
         #for i in range(1, 1):
         ttk.Button(self.frame_btns, text=f"Calibration", bootstyle=WARNING,
                        command=lambda : self.bouton_calibration()).pack(pady=5)
+        ttk.Button(self.frame_btns, text=f"Stop Calibration", bootstyle=WARNING,
+                       command=lambda : self.bouton_calibration_stop()).pack(pady=5)
         ttk.Label(self.frame_btns, text="Normal DAQ", font=("Arial", 15, "bold")).pack(pady=5)
         ttk.Button(self.frame_btns, text=f"Initialise", bootstyle=WARNING,
                    command= lambda :self.bouton_initialise() ).pack(pady=5)
@@ -410,6 +412,10 @@ class daq_widget:
         self.canvas_graph.get_tk_widget().pack(expand=True, fill="both")
 
         self.log("→ Affichage d'un graphique matplotlib")
+
+    def bouton_calibration_stop(self):
+        if hasattr(self,'scurve_process'):
+            self.scurve_process.stop()
 
     def bouton_calibration(self):
         #reinit plots
@@ -528,9 +534,47 @@ class daq_widget:
             self.status_var.set("Status: RUNNING" if st['running'] else "Status: IDLE")
         if hasattr(self,'scurve_process') and self.scurve_process!=None:
             st=self.scurve_process.get_status()
-            self.state_var.set(f"Method: {st.get('method','N/A')}")
-            self.run_var.set(f"Target: {st.get('target','N/A')}")
-            self.event_var.set(f"DAC Local: {st.get('dac_local','N/A')}")
+            method=st.get('method','N/A')
+            self.state_var.set(f"Method: {method}")
+            if method=="aligning":
+                raw_turnon=st.get('raw_turnon',[])
+                target=st.get('target',-1)
+                dac_local=st.get('dac_local',[])
+                if target==-1 and len(raw_turnon)>0: #print last turn_on
+                    last=-1
+                    for i in range(len(raw_turnon)-1,-1,-1):
+                        if (raw_turnon[i]!=0):
+                            last=i
+                            break
+                    if (last!=-1):
+                        self.run_var.set(f"Last Turn On-> Channel {last} : {raw_turnon[last]}")
+                else:
+                     self.run_var.set(f"Target: {target}")
+                     if len(dac_local)>0: #print last
+                         last=-1
+                         for i in range(len(dac_local)-1,-1,-1):
+                             if (dac_local[i]!=0):
+                                 last=i
+                                 break
+                         if (last!=-1):
+                             self.event_var.set(f"DAC Local->Channel {last} : {dac_local[last]}")
+            if method=="SCURVE_1":
+                #print(f"-{method}-")
+                #print(st)
+                scurve=st.get('scurve',[[] for _ in range(64)])
+                #print(scurves)
+                idx=-2
+                for i in reversed(range(64)):
+                    if len(scurve[i])!=0:
+                        idx=i
+                        break
+                self.run_var.set(f"Channel: {idx}")
+                if idx>-1:
+                    sc=scurve[idx]
+                    for i in reversed(range(len(sc))):
+                        if sc[i]>10:
+                           self.event_var.set(f"More than 10 count index : {i}")
+                           break
             self.status_var.set("Status: RUNNING" if st.get('running',False) else "Status: IDLE")
         while not self.queue.empty():
             message = self.queue.get()

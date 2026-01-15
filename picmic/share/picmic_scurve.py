@@ -54,6 +54,7 @@ class scurve_processor:
     def get_status(self):
         with self._lock:
             status_copy = self.pb.status.copy()
+        status_copy["running"]=self._running.is_set()
         return status_copy
     def start_align(self,params=None):
         if not self._running.is_set():
@@ -64,12 +65,18 @@ class scurve_processor:
             self.logger.warning("Calibration déjà en cours")
             return False
         self._running.set()
+        self.pb.status={}
         self._thread = threading.Thread(target=self.align, args=(params,), daemon=True)
         self._thread.start()
         return True
-        
+
+    def stop(self):
+        self._running.clear()
+        if self._thread:
+            self._thread.join(timeout=10)
     def align(self,params=None):
         self.pb.status["method"]="aligning"
+        self.pb._running=self._running
         target,v_dac_local=self.pb.calib_iterative_dac_local(self.conf["thmin"],self.conf["thmax"])
         print(target)
         print(v_dac_local)
@@ -83,14 +90,16 @@ class scurve_processor:
         self.pb.sdb.setup.boards[0].picmic.set("dac_threshold_msb",tmsb)
         #results=make_pedestal_all_channels(state,version,feb_id,feb,an,thi,tha,1,v6=v6_cor)
         #val=input("Next ASIC ? ")
-            
+        if hasattr(self,'_running') and not self._running.is_set():
+            self.logger.info("Alignment was stop before the end")
+            return 
         if "location" in self.conf and "comment" in self.conf:
             self.pb.sdb.setup.version=self.conf["db"]["version"]
             self.pb.sdb.upload_changes(self.conf["comment"])
         else:
             self.pb.sdb.setup.version=999
             self.pb.sdb.setup.to_csv_files()
-                
+        self._running.clear()        
         
     def start_scurves(self,params={"analysis":"SCURVE_A","plot_fig":None}):
         if not self._running.is_set():
@@ -101,16 +110,18 @@ class scurve_processor:
             self.logger.warning("Calibration déjà en cours")
             return False
         self._running.set()
+        self.pb.status={}
         self._thread = threading.Thread(target=self.get_scurves, args=(params,), daemon=True)
         self._thread.start()
         return True            
     #def get_scurves(self,analysis="SCURVE_A",plot_fig=None):
     def get_scurves(self,params):
+        self.pb._running=self._running
         # Now get a run id
         analysis=params.get("analysis","SCURVE_A")
         plot_fig=params.get("plot_fig",None)
         self.logger.info(f"Plot fig set to {plot_fig}")
-        self.pb.status["method"]=f"scurve {analysis}"
+        self.pb.status["method"]=f"{analysis}"
         self.res["analysis"]=analysis
         self.res["channels"]=[]
         scurves=None
@@ -136,14 +147,17 @@ class scurve_processor:
             rc={}
             rc["prc"]=liroc_chan
             rc["tdc"]=daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]
+            print(f"Scurve found :{liroc_chan},  {len(scurves[daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]])} {scurves[daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]]}")
+            if  len(scurves[daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]])==0:
+                continue
             rc["scurve"]=scurves[daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]]
             self.res["channels"].append(rc)
             if plot_fig==None:
-                plt.plot(range(self.conf["thmin"], self.conf["thmax"],1), scurves[liroc_chan], '+-', label=f"ch{liroc_chan}")
+                plt.plot(range(self.conf["thmin"], self.conf["thmax"],1), scurves[daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]], '+-', label=f"ch{liroc_chan}")
             else:
                ax.plot(
                    range(self.conf["thmin"], self.conf["thmax"], 1),
-                   scurves[liroc_chan],
+                   scurves[daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[liroc_chan]],
                    '+-',
                    label=f"ch{liroc_chan}"
                ) 
@@ -158,6 +172,9 @@ class scurve_processor:
             # Envoyer un message pour mettre à jour le plot dans le thread principal
             if hasattr(self, 'queue'):
                 self.queue.put("update_plot")
+        if hasattr(self,'_running') and not self._running.is_set():
+            self.logger.info("Calibration was stop before the end")
+            return True
         # Now get a run id
         runid=None
         if "location" in self.conf and "comment" in self.conf:
@@ -175,6 +192,7 @@ class scurve_processor:
         
         if "location" in self.conf and "comment" in self.conf:
             self.pb.sdb.upload_results(runid,self.conf["location"],self.res["state"],self.res["version"],self.res["feb"],self.res["analysis"],self.res,self.conf["comment"])
+        self._running.clear()        
         return True                              
         
             
@@ -294,11 +312,15 @@ class picmic_scurve:
         return scurves
     def scurve_loop_one(self,start=450,stop=750,step=1,dac_loc=32):
         scurves = [[] for _ in range(64)]
+        self.status["scurve"]=scurves
         for ch in range(64):
+            if (hasattr(self,'_running') and  (not self._running.is_set())):
+                break
             if ch not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
             scurves[ch]=self.scurve_single_chan(ch,start,stop,step,dac_loc)
+            #self.status["scurve"][ch]=scurves[ch]
             print(f"Channel {ch} {scurves[ch]}")
-            self.status[f"scurve_ch{ch}"]=scurves[ch]
+            #print("IN THR ",self.status["scurve"])
             #self.status["current"]=ch
         return scurves
     def scurve_one_channel(self,index,thmin,thmax,thstep=1,dac_loc=64):
@@ -366,6 +388,8 @@ class picmic_scurve:
         v6=[0 for i in range(64)]
         self.status["raw_turnon"]=[0 for i in range(64)]
         for idx in range(64):
+            if (hasattr(self,'_running') and  (not self._running.is_set())):
+                 break
             v6[idx]=self.feb.liroc.getParam(f'DAC_local_ch{idx}')
             if idx not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
             # First step =5
@@ -387,6 +411,8 @@ class picmic_scurve:
         too_high=False
         vexp=[v6[i] for i in range(64)]
         for idx in range(64):
+            if (hasattr(self,'_running') and  (not self._running.is_set())):
+                break
             gc=v6[idx]
             if (turn_on[idx]!=0):
                 gc=v6[idx]+round((target-turn_on[idx])/2.0)
@@ -403,6 +429,8 @@ class picmic_scurve:
         self.status["target"]=target
         self.status["dac_local"]=[0 for i in range(64)]
         for idx in range(64):
+            if (hasattr(self,'_running') and  (not self._running.is_set())):
+                break
             if idx not in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN: continue
             dac_map={}
             """
