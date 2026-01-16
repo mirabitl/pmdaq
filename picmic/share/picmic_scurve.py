@@ -128,10 +128,7 @@ class scurve_processor:
 
         # Plots
         ax=None
-        if plot_fig!=None:
-            # Efface l'ancienne figure
-            plot_fig.clear()
-            ax=plot_fig.add_subplot(111)
+        
         # Check the analysis
         if analysis == "SCURVE_A":
             print(f'start={self.conf["thmin"]},stop={self.conf["thmax"]},step={self.conf["thstep"]},dac_loc=0')
@@ -143,6 +140,11 @@ class scurve_processor:
             scurves=self.pb.scurve_loop_one(start=self.conf["thmin"],stop=self.conf["thmax"],step=self.conf["thstep"],dac_loc=0)
         else:
             return False
+        time.sleep(1.0)
+        if plot_fig!=None:
+            # Efface l'ancienne figure
+            plot_fig.clear()
+            ax=plot_fig.add_subplot(111)
         for liroc_chan in daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN.keys():
             rc={}
             rc["prc"]=liroc_chan
