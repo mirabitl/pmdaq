@@ -70,9 +70,13 @@ class picmic_normal_run:
 
         # Setup DB access
         self.sdb = cra.instance()
-
+        self.run_version=None
+        self.run_params=None
+        self.configured=False
     def set_configuration(self,c):
         self.conf=c
+        self.run_version=self.conf["configuration"]
+        self.run_params=self.conf["configuration_list"][self.run_version]
     def set_db_configuration(self,name,version):
         self.sdb.download_configuration(name,version)
         c=json.loads(open(f"/dev/shm/config/{name}_{version}.json").read())
@@ -100,11 +104,11 @@ class picmic_normal_run:
     def daq_configuring(self,board_id=0,dbstate=None,dbversion=0,filtering=True,falling=0,val_evt=0,pol_neg=0,dc_pa=0,mode=None,threshold=0,channel_list=[i for i in range(64)],ctest_list=[]):
         # Try to use config value
         if self.conf !=None and board_id==0:
-            board_id=self.conf["db"]["board"]
-            dbstate=self.conf["db"]["state"]
-            dbversion=self.conf["db"]["version"]
-            if "mode" in self.conf:
-                mode=self.conf["mode"]
+            board_id=self.run_params["db"]["board"]
+            dbstate=self.run_params["db"]["state"]
+            dbversion=self.run_params["db"]["version"]
+            if "mode" in self.run_params:
+                mode=self.run_params["mode"]
         # Down load DB state and patch it
         self.board_id = board_id
         self.dbstate = dbstate
@@ -171,10 +175,10 @@ class picmic_normal_run:
 
 
     #def daq_configuring(self,threshold=0,channel_list=[i for i in range(64)],ctest_list=[]):
-        if self.conf!=None and threshold==0:
-            threshold=self.conf["threshold"]
-            channel_list=self.conf["channel_list"]
-            ctest_list=self.conf["ctest_list"]
+        if self.run_params!=None and threshold==0:
+            threshold=self.run_params["threshold"]
+            channel_list=self.run_params["channel_list"]
+            ctest_list=self.run_params["ctest_list"]
         self.threshold=threshold
         #print(channel_list)
         #input()
@@ -200,7 +204,7 @@ class picmic_normal_run:
             self.kc705.ipbWrite('ACQ_CTRL.window_start', 1)
             self.kc705.ipbWrite('ACQ_CTRL.window_start', 0)
         # files
-        if self.conf!=None:
+        if self.run_params!=None:
             self.storage=ps.storage_manager(self.conf["storage"]["directory"])
         #self.storage.open("unessai")
         self.runid=None
@@ -217,14 +221,14 @@ class picmic_normal_run:
 
     def daq_starting(self,location=None,comment=None,params={"type":"NORMAL"}):
         if self.conf!=None and location ==None:
-            r_vers=self.conf["run"]["version"]
+            #r_vers=self.conf["run"]["version"]
             location=self.conf["location"]
-            params=self.conf["run"][r_vers]
+            params=self.run_params
             self.logger.info(f"DAQ parameter {params}")
             #exit(0)
             comment=params["comment"]
-            if "use_pulser" in self.conf:
-                self.init_pulser(self.conf["use_pulser"])
+            if "use_pulser" in self.run_params:
+                self.init_pulser(self.run_params["use_pulser"])
         if not "type" in params:
             self.logger.error("Run type should be specified in params")
             return

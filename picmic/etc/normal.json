@@ -1,0 +1,50 @@
+{
+    "name": "UN_TEST",
+    "version": 1,
+    "location": "EDAQLAB_NOV2025",
+    "storage": {
+        "directory": "/tmp/",
+        "type": "disk"
+    },
+    "configuration": "TIMELOOP_FINE_BOARD10",
+    "configuration_list": {
+        "NORMAL_FINE_BOARD10": {
+            "comment": "Normal run",
+            "type": "NORMAL",
+            "db": {
+                "state": "PICMIC_TEST_JUNE",
+                "version": 9,
+                "board": 10},
+            "mode": "fine",
+            "threshold": 525,
+            "channel_list": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,
+            17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
+            32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,
+            49,50,51,52,53,54,55,56,57,58,59,60,61,62,63],
+            "ctest_list": []
+        },
+        "TIMELOOP_FINE_BOARD10": {
+            "type": "TIMELOOP",
+            "comment": "Time resolution scan from 30 to 500 fC rise 1.5 ns",
+            "use_pulser": "/opt/pmdaq/picmic/etc/pulse_config15.json",
+            "db": {
+                "state": "PICMIC_TEST_JUNE",
+                "version": 9,
+                "board": 10},
+            "mode": "fine",
+            "threshold": 525,
+            "channel_list": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,
+            17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
+            32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,
+            49,50,51,52,53,54,55,56,57,58,59,60,61,62,63],
+            "ctest_list": [],
+            "rise": 1.5,
+            "delay": 130,
+            "vmin": 0.3,
+            "vmax": 5.0,
+            "nstep": 20,
+            "nacq": 600
+        }
+    }
+}
+   
