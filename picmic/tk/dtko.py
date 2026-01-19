@@ -212,6 +212,7 @@ class daq_widget:
             self.daq.set_configuration(self.data)
             messagebox.showinfo("OK", "Tree view dat used,\n new picmic_daq set ✔")
             self.log(f"DAQ settings applied and saved in  →/tmp/currentdaq.json")
+            self.scurve_process=None
         else:
             #self.calib_daq=ps.scurve_processor(self.data)
             messagebox.showinfo("OK", "Tree view dat used,\n new calib_scurve set ✔")
@@ -536,6 +537,8 @@ class daq_widget:
             self.run_var.set(f"Run: {st['run']}")
             self.event_var.set(f"Evt: {st['event']}")
             self.status_var.set("Status: RUNNING" if st['running'] else "Status: IDLE")
+            self.root.after(500, self.update_daq_info)
+            return
         if hasattr(self,'scurve_process') and self.scurve_process!=None:
             st=self.scurve_process.get_status()
             method=st.get('method','N/A')
