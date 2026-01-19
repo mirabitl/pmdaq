@@ -20,9 +20,13 @@ def main(par):
 
     sp=ps.scurve_processor(par)
     if par["calibration"] == "ALIGN":
+        sp._running.set()
         sp.align()
+        sp._running.clear()
     else:
-        sp.get_scurves(par["calibration"])
+        sp._running.set()
+        sp.get_scurves(params={"analysis":par["calibration"],"plot_fig":None})
+        sp._running.clear()
         
 if __name__ == '__main__':
     import argparse

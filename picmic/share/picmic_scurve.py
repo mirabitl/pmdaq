@@ -137,6 +137,8 @@ class scurve_processor:
             print(scurves)
             #input()
         elif analysis == "SCURVE_1":
+            print(self.conf)
+            input("calling scurve_one_loop")
             scurves=self.pb.scurve_loop_one(start=self.conf["thmin"],stop=self.conf["thmax"],step=self.conf["thstep"],dac_loc=0)
         else:
             return False
