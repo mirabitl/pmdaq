@@ -17,17 +17,23 @@ def main(par):
     par["time"]=datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     with open(f'calib{par["time"]}.json', 'w') as fp:
         json.dump(par, fp,indent=2)
-
-    sp=ps.scurve_processor(par)
-    if par["calibration"] == "ALIGN":
-        sp._running.set()
-        sp.align()
+    try:
+        sp=ps.scurve_processor(par)
+        if par["calibration"] == "ALIGN":
+            sp._running.set()
+            sp.align()
+            sp._running.clear()
+        else:
+            sp._running.set()
+            sp.get_scurves(params={"analysis":par["calibration"],"plot_fig":None})
+            sp._running.clear()
+    except KeyboardInterrupt:
+        print("\nInterruption détectée.")
+    finally:
+        # Nettoyage garanti
         sp._running.clear()
-    else:
-        sp._running.set()
-        sp.get_scurves(params={"analysis":par["calibration"],"plot_fig":None})
-        sp._running.clear()
-        
+        time.sleep(2.0)
+        print("Ressources nettoyées.")
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()

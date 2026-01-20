@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+import logging
+import sys
+import time
+import matplotlib.pyplot as plt
+import liroc_ptdc_daq as daq
+import numpy as np 
+import picmic_register_access as cra
+import os
+import json
+
+import picmic_daq as pd
+from datetime import datetime
+
+#def main(state,version,feb_id,all_channels,loop_one,location=None,upload_comment=None,thmin=420,thmax=750,dc_pa=0,res_mode='coarse'):
+def main(par):
+    par["time"]=datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    with open(f'run{par["time"]}.json', 'w') as fp:
+        json.dump(par, fp,indent=2)
+    try:
+         
+        n_daq=pd.picmic_normal_run()
+        n_daq.set_configuration(par)
+        n_daq.initialise()
+        n_daq.configure()
+        n_daq._running.set()
+        n_daq.start()
+        while True:
+            print(n_daq.get_status())
+            time.sleep(3)
+        
+    except KeyboardInterrupt:
+        print("\nInterruption détectée.")
+    finally:
+        # Nettoyage garanti
+        n_daq._running.clear()
+        n_daq.stop()
+        time.sleep(2.0)
+        print("Ressources nettoyées.")
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    
+    # configure all the actions
+    grp_action = parser.add_mutually_exclusive_group()
+    grp_action.add_argument('--file', action='store', type=str,default=None, dest='file', help='Daq configuration file')
+    results = parser.parse_args()
+    print(results)
+    if results.file!=None:
+        par=json.loads(open(results.file).read())
+        main(par)
+        exit(0)
+    
