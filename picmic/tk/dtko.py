@@ -304,6 +304,10 @@ class daq_widget:
         #pack(fill="both", expand=True, padx=10, pady=10)
         self.tree.bind("<Double-1>", self.edit_popup)
 
+        # --- Bouton Save to DB --- #
+        ttk.Button(self.tab_json, text="💾 Save to DB", bootstyle=SUCCESS,
+                   command=self.save_to_db).grid(row=2, column=1, sticky="ew", padx=5, pady=5)
+
         # --- Menu déroulant Configurations MongoDB --- #
         #config_frame = ttk.Frame(tab_json)
         #config_frame.grid(row=0,column=1, padx=10, pady=10)#pack(fill="x", padx=10, pady=5)
@@ -636,6 +640,60 @@ class daq_widget:
 
         self.log(f"→ Configuration Mongo téléchargée : {config_name}")
         self.ouvrir_json_file(temp_file)
+
+    def save_to_db(self):
+        """Sauvegarde la configuration JSON actuelle dans la base de données MongoDB"""
+        if not self.data:
+            messagebox.showwarning("Save to DB", "Aucune configuration à sauvegarder")
+            return
+        
+        try:
+            # Demander un nom pour la configuration
+            popup = tk.Toplevel(self.root)
+            popup.title("Sauvegarder la configuration")
+            popup.geometry("400x280")
+            popup.grab_set()
+            
+            ttk.Label(popup, text="Nom de la configuration :").pack(pady=5)
+            entry_name = ttk.Entry(popup)
+            entry_name.pack(pady=5, padx=10, fill="x")
+            # Pré-remplir avec self.data["name"] si disponible
+            if "name" in self.data:
+                entry_name.insert(0, str(self.data["name"]))
+            entry_name.focus()
+            
+            ttk.Label(popup, text="Commentaire :").pack(pady=5)
+            entry_comment = tk.Text(popup, height=4, width=40)
+            entry_comment.pack(pady=5, padx=10, fill="both", expand=True)
+            
+            def save_config():
+                config_name = entry_name.get().strip()
+                if not config_name:
+                    messagebox.showwarning("Save to DB", "Le nom ne peut pas être vide")
+                    return
+                self.data["name"] = config_name
+                comment = entry_comment.get("1.0", tk.END).strip()
+                self.data["comment"] = comment
+                try:
+                    # Sauvegarder dans la base de données
+                    with open("/tmp/currentdaq.json", "w", encoding="utf-8") as f:
+                        json.dump(self.data, f, indent=4, ensure_ascii=False)
+                    self.sdb.upload_configuration("/tmp/currentdaq.json", comment=comment)
+                    self.log(f"→ Configuration sauvegardée dans MongoDB : {config_name} ✔")
+                    if comment:
+                        self.log(f"   Commentaire : {comment}")
+                    messagebox.showinfo("Save to DB", f"Configuration '{config_name}' sauvegardée avec succès")
+                    popup.destroy()
+                    # Recharger la liste des configurations
+                    self.charger_config_mongo()
+                except Exception as e:
+                    messagebox.showerror("Erreur", f"Erreur lors de la sauvegarde : {e}")
+                    self.log(f"Erreur lors de la sauvegarde en DB : {e}")
+            
+            ttk.Button(popup, text="Sauvegarder", bootstyle=SUCCESS, command=save_config).pack(pady=10)
+        except Exception as e:
+            messagebox.showerror("Erreur", f"Erreur : {e}")
+            self.log(f"Erreur save_to_db : {e}")
 
         
 tkui=daq_widget()
