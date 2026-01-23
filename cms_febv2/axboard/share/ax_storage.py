@@ -95,12 +95,12 @@ def store(detid: int,
 
 
 class PyFebWriter:
-    def __init__(self):
+    def __init__(self,shm_directory="/dev/shm/feb_data/"):
         self._event = 0
         self._eventSize = 0   # nombre de uint32
         self._buffer = bytearray(1024 * 1024)  # taille arbitraire
         self._idx = 0
-        self.shm_directory="/dev/shm/events"
+        self.shm_directory=shm_directory
 
     def setIds(self,detid,sourceid):
         self.detector_id=detid

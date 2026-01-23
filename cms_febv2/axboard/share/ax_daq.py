@@ -160,8 +160,13 @@ class febv2_light:
                 self.ax7325b.triggerExternalConfigure(int(trg["external"]) != 0 , trg["external"])                
             #if "periodic" in trg:
             #    self.fc7.configure_periodic_trigger(trg["periodic"])
+        self.storage=None
+        self.febwriter=None
         if self.params!=None:
-            self.storage=ps.storage_manager(self.params["writer"]["file_directory"])
+            if "file_directory" in self.params["writer"]:
+                self.storage=ps.storage_manager(self.params["writer"]["file_directory"])
+            elif  if "shm_directory" in self.params["writer"]:
+                sef.febwriter=ps.PyFebWriter(self.params["writer"]["shm_directory"]))
         #self.storage.open("unessai")
         self.runid=None
         self.configured=True
@@ -225,16 +230,18 @@ class febv2_light:
         if self.runid == None:
             self.runid = int(input("Enter a run number: "))
 
-        # Store results in json
-        self.storage.open(f'run_{self.runid}_{self.params["db_state"]}_{self.params["db_version"]}_{self.params["feb_id"]}_{self.params["vth_shift"]}')
-
         self.run_type=1
-        if self.params==None:
-            rh=np.array([self.run_type,self.params["vth_shift"]],dtype='int64')
-            self.storage.writeRunHeader(self.runid,rh)
-        else:
-            self.storage.writeRunHeaderDict(self.runid,self.params)
-            self.logger.info("Run header writen")
+        if self.storage: 
+            # Store results in json
+            self.storage.open(f'run_{self.runid}_{self.params["db_state"]}_{self.params["db_version"]}_{self.params["feb_id"]}_{self.params["vth_shift"]}')
+
+            
+            if self.params==None:
+                rh=np.array([self.run_type,self.params["vth_shift"]],dtype='int64')
+                self.storage.writeRunHeader(self.runid,rh)
+            else:
+                self.storage.writeRunHeaderDict(self.runid,self.params)
+                self.logger.info("Run header writen")
         print(f"Now we start with \n {params}")
         
         self.logger.info("Normal run")
@@ -256,8 +263,12 @@ class febv2_light:
             
             self.status=self.acq_status()
             self.acquiring_data()
-            if self.storage.event%100 == 0: 
-                self.logger.info(f"Acquisition {self.storage.run} {self.storage.event}")
+            if self.storage:
+                if self.storage.event%100 == 0: 
+                    self.logger.info(f"Acquisition {self.storage.run} {self.storage.event}")
+            elif self.febwriter:
+                if self.febwriter._event%100 == 0: 
+                    self.logger.info(f"Acquisition {self.runid} {self.febwriter._event}")
             time.sleep(0.001)
         self.logger.info("Acquisition thread arrêté")
 
@@ -269,9 +280,14 @@ class febv2_light:
         """
         r={}
         if (self._running.is_set()):
-            r["run"] = self.storage.run
+            if self.storage:
+                r["run"] = self.storage.run
+                r["event"]=self.storage.event
+            elif self.febwriter:
+                r["run"] = self.runid
+                r["event"]=self.febwriter._event
             r["state"]=self.state
-            r["event"]=self.storage.event
+            
         else:
             r["run"] =-1
             r["state"]=self.state
@@ -332,11 +348,13 @@ class febv2_light:
             self.feb0.fpga[fpga].tdcEnable(True)
             self.feb0.fpga[fpga].tdcEnableChannel()       
 
-
+        evt=0
         while (self._running.is_set()):
             self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=False, delay=2)
             #print(f"Running {self.running()}")
             self.ax7325b.fastbitResetBc0Id()
+            if self.febwriter:
+                self.febwriter.newEvent()
             words=[]
             self.start_acquisition()
             nb_frames=0
@@ -371,10 +389,16 @@ class febv2_light:
                 nacq+=1
                 if not self.dummy:
                     #self.logger.info(f'Data {words}')
-                    self.storage.writeEvent([words])
+                    if self.storage:
+                        self.storage.writeEvent([words])
+                        evt=self.storage.event
+                    elif self.febwriter:
+                        self.febwriter.appendEventData(word)
+                        self.febwriter.writeEvent()
+                        evt=self.febwriter._event
         
             if (nacq % 1 == 0):
-                message= "Info : Event {} (acquisition number {}) have read {} words = {} potential TDC frames.".format(self.storage.event, nacq, nbt, nbt/8)
+                message= "Info : Event {} (acquisition number {}) have read {} words = {} potential TDC frames.".format(evt, nacq, nbt, nbt/8)
                 self.logger.info(message)
                 if not self._running.is_set():
                     self.logger.info("running lock is cleared")
@@ -398,13 +422,15 @@ class febv2_light:
        
         if not (self._thread and self._thread.is_alive()):
             self.logger.warning("Acquisition non démarrée")
-            self.storage.close()
+            if self.storage:
+                self.storage.close()
             self._running.clear()
             return False
         self._running.clear()
         # join optionnel court
         self._thread.join(timeout=10)
-        self.storage.close()
+        if self.storage:
+            self.storage.close()
         return True
         
     def running(self):
