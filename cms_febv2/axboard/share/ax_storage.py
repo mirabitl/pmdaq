@@ -12,6 +12,143 @@ import time
 import json
 import base64
 
+from typing import Union
+from array import array
+
+_PM_HEADER_FMT = "<IIIQI"  # PMDAQ header
+
+def store(detid: int,
+          sourceid: int,
+          eventid: int,
+          bxid: int,
+          payload: Union[bytes, bytearray, memoryview],
+          destdir: str,
+          *,
+          add_header: bool = True,
+          add_readout_markers: bool = False) -> None:
+    """
+    Écriture PMDAQ avec marqueurs READOUT hors payload.
+
+    Layout si add_readout_markers=True :
+        '(' + [header] + payload + ')'
+
+    Si add_header=False :
+        '(' + payload + ')'
+    """
+
+    payload = bytes(payload)
+
+    chunks = []
+
+    # --- marqueur de début ---
+    if add_readout_markers:
+        chunks.append(READOUT_START)
+
+    # --- header PMDAQ ---
+    if add_header:
+        header = struct.pack(
+            _PM_HEADER_FMT,
+            detid,
+            sourceid,
+            eventid,
+            bxid,
+            len(payload)
+        )
+        chunks.append(header)
+
+    # --- payload brut ---
+    chunks.append(payload)
+
+    # --- marqueur de fin ---
+    if add_readout_markers:
+        chunks.append(READOUT_END)
+
+    to_write = b"".join(chunks)
+
+    # --- écriture du fichier ---
+    filename = os.path.join(
+        destdir,
+        f"Event_{detid}_{sourceid}_{eventid}_{bxid}"
+    )
+
+    try:
+        with open(filename, "wb") as f:
+            written = f.write(to_write)
+            if written != len(to_write):
+                print(f"pb in write {written}")
+                return
+    except OSError as e:
+        print(f"No way to store to file: {e}")
+        return
+
+    # --- fichier closed/ ---
+    closed_dir = os.path.join(destdir, "closed")
+    os.makedirs(closed_dir, exist_ok=True)
+
+    closed_filename = os.path.join(
+        closed_dir,
+        f"Event_{detid}_{sourceid}_{eventid}_{bxid}"
+    )
+
+    with open(closed_filename, "a"):
+        os.utime(closed_filename, None)
+
+
+class PyFebWriter:
+    def __init__(self):
+        self._event = 0
+        self._eventSize = 0   # nombre de uint32
+        self._buffer = bytearray(1024 * 1024)  # taille arbitraire
+        self._idx = 0
+        self.shm_directory="/dev/shm/events"
+
+    def setIds(self,detid,sourceid):
+        self.detector_id=detid
+        self.source_id=sourceid
+    def newEvent(self):
+        self._event += 1
+        self._eventSize = 0
+        self._idx = 0
+
+        # READOUT_START
+        self._buffer[0] = READOUT_START
+
+        # écrire event (uint32) à offset 1
+        self._buffer[1:5] = self._event.to_bytes(4, byteorder="little")
+
+        # eventSize sera écrit plus tard à offset 5
+        self._idx = 9
+
+    def appendEventData(self, values):
+        """
+        values : iterable de uint32
+        """
+        arr = array('I', values)          # uint32 natif
+        raw = arr.tobytes()
+
+        nwords = len(values)
+        self._eventSize += nwords
+
+        self._buffer[self._idx:self._idx + len(raw)] = raw
+        self._idx += len(raw)
+
+        return self._idx
+
+    def writeEvent(self):
+        # écrire eventSize (uint32) à offset 5
+        self._buffer[5:9] = self._eventSize.to_bytes(4, byteorder="little")
+
+        # READOUT_END
+        self._buffer[self._idx] = READOUT_END
+        self._idx += 1
+
+        # buffer final prêt pour utils::store
+        store(detid=self.detector_id,sourceid=self.source_id,eventid=self._event,bxid=self._event,
+        payload=bytes(self._buffer[:self._idx]),destdir=self.shm_directory,add_header=False,add_readout_markers=False)
+        #return bytes(self._buffer[:self._idx])
+        return
+
+
 class storage_manager:
     def __init__(self,fdir='./'):
         self.fdir=fdir

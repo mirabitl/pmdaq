@@ -115,10 +115,13 @@ class IrpcGeometry:
         Ls = self._cls[strip_nb] / 10.
         Lc = self._clc[strip_nb] / 10.
         # Adapter COMET
-        Lr=Lr+30
-        Lc=Lc+31
+        #Lr=Lr+30
+        #Lc=Lc+31
         #
         vp, vr = 17.148, 14.090
+        t0=t0-30/(vr*0.91)
+        t1=t1-30/(vr*0.91)
+
         zs = (Ls - vp / vr * (Lc - Lr) + vp * (t1 - t0)) / 2.
         zs -= dzs
 

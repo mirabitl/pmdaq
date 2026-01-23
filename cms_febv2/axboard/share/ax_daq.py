@@ -114,9 +114,14 @@ class febv2_light:
         self.sdb=cra.instance()
         self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
         self.sdb.setup.febs[0].fpga_version='4.8'
+        # Handle possible changes of vth, ccomp or delay reset
         if "vth_shift" in self.params:
             self.sdb.setup.febs[0].petiroc.shift_10b_dac(self.params["vth_shift"])
-        
+        if "pa_ccomp" in self.params:
+            self.sdb.setup.febs[0].petiroc.set_parameter("pa_ccomp",self.params["pa_ccomp"]&0XF,asic=None)
+        if "delay_reset_trigger" in self.params:
+            self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",self.params["delay_reset_trigger"]&0XF,asic=None)
+
         self.sdb.to_csv_files()
         daq.configLogger(logging.WARN)
         
@@ -173,16 +178,18 @@ class febv2_light:
         Args:
             shift (int): Shift to add to VTH_TIME DAC10 bits taken in the DB
         """
-        self.sdb.setup.febs[0].petiroc.shift_10b_dac(shift)
-        self.sdb.to_csv_files()
+        #self.sdb.setup.febs[0].petiroc.shift_10b_dac(shift)
+        #self.sdb.to_csv_files()
+        self.params["vth_shift"]=shift
     def change_paccomp(self,value):
         """ Change the PETIROC PACCOMP
             The PETIROC parameters to be used are modified but not load (configure needed)
         Args:
             value (int): PACCOMP to all asics
         """
-        self.sdb.setup.febs[0].petiroc.set_parameter("pa_ccomp",value&0XF,asic=None)
-        self.sdb.to_csv_files()
+        #self.sdb.setup.febs[0].petiroc.set_parameter("pa_ccomp",value&0XF,asic=None)
+        #self.sdb.to_csv_files()
+        self.params["paccomp"]=value
 
     def change_delay_reset_trigger(self,value):
         """ Change the PETIROC delay_reset_trigger value
@@ -190,9 +197,9 @@ class febv2_light:
         Args:
             value (int): DELAY_RESET_TRIGGER VALUE
         """
-        self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",value&0XF,asic=None)
-        self.sdb.to_csv_files()
-    
+        #self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",value&0XF,asic=None)
+        #self.sdb.to_csv_files()
+        self.params["delay_reset_trigger"]=value
     def change_db(self,state_name,version):
         """ Download and store a new DB version
             The FPGA/PETIROC parameters to be used are stored but not load (configure needed)

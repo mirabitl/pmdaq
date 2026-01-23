@@ -20,6 +20,7 @@ from collections import namedtuple
 import irpcGeometry as irg
 # Définition du namedtuple
 TdcChannel = namedtuple('TdcChannel', ['chan', 'raw', 'diff', 'bc0id','time','strip','side'])
+Strip = namedtuple('Strip', ['strip', 'thr', 'tlr','zs','xloc','yloc'])
 
 c1=R.TCanvas()
 
@@ -45,6 +46,9 @@ class febEvent:
         self.hstrip=R.TH1F("hstrip","strip",50,0.,50.)
         self.hzs=R.TH1F("hzs","zs",200,-50.,150.)
         self.hdiff=R.TH1F("hdiff","[D] T",200,-50.,150.)
+        self.hcxy=R.TH2F("hcxy","Central Y vs X",100,0.,50.,50,0.,200.)
+        self.hcstrip=R.TH1F("hcstrip","Central strip",50,0.,50.)
+        self.hczs=R.TH1F("hczs","Central zs",200,-50.,150.)
         self.nfound=0
         self.tdcdata = {
                 'FEB0' : {
@@ -209,6 +213,7 @@ class febEvent:
         #     if x.strip<49 and x.diff>self.tmin-100 and x.diff<self.tmax+100:
         #         print(x)
         # input()
+        self.strips=[]
         for i in range(len(self.sorted_channels)-1):
             if (self.sorted_channels[i].strip>48):
                 continue
@@ -225,18 +230,30 @@ class febEvent:
                     continue
                 if (self.sorted_channels[i].diff-self.sorted_channels[j].diff)>30:
                     continue
-                #print(f"----------------------------> Strip {self.sorted_channels[j].strip}")
+
                 #print(self.sorted_channels[i])
                 #print(self.sorted_channels[j])
                 self.hpos.Fill(self.sorted_channels[j].strip,self.sorted_channels[i].diff-self.sorted_channels[j].diff)
                 self.hdiff.Fill(self.sorted_channels[i].diff-self.sorted_channels[j].diff)
                 self.hstrip.Fill(self.sorted_channels[j].strip)
                 zs, xloc, yloc = self.geo.local_position(self.sorted_channels[j].strip,self.sorted_channels[i].diff,self.sorted_channels[j].diff)
+                #print(f"----------------------------> Strip {self.sorted_channels[j].strip} {self.sorted_channels[i].diff}  {self.sorted_channels[j].diff} {zs}")
+                self.strips.append(Strip(strip=self.sorted_channels[j].strip,thr=self.sorted_channels[j].diff,tlr=self.sorted_channels[i].diff,zs=zs,xloc=xloc,yloc=yloc))
                 #print(zs,xloc,yloc)
                 self.hxy.Fill(self.sorted_channels[j].strip,zs)
                 self.hzs.Fill(zs)
                 #input()
-        #input()        
+        if (len(self.strips)>0):
+            self.sorted_strips=sorted(self.strips, key=lambda x: (x.thr,x.strip))
+            ns=0
+            for x in self.sorted_strips:
+                self.hcxy.Fill(x.strip,x.zs)
+                self.hczs.Fill(x.zs)
+                self.hcstrip.Fill(x.strip)
+                ns+=1
+                if ns>0:
+                    break
+            #input()        
         return
 
     def end_handler(self):
