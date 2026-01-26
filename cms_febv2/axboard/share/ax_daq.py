@@ -166,7 +166,7 @@ class febv2_light:
             if "file_directory" in self.params["writer"]:
                 self.storage=ps.storage_manager(self.params["writer"]["file_directory"])
             elif "shm_directory" in self.params["writer"]:
-                sef.febwriter=ps.PyFebWriter(self.params["writer"]["shm_directory"])
+                self.febwriter=ps.PyFebWriter(self.params["writer"]["shm_directory"])
         #self.storage.open("unessai")
         self.runid=None
         self.configured=True
@@ -393,7 +393,7 @@ class febv2_light:
                         self.storage.writeEvent([words])
                         evt=self.storage.event
                     elif self.febwriter:
-                        self.febwriter.appendEventData(word)
+                        self.febwriter.appendEventData(words)
                         self.febwriter.writeEvent()
                         evt=self.febwriter._event
         
