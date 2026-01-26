@@ -240,8 +240,7 @@ class scurve_processor:
             
             if "location" in self.conf and "comment" in self.conf:
                 self.pb.sdb.upload_results(self.res["state"],self.res["version"],self.res["feb"],self.res["analysis"],self.res,comment=self.conf["comment"],runid=runid)
-                self.logger.info("Upload done",self.res["state"],self.res["version"],
-                      self.res["feb"],self.res["analysis"],self.conf["comment"],runid)
+                self.logger.info(f'Upload done {self.res["state"]} {self.res["version"]} {self.res["feb"]} {self.res["analysis"]} {self.conf["comment"]} {runid}')
                 #input("Next asic ?")
         return True
                 
@@ -260,6 +259,7 @@ class ax_scurves:
             self.sdb.setup.febs[0].fpga.set_pair_filtering_en(i,0)
         self.sdb.setup.version=998
         self.sdb.to_csv_files()
+        self.logger=logging.getLogger(__name__)
 
         self.logger.info(self.sdb.setup.febs[0].fpga_version,self.sdb.setup.febs[0].petiroc_version)
         lightdaq.configLogger(loglevel=logging.INFO)
@@ -394,7 +394,7 @@ class ax_scurves:
                 counters = f_tdc.tdcGetCounterData()
                 for _, tdc_ch in used_chan:
                     scurves[tdc_ch].append(counters[tdc_ch])
-                self.logger.info(f"{dac10b_val} / {2**10}", counters)
+                self.logger.info(f"{dac10b_val} / {2**10} {counters}")
             return scurves
         except NameError as e:
             self.logger.info(f"Test failed with message: {e}")
@@ -437,7 +437,7 @@ class ax_scurves:
                     counters = f_tdc.tdcGetCounterData()
                     
                     scurves[tdc_ch].append(counters[tdc_ch])
-                    self.logger.info(f"{dac10b_val} / {2**10}", counters)               
+                    self.logger.info(f"{dac10b_val} / {2**10} {counters}")               
             return scurves
 
 
@@ -785,7 +785,7 @@ def make_pedestal_one_by_one(state,version,feb_id,feb,asic_name,thmin,thmax,thst
                 counters = f_tdc.tdcGetCounterData()
                 
                 scurves[tdc_ch].append(counters[tdc_ch])
-                self.logger.info(f"{dac10b_val} / {2**10}", counters)
+                self.logger.info(f"{dac10b_val} / {2**10} {counters}")
 
 
             rc={}
@@ -902,7 +902,7 @@ def make_pedestal_all_channels(state,version,feb_id,feb,asic_name,thmin,thmax,th
             counters = f_tdc.tdcGetCounterData()
             for _, tdc_ch in used_chan:
                 scurves[tdc_ch].append(counters[tdc_ch])
-            self.logger.info(f"{dac10b_val} / {2**10}", counters)
+            self.logger.info(f"{dac10b_val} / {2**10} {counters}")
 
         res={}
         res["state"]=state
@@ -957,7 +957,7 @@ def main(params):
     self.sdb.setup.version=998
     self.sdb.to_csv_files()
 
-    self.logger.info(self.sdb.setup.febs[0].fpga_version,self.sdb.setup.febs[0].petiroc_version)
+    self.logger.info(f" {self.sdb.setup.febs[0].fpga_version}, {self.sdb.setup.febs[0].petiroc_version}")
     lightdaq.configLogger(loglevel=logging.INFO)
     logger = logging.getLogger('CMS_IRPC_FEB_LightDAQ')
     try:

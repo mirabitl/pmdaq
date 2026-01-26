@@ -121,11 +121,11 @@ class febv2_light:
             self.sdb.setup.febs[0].petiroc.set_parameter("pa_ccomp",self.params["pa_ccomp"]&0XF,asic=None)
         if "delay_reset_trigger" in self.params:
             self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",self.params["delay_reset_trigger"]&0XF,asic=None)
-
+        self.sdb.setup.version=999
         self.sdb.to_csv_files()
         daq.configLogger(logging.WARN)
         
-        self.feb0.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.params["db_state"],self.params["db_version"],self.params["feb_id"]))
+        self.feb0.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.params["db_state"],999,self.params["feb_id"]))
         #enableforces2=True
         if ("disable_force_s2" in self.params):
             enableforces2=not (self.params["disable_force_s2"]==1)
@@ -165,8 +165,8 @@ class febv2_light:
         if self.params!=None:
             if "file_directory" in self.params["writer"]:
                 self.storage=ps.storage_manager(self.params["writer"]["file_directory"])
-            elif  if "shm_directory" in self.params["writer"]:
-                sef.febwriter=ps.PyFebWriter(self.params["writer"]["shm_directory"]))
+            elif "shm_directory" in self.params["writer"]:
+                sef.febwriter=ps.PyFebWriter(self.params["writer"]["shm_directory"])
         #self.storage.open("unessai")
         self.runid=None
         self.configured=True

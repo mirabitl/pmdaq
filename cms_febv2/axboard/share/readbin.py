@@ -31,8 +31,15 @@ class febEvent:
         self.nread=0
         self.tdcframes=[]
         self.tmax = -785.0
-        self.tmin = -825.;0
-                #tmin = -855;t
+        self.tmin = -825.0
+        self.tmax+=50
+        self.tmin-=50
+
+
+        self.tmax = -830.0
+        self.tmin = -880.0
+
+        #tmin = -855;t
         self.hfile = R.gROOT.FindObject( 'hreadbin.root' )
         if self.hfile:
             hfile.Close()
@@ -40,7 +47,7 @@ class febEvent:
  
         self.htm=[R.TH1F(f"dt{lch}",f"dt{lch}",50,self.tmin-5,self.tmax+5) for lch in range(32)]
         self.html=[R.TH1F(f"dtl{lch}",f"dtl{lch}",3000,-300000.,0.) for lch in range(32)]
-        self.hpos=R.TH2F("hpos","DT vs strip",50,0.,50.,400,0.,40.)
+        self.hpos=R.TH2F("hpos","zs vs strip",50,0.,50.,400,0.,200.)
 
         self.hxy=R.TH2F("hxy","Y vs X",100,0.,50.,50,0.,200.)
         self.hstrip=R.TH1F("hstrip","strip",50,0.,50.)
@@ -88,6 +95,7 @@ class febEvent:
                 self.tdcdata[feb][fp].clear()
     def rh_handler(self,psi):
         psi.logger.warning(f"Run {psi.run} {psi.runheader}")
+        self.run=psi.run
         print(psi.new_run_header)
         #input("New run header found , hit return")
     def ev_handler(self,psi):
@@ -233,21 +241,22 @@ class febEvent:
 
                 #print(self.sorted_channels[i])
                 #print(self.sorted_channels[j])
-                self.hpos.Fill(self.sorted_channels[j].strip,self.sorted_channels[i].diff-self.sorted_channels[j].diff)
+                #self.hpos.Fill(self.sorted_channels[j].strip,self.sorted_channels[i].diff-self.sorted_channels[j].diff)
                 self.hdiff.Fill(self.sorted_channels[i].diff-self.sorted_channels[j].diff)
                 self.hstrip.Fill(self.sorted_channels[j].strip)
                 zs, xloc, yloc = self.geo.local_position(self.sorted_channels[j].strip,self.sorted_channels[i].diff,self.sorted_channels[j].diff)
                 #print(f"----------------------------> Strip {self.sorted_channels[j].strip} {self.sorted_channels[i].diff}  {self.sorted_channels[j].diff} {zs}")
                 self.strips.append(Strip(strip=self.sorted_channels[j].strip,thr=self.sorted_channels[j].diff,tlr=self.sorted_channels[i].diff,zs=zs,xloc=xloc,yloc=yloc))
                 #print(zs,xloc,yloc)
-                self.hxy.Fill(self.sorted_channels[j].strip,zs)
+                self.hpos.Fill(self.sorted_channels[j].strip,zs)
+                self.hxy.Fill(xloc,yloc)
                 self.hzs.Fill(zs)
                 #input()
         if (len(self.strips)>0):
             self.sorted_strips=sorted(self.strips, key=lambda x: (x.thr,x.strip))
             ns=0
             for x in self.sorted_strips:
-                self.hcxy.Fill(x.strip,x.zs)
+                self.hcxy.Fill(x.xloc,x.yloc)
                 self.hczs.Fill(x.zs)
                 self.hcstrip.Fill(x.strip)
                 ns+=1
