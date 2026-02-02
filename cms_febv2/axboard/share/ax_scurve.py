@@ -61,7 +61,10 @@ class scurve_processor:
         self.res["ctime"]=time.time()
         if "location" in params:
             self.res["location"]=params["location"]
-
+    def stop(self):
+        self._running.clear()
+        if self._thread:
+            self._thread.join(timeout=10)
     def start_align(self,params=None):
         if not self._running.is_set():
             self.logger.info("running lock is cleared") 
