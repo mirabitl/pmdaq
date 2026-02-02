@@ -404,20 +404,26 @@ class daq_widget:
             self.plot_canvas.get_tk_widget().destroy()
             self.plot_canvas = None
 
-
     def afficher_graphique(self):
-        self.clear_visu()  # on efface avant d'afficher un graph
-
-        self.fig = Figure(figsize=(5, 4))
-        ax = self.fig.add_subplot(111)
-        ax.plot([1, 3, 2, 4, 6, 5])  # exemple
-        ax.set_title("Graphique Matplotlib")
-
-        self.canvas_graph = FigureCanvasTkAgg(self.fig, master=self.plot_frame)
-        self.canvas_graph.draw()
-        self.canvas_graph.get_tk_widget().pack(expand=True, fill="both")
-
-        self.log("→ Affichage d'un graphique matplotlib")
+        pass
+    def afficher_scurve(self,thi,tha,ch,sc):
+        if not hasattr(self,'last_plot_channel'):
+            self.last_plot_channel = ch
+        else:   
+            if self.last_plot_channel == ch:
+                return
+            self.last_plot_channel = ch
+        self.plot_fig.clear()
+        #if not hasattr(self,'ax'):
+        self.ax=self.plot_fig.add_subplot(111)       
+        self.ax.plot(range(thi, tha, 1),
+                   sc,
+                   '+-',
+                   label=f"ch{ch}")
+        self.ax.set_title(f"SCURVE Channel {ch}")
+        self.ax.grid()
+        self.ax.legend(loc="upper right")
+        
     def bouton_calibration_stop(self):
         if hasattr(self,'scurve_process'):
             self.scurve_process.stop()
@@ -529,17 +535,69 @@ class daq_widget:
             self.tail_panel = TailFPanel(self.tab_tail, file_path, update_interval=1000)
         
     def update_daq_info(self):
-
         if self.daq!=None:
             st=self.daq.get_status()
             self.state_var.set(f"State: {self.daq.state}")
             self.run_var.set(f"Run: {st['run']}")
             self.event_var.set(f"Evt: {st['event']}")
             self.status_var.set("Status: RUNNING" if st['running'] else "Status: IDLE")
+            self.root.after(500, self.update_daq_info)
+            return
+        if hasattr(self,'scurve_process') and self.scurve_process!=None:
+            st=self.scurve_process.get_status()
+            method=st.get('method','N/A')
+            self.state_var.set(f"Method: {method}")
+            if method=="aligning":
+                raw_turnon=st.get('raw_turnon',[])
+                target=st.get('target',-1)
+                dac_local=st.get('dac_local',[])
+                if target==-1 and len(raw_turnon)>0: #print last turn_on
+                    last=-1
+                    for i in range(len(raw_turnon)-1,-1,-1):
+                        if (raw_turnon[i]!=0):
+                            last=i
+                            break
+                    if (last!=-1):
+                        self.run_var.set(f"Last Turn On-> Channel {last} : {raw_turnon[last]}")
+                else:
+                     self.run_var.set(f"Target: {target}")
+                     if len(dac_local)>0: #print last
+                         last=-1
+                         for i in range(len(dac_local)-1,-1,-1):
+                             if (dac_local[i]!=0):
+                                 last=i
+                                 break
+                         if (last!=-1):
+                             self.event_var.set(f"DAC Local->Channel {last} : {dac_local[last]}")
+            if method=="SCURVE_1":
+                scurve=st.get('scurve',[[] for _ in range(64)])
+                thi=self.scurve_process.conf["thmin"]
+                tha=self.scurve_process.conf["thmax"]
+                thstep=self.scurve_process.conf["thstep"]
+                # Find last channel with data
+                idx=-2
+                for i in reversed(range(64)):
+                    if len(scurve[i])!=0:
+                        idx=i
+                        break
+                self.run_var.set(f"Current channel: {idx}")
+                # Find last point >10
+                if idx>-1:
+                    sc=scurve[idx]
+                    for i in reversed(range(len(sc))):
+                        if sc[i]>10:
+                           to_10= self.scurve_process.conf["thmin"]+ i*self.scurve_process.conf.get("thstep",1)
+                           self.event_var.set(f"Last >10 at DAC:{i}-> {to_10}")
+                           break
+                    # Update plot
+                    self.afficher_scurve(self.scurve_process.conf["thmin"], self.scurve_process.conf["thmax"], idx, sc)
+                    self.plot_canvas.draw_idle()
+            self.status_var.set("Status: RUNNING" if st.get('running',False) else "Status: IDLE")
         while not self.queue.empty():
             message = self.queue.get()
             if message == "update_plot":
                 self.plot_canvas.draw_idle()  # Mettre à jour le plot dans le thread principal
+
         # Mise à jour toutes les 500 ms
         self.root.after(500, self.update_daq_info)
         

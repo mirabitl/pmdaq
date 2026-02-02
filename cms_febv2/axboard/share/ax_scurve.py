@@ -74,10 +74,12 @@ class scurve_processor:
             self.logger.warning("Calibration déjà en cours")
             return False
         self._running.set()
+        self.pb.status={}
         self._thread = threading.Thread(target=self.align, args=(params,), daemon=True)
         self._thread.start()
         return True    
     def align(self,params=None):
+        self.pb.status["method"]="aligning"
         for an in self.pb.asicl:
             self.logger.info(f"Aligning ASIC {an}")
             target,v6_cor=self.align_asic(an)
@@ -97,6 +99,8 @@ class scurve_processor:
         _,_,used_chan =self.pb.get_mapping(asic_name)
         v6=self.pb.sdb.setup.febs[0].petiroc.get_6b_dac(asic_name)
         turn_on=[]
+        self.status["asic"]=asic_name
+        self.status["raw_turnon"]=turn_on
         for idx in range(16):
             to=self.pb.pedestal_one_channel(asic_name,idx,self.conf["thmin"],self.conf["thmax"],v6)
             turn_on.append(to)
@@ -120,6 +124,8 @@ class scurve_processor:
         if (too_high):
             target=target-10
         self.logger.info(f"Median target final {target} dac6b {vexp}")
+        self.status["target"]=target
+        self.status["dac_local"]=[0 for i in range(32)]
         #val=input("Second round ? ")
         v6_cor=v6
         turn_on_cor=[]
@@ -154,6 +160,7 @@ class scurve_processor:
             if (newdac>63):
                 newdac=63
             v6_cor[petiroc_chan]=newdac
+            self.status["dac_local"][petiroc_chan]=newdac
         self.logger.info(f" Turn ON {turn_on_cor}")
         ntoc=np.array(turn_on_cor)
         # Target
@@ -171,6 +178,7 @@ class scurve_processor:
             self.logger.warning("Calibration déjà en cours")
             return False
         self._running.set()
+        self.pb.status={}
         self._thread = threading.Thread(target=self.get_scurves, args=(params,), daemon=True)
         self._thread.start()
         return True            
@@ -179,6 +187,8 @@ class scurve_processor:
         # Now get a run id
         analysis=params.get("analysis","SCURVE_A")
         plot_fig=params.get("plot_fig",None)
+        self.logger.info(f"Plot fig set to {plot_fig}")
+        self.pb.status["method"]=f"{analysis}"
         runid=None
         if "location" in self.conf and "comment" in self.conf:
             runobj=self.pb.sdb.getRun(self.conf["location"],self.conf["comment"])
@@ -251,7 +261,7 @@ class scurve_processor:
 
 class ax_scurves:
     def __init__(self,feb_id,state,version):
-
+        self.status={}
         self.dbstate=state
         self.dbversion=version
         self.feb_id=feb_id
@@ -406,7 +416,8 @@ class ax_scurves:
         try:
             f_tdc,f_asic,used_chan =self.get_mapping(asic_name)
 
-            scurves = [ [] for _ in range(32) ]         
+            scurves = [ [] for _ in range(32) ]
+            self.status["scurve"]=scurves      
             for petiroc_chan,tdc_ch in used_chan:
                 en=1
                 for o_chan in range(32):
