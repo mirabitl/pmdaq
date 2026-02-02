@@ -295,7 +295,7 @@ class storage_manager:
                     # Décompression
                     json_bytes = self.decompressor.decompress(compressed)
                     print(json_bytes)
-                    input()
+                    #input()
                     # Décodage JSON
                     self.runheader = json.loads(json_bytes.decode("utf-8"))
                 self.logger.debug(f"new run header {self.run} : {self.runheader}")
