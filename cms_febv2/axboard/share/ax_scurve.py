@@ -65,6 +65,11 @@ class scurve_processor:
         self._running.clear()
         if self._thread:
             self._thread.join(timeout=10)
+    def get_status(self):
+        with self._lock:
+            status_copy = self.pb.status.copy()
+        status_copy["running"]=self._running.is_set()
+        return status_copy
     def start_align(self,params=None):
         if not self._running.is_set():
             self.logger.info("running lock is cleared") 
@@ -80,10 +85,13 @@ class scurve_processor:
         return True    
     def align(self,params=None):
         self.pb.status["method"]="aligning"
+        self.pb._running=self._running
         for an in self.pb.asicl:
             self.logger.info(f"Aligning ASIC {an}")
             target,v6_cor=self.align_asic(an)
-            
+            if hasattr(self,'_running') and not self._running.is_set():
+                self.logger.info("Alignment was stop before the end")
+                return
             for  ich in range(len(v6_cor)):
                 self.pb.sdb.setup.febs[0].petiroc.set_6b_dac(ich,v6_cor[ich],an.upper()) 
                 self.pb.sdb.setup.febs[0].petiroc.set_parameter("10b_dac_vth_discri_time",target,an.upper())
@@ -102,6 +110,9 @@ class scurve_processor:
         self.status["asic"]=asic_name
         self.status["raw_turnon"]=turn_on
         for idx in range(16):
+            if hasattr(self,'_running') and not self._running.is_set():
+                self.logger.info("Alignment was stop before the end")
+                return 0,[]
             to=self.pb.pedestal_one_channel(asic_name,idx,self.conf["thmin"],self.conf["thmax"],v6)
             turn_on.append(to)
         self.logger.info(f" Turn ON {turn_on}")
@@ -130,6 +141,9 @@ class scurve_processor:
         v6_cor=v6
         turn_on_cor=[]
         for idx in range(16):
+            if hasattr(self,'_running') and not self._running.is_set():
+                self.logger.info("Alignment was stop before the end")
+                return 0,[]
             petiroc_chan,tdc_ch =used_chan[idx]
             gc=v6[ petiroc_chan]+round((target-turn_on[idx])/3.9)
             td=[]
@@ -183,31 +197,36 @@ class scurve_processor:
         self._thread.start()
         return True            
     #def get_scurves(self,analysis="SCURVE_A",plot_fig=None):
-    def get_scurves(self,params):
+    def get_scurves(self,params,doPlot=False):
         # Now get a run id
         analysis=params.get("analysis","SCURVE_A")
         plot_fig=params.get("plot_fig",None)
         self.logger.info(f"Plot fig set to {plot_fig}")
         self.pb.status["method"]=f"{analysis}"
+        self.pb._running=self._running
+        if hasattr(self, 'queue'):
+            self.pb.queue=self.queue
         runid=None
         if "location" in self.conf and "comment" in self.conf:
             runobj=self.pb.sdb.getRun(self.conf["location"],self.conf["comment"])
             runid=runobj['run']
                                       
         for an in self.pb.asicl:
+            if (hasattr(self,'_running') and  (not self._running.is_set())):
+                break
             self.reset_results()
             _,_,used_chan =self.pb.get_mapping(an)
             self.res["analysis"]=analysis
             self.res["asic"]=an.upper()
             self.res["channels"]=[]
             scurves=None
-
+            ax=None    
+            if doPlot:
             # Plots
-            ax=None
-            if plot_fig!=None:
-                # Efface l'ancienne figure
-                plot_fig.clear()
-                ax=plot_fig.add_subplot(111)
+                if plot_fig!=None:
+                    # Efface l'ancienne figure
+                    plot_fig.clear()
+                    ax=plot_fig.add_subplot(111)
             # Check the analysis
             if analysis == "SCURVE_A":
                 self.logger.info(f'start={self.conf["thmin"]},stop={self.conf["thmax"]},step={self.conf["thstep"]},dac_loc=0')
@@ -218,30 +237,39 @@ class scurve_processor:
                 scurves=self.pb.make_pedestal_one_by_one(asic_name=an,thmin=self.conf["thmin"],thmax=self.conf["thmax"],thstep=self.conf["thstep"],v6=None)
             else:
                 return False
+            local_plot=False
             for petiroc_chan, tdc_chan in used_chan:
                 rc={}
                 rc["prc"]=petiroc_chan
                 rc["tdc"]=tdc_chan
                 rc["scurve"]=scurves[tdc_chan]
+                if (len(scurves[tdc_chan])==0):
+                    continue
+                #self.logger.warning(rc)
                 self.res["channels"].append(rc)
-                if plot_fig==None:
-                    plt.plot(range(self.conf["thmin"], self.conf["thmax"],1), scurves[tdc_chan], '+-', label=f"ch{tdc_chan}")
+                if doPlot:
+                    if plot_fig==None or local_plot:
+                        plt.plot(range(self.conf["thmin"], self.conf["thmax"],1), scurves[tdc_chan], '+-', label=f"ch{tdc_chan}")
+                    else:
+                        ax.plot(
+                        range(self.conf["thmin"], self.conf["thmax"], 1),
+                            scurves[tdc_chan],
+                            '+-',
+                            label=f"ch{tdc_chan}"
+                    )
+            if doPlot: 
+                if plot_fig==None or local_plot:
+                    plt.grid()
+                    plt.legend(loc="upper right")
+                    plt.show()
                 else:
-                    ax.plot(
-                    range(self.conf["thmin"], self.conf["thmax"], 1),
-                        scurves[tdc_chan],
-                        '+-',
-                        label=f"ch{tdc_chan}"
-                ) 
-            if plot_fig==None:
-                plt.grid()
-                plt.legend(loc="upper right")
-                plt.show()
-            else:
-                ax.grid()
-                ax.legend(loc="upper right")
-                if hasattr(self, 'queue'):
-                    self.queue.put("update_plot")
+                    ax.grid()
+                    ax.legend(loc="upper right")
+                    if hasattr(self, 'queue'):
+                        self.queue.put("update_plot")
+            if hasattr(self,'_running') and not self._running.is_set():
+                self.logger.info("Calibration was stop before the end")
+                break
             # Store results in json
             res_dir='/tmp/results/%s_%d_f_%d' % (self.conf["db"]["state"],self.conf["db"]["version"],self.conf["db"]["board"])
             if runid==None:
@@ -276,7 +304,9 @@ class ax_scurves:
 
         self.logger.info(self.sdb.setup.febs[0].fpga_version,self.sdb.setup.febs[0].petiroc_version)
         lightdaq.configLogger(loglevel=logging.INFO)
-        self.logger = logging.getLogger('CMS_IRPC_FEB_LightDAQ')
+        self.daqlogger = logging.getLogger('CMS_IRPC_FEB_LightDAQ')
+        self.daqlogger.setLevel(logging.INFO)
+
         try:
             self.ax7325b = lightdaq.AX7325BBoard()
             self.feb = lightdaq.FebV2Board(self.ax7325b, febid='FEB0', fpga_fw_ver='4.8')
@@ -287,6 +317,9 @@ class ax_scurves:
             self.feb.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (state,998,feb_id))
         except NameError as e:
             self.logger.info(f"Test failed with message: {e}")
+        #lightdaq.configLogger(logging.INFO)
+        #logger=logging.getLogger('CMS_IRPC_FEB_LightDAQ')
+        self.logger.setLevel(logging.INFO)
 
         self.asicl=["left_top","left_bot","middle_top","middle_bot","right_top","right_bot"]
 
@@ -408,6 +441,14 @@ class ax_scurves:
                 for _, tdc_ch in used_chan:
                     scurves[tdc_ch].append(counters[tdc_ch])
                 self.logger.info(f"{dac10b_val} / {2**10} {counters}")
+            if hasattr(self, 'queue'):
+                self.status["asic"]=asic_name
+                self.status["thmin"]=thmin
+                self.status["thmax"]=thmax
+                self.status["thstep"]=thstep
+                self.status["scurves"]= scurves
+                self.queue.put("update_scurves")
+                time.sleep(1)
             return scurves
         except NameError as e:
             self.logger.info(f"Test failed with message: {e}")
@@ -417,8 +458,10 @@ class ax_scurves:
             f_tdc,f_asic,used_chan =self.get_mapping(asic_name)
 
             scurves = [ [] for _ in range(32) ]
-            self.status["scurve"]=scurves      
             for petiroc_chan,tdc_ch in used_chan:
+                if (hasattr(self,'_running') and  (not self._running.is_set())):
+                    return scurves
+                    break
                 en=1
                 for o_chan in range(32):
 
@@ -451,7 +494,25 @@ class ax_scurves:
                     counters = f_tdc.tdcGetCounterData()
                     
                     scurves[tdc_ch].append(counters[tdc_ch])
-                    self.logger.info(f"{dac10b_val} / {2**10} {counters}")               
+                    self.logger.info(f"{dac10b_val} / {2**10} {counters}")
+                if hasattr(self, 'queue'):
+                    self.status["asic"]=asic_name
+                    self.status["thmin"]=thmin
+                    self.status["thmax"]=thmax
+                    self.status["thstep"]=thstep
+                    self.status["petiroc"]=petiroc_chan
+                    self.status["tdc"]=tdc_ch
+                    self.status["scurve"]= scurves[tdc_ch]
+                    self.queue.put("update_scurve")
+            if hasattr(self, 'queue'):
+                self.status["asic"]=asic_name
+                self.status["thmin"]=thmin
+                self.status["thmax"]=thmax
+                self.status["thstep"]=thstep
+                self.status["scurves"]= scurves
+                self.queue.put("update_scurves")
+                time.sleep(1)
+             
             return scurves
 
 
@@ -464,7 +525,7 @@ class ax_scurves:
         
         en=1
         for o_chan in range(32):
-
+            
             if (o_chan==petiroc_chan):
                 en = 0
             else:
