@@ -574,31 +574,32 @@ class daq_widget:
             st=self.scurve_process.get_status()
             if not self.scurve_process._running.is_set():
                 self.status_var.set("Status: STOPPED")
-            else:
-                method=st.get('method','N/A')
-                self.state_var.set(f"Method: {method}")
-                if method=="aligning":
-                    raw_turnon=st.get('raw_turnon',[])
-                    target=st.get('target',-1)
-                    dac_local=st.get('dac_local',[])
-                    if target==-1 and len(raw_turnon)>0: #print last turn_on
-                        last=-1
-                        for i in range(len(raw_turnon)-1,-1,-1):
-                            if (raw_turnon[i]!=0):
-                                last=i
-                                break
-                        if (last!=-1):
-                            self.run_var.set(f"Last Turn On-> Channel {last} : {raw_turnon[last]}")
-                    else:
-                        self.run_var.set(f"Target: {target}")
-                        if len(dac_local)>0: #print last
-                            last=-1
-                            for i in range(len(dac_local)-1,-1,-1):
-                                if (dac_local[i]!=0):
-                                    last=i
-                                    break
-                            if (last!=-1):
-                                self.event_var.set(f"DAC Local->Channel {last} : {dac_local[last]}")
+            # else:
+            #     method=st.get('method','N/A')
+            #     self.state_var.set(f"Method: {method}")
+            #     if method=="aligning":
+            #         raw_turnon=st.get('raw_turnon',[])
+            #         target=st.get('target',-1)
+            #         asic_name=st.get('asic',"unknown")
+            #         dac_local=st.get('dac_local',[])
+            #         if target==-1 and len(raw_turnon)>0: #print last turn_on
+            #             last=-1
+            #             for i in range(len(raw_turnon)-1,-1,-1):
+            #                 if (raw_turnon[i]!=0):
+            #                     last=i
+            #                     break
+            #             if (last!=-1):
+            #                 self.run_var.set(f"{asic_name.upper()} Last Turn On-> Channel {last} : {raw_turnon[last]}")
+            #         else:
+            #             self.run_var.set(f"{asic_name.upper()} Target: {target}")
+            #             if len(dac_local)>0: #print last
+            #                 last=-1
+            #                 for i in range(len(dac_local)-1,-1,-1):
+            #                     if (dac_local[i]!=0):
+            #                         last=i
+            #                         break
+            #                 if (last!=-1):
+            #                     self.event_var.set(f"DAC Local->Channel {last} : {dac_local[last]}")
                 # if method=="SCURVE_1" or method=="SCURVE_A":
                 #     scurve=st.get('scurve',[[] for _ in range(32)])
                 #     thi=self.scurve_process.conf["thmin"]
@@ -644,6 +645,7 @@ class daq_widget:
                             raw_turnon=st.get('raw_turnon',[])
                             target=st.get('target',-1)
                             dac_local=st.get('dac_local',[])
+                            asic_name=st.get('asic',"unknown")
                             if target==-1 and len(raw_turnon)>0: #print last turn_on
                                 last=-1
                                 for i in range(len(raw_turnon)-1,-1,-1):
@@ -651,9 +653,9 @@ class daq_widget:
                                         last=i
                                         break
                                 if (last!=-1):
-                                    self.run_var.set(f"Last Turn On-> Channel {last} : {raw_turnon[last]}")
+                                    self.run_var.set(f"Last Turn On-> {asic_name.upper()} Channel {last} : {raw_turnon[last]}")
                             else:
-                                self.run_var.set(f"Target: {target}")
+                                self.run_var.set(f"Target for {asic_name.upper()}: {target}")
                                 if len(dac_local)>0: #print last
                                     last=-1
                                     for i in range(len(dac_local)-1,-1,-1):
@@ -661,7 +663,7 @@ class daq_widget:
                                             last=i
                                             break
                                     if (last!=-1):
-                                        self.event_var.set(f"DAC Local->Channel {last} : {dac_local[last]}")
+                                        self.event_var.set(f"DAC Local->{asic_name.upper()} Channel {last} : {dac_local[last]}")
             if message == "update_scurve" and hasattr(self,'scurve_process') and self.scurve_process!=None:                
                 st=self.scurve_process.get_status()
                 method=st.get('method','N/A')

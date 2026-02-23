@@ -107,14 +107,17 @@ class scurve_processor:
         _,_,used_chan =self.pb.get_mapping(asic_name)
         v6=self.pb.sdb.setup.febs[0].petiroc.get_6b_dac(asic_name)
         turn_on=[]
-        self.status["asic"]=asic_name
-        self.status["raw_turnon"]=turn_on
+        self.pb.status["asic"]=asic_name
+        self.pb.status["raw_turnon"]=turn_on
+        if 'target' in self.pb.status:
+            del self.pb.status['target']
         for idx in range(16):
             if hasattr(self,'_running') and not self._running.is_set():
                 self.logger.info("Alignment was stop before the end")
                 return 0,[]
             to=self.pb.pedestal_one_channel(asic_name,idx,self.conf["thmin"],self.conf["thmax"],v6)
             turn_on.append(to)
+            self.queue.put("update_status")
         self.logger.info(f" Turn ON {turn_on}")
         nto=np.array(turn_on)
         # Target
@@ -135,8 +138,8 @@ class scurve_processor:
         if (too_high):
             target=target-10
         self.logger.info(f"Median target final {target} dac6b {vexp}")
-        self.status["target"]=target
-        self.status["dac_local"]=[0 for i in range(32)]
+        self.pb.status["target"]=target
+        self.pb.status["dac_local"]=[0 for i in range(32)]
         #val=input("Second round ? ")
         v6_cor=v6
         turn_on_cor=[]
@@ -174,7 +177,8 @@ class scurve_processor:
             if (newdac>63):
                 newdac=63
             v6_cor[petiroc_chan]=newdac
-            self.status["dac_local"][petiroc_chan]=newdac
+            self.pb.status["dac_local"][petiroc_chan]=newdac
+            self.queue.put("update_status")
         self.logger.info(f" Turn ON {turn_on_cor}")
         ntoc=np.array(turn_on_cor)
         # Target
