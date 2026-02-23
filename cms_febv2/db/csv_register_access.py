@@ -1087,7 +1087,18 @@ class mgdb_feb:
         s["name"]=s["content"]["name"]
         s["time"]=time.time()
         s["comment"]=comment
-        s["version"]=s["content"]["version"]
+        # Find last version
+        res=self.db.configurations.find({'name':s['name']})
+        last=0
+        for x in res:
+            if (last<x["version"]):
+                last=x["version"]
+        if (last==0):
+            print(f" No configuration {s['name']} found, it will be created")
+        else:
+            print(f"New version created {s['name']} {last+1} ")
+
+        s["version"]=last+1
         resconf=self.db.configurations.insert_one(s)
         print(resconf)
     def download_configuration(self,cname,version,toFileOnly=False):

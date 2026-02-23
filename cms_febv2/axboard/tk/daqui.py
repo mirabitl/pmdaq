@@ -788,6 +788,8 @@ class daq_widget:
                 self.data["name"] = config_name
                 comment = entry_comment.get("1.0", tk.END).strip()
                 self.data["comment"] = comment
+                if "version" in self.data:
+                    del self.data["version"]
                 try:
                     # Sauvegarder dans la base de données
                     with open("/tmp/currentdaq.json", "w", encoding="utf-8") as f:
