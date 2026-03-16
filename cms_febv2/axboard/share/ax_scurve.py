@@ -7,7 +7,7 @@ import time
 
 import numpy as np 
 from matplotlib import pyplot as plt
-
+from scipy import stats
 
 import cms_irpc_feb_lightdaq as lightdaq
 
@@ -288,9 +288,6 @@ class scurve_processor:
                 self.logger.info(f'Upload done {self.res["state"]} {self.res["version"]} {self.res["feb"]} {self.res["analysis"]} {self.conf["comment"]} {runid}')
                 #input("Next asic ?")
         return True
-                
-    
-
 class ax_scurves:
     def __init__(self,feb_id,state,version):
         self.status={}
@@ -624,6 +621,209 @@ class ax_scurves:
         self.logger.info(f"Seuil fin {to_1}")
         #val=input("Next channel? ")
         return to_1
+
+
+class timing_processor:
+    def __init__(self,params):
+        self.sdb=cra.instance()
+        self.sdb.download_setup(params["db"]["state"],params["db"]["version"])
+        self.pb=ax_time_pedestal(params["db"]["state"],params["db"]["version"],params["db"]["board"])
+                       
+        self.res={}
+        self.res["state"]=params["db"]["state"]
+        self.res["version"]=params["db"]["version"]
+        self.res["feb"]=params["db"]["board"]
+        self.res["ctime"]=time.time()
+        if "location" in params:
+            self.res["location"]=params["location"]
+
+        self.conf=params
+        self.logger=logging.getLogger(__name__)
+        self._thread = None
+        self._running = threading.Event()
+        self._lock = threading.Lock()
+    def reset_results(self):
+        params=self.conf
+        self.res={}
+        self.res["state"]=params["db"]["state"]
+        self.res["version"]=params["db"]["version"]
+        self.res["feb"]=params["db"]["board"]
+        self.res["ctime"]=time.time()
+        if "location" in params:
+            self.res["location"]=params["location"]
+    def stop(self):
+        self._running.clear()
+        if self._thread:
+            self._thread.join(timeout=10)
+    def get_status(self):
+        with self._lock:
+            status_copy = self.pb.status.copy()
+        status_copy["running"]=self._running.is_set()
+        return status_copy
+    def start_timing(self,params=None):
+        if not self._running.is_set():
+            self.logger.info("running lock is cleared") 
+        if self._thread:
+            self._thread.join(timeout=10)
+        if self._thread and self._thread.is_alive():
+            self.logger.warning("Calibration déjà en cours")
+            return False
+        self._running.set()
+        self.pb.status={}
+        self._thread = threading.Thread(target=self.time_pedestal, args=(params,), daemon=True)
+        self._thread.start()
+        return True    
+    def time_pedestal(self,params=None):
+        self.pb.status["method"]="timing"
+        self.pb._running=self._running
+        sdb1=cra.instance()  
+        analysis="TIME_PEDESTAL"
+        state=self.conf["db"]["state"]
+        version=self.conf["db"]["version"]
+        data=self.pb.acquire_time_pedestal(nevt_max=self.conf["maxevt"])
+        for fpga in lightdaq.FPGA_ID:
+                chan_ts = [[] for _ in range(34)]
+                for chan, ts, *_ in data['FEB0'][fpga]:
+                    #ts = round(ts*1e3/(256*400.79), 2) # ts in ns
+                    chan_ts[chan].append(ts)
+                res={}
+                res["fpga"]=fpga
+                res["channels"]=chan_ts
+                print("Uploading FPGA")
+                print(res)
+                sdb1.upload_results(self.conf["db"]["state"],self.conf["db"]["version"],self.conf["db"]["board"],analysis,res,comment=self.conf["comment"])
+        c_upload=None
+        if "correct" in self.conf and self.conf["correct"]==1:
+            c_upload="Pair Filtering disabled-Correction for "+self.conf["comment"]
+        
+        self.pedestals={}
+            
+        fpgal=["LEFT","MIDDLE","RIGHT"]
+        for f in fpgal:
+            print(f"Getting time pedestals for {f} from analysis {analysis} on {state}/{version}")
+            self.pedestals[f.upper()]=self.sdb.get_time_pedestal(self.conf["db"]["state"],self.conf["db"]["version"],self.conf["db"]["board"],analysis,f.upper())
+
+        fpga_chan_offset = {}
+        fpga_chan_mu = {}
+        min_resync = 5000000000
+        for fpga in self.pedestals.keys():
+            fpga_chan_mu[fpga]=[0 for i in range(34)]
+            for ch in range(34):
+                if (ch!=32):
+                    #fpga_chan_mu[fpga][ch] = np.mean(self.pedestals[fpga]["channels"][ch])
+                    fpga_chan_mu[fpga][ch]=stats.trim_mean(self.pedestals[fpga]["channels"][ch], 0.1)
+                else:
+                    fpga_chan_mu[fpga][ch]=0
+            min_resync = min(min_resync, fpga_chan_mu[fpga][33])
+            fpga_chan_offset[fpga] = [0]*34
+        #print(fpga_chan_mu)
+        print(" aligned to channel lowest time[33]:", min_resync)
+        for fpga in self.pedestals.keys():
+            ##if (fpga.lower()!="right"):
+            ##    continue
+            for ch in range(34):
+                if ch != 32: fpga_chan_offset[fpga][ch] = round(fpga_chan_mu[fpga][ch]-min_resync)
+
+       
+        print ("{:<10} {:<10} {:<10} {:<10}".format("Channel","LEFT","MIDDLE","RIGHT"))
+        for ch in range(34):
+            if ch < 32:
+                print("{:<10} {:<10} {:<10} {:<10}".format(ch,fpga_chan_offset['LEFT'][ch], fpga_chan_offset['MIDDLE'][ch], fpga_chan_offset['RIGHT'][ch]))
+                self.sdb.setup.febs[0].fpga.set_ts_offset(ch,fpga_chan_offset['LEFT'][ch],'LEFT')
+                self.sdb.setup.febs[0].fpga.set_ts_offset(ch,fpga_chan_offset['MIDDLE'][ch],'MIDDLE')
+                self.sdb.setup.febs[0].fpga.set_ts_offset(ch,fpga_chan_offset['RIGHT'][ch],'RIGHT')
+            else:
+                print("{:<10} {:<10} {:<10} {:<10}".format(ch,0,0,0))
+        min_del=0
+        for ch in range(16):
+            print("{:<10} {:<10} {:<10} {:<10}".format(ch,fpga_chan_offset['LEFT'][ch],fpga_chan_offset['LEFT'][31-ch],fpga_chan_offset['LEFT'][ch]-fpga_chan_offset['LEFT'][31-ch]))
+            min_del=min_del+fpga_chan_offset['LEFT'][ch]-fpga_chan_offset['LEFT'][31-ch]
+        print(min_del/16.)
+
+        min_del=0
+        for ch in range(16):
+            print("{:<10} {:<10} {:<10} {:<10}".format(ch,fpga_chan_offset['MIDDLE'][ch],fpga_chan_offset['MIDDLE'][31-ch],fpga_chan_offset['MIDDLE'][ch]-fpga_chan_offset['MIDDLE'][31-ch]))
+            min_del=min_del+fpga_chan_offset['MIDDLE'][ch]-fpga_chan_offset['MIDDLE'][31-ch]
+        print(min_del/16.)
+        min_del=0
+        for ch in range(16):
+            print("{:<10} {:<10} {:<10} {:<10}".format(ch,fpga_chan_offset['RIGHT'][ch],fpga_chan_offset['RIGHT'][31-ch],fpga_chan_offset['RIGHT'][ch]-fpga_chan_offset['RIGHT'][31-ch]))
+            min_del=min_del+fpga_chan_offset['RIGHT'][ch]-fpga_chan_offset['RIGHT'][31-ch]
+        print(min_del/16.)
+        upload=(c_upload!=None)
+        if (upload):
+            cm=" Pair filtering disabled"+c_upload
+            self.sdb.upload_changes(cm)
+        else:
+            self.sdb.setup.version=999
+            self.sdb.setup.to_csv_files()    
+        self._running.clear()
+  
+class ax_time_pedestal:
+    def __init__(self,state,version,feb_id):
+        self.state=state
+        self.version=version
+        self.feb_id=feb_id
+        self.logger=logging.getLogger('CMS_IRPC_FEB_LightDAQ')
+        self.sdb=cra.instance()
+        self.sdb.download_setup(state,version)
+        fp=self.sdb.setup.febs[0].fpga
+        pr=self.sdb.setup.febs[0].petiroc
+        pr.set_parameter("10b_dac_vth_discri_time",800)
+        fp.set_parameter("DATA_PATH_CTRL.MAX_QUEUE_SIZE.NB_FRAMES",0x25,"MIDDLE")
+        for i in range(16):
+            fp.set_pair_filtering_en(i,0,"LEFT")
+            fp.set_pair_filtering_en(i,0,"MIDDLE")
+            fp.set_pair_filtering_en(i,0,"RIGHT")
+        
+        fp.set_parameter("DATA_PATH_CTRL.RETRIG_MITIG_MUTEROC_TIME.STEP_120MHz",0,fpga=None)
+
+        self.sdb.setup.version=996
+
+        self.sdb.to_csv_files()
+        
+        lightdaq.configLogger(loglevel=logging.INFO)
+
+        try:
+            self.ax7325b = lightdaq.AX7325BBoard()
+            self.feb = lightdaq.FebV2Board(self.ax7325b, febid='FEB0', fpga_fw_ver='4.8')
+            self.ax7325b.init(feb0=True, feb1=False)
+            ### Test
+            self.sdb.setup.febs[0].fpga_version='4.8'
+            self.feb.init()
+            self.feb.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (state,996,feb_id))
+
+            for fpga in lightdaq.FPGA_ID:
+                self.feb.fpga[fpga].tdcSetInjectionMode('trig_ext_resync')
+                self.feb.fpga[fpga].tdcEnable(False)       
+
+            self.ax7325b.fastbitFsmConfigure(
+                s0_duration=int(89e-6/25e-9),
+                s1_duration=106,
+                s2_duration=10,
+                s3_duration=5,
+                s4_duration=5)
+            
+            self.ax7325b.fastbitResyncConfigure(external=False, after_bc0=True, delay=20)
+            #fc7.configure_resync_after_bc0(20)
+        except NameError as e:
+                self.logger.info(f"Test failed with message: {e}")   
+    def acquire_time_pedestal(self,nevt_max=200):
+
+        try:
+            self.feb.tdcEnable(True)
+            #self.feb.enable_tdc(True,"right")
+
+            self.ax7325b.triggerBc0Configure(True, nevt_max)
+            self.ax7325b.fastbitResetBc0Id()
+
+            data = self.ax7325b.acquireToMemory(timeout=0.1)
+            self.feb.tdcEnable(False)
+            return data
+        except NameError as e:
+            print(f"Test failed with message: {e}")
+
+        return None
 
         
 def pedestal_one_channel(feb,asic_name,index,thmin,thmax,v6=None,two_steps=True,dac6=32):

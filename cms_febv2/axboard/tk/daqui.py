@@ -353,6 +353,8 @@ class daq_widget:
         #for i in range(1, 1):
         ttk.Button(self.frame_btns, text=f"Calibration", bootstyle=WARNING,
                        command=lambda : self.bouton_calibration()).pack(pady=5)
+        ttk.Button(self.frame_btns, text=f"Timing", bootstyle=WARNING,
+                       command=lambda : self.bouton_timing()).pack(pady=5)
         ttk.Button(self.frame_btns, text=f"Stop Calibration", bootstyle=WARNING,
                        command=lambda : self.bouton_calibration_stop()).pack(pady=5)
         ttk.Label(self.frame_btns, text="Normal DAQ", font=("Arial", 15, "bold")).pack(pady=5)
@@ -452,6 +454,8 @@ class daq_widget:
     def bouton_calibration_stop(self):
         if hasattr(self,'scurve_process'):
             self.scurve_process.stop()
+        if hasattr(self,'time_process'):
+            self.time_process.stop()
     def bouton_calibration(self):
         #reinit plots
         self.clear_visu()
@@ -478,8 +482,24 @@ class daq_widget:
         
 
         #self.afficher_graphique()
+    def bouton_timing(self):
+        #reinit plots
+        self.clear_visu()
+        self.plot_fig = Figure(figsize=(5,4), dpi=100)
+        self.plot_canvas = FigureCanvasTkAgg(self.plot_fig, master=self.plot_frame)
+        self.plot_canvas_widget = self.plot_canvas.get_tk_widget()
+        self.plot_canvas_widget.pack(fill="both", expand=True)
+        # Do calibration
+        par=self.data
         
+        par["time"]=datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        with open(f'timing{par["time"]}.json', 'w') as fp:
+            json.dump(par, fp,indent=2)
 
+        self.time_process=ps.timing_processor(par)
+        self.time_process.queue = self.queue
+        self.time_process.start_timing()
+        
     def bouton_initialise(self):
 
         txt = f"Initialise send"
