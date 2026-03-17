@@ -13,7 +13,7 @@ import  cms_irpc_feb_lightdaq as daq
 from cms_irpc_feb_lightdaq.tools import *
 from cms_irpc_feb_lightdaq.feb import FEB_ID, FEB_NAME, FPGA_ID, FPGA_NAME, ASIC_ID, ASIC_NAME
 from cms_irpc_feb_lightdaq.AX7325BBoard import TdcUplinkFrame,TdcData
-
+import math
 import numpy as np
 import ROOT as R
 from collections import namedtuple
@@ -36,8 +36,8 @@ class febEvent:
         self.tmin-=50
 
 
-        self.tmax = -830.0
-        self.tmin = -880.0
+        #self.tmax = -830.0
+        #self.tmin = -880.0
 
         #tmin = -855;t
         self.hfile = R.gROOT.FindObject( 'hreadbin.root' )
@@ -221,12 +221,13 @@ class febEvent:
                     if (ch<32):
                         for t in self.chan_ts[ch]:
                             d = t-t0
-                            #print(t,t0,d,tmin,tmax)
+                            #if abs(d)<2000:
+                            #    print(t,t0,d,self.tmin,self.tmax)
                             if fpga=="MIDDLE":
                                 self.html[ch].Fill(d)
                             if d>self.tmin and d<self.tmax:
                                 self.htm[ch].Fill(d)
-                                psi.logger.debug(f"Found {fpga} {ch} {t} {d}")
+                                psi.logger.info(f"Found {fpga} {ch} {t} {d}")
                                 found=True
                     mu = np.mean(self.chan_ts[ch])
                     sigma = np.std(self.chan_ts[ch])
