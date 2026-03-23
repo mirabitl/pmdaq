@@ -223,7 +223,7 @@ class febv2_light:
             location=self.params["location"]
             self.logger.info(f"DAQ parameter {self.params}")
             #exit(0)
-            comment=params["comment"] if "comment" in params else "No comment set"
+            comment=self.params["comment"] if "comment" in self.params else "No comment set"
                          
         runobj = self.sdb.getRun(location,comment)
         self.runid = runobj["run"]
@@ -233,7 +233,7 @@ class febv2_light:
         self.run_type=1
         if self.storage: 
             # Store results in json
-            self.storage.open(f'run_{self.runid}_{self.params["db_state"]}_{self.params["db_version"]}_{self.params["feb_id"]}_{self.params["vth_shift"]}')
+            self.storage.open(f'{self.params["location"]}_{self.runid}_DB{self.params["db_state"]}_{self.params["db_version"]}_{self.params["feb_id"]}_VTH{self.params["vth_shift"]}')
 
             
             if self.params==None:

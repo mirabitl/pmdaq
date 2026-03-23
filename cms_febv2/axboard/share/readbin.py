@@ -35,9 +35,9 @@ class febEvent:
         self.tmax+=50
         self.tmin-=50
 
-
-        #self.tmax = -830.0
-        #self.tmin = -880.0
+        # Derniers runs (comet)
+        self.tmax = -820.0
+        self.tmin = -890.0
 
         #tmin = -855;t
         self.hfile = R.gROOT.FindObject( 'hreadbin.root' )

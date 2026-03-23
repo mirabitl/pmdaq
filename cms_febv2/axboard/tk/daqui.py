@@ -366,6 +366,8 @@ class daq_widget:
                    command=lambda :self.bouton_start()).pack(pady=5)
         ttk.Button(self.frame_btns, text=f"Stop", bootstyle=WARNING,
                    command=lambda :self.bouton_stop()).pack(pady=5)
+        ttk.Button(self.frame_btns, text=f"destroy", bootstyle=WARNING,
+                   command=lambda :self.bouton_destroy()).pack(pady=5)
 
         # --- Encart informations DAQ --- #
         self.daq_frame = ttk.LabelFrame(self.tab_visu, text="DAQ Info")
@@ -547,6 +549,20 @@ class daq_widget:
         if self.daq!=None:
             try:
                 self.daq.stop()
+                self.log(txt)
+            except transitions.core.MachineError as e:
+               messagebox.showerror("Wrong transition", f"{e} ✔")  
+
+        else:
+            messagebox.showerror("NO daq","DAQ is not created\n Please choose,load a configuration and Apply first✔")  
+            self.log("stop failed")
+
+    def bouton_destroy(self):
+
+        txt = f"Destroy send"
+        if self.daq!=None:
+            try:
+                self.daq.destroy()
                 self.log(txt)
             except transitions.core.MachineError as e:
                messagebox.showerror("Wrong transition", f"{e} ✔")  
