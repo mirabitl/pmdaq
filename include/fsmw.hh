@@ -110,7 +110,7 @@ class fsmw : public handlerPlugin
     /**
        \brief mosquitto publication
      */
-    void mqtt_publish(std::string topic,const json::value &body_data);
+    void mqtt_publish(std::string topic,const json::value &body_data,bool retain=false);
   private:
     std::map<std::string,CMDFunctor> _commands;
     std::vector<std::string> _states;
@@ -125,6 +125,7 @@ class fsmw : public handlerPlugin
     std::string _p_name;
     uint32_t _p_instance;
     web::json::value _params;
+    bool _use_mqtt;
     web::http::http_response _response;
   };
 

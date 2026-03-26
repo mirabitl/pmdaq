@@ -84,7 +84,7 @@ bool checkpns(int port = 8888)
   }
 }
 
-fsmw::fsmw() : _host(""), _port(0), _p_session(""), _p_name(""), _p_instance(0), _state("CREATED")
+fsmw::fsmw() : _host(""), _port(0), _p_session(""), _p_name(""), _p_instance(0), _state("CREATED"),_use_mqtt(false)
 {
   _states.clear();
   _transitions.clear();
@@ -124,6 +124,7 @@ std::vector<std::string> fsmw::getPaths(std::string query)
       auto jval = web::json::value::parse(std::string(it2->second), errorCode);
       _params = jval;
       PM_DEBUG(_logFsm, "Parameters " << _params);
+      _use_mqtt=utils::isMember(_params,"mqtt_broker");
     }
   }
   std::stringstream sb;
@@ -336,6 +337,10 @@ void fsmw::publishState()
 
   http_response response = client.request(methods::GET, buf.str()).get();
   PM_DEBUG(_logFsm, "reponse " << response.to_string());
+  // MQTT publish
+  web::json::value jstate=json::value::string(U(state()));
+  this->mqtt_publish("state",jstate,true);
+  
 }
 web::json::value fsmw::transitionsList()
 {
@@ -377,11 +382,11 @@ void fsmw::Reply(http::status_code code, const json::value &body_data)
   _response.set_status_code(code);
   _response.set_body(body_data);
 }
-void fsmw::mqtt_publish(std::string topic,const json::value &body_data)
+void fsmw::mqtt_publish(std::string topic,const json::value &body_data,bool retain)
 {
-  if (utils::isMember(params(),"mqtt_broker") )
+  if (_use_mqtt )
     {
-      std::stringstream stag("");stag<<path().substr(1,path().size()-1)<<topic;
-      utils::mqtt_publish(params()["mqtt_broker"].as_string(),stag.str(),body_data);
+      std::stringstream stag("pmdaq/");stag<<path().substr(1,path().size()-1)<<topic;
+      utils::mqtt_publish(params()["mqtt_broker"].as_string(),stag.str(),body_data,retain);
     }
 }
