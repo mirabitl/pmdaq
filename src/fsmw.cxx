@@ -339,7 +339,9 @@ void fsmw::publishState()
   PM_DEBUG(_logFsm, "reponse " << response.to_string());
   // MQTT publish
   web::json::value jstate=json::value::string(U(state()));
-  this->mqtt_publish("state",jstate,true);
+  auto par = json::value::object();
+  par["value"]=jstate;
+  this->mqtt_publish("state",par,true);
   
 }
 web::json::value fsmw::transitionsList()

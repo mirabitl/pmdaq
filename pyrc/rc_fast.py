@@ -26,9 +26,9 @@ def print_dict(d, mode="row", tablefmt="grid"):
     else:
         raise ValueError("mode doit être 'row' ou 'kv'")
 
-def pmrTransitionWorker(app,transition,res):
+def pmrTransitionWorker(o,app,transition,res):
     """!thread pmr Transition worker function"""
-    s = json.loads(app.sendTransition(transition, {}))
+    s = json.loads(o.sendTransition(app,transition, {}))
     res = s
     logging.info('ending')
     return
@@ -104,6 +104,7 @@ class rc_control(rc_interface.daqControl):
 
         self.daq_params_file="UNKNOWN"
         self.daq_params_set="UNKNOWN:UNKNOWN"
+        self.mqtt=None
     # daq
     def parse_config(self,file_name,debug=False):
         # Charger le JSON
@@ -121,6 +122,187 @@ class rc_control(rc_interface.daqControl):
             for x in config.apps:
                 print(x.host,x.port,x.instance,x.name,x.params)
             print(config.model_dump(mode='json'))
+        self.mqtt=mqtt_interface.MQTTInterface(root_topic=f"pmdaq/{self.config.session}/#")
+
+    def sendRequest(self,app: App,name: str,params)->str:
+        """
+        Access to a command or a transition of a pmdaq service
+        
+        @param host: Host name
+        @param port: Application port
+        @param path: The complete PATH of the service session/pluggin/instance/command
+        @param params: CGI additional parameters
+        @return: url answer as text
+        """
+        path="/".join([self.config.session,app.name,app.instance,name])
+        if (params!=None ):
+            myurl = "http://"+app.host+ ":%d" % (app.port)
+            
+            lq={}
+            for x,y in params.items():
+                if (type(y) is dict):
+                    y=json.dumps(y).replace(" ","").encode("utf8")
+                    #print("STRING ",y)
+                    lq[x]=y
+            try:
+                r = requests.get(myurl+path, params=lq)
+            except requests.exceptions.RequestException as e:
+                print(e)
+                p_rep={}
+                p_rep["STATE"]="DEAD"
+                p_rep["http_error"] = e.code
+                return json.dumps(p_rep,sort_keys=True)
+            return r.text
+        else:
+            myurl = "http://"+host+ ":%d%s" % (port,path)
+            #print(myurl)
+            try:
+                r = requests.get(myurl)
+            except requests.exceptions.RequestException as e:
+                print(e)
+                p_rep={}
+                p_rep["STATE"]="DEAD"
+                p_rep["http_error"] = e.code
+            return json.dumps(p_rep,sort_keys=True)
+        return r.text
+    def sendCommand(self, app: App, name: str, content)->str:
+        """!
+        Send a command to the plugin service
+        @param name Command(service) Name
+        @param content CGI parameters of the command
+        @return The string answer 
+        """
+        self.update_access_info(app)
+        isValid = name in app.commands
+        if (not isValid):
+            return '{"answer":"invalid command ","status":"FAILED"}'
+        rep=self.sendRequest(app,name,content)
+        if (type(rep) is bytes):
+            rep=rep.decode("utf-8")
+        return rep
+    def sendTransition(self,app: App, name, content)->str:
+        """!
+        Send a transition to the plugin service. The transition is checked to be in the ALLOWED list before beeing sent
+        @param name Transition(service) Name
+        @param content CGI parameters of the command
+        @return The string answer  or a FAILED message
+        """
+        self.update_access_info(app)
+        #print "Send Transition",self.procInfos
+        isValid = False
+        isValid = name in app.allowed
+        if (not isValid):
+            return '{"answer":"invalid transition","status":"FAILED"}'
+
+        rep=rc_request.executeCMD(self.host,self.port,"%s%s" % (self.path,name),content)
+        if (type(rep) is bytes):
+            rep=rep.decode("utf-8")
+
+        # update state (published is asynchronous)
+        #time.sleep(10000/1000000.0)
+        self.update_access_info(app)
+        #print("New State is ",self.state)
+        return rep
+
+    # daq
+    def process_transition(self,transition_name):
+        rep={}
+        if not transition_name in self.m_config.sequences.keys():
+            print(f"{transition_name} is not in possibles kest {self.m_config.sequences.keys()}")
+            return rep
+        app_list=self.m_config.sequences[transition_name]
+        for app_name in app_list:
+            #  The plugin is in the daq
+            if not any(d.get("name") == app_name for d in self.config.apps):
+                continue
+            # the pllugin is defined in meta data
+            if not app_name in self.m_config.apps.keys():
+                continue
+            #print(app_name)
+            #print(self.metadata["apps"][app_name])
+            threaded=self.m_config.apps[app_name].threaded==1
+            fsm_list=self.m_config.apps[app_name].transitions[transition_name].fsm
+            cmd_list=self.m_config.apps[app_name].transitions[transition_name].commands
+            # Loop on specific transitions for this transition
+            for t in fsm_list:
+                list_of_threads=None
+                msg=self.build_message(app_name,t)
+                print(app_name,t,threaded,f" Message {msg}")
+                if not threaded:
+                    for a in self.config.apps:
+                        if a.name==app_name:
+                            s=json.loads(self.sendTransition(a,t,msg))
+                            rep[f"{app_name}_{a.instance}"]=s
+                    continue
+                else:
+                    list_of_threads=list()
+                for x in self.config.apps:
+                    if x.name== app_name:                     
+                        rep[f"{app_name}_{x.instance}"]={}
+                        thr = threading.Thread(target=pmrTransitionWorker, args=(self,x,t,rep[f"{app_name}_{x.instance}"],))
+                        thr.start()
+                        list_of_threads.append(thr)
+
+                logging.info(f'{t} Waiting for worker threads')
+                alive=True
+                while (alive):
+                    nalive=False
+                    for thr in list_of_threads:
+                        nalive=nalive or thr.is_alive()
+                        logging.debug("%s %d " % (thr.getName() ,thr.is_alive()))
+                        thr.join(1)
+                    alive=nalive
+            # Now process command list
+            for c in cmd_list:
+                msg={}
+                for x in self.config.apps:
+                    if x.name==app_name:                     
+                        s = json.loads(self.sendCommand(x,c,msg))
+                        rep[f"{app_name}_{x.instance}_{c}"]=s
+
+        self.daq_answer = json.dumps(rep)
+        self.store_state()
+
+    def build_message(self,app_name,transition_name):
+        """
+        Build a message with run number uniquely for evb_builder 
+        """
+        m={}
+        if (app_name == "evb_builder" and transition_name == "START"):
+            if (self.experiment == "UNKNOWN"):
+                self.experiment = os.getenv("DAQSETUP", "UNKNOWN")
+
+            jnrun = self.db.getRun(self.experiment, self.comment)
+            m['run'] = jnrun['run']
+        return m
+    def set_parameters(self):
+        rep={}
+        if (self.daq_params_file == "UNKNOWN"):
+                self.daq_params_file = os.getenv("DAQ_PARAMS_FILE", "UNKNOWN")
+        if (self.daq_params_set == "UNKNOWN:UNKNOWN"):
+                self.daq_params_set = os.getenv("DAQ_PARAMS_SET", "UNKNOWN:UNKNOWN")
+        if (self.daq_params_file == "UNKNOWN" or self.daq_params_set == "UNKNOWN:UNKNOWN"):
+            return rep
+        j_params=json.loads(open(self.daq_params_file).read())
+        pset=self.daq_params_set.split(":")
+        if (not pset[0] in j_params["setups"].keys()):
+            print(f"Missing experiment {pset[0]} in file {self.daq_params_file} ({j_params['setups'].keys()})")
+            return rep
+        if (not pset[1] in j_params["setups"][pset[0]].keys()):
+            print(f"Missing parameters set {pset[1]} in {pset[0]} experiment in the file {self.daq_params_file} ({j_params['setups'].keys()})")
+            return rep
+        p_apps=j_params["setups"][pset[0]][pset[1]]["apps"]
+        for x in p_apps:
+            if not x["name"] in self.session.apps.keys():
+                continue
+
+            for a in self.session.apps[x["name"]]:
+                    par={}
+                    par["params"]=x["params"]
+                    s = json.loads(a.sendCommand("SETPARAMS",par))
+                    rep[f"{x['name']}_{a.instance}"]=s
+        return rep
+        
 
 
 
