@@ -247,10 +247,12 @@ void fsmw::info(http_request message)
   rep["TRANSITIONS"] = transitionsList();
   rep["ALLOWED"] = allowList();
   rep["STATE"] = json::value::string(U(_state));
+  this->mqtt_publish("info",rep,true);
   message.reply(status_codes::OK, rep);
 }
 void fsmw::getparams(http_request message)
 {
+  this->mqtt_publish("params",_params,true);
   message.reply(status_codes::OK, _params);
 }
 void fsmw::setparams(http_request message)
@@ -266,7 +268,7 @@ void fsmw::setparams(http_request message)
         _params[iter->first] = iter->second;
       PM_INFO(_logFsm, "Parameters sets " << _params);
     }
-
+  this->mqtt_publish("params",_params,true);
   message.reply(status_codes::OK, _params);
 }
 

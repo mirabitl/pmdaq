@@ -36,7 +36,9 @@ class MQTTInterface:
         self.client.on_connect = self._on_connect
         self.client.on_disconnect = self._on_disconnect
         self.client.on_message = self._on_message
-
+        
+        #Configuration to update
+        self.app_config=None
     # -------------------------
     # MQTT CALLBACKS
     # -------------------------
@@ -57,6 +59,30 @@ class MQTTInterface:
         raw_payload = msg.payload.decode()
 
         payload = raw_payload
+
+        # Decode PMDAQ messages and update config
+        if self.app_config:        
+            v=msg.topic.split("/")
+            if (v[0]=="pmdaq" and len(v)==5):
+                with self._lock:
+                    [role,session,name,instance,mtype]=v
+                    the_app=next((d for d in self.app_config.apps if (d.get("name") == name) and  (d.get("instance") == instance) ), None)
+                    if the_app:
+                        o_payload=json.loads(raw_payload)
+                        if mtype=="info":
+                            the_app.info= o_payload
+                        if mtype=="params":
+                            the_app.params= o_payload
+                        if mtype=="state":
+                            the_app.state=o_payload["value"]
+                        if mtype=="status":
+                            the_app.status= o_payload
+            elif (v[0]=="pmdaq" and v[2]=="rc"):
+                with self._lock:
+                    [role,session,name,mtype]=v
+                    if mtype=="state":                        
+                        self.app_config.state=payload
+                        
         if self.use_json:
             try:
                 payload = json.loads(raw_payload)
@@ -97,7 +123,8 @@ class MQTTInterface:
     # -------------------------
     # API PUBLIQUE
     # -------------------------
-    def start(self):
+    def start(self,app_config):
+        self.app_config=app_config
         self._running = True
         self.client.connect(self.host, self.port, 60)
         self.client.loop_start()

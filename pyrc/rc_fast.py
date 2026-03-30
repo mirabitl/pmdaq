@@ -11,7 +11,8 @@ from tabulate import tabulate
 from termcolor import colored
 from typing import Dict,List, Optional,Any
 from pydantic import BaseModel
-
+from transitions import Machine, State
+import mqtt_interface
 def print_dict(d, mode="row", tablefmt="grid"):
     """
     Affiche un dictionnaire avec tabulate.
@@ -43,6 +44,10 @@ class App(BaseModel):
     name: str
     port: int
     params: Dict[str, Any]
+    info: Optional[Dict[str, Any]] = None  # Champ optionnel avec typage
+    status: Optional[Dict[str, Any]] = None  # Champ optionnel avec typage
+    state: Optional[str] = None  # Champ optionnel avec typage
+    model_config = {"extra": "allow"}
 
 class AppConfig(BaseModel):
     apps: List[App]
@@ -51,7 +56,8 @@ class AppConfig(BaseModel):
     type: str
     version: int
     mqtt_broker: Optional[str] = None
-
+    state: Optional[str] = None  # Champ optionnel avec typage
+    model_config = {"extra": "allow"}
 
 class m_Transition(BaseModel):
     fsm: List[str]
@@ -84,15 +90,9 @@ class rc_control(rc_interface.daqControl):
         self.md_name = "lyon_mdcc"
         ## MongoDB MongoJob instance
         self.db = mg.instance()
-        ## Current state
-        self.state = self.get_stored_state()
-        ## List of pmdaq url
-        self.pm_hosts=[]
-        j_sess=json.loads(open(config).read())
-        for x in j_sess["apps"]:
-            sh="http://%s:%d" % (x["host"],x["port"])
-            if (not sh in self.pm_hosts):
-                self.pm_hosts.append(sh)
+        # Configure MQTT
+        self.mqtt=None
+        self.broker = os.getenv("MQTT_BROKER", "localhost")
         ### Build the AppConfig
         self.config=None
         self.parse_config(config)
@@ -104,7 +104,29 @@ class rc_control(rc_interface.daqControl):
 
         self.daq_params_file="UNKNOWN"
         self.daq_params_set="UNKNOWN:UNKNOWN"
-        self.mqtt=None
+
+        
+       
+        # RC state machine
+        self.configure_state_machine()
+
+    def configure_state_machine(self):
+         ## DAQ Finite State Machine (transitions.Machine)
+        self.daqfsm = Machine(model=self, states=[
+                              'CREATED', 'INITIALISED', 'CONFIGURED', 'RUNNING', 'CONFIGURED'], initial='CREATED')
+        self.daqfsm.add_transition(
+            'initialise', 'CREATED', 'INITIALISED', after='daq_initialising', conditions='isConfigured')
+        self.daqfsm.add_transition('configure', [
+                                   'INITIALISED', 'CONFIGURED'], 'CONFIGURED', after='daq_configuring', conditions='isConfigured')
+        self.daqfsm.add_transition(
+            'start', 'CONFIGURED', 'RUNNING', after='daq_starting', conditions='isConfigured')
+        self.daqfsm.add_transition(
+            'stop', 'RUNNING', 'CONFIGURED', after='daq_stopping', conditions='isConfigured')
+        self.daqfsm.add_transition(
+            'destroy', 'CONFIGURED', 'CREATED', after='daq_destroying', conditions='isConfigured')
+
+
+
     # daq
     def parse_config(self,file_name,debug=False):
         # Charger le JSON
@@ -114,15 +136,16 @@ class rc_control(rc_interface.daqControl):
         # Valider et parser avec Pydantic
         self.config = AppConfig(**data)
         if self.config.mqtt_broker:
-        for x in self.config.apps:
-            x.params["mqtt_broker"]=self.config.mqtt_broker
+            for x in self.config.apps:
+                x.params["mqtt_broker"]=self.config.mqtt_broker
 
         if debug:
-            print(f"Session: {config.session} version: {config.version}")
-            for x in config.apps:
+            print(f"Session: {self.config.session} version: {self.config.version}")
+            for x in self.config.apps:
                 print(x.host,x.port,x.instance,x.name,x.params)
-            print(config.model_dump(mode='json'))
-        self.mqtt=mqtt_interface.MQTTInterface(root_topic=f"pmdaq/{self.config.session}/#")
+            print(self.config.model_dump(mode='json'))
+        self.mqtt=mqtt_interface.MQTTInterface(host=self.broker,root_topic=f"pmdaq/{self.config.session}/#")
+        self.mqtt.start(self.config)
 
     def sendRequest(self,app: App,name: str,params)->str:
         """
