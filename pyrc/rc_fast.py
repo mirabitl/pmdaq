@@ -56,7 +56,7 @@ class AppConfig(BaseModel):
     type: str
     version: int
     mqtt_broker: Optional[str] = None
-    state: Optional[str] = None  # Champ optionnel avec typage
+    state: Optional[str] = "UNKNOWN"  # Champ optionnel avec typage
     model_config = {"extra": "allow"}
 
 class m_Transition(BaseModel):
@@ -125,7 +125,8 @@ class rc_control(rc_interface.daqControl):
         self.daqfsm.add_transition(
             'destroy', 'CONFIGURED', 'CREATED', after='daq_destroying', conditions='isConfigured')
 
-
+        if self.config.state=="UNKNOWN":
+            self.to_CREATED()
 
     # daq
     def parse_config(self,file_name,debug=False):
