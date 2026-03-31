@@ -11,6 +11,7 @@ from tabulate import tabulate
 from termcolor import colored
 from typing import Dict,List, Optional,Any
 from pydantic import BaseModel
+import requests
 from transitions import Machine, State
 import mqtt_interface
 def print_dict(d, mode="row", tablefmt="grid"):
@@ -124,10 +125,28 @@ class rc_control(rc_interface.daqControl):
             'stop', 'RUNNING', 'CONFIGURED', after='daq_stopping', conditions='isConfigured')
         self.daqfsm.add_transition(
             'destroy', 'CONFIGURED', 'CREATED', after='daq_destroying', conditions='isConfigured')
+        
+        # Pour l'instant juste la gestion d'une prise en main a distance
+        
+        if self.config.state == "UNKNOWN":
+            # Creer la session et la publier sur MQTT
+            self.create_session()
+            
+        else:
+            self.daqfsm.set_state(self.config.state, model=self)
 
-        if self.config.state=="UNKNOWN":
-            self.to_CREATED()
-
+    def publish_state(self):
+        """! Publish the current state of the RC on MQTT
+        """
+        if self.mqtt:
+            self.mqtt.publish(f"pmdaq/{self.config.session}/rc/state", self.state,retain=True)
+    def create_session(self):
+        """! Create the session on MQTT with the session name and the state CREATED
+        """
+        self.daqfsm.set_state('CREATED', model=self)
+        for x in self.config.apps:
+            self.sendRequest(x,"REGISTER",x.params  if x.params!=None else None)
+        self.publish_state() 
     # daq
     def parse_config(self,file_name,debug=False):
         # Charger le JSON
@@ -158,10 +177,8 @@ class rc_control(rc_interface.daqControl):
         @param params: CGI additional parameters
         @return: url answer as text
         """
-        path="/".join([self.config.session,app.name,app.instance,name])
-        if (params!=None ):
-            myurl = "http://"+app.host+ ":%d" % (app.port)
-            
+        path="/".join([self.config.session,app.name,str(app.instance),name])
+        if (params!=None ):            
             lq={}
             for x,y in params.items():
                 if (type(y) is dict):
@@ -169,7 +186,7 @@ class rc_control(rc_interface.daqControl):
                     #print("STRING ",y)
                     lq[x]=y
             try:
-                r = requests.get(myurl+path, params=lq)
+                r = requests.get(f"http://{app.host}:{app.port}/{path}", params=lq)
             except requests.exceptions.RequestException as e:
                 print(e)
                 p_rep={}
@@ -178,17 +195,20 @@ class rc_control(rc_interface.daqControl):
                 return json.dumps(p_rep,sort_keys=True)
             return r.text
         else:
-            myurl = "http://"+host+ ":%d%s" % (port,path)
-            #print(myurl)
             try:
-                r = requests.get(myurl)
+                r = requests.get(f"http://{app.host}:{app.port}/{path}")
             except requests.exceptions.RequestException as e:
                 print(e)
                 p_rep={}
                 p_rep["STATE"]="DEAD"
                 p_rep["http_error"] = e.code
             return json.dumps(p_rep,sort_keys=True)
-        return r.text
+    def update_access_info(self,app: App):
+        """!
+        Update the access information of an app (state, info, params) by sending an INFO command to the plugin service
+        @param app The app to update
+        """
+        self.sendCommand(app,"INFO",None)
     def sendCommand(self, app: App, name: str, content)->str:
         """!
         Send a command to the plugin service
@@ -218,7 +238,7 @@ class rc_control(rc_interface.daqControl):
         if (not isValid):
             return '{"answer":"invalid transition","status":"FAILED"}'
 
-        rep=rc_request.executeCMD(self.host,self.port,"%s%s" % (self.path,name),content)
+        rep=self.sendRequest(app,name,content)
         if (type(rep) is bytes):
             rep=rep.decode("utf-8")
 

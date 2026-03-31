@@ -82,7 +82,8 @@ class MQTTInterface:
                     [role,session,name,mtype]=v
                     if mtype=="state":                        
                         self.app_config.state=payload
-                        
+        """ 
+        # Pour l'instant on ne gere que les messages PMDAQ pour mettre à jour la config, mais on pourrait aussi les publier dans le cache et la queue d'événements                
         if self.use_json:
             try:
                 payload = json.loads(raw_payload)
@@ -98,7 +99,7 @@ class MQTTInterface:
 
         # push événement
         self._queue.put((msg.topic, payload))
-
+        """
     # -------------------------
     # INTERNALS
     # -------------------------
