@@ -43,6 +43,10 @@ class App(BaseModel):
     port: int
     params: Dict[str, Any]
     info: Optional[Dict[str, Any]] = None  # Champ optionnel avec typage
+    commands:Optional[ List[str]]=None
+    allowed:Optional[ List[str]]=None
+    transitions:Optional[ List[str]]=None
+    
     status: Optional[Dict[str, Any]] = None  # Champ optionnel avec typage
     state: Optional[str] = None  # Champ optionnel avec typage
     model_config = {"extra": "allow"}
@@ -75,7 +79,7 @@ class AppConfig(BaseModel):
 
 class meta_Transition(BaseModel):
     fsm: List[str]
-    commands: List[str] = []
+    commands: List[Any] = []
 
 class meta_AppConfig(BaseModel):
     threaded: int
@@ -163,7 +167,17 @@ class rc_fast:
         """
         self.daqfsm.set_state('CREATED', model=self)
         for x in self.config.apps:
-            self.sendRequest(x,"REGISTER",x.params  if x.params!=None else None)
+            print(x)
+            par={}
+            par["session"]=self.config.session
+            par["name"]=x.name
+            par["instance"]=x.instance
+            par["params"]=""
+            if (x.params!=None):
+                par["params"]=x.params
+            executeCMD(x.host,x.port,"/REGISTER",par)
+            r=self.sendRequest(x,"INFO")
+            print(r)
         self.publish_state() 
     # daq
     def parse_config(self,file_name,debug=False):
@@ -176,7 +190,7 @@ class rc_fast:
         if self.config.mqtt_broker:
             for x in self.config.apps:
                 x.params["mqtt_broker"]=self.config.mqtt_broker
-
+            self.broker=self.config.mqtt_broker
         if debug:
             print(f"Session: {self.config.session} version: {self.config.version}")
             for x in self.config.apps:
@@ -185,7 +199,7 @@ class rc_fast:
         self.mqtt=mqtt_interface.MQTTInterface(host=self.broker,root_topic=f"pmdaq/{self.config.session}/#")
         self.mqtt.start(self.config)
 
-    def sendRequest(self,app: App,name: str,params)->str:
+    def sendRequest(self,app: App,name: str,params=None)->str:
         """
         Access to a command or a transition of a pmdaq service
         
@@ -205,6 +219,9 @@ class rc_fast:
                     lq[x]=y
             try:
                 r = requests.get(f"http://{app.host}:{app.port}/{path}", params=lq)
+                #print(f"http://{app.host}:{app.port}/{path} with {lq}")
+                #print(r.text)
+                return r.text
             except requests.exceptions.RequestException as e:
                 print(e)
                 p_rep={}
@@ -215,6 +232,10 @@ class rc_fast:
         else:
             try:
                 r = requests.get(f"http://{app.host}:{app.port}/{path}")
+                #print(f"http://{app.host}:{app.port}/{path} with no params")
+                #print("In sendRequest ",r.text)
+
+                return r.text
             except requests.exceptions.RequestException as e:
                 print(e)
                 p_rep={}
@@ -226,7 +247,7 @@ class rc_fast:
         Update the access information of an app (state, info, params) by sending an INFO command to the plugin service
         @param app The app to update
         """
-        self.sendCommand(app,"INFO",None)
+        self.sendRequest(app,"INFO",None)
     def sendCommand(self, app: App, name: str, content)->str:
         """!
         Send a command to the plugin service
@@ -235,6 +256,7 @@ class rc_fast:
         @return The string answer 
         """
         self.update_access_info(app)
+        #self.sendRequest(app,"INFO",None)
         isValid = name in app.commands
         if (not isValid):
             return '{"answer":"invalid command ","status":"FAILED"}'
@@ -275,7 +297,7 @@ class rc_fast:
         app_list=self.meta_config.sequences[transition_name]
         for app_name in app_list:
             #  The plugin is in the daq
-            if not any(d.get("name") == app_name for d in self.config.apps):
+            if not any(d.name == app_name for d in self.config.apps):
                 continue
             # the pllugin is defined in meta data
             if not app_name in self.meta_config.apps.keys():
@@ -350,7 +372,7 @@ class rc_fast:
             return rep
         p_apps=j_params["setups"][pset[0]][pset[1]]["apps"]
         for x in p_apps:
-            if not any(d.get("name") == x["name"] for d in self.config.apps):
+            if not any(d.name == x["name"] for d in self.config.apps):
                 continue
 
             for a in self.config.apps:
@@ -426,3 +448,44 @@ def executeRequest(url):
         return json.dumps(p_rep,sort_keys=True)
     return r.text
     
+def executeCMD(host,port,path,params):
+    """
+        Access to a command or a transition of a pmdaq service
+        
+        @param host: Host name
+        @param port: Application port
+        @param path: The complete PATH of the service session/pluggin/instance/command
+        @param params: CGI additional parameters
+        @return: url answer as text
+    """
+
+    if (params!=None ):
+        myurl = "http://"+host+ ":%d" % (port)
+
+        lq={}
+        for x,y in params.items():
+            if (type(y) is dict):
+                y=json.dumps(y).replace(" ","").encode("utf8")
+                #print("STRING ",y)
+            lq[x]=y
+        try:
+            r = requests.get(myurl+path, params=lq)
+        except requests.exceptions.RequestException as e:
+            print(e)
+            p_rep={}
+            p_rep["STATE"]="DEAD"
+            p_rep["http_error"] = e.code
+            return json.dumps(p_rep,sort_keys=True)
+        return r.text
+    else:
+        myurl = "http://"+host+ ":%d%s" % (port,path)
+        #print(myurl)
+        try:
+            r = requests.get(myurl)
+        except requests.exceptions.RequestException as e:
+            print(e)
+            p_rep={}
+            p_rep["STATE"]="DEAD"
+            p_rep["http_error"] = e.code
+            return json.dumps(p_rep,sort_keys=True)
+        return r.text

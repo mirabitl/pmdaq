@@ -390,7 +390,9 @@ void fsmw::mqtt_publish(std::string topic,const json::value &body_data,bool reta
 {
   if (_use_mqtt )
     {
-      std::stringstream stag("pmdaq/");stag<<path().substr(1,path().size()-1)<<topic;
+      std::stringstream stag("");
+      stag<<"pmdaq/"<<session()<<"/"<<name()<<"/"<<instance()<<"/"<<topic;
+    std:cout<<stag.str()<<std::endl;
       utils::mqtt_publish(params()["mqtt_broker"].as_string(),stag.str(),body_data,retain);
     }
 }

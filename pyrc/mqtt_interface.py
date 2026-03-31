@@ -59,18 +59,33 @@ class MQTTInterface:
         raw_payload = msg.payload.decode()
 
         payload = raw_payload
-
+        #print("MQTT->",msg.topic,msg.payload)
         # Decode PMDAQ messages and update config
         if self.app_config:        
             v=msg.topic.split("/")
             if (v[0]=="pmdaq" and len(v)==5):
                 with self._lock:
                     [role,session,name,instance,mtype]=v
-                    the_app=next((d for d in self.app_config.apps if (d.get("name") == name) and  (d.get("instance") == instance) ), None)
+                    print("MQTT pmdaq-> ",role,session,name,instance,mtype)
+                    the_app=next((d for d in self.app_config.apps if (d.name == name) and  (d.instance == int(instance)) ), None)
                     if the_app:
                         o_payload=json.loads(raw_payload)
+                        #print("MQTT pmdaq-> ",o_payload)
                         if mtype=="info":
                             the_app.info= o_payload
+                            # creer les listes commands,allowed and transitions
+                            the_app.commands=[]
+                            the_app.allowed=[]
+                            the_app.transitions=[]
+                            for x in the_app.info['COMMANDS']:
+                                v=x.split("/")
+                                the_app.commands.append(v[len(v)-1])
+                            for x in the_app.info['TRANSITIONS']:
+                                v=x.split("/")
+                                the_app.transitions.append(v[len(v)-1])
+                            for x in the_app.info['ALLOWED']:
+                                v=x.split("/")
+                                the_app.allowed.append(v[len(v)-1])
                         if mtype=="params":
                             the_app.params= o_payload
                         if mtype=="state":
