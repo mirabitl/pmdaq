@@ -134,10 +134,29 @@ class rc_fast:
         # Wait MQTT status 
         time.sleep(1)
         # To do xcheck services
-        # self.check_services() it should set self.config.state to UNKNOWN if seervices are missing and trigger a restart
+        running_daq=self.check_services()
+        #it should set self.config.state to UNKNOWN if seervices are missing and trigger a restart
+        if not running_daq:
+            self.restart()
+            print("Wait 10 s ... restarting pmdaq ")
+            time.sleep(10)
+            self.config.state="UNKNOWN"
         # Configure state machine
         self.configure_state_machine()
 
+    def check_services(self):
+        for x in self.config.apps:
+            s_rep=executeRequest(f"http://{x.host}:{x.port}/SERVICES")
+            if s_rep=='null':
+                return False
+            o_rep=json.loads(s_rep)
+            if not type(o_rep) is list:
+                return False
+            s_info=f"/{self.config.session}/{x.name}/{x.instance}/INFO"
+            if not s_info in o_rep:
+                return False
+        return True
+    
     def configure_state_machine(self):
          ## DAQ Finite State Machine (transitions.Machine)
         self.daqfsm = Machine(model=self, states=[
