@@ -131,6 +131,11 @@ class rc_fast:
         
        
         # RC state machine
+        # Wait MQTT status 
+        time.sleep(1)
+        # To do xcheck services
+        # self.check_services() it should set self.config.state to UNKNOWN if seervices are missing and trigger a restart
+        # Configure state machine
         self.configure_state_machine()
 
     def configure_state_machine(self):
@@ -216,7 +221,7 @@ class rc_fast:
                 if (type(y) is dict):
                     y=json.dumps(y).replace(" ","").encode("utf8")
                     #print("STRING ",y)
-                    lq[x]=y
+                lq[x]=y
             try:
                 r = requests.get(f"http://{app.host}:{app.port}/{path}", params=lq)
                 #print(f"http://{app.host}:{app.port}/{path} with {lq}")
