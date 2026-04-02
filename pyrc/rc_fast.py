@@ -126,7 +126,7 @@ class rc_fast:
         self.daq_params_set = os.getenv("DAQ_PARAMS_SET", "UNKNOWN:UNKNOWN")
         if (self.daq_params_file == "UNKNOWN" or self.daq_params_set == "UNKNOWN:UNKNOWN"):
             print("Warning: DAQ_PARAMS_FILE or DAQ_PARAMS_SET environment variable not set, set_parameters will not work")
-            exit(1)
+            #exit(1)
 
         
        
@@ -144,6 +144,9 @@ class rc_fast:
         # Configure state machine
         self.configure_state_machine()
 
+    def set_parameters_access(self,p_file: str,p_set: str):
+        self.daq_params_file=p_file
+        self.daq_params_set=p_set
     def check_services(self):
         for x in self.config.apps:
             s_rep=executeRequest(f"http://{x.host}:{x.port}/SERVICES")
