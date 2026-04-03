@@ -67,7 +67,53 @@ class MongoJob:
         s["time"]=time.time()
         s["comment"]=comment
         s["version"]=version
+        # Find last version
+        res=self.db.configurations.find({'name':s['name']})
+        last=0
+        for x in res:
+            if (last<x["version"]):
+                last=x["version"]
+        if (last==0):
+            print(f" No configuration {s['name']} found, it will be created")
+        else:
+            print(f"New version created {s['name']} {last+1} ")
+
+        s["version"]=last+1
+        s["content"]["name"]=s["name"]
+        s["content"]["version"]=s["version"]
         resconf=self.db.configurations.insert_one(s)
+        print(resconf)
+
+    def uploadParameters(self,name,fname,comment,version=1):
+        """!
+        Parameters configuration upload
+
+        @param name: Name of the configuration
+        @param fname: File name to upload
+        @param comment: A comment on the configuration
+        @param version: The version of the configuration
+        """
+        s={}
+        s["content"]=json.loads(open(fname).read())
+        s["name"]=name
+        s["time"]=time.time()
+        s["comment"]=comment
+        s["version"]=version
+        # Find last version
+        res=self.db.parameters_set.find({'name':s['name']})
+        last=0
+        for x in res:
+            if (last<x["version"]):
+                last=x["version"]
+        if (last==0):
+            print(f" No configuration {s['name']} found, it will be created")
+        else:
+            print(f"New version created {s['name']} {last+1} ")
+
+        s["version"]=last+1
+        s["content"]["name"]=s["name"]
+        s["content"]["version"]=s["version"]
+        resconf=self.db.parameters_set.insert_one(s)
         print(resconf)
 
     def uploadCalibration(self,setup,run,ctype,results,comment="not set"):
@@ -130,6 +176,19 @@ class MongoJob:
                 else:
                     print(time.ctime(x["time"]),x["version"],x["name"],x["comment"])
 
+                cl.append((x["name"],x['version'],x['comment']))
+        return cl
+    
+    def parameters(self):
+        """!
+        List all the parameters stored
+        """
+        cl=[]
+        res=self.db.parameters_set.find({})
+        for x in res:
+            #print(x)
+            if ("comment" in x):
+                print(time.ctime(x["time"]),x["version"],x["name"],x["comment"])
                 cl.append((x["name"],x['version'],x['comment']))
         return cl
     def updateRun(self,run,loc,tag,vtag):
@@ -323,6 +382,35 @@ class MongoJob:
             f.write(json.dumps(slc, indent=2, sort_keys=True))
             f.close()
             return slc
+    
+    def downloadParameters(self,cname,version,toFileOnly=False):
+        """!
+        Download a parameters set to /dev/shm/mgjob/ directory
+
+        @param cname: Parameters set name
+        @param version: Parameters set version
+        @param toFileOnly:if True and /dev/shm/mgjob/cname_version.json exists, then it exits
+        """
+        os.system("mkdir -p /dev/shm/mgparams")
+        fname="/dev/shm/mgparams/%s_%s.json" % (cname,version)
+        if os.path.isfile(fname) and toFileOnly:
+            #print('%s already download, Exiting' % fname)
+            return
+        res=self.db.parameters_set.find({'name':cname,'version':version})
+        for x in res:
+            print(x)
+            print(x["name"],x["version"],x["comment"])
+            #var=raw_input()
+            slc=x["content"]
+            if ("pns" in x):
+                slc["pns"]=x["pns"]
+            os.system("mkdir -p /dev/shm/mgparams")
+            fname="/dev/shm/mgparams/%s_%s.json" % (cname,version)
+            f=open(fname,"w+")
+            f.write(json.dumps(slc, indent=2, sort_keys=True))
+            f.close()
+            return slc
+        
     def downloadCalibration(self,cname,version,toFileOnly=False):
         """!
         Download a calibration to /dev/shm/mgjob/ directory
