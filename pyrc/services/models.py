@@ -24,7 +24,7 @@ class Session:
     
     def configure(self, params: dict):
         self.config.update(params)
-        self._wdj=mgj.instance()
+        self._wdj=mg.instance()
         try:
             self._wdj.downloadConfig(self.name,self.version,True)
         except:

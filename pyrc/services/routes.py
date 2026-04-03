@@ -54,10 +54,10 @@ def execute_command(name: str, version: str, req: CommandRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/{name}/versions/{version}/transitions")
-def execute_command(name: str, version: str, req: RegisterRequest):
+def execute_transition(name: str, version: str, req: RegisterRequest):
     try:
         app = service.get_app(name, version)
-        result = app.transition(req.cmd)
+        result = app.transition(req.name)
         return {"result": result}
     except KeyError:
         raise HTTPException(status_code=404, detail="App not found")
