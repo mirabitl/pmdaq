@@ -1,0 +1,37 @@
+from typing import Dict
+from models import Session
+
+class AppService:
+    def __init__(self):
+        self.apps: Dict[str, Dict[str, Session]] = {}
+
+    def create_app(self, name: str, version: str):
+        if name not in self.apps:
+            self.apps[name] = {}
+
+        if version in self.apps[name]:
+            raise ValueError("App version already exists")
+
+        self.apps[name][version] = Session(name, version)
+
+    def get_app(self, name: str, version: str) -> Session:
+        try:
+            return self.apps[name][version]
+        except KeyError:
+            raise KeyError("App not found")
+
+    def list_apps(self):
+        return [
+            {"name": name, "versions": list(versions.keys())}
+            for name, versions in self.apps.items()
+        ]
+
+    def delete_app(self, name: str, version: str):
+        if name not in self.apps or version not in self.apps[name]:
+            raise KeyError("App not found")
+
+        del self.apps[name][version]
+
+        if not self.apps[name]:  # nettoyage
+            del self.apps[name]
+

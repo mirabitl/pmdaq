@@ -62,7 +62,21 @@ class App(BaseModel):
             print_dict(self.status)
         if self.state:
             print(f"State: {self.state}")
-
+    
+    def to_dict(self):
+        return {
+            "host": self.host,
+            "instance": self.instance,
+            "name": self.name,
+            "port": self.port,
+            "params": self.params,
+            "info": self.info,
+            "commands": self.commands,
+            "allowed": self.allowed,
+            "transitions": self.transitions,
+            "status": self.status,
+            "state": self.state,
+        }
 class AppConfig(BaseModel):
     apps: List[App]
     pns: str
@@ -77,6 +91,19 @@ class AppConfig(BaseModel):
         for x in self.apps:
             x.print()
 
+    def to_dict(self):
+        return {
+            "apps": [app.to_dict() for app in self.apps],
+            "pns": self.pns,
+            "session": self.session,
+            "type": self.type,
+            "version": self.version,
+            "mqtt_broker": self.mqtt_broker,
+            "state": self.state,
+        }
+    def to_json(self):
+        return json.dumps(self.to_dict(), indent=4)
+    
 class meta_Transition(BaseModel):
     fsm: List[str]
     commands: List[Any] = []
@@ -147,6 +174,7 @@ class rc_fast:
     def set_parameters_access(self,p_file: str,p_set: str):
         self.daq_params_file=p_file
         self.daq_params_set=p_set
+
     def check_services(self):
         for x in self.config.apps:
             s_rep=executeRequest(f"http://{x.host}:{x.port}/SERVICES")
@@ -275,6 +303,38 @@ class rc_fast:
         @param app The app to update
         """
         self.sendRequest(app,"INFO",None)
+    
+    def namedCommand(self,app_name:str,cmd_name:str,params:Dict):
+        """!
+        Send a command to an app by its name
+        @param app_name The name of the app
+        @param cmd_name The name of the command
+        @param params The parameters of the command
+        @return The string answer 
+        """
+        for x in self.config.apps:
+            if x.name==app_name:
+                return self.sendCommand(x,cmd_name,params)
+        return '{"answer":"invalid app name","status":"FAILED"}'
+    
+    def resume(self):
+        """!
+        Resume the daq by sending a RESUME command to all trigger controllers (lyon_mdcc, lyon_mbmdcc, lyon_sdcc, lyon_ipdc)
+        """
+        for x in self.config.apps:
+            if x.name in ["lyon_mdcc","lyon_mbmdcc","lyon_sdcc","lyon_ipdc"]:
+                self.sendCommand(x,"RESUME",None)
+                break
+    
+    def pause(self):
+        """!
+        Pause the daq by sending a PAUSE command to all trigger controllers (lyon_mdcc, lyon_mbmdcc, lyon_sdcc, lyon_ipdc)
+        """
+        for x in self.config.apps:
+            if x.name in ["lyon_mdcc","lyon_mbmdcc","lyon_sdcc","lyon_ipdc"]:
+                self.sendCommand(x,"PAUSE",None)
+                break
+
     def sendCommand(self, app: App, name: str, content)->str:
         """!
         Send a command to the plugin service
