@@ -251,8 +251,9 @@ class rc_fast:
             for x in self.config.apps:
                 print(x.host,x.port,x.instance,x.name,x.params)
             print(self.config.model_dump(mode='json'))
-        self.mqtt=mqtt_interface.MQTTInterface(host=self.broker,root_topic=f"pmdaq/{self.config.session}/#")
-        self.mqtt.start(self.config)
+        if self.mqtt==None:
+            self.mqtt=mqtt_interface.MQTTInterface(host=self.broker,root_topic=f"pmdaq/{self.config.session}/#")
+            self.mqtt.start(self.config)
 
     def sendRequest(self,app: App,name: str,params=None)->str:
         """
@@ -451,6 +452,7 @@ class rc_fast:
         
         j_params=json.loads(open(self.daq_params_file).read())
         pset=self.daq_params_set.split(":")
+        self.experiment=pset[0]
         if (not pset[0] in j_params["setups"].keys()):
             print(f"Missing experiment {pset[0]} in file {self.daq_params_file} ({j_params['setups'].keys()})")
             return rep
@@ -511,13 +513,16 @@ class rc_fast:
         @param url If not None send EXIT only to this url
         @warning It is a real restarting of the whole DAQ
         """
+        # restart apps
         exit_done=[]
         for x in self.config.apps:
             url=f"http://{x.host}:{x.port}/EXIT"
             if not url in exit_done:
                 executeRequest(url)
             exit_done.append(url)
-            
+        # Purge mqtt status
+        #self.mqtt.purge(self.config.session)
+
 def executeRequest(url):
     """
     Access to an url

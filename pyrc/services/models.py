@@ -21,7 +21,25 @@ class Session:
             return {"status": "restarted", "status":"remove and reconfigure needed"}
         else:
             return {"status": "missing", "status":f"daq {self.name} v{self.version} is not configured"}
-    
+
+    def parse_settings(self,params: dict):
+        params_file=params.get("params_file")
+        params_set=params.get("params_set")
+        params_dbname=params.get("params_dbname")
+        params_dbversion=params.get("params_dbversion")
+        file_access= params_file!=None
+        db_access =params_dbname!=None and params_dbversion!=None
+        if not (file_access or db_access) or not params_set:
+            raise ValueError("Missing 'params_file' or 'params_name' or 'params_version' or 'params_set' in parameters")
+
+            
+        if db_access:
+            self._wdj.downloadParameters(params_dbname,params_dbversion,True)
+            params_file=f"/dev/shm/mgparams/{params_dbname}_{params_dbversion}.json"
+
+        self.daq.set_parameters_access(params_file, params_set)
+        return f"parameter '{params_file}' access set to '{params_set}'"
+
     def configure(self, params: dict):
         self.config.update(params)
         self._wdj=mg.instance()
@@ -31,13 +49,19 @@ class Session:
             return {"status":"failed"}
         self.conf_file=f"/dev/shm/mgjob/{self.name}_{self.version}.json"
         self.daq=daq.rc_fast(self.conf_file)
-        return {"status": "configured", "file":self.conf_file}
-
+        # parameters
+        have_parameters=params.get("params_dbname") or params.get("params_file")
+        if not have_parameters:
+            return {"status": "configured", "file":self.conf_file}
+        else:
+            rc=self.parse_settings(params)
+            return {"status": "configured", "file":self.conf_file,"params":rc}
+        
     def execute(self, command_type: str, params: dict):
         # dispatcher simple
         if not self.daq:
             raise ValueError(f"daq {self.name} v{self.version} is not configured for transition")
-        valid=["pause","resume","set_parameter_access","status","app_command"]
+        valid=["pause","resume","set_parameter_access","set_parameter_db","status","app_command"]
         if not command_type in valid:
             raise ValueError(f"Invalid command '{command_type}' for state '{self.daq.state}' (valid: {valid})")
 
@@ -53,12 +77,9 @@ class Session:
             self.daq.resume()
             return {"status": "resumed"}
         if command_type == "set_parameter_access":
-            params_file=params.get("params_file")
-            params_set=params.get("params_set")
-            if not params_file or not params_set:
-                raise ValueError("Missing 'params_file' or 'params_set' in parameters")
-            self.daq.set_parameter_access(params_file, params_set)
-            return {"status":f"parameter '{params_file}' access set to '{params_set}'"}
+            rc=self.parse_settings(params)
+            return {"status":rc}
+
         if command_type == "app_command":
             app_name=params.get("app_name")
             cmd_name=params.get("cmd_name")

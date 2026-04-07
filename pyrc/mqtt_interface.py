@@ -36,7 +36,8 @@ class MQTTInterface:
         self.client.on_connect = self._on_connect
         self.client.on_disconnect = self._on_disconnect
         self.client.on_message = self._on_message
-        
+
+        self.topics=set()
         #Configuration to update
         self.app_config=None
     # -------------------------
@@ -56,6 +57,8 @@ class MQTTInterface:
             self._reconnect_loop()
 
     def _on_message(self, client, userdata, msg):
+        if not msg.topic in self.topics:
+            self.topics.add(msg.topic)
         raw_payload = msg.payload.decode()
 
         payload = raw_payload
@@ -182,3 +185,16 @@ class MQTTInterface:
             time.sleep(0.05)
 
         return None
+    
+    def purge(self,session):
+        self.stop()
+        for topic in self.topics:
+            print(f"Deleting retained: {topic}")
+            self.client.publish(topic, payload="", retain=True)
+        time.sleep(5)  # laisser le temps de recevoir les retained
+
+        for topic in self.topics:
+            print(f"Deleting retained: {topic}")
+            self.client.publish(topic, payload="", retain=False)
+
+

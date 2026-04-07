@@ -18,10 +18,18 @@ parser = argparse.ArgumentParser()
 # configure all the actions
 grp_action = parser.add_mutually_exclusive_group()
 grp_action.add_argument('--upload-config',action='store_true',help=' Upload new config with --name=NAME --file=FILE and optional --comment=xxx and --version=num')
+
+grp_action.add_argument('--upload-pset',action='store_true',help=' Upload new parameters set with --name=NAME --file=FILE and optional --comment=xxx and --version=num')
+
 grp_action.add_argument('--configurations', action='store_true',help='List all the available configurations')
+
+grp_action.add_argument('--pset', action='store_true',help='List all the available parameters set')
 
 grp_action.add_argument('--download', action='store_true',
                         help='download the configuration specified in --name=config name --version=version')
+
+grp_action.add_argument('--download-pset', action='store_true',
+                        help='download the parameters set specified in --name=config name --version=version')
 
 grp_action.add_argument('--calib-upload',action='store_true',help=' Upload new calibration with --setup=NAME --number=run --type=type  and optional --comment=xxx')
 grp_action.add_argument('--calib-list', action='store_true',help='List all the available calibrationtions')
@@ -96,6 +104,25 @@ if (results.upload_config):
     _wdd.uploadConfig(results.name,results.file,comment,version)
     exit(0)
 
+if (results.upload_pset):
+    r_cmd = 'upload_pset'
+    version=1
+    comment="No comment given"
+    if (results.name == None):
+        print('Please specify the name --name=name')
+        exit(0)
+    if (results.file == None):
+        print('Please specify the file --file=ver')
+        exit(0)
+    if (results.version != None):
+       version=results.version
+       #print(version)
+    if (results.comment != None):
+       comment=results.comment
+       #print(comment)
+    _wdd.uploadParameters(results.name,results.file,comment,version)
+    exit(0)
+
 
 
 
@@ -112,9 +139,27 @@ if (results.download):
         print(" Specify  --name for configuration ")
         exit(0)
 
+if (results.download_pset):
+    r_cmd = 'download-pset'
+    
+    if (results.name != None):
+        if (results.version == None):
+            print('Please specify the version --version=ver')
+            exit(0)
+        _wdd.downloadParameters(results.name,results.version,True)
+        exit(0)
+    else:
+        print(" Specify  --name for configuration ")
+        exit(0)
+
 if (results.configurations):
     r_cmd = 'configurations'
     _wdd.configurations()
+    exit(0)
+
+if (results.pset):
+    r_cmd = 'pset'
+    _wdd.parameters()
     exit(0)
 
 if (results.runs):
