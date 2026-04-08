@@ -1,0 +1,40 @@
+FROM python:3.11-slim
+
+# -----------------------------
+# Env
+# -----------------------------
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# PYTHONPATH (important)
+ENV PYTHONPATH="/usr/local/pmdaq/share:/opt/pmdaq/pyrc:/opt/pmdaq/pyrc/services"
+
+# -----------------------------
+# Dépendances système
+# -----------------------------
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# -----------------------------
+# Working dir
+# -----------------------------
+WORKDIR /opt/pmdaq/pyrc/services
+
+# -----------------------------
+# Dépendances Python
+# -----------------------------
+RUN pip install --no-cache-dir \
+    ttkbootstrap matplotlib numpy zstd zstandard pymongo \
+    pyvisa pyvisa_py requests termcolor transitions \
+    fastapi uvicorn tabulate paho-mqtt
+
+# -----------------------------
+# Port
+# -----------------------------
+EXPOSE 8000
+
+# -----------------------------
+# Run
+# -----------------------------
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
