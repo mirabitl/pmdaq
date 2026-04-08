@@ -198,6 +198,9 @@ class pico_monitor:
         self.cname="monitor-%d" % id
         #self.client= paho.Client(self.cname)
         self.client = paho.Client(client_id=self.cname)#, callback_api_version=1)
+        
+        
+
         #self.client.on_connect=self.on_connect
         self.client.on_connect = lambda client, userdata, flags, reasonCode, properties=None: self.on_connect(client, userdata, flags, reasonCode, properties)
 

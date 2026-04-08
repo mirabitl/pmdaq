@@ -69,7 +69,8 @@ class Session:
         if command_type == "status":
             self.daq.update_status()
             time.sleep(0.1)  # simuler un délai de traitement
-            return {f"status:{self.daq.config.to_json()}"}
+            #return {f"status:{self.daq.config.to_dict()}"}
+            return self.daq.config.to_dict()
         if command_type == "pause":
             self.daq.pause()
             return {"status": "paused"}

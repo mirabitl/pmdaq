@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   mongodb:
     image : mongo:6-jammy
@@ -65,3 +64,29 @@ services:
     volumes:
       - /usr/local/pmdaq/htdocs:/usr/local/apache2/htdocs/
     restart: always
+  runctrl:
+    build: /opt/pmdaq/pyrc/services
+    container_name: pmdaq-runctrl
+
+    environment:
+      - MQTT_BROKER=mosquitto
+      - MGDBLOGIN=acqilc/RPC_2008@mongodb:27017@LYONROC
+      - PYTHONPATH=/usr/local/pmdaq/share:/opt/pmdaq/pyrc:/opt/pmdaq/pyrc/services
+
+    volumes:
+      - /usr/local/pmdaq/share:/usr/local/pmdaq/share
+      - /usr/local/pmdaq/etc:/usr/local/pmdaq/etc	
+      - /opt/pmdaq/pyrc:/opt/pmdaq/pyrc
+
+    working_dir: /opt/pmdaq/pyrc/services
+
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+    ports:
+      - "8000:8000"
+
+    depends_on:
+      - mongodb
+      - mosquitto
+
+    restart: unless-stopped

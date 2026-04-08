@@ -145,6 +145,7 @@ class MQTTInterface:
     def start(self,app_config):
         self.app_config=app_config
         self._running = True
+        print(f"[MQTT] connecting {self.host} port {self.port}")
         self.client.connect(self.host, self.port, 60)
         self.client.loop_start()
 

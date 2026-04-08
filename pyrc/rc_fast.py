@@ -138,7 +138,7 @@ class rc_fast:
 
         # Configure MQTT
         self.mqtt=None
-        self.broker = os.getenv("MQTT_BROKER", "localhost")
+        self.broker = os.getenv("MQTT_BROKER", "notset")
         ### Build the AppConfig
         self.config=None
         self.parse_config(config)
@@ -245,6 +245,7 @@ class rc_fast:
         if self.config.mqtt_broker:
             for x in self.config.apps:
                 x.params["mqtt_broker"]=self.config.mqtt_broker
+        if self.broker=="notset":
             self.broker=self.config.mqtt_broker
         if debug:
             print(f"Session: {self.config.session} version: {self.config.version}")
@@ -252,6 +253,7 @@ class rc_fast:
                 print(x.host,x.port,x.instance,x.name,x.params)
             print(self.config.model_dump(mode='json'))
         if self.mqtt==None:
+            logging.warn("The broker is {self.broker}")
             self.mqtt=mqtt_interface.MQTTInterface(host=self.broker,root_topic=f"pmdaq/{self.config.session}/#")
             self.mqtt.start(self.config)
 
