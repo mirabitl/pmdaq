@@ -1,0 +1,207 @@
+#!/usr/bin/env python3
+
+import argparse
+import requests
+import json
+import sys
+from tabulate import tabulate
+from termcolor import colored
+
+BASE_URL = "http://lyoilcdaq01:8000"
+
+
+def print_dict(d, mode="row", tablefmt="grid"):
+    """
+    Affiche un dictionnaire avec tabulate.
+
+    mode="row"    → affiche le dict comme une seule ligne (colonnes = clés)
+    mode="kv"     → affiche le dict en deux colonnes clé/valeur
+    """
+    if mode == "row":
+        print(tabulate([d], headers="keys", tablefmt=tablefmt))
+    elif mode == "kv":
+        print(tabulate(d.items(), headers=["Clé", "Valeur"], tablefmt=tablefmt))
+    else:
+        raise ValueError("mode doit être 'row' ou 'kv'")
+
+
+def call_api(method, url, payload=None):
+    #print(f">>> {method} {url}")
+    try:
+        if method == "GET":
+            r = requests.get(url)
+        elif method == "POST":
+            r = requests.post(url, json=payload)
+        elif method == "DELETE":
+            r = requests.delete(url)
+        else:
+            raise ValueError("Unsupported method")
+
+        #print(f"Status: {r.status_code}")
+
+        if r.text:
+            try:
+                #print(json.dumps(r.json(), indent=2))
+                return r.json()
+            except Exception:
+                print(r.text)
+
+    except requests.exceptions.RequestException as e:
+        print(f"ERROR: {e}")
+        sys.exit(1)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="CMS API client")
+
+    parser.add_argument("-a", "--action", required=True,
+                        choices=["create", "restart", "configure", "transition", "command","triggerstatus","builderstatus","pmrstatus"],
+                        help="Action to perform")
+
+    parser.add_argument("-n", "--name", help="App name")
+    parser.add_argument("-v", "--version", help="App version")
+    parser.add_argument("-t", "--transition", help="Transition name")
+    parser.add_argument("-c", "--command", help="Command name")
+    parser.add_argument("-p", "--params", default="{}", help="JSON params")
+    parser.add_argument('--trigger-status', action='store_true',default=False,
+                        help=' display trigger board status')
+    parser.add_argument('--builder-status', action='store_true',default=False,
+                        help=' display trigger board status')
+    parser.add_argument('--pmr-status', action='store_true',default=False,
+                        help=' display trigger board status')
+
+    args = parser.parse_args()
+
+    try:
+        params = json.loads(args.params)
+    except json.JSONDecodeError:
+        print("Invalid JSON for params")
+        sys.exit(1)
+
+    # -----------------------------
+    # Actions
+    # -----------------------------
+
+    if args.action == "create":
+        url = f"{BASE_URL}/apps/"
+        payload = {"name": args.name, "version": args.version}
+        js=call_api("POST", url, payload)
+        try:
+            print(json.dumps(js,indent=2))
+        except:
+            print(js)
+
+    elif args.action == "delete":
+        url = f"{BASE_URL}/apps/{args.name}/versions/{args.version}"
+        payload = {}
+        js=call_api("DELETE", url, payload)
+        try:
+            print(json.dumps(js,indent=2))
+        except:
+            print(js)
+
+    elif args.action == "restart":
+        url = f"{BASE_URL}/apps/{args.name}/versions/{args.version}/restart"
+        payload = {"params": params}
+        js=call_api("POST", url, payload)
+        try:
+            print(json.dumps(js,indent=2))
+        except:
+            print(js)
+
+    elif args.action == "configure":
+        url = f"{BASE_URL}/apps/{args.name}/versions/{args.version}/configure"
+        payload = {"params": params}
+        js=call_api("POST", url, payload)
+        try:
+            print(json.dumps(js,indent=2))
+        except:
+            print(js)
+
+    elif args.action == "transition":
+        if not args.transition:
+            print("Missing --transition")
+            sys.exit(1)
+
+        url = f"{BASE_URL}/apps/{args.name}/versions/{args.version}/transitions"
+        payload = {"name": args.transition}
+        js=call_api("POST", url, payload)
+        try:
+            print(json.dumps(js,indent=2))
+        except:
+            print(js)
+
+    elif args.action == "command":
+        if not args.command:
+            print("Missing --command")
+            sys.exit(1)
+
+        url = f"{BASE_URL}/apps/{args.name}/versions/{args.version}/commands"
+        payload = {"cmd": args.command, "params": params}
+        js=call_api("POST", url, payload)
+        bstat = args.command=="status"
+        fulldump = (not bstat) or (bstat and not (args.trigger_status or args.builder_status or  args.pmr_status))
+        if fulldump:
+            try:
+                print(json.dumps(js,indent=2))
+            except:
+                print(js)
+        else:
+            if args.trigger_status:
+                trigger_dump(js)
+            if args.builder_status:
+                builder_dump(js)
+            if args.pmr_status:
+                pmr_dump(js)
+
+    elif args.action == "triggerstatus":
+        url = f"{BASE_URL}/apps/{args.name}/versions/{args.version}/commands"
+        payload = {"cmd":"status", "params": params}
+        js=call_api("POST", url, payload)
+        trigger_dump(js)
+        
+    elif args.action == "builderstatus":
+        url = f"{BASE_URL}/apps/{args.name}/versions/{args.version}/commands"
+        payload = {"cmd":"status", "params": params}
+        js=call_api("POST", url, payload)
+        builder_dump(js)
+    elif args.action == "pmrstatus":
+        url = f"{BASE_URL}/apps/{args.name}/versions/{args.version}/commands"
+        payload = {"cmd":"status", "params": params}
+        js=call_api("POST", url, payload)
+        pmr_dump(js)
+
+def trigger_dump(js):
+    print("=========== TRIGGER STATUS ========")
+    #js=json.loads(jss)
+    for x in js["result"]["apps"]:
+        if not x["name"] in ["lyon_mbmdcc","lyon_mdcc","lyon_ipdc"]:
+            continue
+        print_dict(x["status"]["COUNTERS"])
+
+def builder_dump(js):
+    print("=========== BUILDER STATUS ========")
+    #js=json.loads(jss)
+    for x in js["result"]["apps"]:
+        if not x["name"] in ["evb_builder"]:
+            continue
+        
+        kk={}
+        for k in x["status"]["answer"].keys():
+            if not k=="difs":
+                kk[k]=x["status"]["answer"][k]
+        print_dict(kk)
+        print(tabulate(x["status"]["answer"]["difs"], headers="keys"))
+
+def pmr_dump(js):
+    print("=========== PMR STATUS ========")
+    #js=json.loads(jss)
+    for x in js["result"]["apps"]:
+        if not x["name"] in ["lyon_pmr"]:
+            continue
+        
+        print(tabulate(x["status"], headers="keys"))
+
+    
+if __name__ == "__main__":
+    main()
