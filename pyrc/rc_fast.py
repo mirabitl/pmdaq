@@ -217,6 +217,7 @@ class rc_fast:
         """
         if self.mqtt:
             self.mqtt.publish(f"pmdaq/{self.config.session}/rc/state", self.state,retain=True)
+            self.mqtt.publish(f"pmdaq/{self.config.session}/rc/valid",self.daqfsm.get_triggers(self.state),retain=True)
     def create_session(self):
         """! Create the session on MQTT with the session name and the state CREATED
         """

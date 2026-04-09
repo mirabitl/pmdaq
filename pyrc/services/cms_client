@@ -55,7 +55,7 @@ def main():
     parser = argparse.ArgumentParser(description="CMS API client")
 
     parser.add_argument("-a", "--action", required=True,
-                        choices=["create", "restart", "configure", "transition", "command","triggerstatus","builderstatus","pmrstatus"],
+                        choices=["create", "restart", "configure", "transition", "command"],
                         help="Action to perform")
 
     parser.add_argument("-n", "--name", help="App name")
@@ -154,25 +154,9 @@ def main():
             if args.pmr_status:
                 pmr_dump(js)
 
-    elif args.action == "triggerstatus":
-        url = f"{BASE_URL}/apps/{args.name}/versions/{args.version}/commands"
-        payload = {"cmd":"status", "params": params}
-        js=call_api("POST", url, payload)
-        trigger_dump(js)
-        
-    elif args.action == "builderstatus":
-        url = f"{BASE_URL}/apps/{args.name}/versions/{args.version}/commands"
-        payload = {"cmd":"status", "params": params}
-        js=call_api("POST", url, payload)
-        builder_dump(js)
-    elif args.action == "pmrstatus":
-        url = f"{BASE_URL}/apps/{args.name}/versions/{args.version}/commands"
-        payload = {"cmd":"status", "params": params}
-        js=call_api("POST", url, payload)
-        pmr_dump(js)
 
 def trigger_dump(js):
-    print("=========== TRIGGER STATUS ========")
+    print("\n \t =========== TRIGGER STATUS ========")
     #js=json.loads(jss)
     for x in js["result"]["apps"]:
         if not x["name"] in ["lyon_mbmdcc","lyon_mdcc","lyon_ipdc"]:
@@ -180,7 +164,7 @@ def trigger_dump(js):
         print_dict(x["status"]["COUNTERS"])
 
 def builder_dump(js):
-    print("=========== BUILDER STATUS ========")
+    print("\n \t =========== BUILDER STATUS ========")
     #js=json.loads(jss)
     for x in js["result"]["apps"]:
         if not x["name"] in ["evb_builder"]:
@@ -194,7 +178,7 @@ def builder_dump(js):
         print(tabulate(x["status"]["answer"]["difs"], headers="keys"))
 
 def pmr_dump(js):
-    print("=========== PMR STATUS ========")
+    print("\n \t =========== PMR STATUS ========")
     #js=json.loads(jss)
     for x in js["result"]["apps"]:
         if not x["name"] in ["lyon_pmr"]:
