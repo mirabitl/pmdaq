@@ -55,7 +55,7 @@ def main():
     parser = argparse.ArgumentParser(description="CMS API client")
 
     parser.add_argument("-a", "--action", required=True,
-                        choices=["create", "restart", "configure", "transition", "command"],
+                        choices=["create", "restart", "delete","configure", "transition", "command"],
                         help="Action to perform")
 
     parser.add_argument("-n", "--name", help="App name")
@@ -124,7 +124,10 @@ def main():
             sys.exit(1)
 
         url = f"{BASE_URL}/apps/{args.name}/versions/{args.version}/transitions"
-        payload = {"name": args.transition}
+        if params=={}:
+            payload = {"name": args.transition}
+        else:
+            payload = {"name": args.transition,"params":params}
         js=call_api("POST", url, payload)
         try:
             print(json.dumps(js,indent=2))
