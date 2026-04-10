@@ -98,8 +98,11 @@ class MQTTInterface:
             elif (v[0]=="pmdaq" and v[2]=="rc"):
                 with self._lock:
                     [role,session,name,mtype]=v
+                    #print(f"[MQTT] {v} topic received")
                     if mtype=="state":                        
                         self.app_config.state=payload
+                    if mtype=="allowed":                        
+                        self.app_config.allowed=json.loads(payload)
         """ 
         # Pour l'instant on ne gere que les messages PMDAQ pour mettre à jour la config, mais on pourrait aussi les publier dans le cache et la queue d'événements                
         if self.use_json:

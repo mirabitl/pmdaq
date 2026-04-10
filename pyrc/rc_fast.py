@@ -85,6 +85,7 @@ class AppConfig(BaseModel):
     version: int
     mqtt_broker: Optional[str] = None
     state: Optional[str] = "UNKNOWN"  # Champ optionnel avec typage
+    allowed: Optional[Dict]=None
     model_config = {"extra": "allow"}
     def print(self):
         print(f"Session {self.session} version {self.version} state {self.state}")
@@ -99,6 +100,7 @@ class AppConfig(BaseModel):
             "type": self.type,
             "version": self.version,
             "mqtt_broker": self.mqtt_broker,
+            "allowed": self.allowed,
             "state": self.state,
         }
     def to_json(self):
@@ -217,7 +219,7 @@ class rc_fast:
         """
         if self.mqtt:
             self.mqtt.publish(f"pmdaq/{self.config.session}/rc/state", self.state,retain=True)
-            self.mqtt.publish(f"pmdaq/{self.config.session}/rc/valid",self.daqfsm.get_triggers(self.state),retain=True)
+            self.mqtt.publish(f"pmdaq/{self.config.session}/rc/allowed",self.daqfsm.get_triggers(self.state),retain=True)
     def create_session(self):
         """! Create the session on MQTT with the session name and the state CREATED
         """

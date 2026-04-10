@@ -90,3 +90,24 @@ services:
       - mosquitto
 
     restart: unless-stopped
+  nodered:
+    image: nodered/node-red:latest  # dernière version stable Node-RED
+    container_name: nodered
+    user: "1000:1000"
+    volumes:
+      - /data/nodered_data:/data  # dossier pour flows, settings, nodes
+    ports:
+      - "1880:1880"
+    environment:
+      - NODE_RED_ENABLE_PROJECTS=true
+      - TZ=Europe/Paris
+    restart: unless-stopped
+    command: >
+      bash -lc "
+      npm install @flowfuse/node-red-dashboard && 
+      npm audit fix --force && 
+      node-red
+      "
+    depends_on:
+      - runctrl
+      - mosquitto
