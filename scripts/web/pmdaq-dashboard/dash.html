@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>PMDAQ Dashboard</title>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<style>
+body { font-family: Arial; margin:0; background:#111; color:#eee; }
+.tabs { display:flex; background:#222; }
+.tab { padding:10px 20px; cursor:pointer; }
+.tab.active { background:#444; }
+.content { display:none; padding:20px; }
+.content.active { display:block; }
+.card { background:#1e1e1e; padding:10px; margin:10px 0; border-radius:8px; }
+button { margin:5px; padding:6px 10px; }
+input, textarea { width:100%; margin:5px 0; padding:6px; }
+pre { background:#000; padding:10px; overflow:auto; }
+.app { border:1px solid #333; margin:10px 0; padding:10px; }
+.instance { border:1px dashed #444; margin:5px; padding:5px; }
+.state { font-weight:bold; color:#6cf; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h3>Session</h3>
+  <input id="global_name" placeholder="name (tel_cms)">
+  <input id="global_version" placeholder="version (4)">
+  <button onclick="applyConfig()">Apply</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="openTab('mqtt')">MQTT</div>
+  <div class="tab" onclick="openTab('versions')">Versions</div>
+  <div class="tab" onclick="openTab('fsm')">FSM</div>
+</div>
+
+<div id="mqtt" class="content active">
+  <h2>MQTT Hierarchical View</h2>
+  <div id="mqttData"></div>
+</div>
+
+<div id="versions" class="content">
+  <h2>Versions</h2>
+  <button onclick="createApp()">Create</button>
+  <button onclick="deleteApp()">Delete</button>
+  <textarea id="c_params">{}</textarea>
+  <button onclick="configureApp()">Configure</button>
+  <pre id="versions_output"></pre>
+</div>
+
+<div id="fsm" class="content">
+  <h2>FSM</h2>
+  <input id="t_transition" placeholder="transition">
+  <button onclick="sendTransition()">Send</button>
+  <input id="cmd_command" placeholder="command">
+  <textarea id="cmd_params">{}</textarea>
+  <button onclick="sendCommand()">Send</button>
+  <pre id="fsm_output"></pre>
+</div>
+
+<script>
+let STATE = {
+  name: null,
+  version: null,
+  mqttClient: null,
+  data: {}
+};
+
+function isConfigured() {
+  return STATE.name && STATE.version;
+}
+
+function applyConfig() {
+  STATE.name = global_name.value;
+  STATE.version = global_version.value;
+
+  if (!isConfigured()) return alert("Missing config");
+
+  connectMQTT();
+}
+
+// MQTT CONNECT
+function connectMQTT() {
+  if (STATE.mqttClient) STATE.mqttClient.end();
+
+  STATE.data = {};
+
+  const topic = `pmdaq/${STATE.name}/#`;
+
+  const client = mqtt.connect('ws://lyoilcdaq01:8080');
+  STATE.mqttClient = client;
+
+  client.on('connect', () => {
+    console.log("MQTT connected");
+    client.subscribe(topic);
+  });
+
+  client.on('message', (topic, message) => {
+    try {
+      const payload = JSON.parse(message.toString());
+      parseTopic(topic, payload);
+      renderMQTT();
+    } catch (e) {
+      console.error(e);
+    }
+  });
+}
+
+// PARSE TOPIC → HIERARCHY
+function parseTopic(topic, payload) {
+  const parts = topic.split('/');
+
+  if (parts.length < 5) return;
+
+  const appInstance = parts[2];
+  const instance = parts[3];
+  const type = parts[4];
+
+  if (!STATE.data[appInstance]) STATE.data[appInstance] = {};
+  if (!STATE.data[appInstance][instance]) STATE.data[appInstance][instance] = {};
+
+  STATE.data[appInstance][instance][type] = payload;
+}
+
+// RENDER HIERARCHICAL VIEW
+function renderMQTT() {
+  const container = document.getElementById('mqttData');
+  container.innerHTML = '';
+
+  Object.entries(STATE.data).forEach(([app, instances]) => {
+
+    const appDiv = document.createElement('div');
+    appDiv.className = 'app';
+    appDiv.innerHTML = `<h3>${app}</h3>`;
+
+    Object.entries(instances).forEach(([inst, data]) => {
+
+      const instDiv = document.createElement('div');
+      instDiv.className = 'instance';
+
+      const state = data.state?.value || data.info?.STATE || "?";
+
+      instDiv.innerHTML = `
+        <div>Instance: ${inst} <span class="state">${state}</span></div>
+        <details>
+          <summary>Details</summary>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        </details>
+      `;
+
+      appDiv.appendChild(instDiv);
+    });
+
+    container.appendChild(appDiv);
+  });
+}
+
+// REST
+const BASE = 'http://lyoilcdaq01:8000';
+
+async function api(path, method='GET', body=null) {
+  const res = await fetch(BASE + path, {
+    method,
+    headers: {'Content-Type':'application/json'},
+    body: body ? JSON.stringify(body) : null
+  });
+  return await res.json();
+}
+
+async function createApp() {
+  if (!isConfigured()) return;
+  const res = await api('/apps/', 'POST', {name: STATE.name, version: STATE.version});
+  versions_output.textContent = JSON.stringify(res, null, 2);
+}
+
+async function deleteApp() {
+  if (!isConfigured()) return;
+  const res = await api(`/apps/${STATE.name}/versions/${STATE.version}`, 'DELETE');
+  versions_output.textContent = JSON.stringify(res, null, 2);
+}
+
+async function configureApp() {
+  if (!isConfigured()) return;
+  const res = await api(`/apps/${STATE.name}/versions/${STATE.version}/configure`, 'POST', {
+    params: JSON.parse(c_params.value)
+  });
+  versions_output.textContent = JSON.stringify(res, null, 2);
+}
+
+async function sendTransition() {
+  if (!isConfigured()) return;
+  const res = await api(`/apps/${STATE.name}/versions/${STATE.version}/transitions`, 'POST', {
+    name: t_transition.value
+  });
+  fsm_output.textContent = JSON.stringify(res, null, 2);
+}
+
+async function sendCommand() {
+  if (!isConfigured()) return;
+  const res = await api(`/apps/${STATE.name}/versions/${STATE.version}/commands`, 'POST', {
+    cmd: cmd_command.value,
+    params: JSON.parse(cmd_params.value)
+  });
+  fsm_output.textContent = JSON.stringify(res, null, 2);
+}
+
+function openTab(id) {
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

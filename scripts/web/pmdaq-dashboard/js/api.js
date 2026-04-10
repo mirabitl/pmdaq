@@ -59,3 +59,14 @@ async function sendCommand() {
 
   fsm_output.textContent = JSON.stringify(res, null, 2);
 }
+async function quickTransition(name) {
+  if (!isConfigured()) return;
+
+  const res = await api(
+    `/apps/${STATE.name}/versions/${STATE.version}/transitions`,
+    'POST',
+    { name }
+  );
+
+  console.log("Transition:", name, res);
+}

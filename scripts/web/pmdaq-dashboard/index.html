@@ -9,7 +9,14 @@
 </head>
 
 <body>
+<div class="card">
+  <h3>Session</h3>
 
+  <input id="global_name" placeholder="name (ex: tel_cms)">
+  <input id="global_version" placeholder="version (ex: 4)">
+
+  <button onclick="applyConfig()">Apply</button>
+</div>
 <div class="tabs">
   <div class="tab active" onclick="openTab('mqtt')">MQTT</div>
   <div class="tab" onclick="openTab('versions')">Versions</div>
