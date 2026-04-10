@@ -61,7 +61,7 @@ class Session:
         # dispatcher simple
         if not self.daq:
             raise ValueError(f"daq {self.name} v{self.version} is not configured for transition")
-        valid=["pause","resume","set_parameter_access","set_parameter_db","status","app_command"]
+        valid=["pause","resume","set_parameter_access","set_parameter_db","status","app_command","set_comment"]
         if not command_type in valid:
             raise ValueError(f"Invalid command '{command_type}' for state '{self.daq.state}' (valid: {valid})")
 
@@ -79,6 +79,10 @@ class Session:
             return {"status": "resumed"}
         if command_type == "set_parameter_access":
             rc=self.parse_settings(params)
+            return {"status":rc}
+
+        if command_type == "set_comment":
+            rc=self.daq.run_comment=params.get("comment")
             return {"status":rc}
 
         if command_type == "app_command":

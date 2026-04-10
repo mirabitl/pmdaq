@@ -130,7 +130,7 @@ class rc_fast:
         ##reset time
         self.reset = 0
         ## Comment for a run
-        self.comment = "Not yet set"
+        self.run_comment = "Not yet set"
         ## Setup name
         self.experiment = "UNKNOWN"
         ## MDCC plugin name
@@ -449,7 +449,7 @@ class rc_fast:
             if (self.experiment == "UNKNOWN"):
                 self.experiment = os.getenv("DAQSETUP", "UNKNOWN")
 
-            jnrun = self.db.getRun(self.experiment, self.comment)
+            jnrun = self.db.getRun(self.experiment, self.run_comment)
             m['run'] = jnrun['run']
         return m
     def set_parameters(self):
