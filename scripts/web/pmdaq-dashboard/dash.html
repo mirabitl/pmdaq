@@ -29,6 +29,16 @@ pre { background:#000; padding:10px; overflow:auto; }
   <button onclick="applyConfig()">Apply</button>
 </div>
 
+<div class="card">
+  <h3>Run Control</h3>
+  <div>State: <span id="rc_state">-</span></div>
+  <div id="rc_buttons"></div>
+  <div style="margin-top:10px;">
+    <button onclick="sendCommandGlobal('pause')">Pause</button>
+    <button onclick="sendCommandGlobal('resume')">Resume</button>
+  </div>
+</div>
+
 <div class="tabs">
   <div class="tab active" onclick="openTab('mqtt')">MQTT</div>
   <div class="tab" onclick="openTab('versions')">Versions</div>
@@ -44,6 +54,7 @@ pre { background:#000; padding:10px; overflow:auto; }
   <h2>Versions</h2>
   <button onclick="createApp()">Create</button>
   <button onclick="deleteApp()">Delete</button>
+  <button onclick="restartApp()">Restart</button> 
   <textarea id="c_params">{}</textarea>
   <button onclick="configureApp()">Configure</button>
   <pre id="versions_output"></pre>
@@ -64,7 +75,14 @@ let STATE = {
   name: null,
   version: null,
   mqttClient: null,
-  data: {}
+  data: {},
+
+  rc: {
+    state: null,
+    allowed: []
+  },
+
+  statusTimer: null
 };
 
 function isConfigured() {
@@ -97,32 +115,167 @@ function connectMQTT() {
   });
 
   client.on('message', (topic, message) => {
-    try {
-      const payload = JSON.parse(message.toString());
-      parseTopic(topic, payload);
-      renderMQTT();
-    } catch (e) {
-      console.error(e);
-    }
-  });
+  let payload;
+
+  try {
+    payload = JSON.parse(message.toString());
+  } catch {
+    // ⚠️ cas rc/state = "RUNNING" (non JSON)
+    payload = message.toString();
+  }
+
+  parseTopic(topic, payload);
+  renderMQTT();
+});
 }
 
 // PARSE TOPIC → HIERARCHY
 function parseTopic(topic, payload) {
   const parts = topic.split('/');
 
+    // RC GLOBAL
+    if (parts[2] === "rc") {
+  const type = parts[3];
+
+  if (type === "state") {
+    STATE.rc.state = payload;  // string directe
+  }
+
+  if (type === "allowed") {
+    // peut être string JSON ou déjà array
+    if (typeof payload === "string") {
+      try {
+        STATE.rc.allowed = JSON.parse(payload);
+      } catch {
+        STATE.rc.allowed = [];
+      }
+    } else {
+      STATE.rc.allowed = payload;
+    }
+  }
+
+  console.log("RC UPDATE:", STATE.rc);
+
+  updateRCDisplay();
+  updateFSMButtons();
+  manageAutoStatus();
+
+  return;
+}
+ 
+  // APPS
   if (parts.length < 5) return;
 
-  const appInstance = parts[2];
+  const app = parts[2];
   const instance = parts[3];
   const type = parts[4];
 
-  if (!STATE.data[appInstance]) STATE.data[appInstance] = {};
-  if (!STATE.data[appInstance][instance]) STATE.data[appInstance][instance] = {};
+  if (!STATE.data[app]) STATE.data[app] = {};
+  if (!STATE.data[app][instance]) STATE.data[app][instance] = {};
 
-  STATE.data[appInstance][instance][type] = payload;
+  STATE.data[app][instance][type] = payload;
 }
 
+function makeTable(obj) {
+  let html = '<table border="1" style="border-collapse:collapse;">';
+  html += '<tr>';
+  Object.keys(obj).forEach(k => html += `<th>${k}</th>`);
+  html += '</tr>';
+
+  html += '<tr>';
+  Object.values(obj).forEach(v => html += `<td>${v}</td>`);
+  html += '</tr>';
+
+  html += '</table>';
+  return html;
+}
+
+function makeTableFromArray(arr) {
+  if (!arr.length) return '';
+
+  let html = '<table border="1" style="border-collapse:collapse;">';
+
+  html += '<tr>';
+  Object.keys(arr[0]).forEach(k => html += `<th>${k}</th>`);
+  html += '</tr>';
+
+  arr.forEach(row => {
+    html += '<tr>';
+    Object.values(row).forEach(v => html += `<td>${v}</td>`);
+    html += '</tr>';
+  });
+
+  html += '</table>';
+  return html;
+}
+
+
+function updateRCDisplay() {
+  const el = document.getElementById('rc_state');
+  if (!el) return;
+
+  el.innerText = STATE.rc.state || "-";
+}
+
+function updateFSMButtons() {
+  const div = document.getElementById('rc_buttons');
+  div.innerHTML = '';
+
+  STATE.rc.allowed
+    .filter(tr => !tr.startsWith("to_"))   // 🔥 filtre ici
+    .forEach(tr => {
+      const b = document.createElement('button');
+      b.innerText = tr;
+      b.onclick = () => sendTransitionRC(tr);
+      div.appendChild(b);
+    });
+}
+    
+
+
+async function sendTransitionRC(name) {
+  if (!isConfigured()) return;
+
+  const res = await api(
+    `/apps/${STATE.name}/versions/${STATE.version}/transitions`,
+    'POST',
+    { name }
+  );
+
+  console.log("RC transition:", name, res);
+}
+
+function renderStatus(app, data) {
+  if (!data.status) return '';
+
+  // -------- BUILDER --------
+  if (data.status.answer) {
+    let main = {...data.status.answer};
+    delete main.difs;
+
+    let html = '<h4>Builder</h4>';
+    html += makeTable(main);
+
+    if (data.status.answer.difs) {
+      html += '<h5>DIFs</h5>';
+      html += makeTableFromArray(data.status.answer.difs);
+    }
+
+    return html;
+  }
+
+  // -------- TRIGGER --------
+  if (data.status.COUNTERS) {
+    return `<h4>Trigger</h4>` + makeTable(data.status.COUNTERS);
+  }
+
+  // -------- PMR --------
+  if (Array.isArray(data.status)) {
+    return `<h4>PMR</h4>` + makeTableFromArray(data.status);
+  }
+
+  return `<pre>${JSON.stringify(data.status, null, 2)}</pre>`;
+}
 // RENDER HIERARCHICAL VIEW
 function renderMQTT() {
   const container = document.getElementById('mqttData');
@@ -141,21 +294,31 @@ function renderMQTT() {
 
       const state = data.state?.value || data.info?.STATE || "?";
 
-      instDiv.innerHTML = `
-        <div>Instance: ${inst} <span class="state">${state}</span></div>
+      let html = `
+        <div>
+          Instance: ${inst} 
+          <span class="state">${state}</span>
+        </div>
+      `;
+
+      // -------- STATUS TABLE --------
+      html += renderStatus(app, data);
+
+      // -------- DETAILS JSON (debug) --------
+      html += `
         <details>
-          <summary>Details</summary>
+          <summary>Raw JSON</summary>
           <pre>${JSON.stringify(data, null, 2)}</pre>
         </details>
       `;
 
+      instDiv.innerHTML = html;
       appDiv.appendChild(instDiv);
     });
 
     container.appendChild(appDiv);
   });
 }
-
 // REST
 const BASE = 'http://lyoilcdaq01:8000';
 
@@ -188,14 +351,103 @@ async function configureApp() {
   versions_output.textContent = JSON.stringify(res, null, 2);
 }
 
-async function sendTransition() {
-  if (!isConfigured()) return;
-  const res = await api(`/apps/${STATE.name}/versions/${STATE.version}/transitions`, 'POST', {
-    name: t_transition.value
-  });
-  fsm_output.textContent = JSON.stringify(res, null, 2);
+
+function manageAutoStatus() {
+  const activeStates = ["INITIALISED", "CONFIGURED", "RUNNING"];
+
+  console.log("RC state:", STATE.rc.state);
+
+  if (!activeStates.includes(STATE.rc.state)) {
+    if (STATE.statusTimer) {
+      clearInterval(STATE.statusTimer);
+      STATE.statusTimer = null;
+      console.log("Auto status STOPPED");
+    }
+    return;
+  }
+
+  if (STATE.statusTimer) return;
+
+  console.log("Auto status STARTED");
+
+  STATE.statusTimer = setInterval(async () => {
+    if (!isConfigured()) return;
+
+    console.log("Polling status...");
+
+    try {
+      const res = await api(
+        `/apps/${STATE.name}/versions/${STATE.version}/commands`,
+        'POST',
+        { cmd: "status", params: {} }
+      );
+
+      console.log("Status OK");
+      renderStatusFromAPI(res);
+
+    } catch (e) {
+      console.error("Status polling error", e);
+    }
+
+  }, 10000);
 }
 
+
+function renderStatusFromAPI(res) {
+  const container = document.getElementById('mqttData');
+
+  if (!res.result) return;
+
+  let html = `<h2>GLOBAL STATUS (${STATE.rc.state})</h2>`;
+
+  res.result.apps.forEach(app => {
+    html += `<div class="app">`;
+    html += `<h3>${app.name} (${app.state})</h3>`;
+
+    // BUILDER
+    if (app.status?.answer) {
+      const main = {...app.status.answer};
+      delete main.difs;
+
+      html += makeTable(main);
+      html += makeTableFromArray(app.status.answer.difs);
+    }
+
+    // TRIGGER
+    else if (app.status?.COUNTERS) {
+      html += makeTable(app.status.COUNTERS);
+    }
+
+    // PMR
+    else if (Array.isArray(app.status)) {
+      html += makeTableFromArray(app.status);
+    }
+
+    html += `</div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+
+async function sendTransition() {
+  if (!isConfigured()) return;
+
+  const t = t_transition.value;
+
+  if (!STATE.rc.allowed.includes(t)) {
+    return alert("Transition not allowed in current RC state");
+  }
+
+  const res = await api(
+    `/apps/${STATE.name}/versions/${STATE.version}/transitions`,
+    'POST',
+    { name: t }
+  );
+
+  fsm_output.textContent = JSON.stringify(res, null, 2);
+}
+	
 async function sendCommand() {
   if (!isConfigured()) return;
   const res = await api(`/apps/${STATE.name}/versions/${STATE.version}/commands`, 'POST', {
@@ -210,6 +462,38 @@ function openTab(id) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   event.target.classList.add('active');
+}
+
+async function sendCommandGlobal(cmd) {
+  if (!isConfigured()) return;
+
+  try {
+    const res = await api(
+      `/apps/${STATE.name}/versions/${STATE.version}/commands`,
+      'POST',
+      {
+        cmd: cmd,
+        params: {}
+      }
+    );
+
+    console.log("Command:", cmd, res);
+
+  } catch (e) {
+    console.error("Command error", e);
+  }
+}
+
+async function restartApp() {
+  if (!isConfigured()) return;
+
+  const res = await api(
+    `/apps/${STATE.name}/versions/${STATE.version}/restart`,
+    'POST',
+    { params: {} }
+  );
+
+  versions_output.textContent = JSON.stringify(res, null, 2);
 }
 </script>
 
