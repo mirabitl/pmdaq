@@ -168,7 +168,8 @@ if (results.pset):
 if (results.runs):
     if results.location != None:    
         print("Runs for setup ",results.location)
-        _wdd.runs(experiment=results.location,do_json=results.json)
+        s=_wdd.runs(experiment=results.location,do_json=results.json)
+        print(json.dumps(s))
     else:
         print("Runs for all setups")
         _wdd.runs(do_json=results.json)
