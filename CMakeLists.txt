@@ -181,7 +181,7 @@ file(GLOB ETC_TARGET
     "${CMAKE_CURRENT_SOURCE_DIR}/pyrc/etc/*.json"
 )
 
-file(GLOB DAQJS_TARGET
+file(GLOB_RECURSE DAQJS_TARGET
      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/web/*"
      )
 file(GLOB PICOJS_TARGET
@@ -190,7 +190,17 @@ file(GLOB PICOJS_TARGET
 
 debug_var("ETC_TARGET")
 
-install(FILES ${DAQJS_TARGET}  DESTINATION htdocs/webdaq )
+#install(FILES ${DAQJS_TARGET}  DESTINATION htdocs/webdaq/ )
+
+install(
+    DIRECTORY
+    "${CMAKE_CURRENT_SOURCE_DIR}/scripts/web/"
+    DESTINATION
+    htdocs/webdaq/
+    USE_SOURCE_PERMISSIONS
+)
+
+
 install(FILES ${PICOJS_TARGET}  DESTINATION htdocs/pico )
 install(FILES ${SCRIPT_TARGET} ${PYRC_SCRIPT_TARGET} DESTINATION share )
 install(FILES ${ETC_TARGET} DESTINATION etc)
