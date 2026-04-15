@@ -162,23 +162,29 @@ class MongoJob:
         return cl
 
 
-    def configurations(self):
+    def configurations(self,do_print=True,do_json=False):
         """!
         List all the configurations stored
         """
         cl=[]
         res=self.db.configurations.find({})
-        for x in res:
-            #print(x)
-            if ("comment" in x):
-                if ("pns" in x):
-                    print(time.ctime(x["time"]),x["version"],x["name"],x["comment"],x["pns"])
-                else:
-                    print(time.ctime(x["time"]),x["version"],x["name"],x["comment"])
+        if not do_json:
+            for x in res:
+                #print(x)
+                if ("comment" in x):
+                    if ("pns" in x):
+                        if (do_print):
+                            print(time.ctime(x["time"]),x["version"],x["name"],x["comment"],x["pns"])
+                    else:
+                        if (do_print):
+                            print(time.ctime(x["time"]),x["version"],x["name"],x["comment"])
 
-                cl.append((x["name"],x['version'],x['comment']))
-        return cl
-    
+                    cl.append((x["name"],x['version'],x['comment']))
+            return cl
+        for x in res:
+            if ("comment" in x):
+                cl.append({"name": x["name"], "version": x['version'], "comment": x['comment'],"date": time.ctime(x["time"])})
+        return {"configurations": cl}
     def parameters(self):
         """!
         List all the parameters stored
@@ -229,23 +235,33 @@ class MongoJob:
         print(filter,newvalues)
         self.db.configurations.update_one(filter, newvalues)
         
-    def runs(self):
+    def runs(self,do_json=False,experiment=None):
         """!
         List all the run informations stored
         """
-        res=self.db.runs.find({})
-        for x in res:
-            #print(x)
-            if ("run" in x):
-                if ("comment" in x and "time" in x and "P" in x):
-                    print(time.ctime(x["time"]),x["location"],x["run"],x["P"],x["comment"])
-                    continue
+        if (experiment!=None):
+            res=self.db.runs.find({"location":experiment})
+        else:   
+            res=self.db.runs.find({})
+        if not do_json:
+            for x in res:
+                #print(x)
+                if ("run" in x):
+                    if ("comment" in x and "time" in x and "P" in x):
+                        if (do_print):
+                            print(time.ctime(x["time"]),x["location"],x["run"],x["P"],x["comment"])
+                        continue
                 if ("comment" in x and "time" in x):
                     print(time.ctime(x["time"]),x["location"],x["run"],x["comment"])
                 else:
                     if ("run" in x):
                         print(x["location"],x["run"],x["comment"])
                 #print(x["time"],x["location"],x["run"],x["comment"])
+        else:
+            d=[]
+            for x in res:
+                d.append({"location": x["location"], "run": x["run"], "comment": x["comment"], "date": time.ctime(x["time"])})
+            return {"runs": d}
     def getRunInfo(self,run):
         """!
         Get the info on a given run number
