@@ -248,8 +248,7 @@ class MongoJob:
                 #print(x)
                 if ("run" in x):
                     if ("comment" in x and "time" in x and "P" in x):
-                        if (do_print):
-                            print(time.ctime(x["time"]),x["location"],x["run"],x["P"],x["comment"])
+                        print(time.ctime(x["time"]),x["location"],x["run"],x["P"],x["comment"])
                         continue
                 if ("comment" in x and "time" in x):
                     print(time.ctime(x["time"]),x["location"],x["run"],x["comment"])
