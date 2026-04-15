@@ -50,3 +50,13 @@ pre {
   background:#000;
   padding:10px;
 }
+#global_state {
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.state-running { color: #0f0; }
+.state-configured { color: #ff0; }
+.state-initialised { color: #0ff; }
+.state-error { color: #f00; }

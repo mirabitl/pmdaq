@@ -19,6 +19,7 @@ pre { background:#000; padding:10px; overflow:auto; }
 .instance { border:1px dashed #444; margin:5px; padding:5px; }
 .state { font-weight:bold; color:#6cf; }
 </style>
+<link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
@@ -31,25 +32,36 @@ pre { background:#000; padding:10px; overflow:auto; }
 
 <div class="card">
   <h3>Run Control</h3>
+  <h2> Transitions </h2>
   <div>State: <span id="rc_state">-</span></div>
   <div id="rc_buttons"></div>
+
+  <h2> Commands </h2>
+
   <div style="margin-top:10px;">
     <button onclick="sendCommandGlobal('pause')">Pause</button>
     <button onclick="sendCommandGlobal('resume')">Resume</button>
+    <button onclick="sendCommandGlobal('status')">Update Status</button>
   </div>
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="openTab('mqtt')">MQTT</div>
-  <div class="tab" onclick="openTab('versions')">Versions</div>
-  <div class="tab" onclick="openTab('fsm')">FSM</div>
+  <div class="tab active" onclick="openTab('mqtt')">STATUS</div>
+  <div class="tab" onclick="openTab('versions')">Session Managment</div>
+  <div class="tab" onclick="openTab('fsm')">FSM & Commands</div>
 </div>
 
 <div id="mqtt" class="content active">
-  <h2>MQTT Hierarchical View</h2>
+
+<h2>
+  DAQ Status 
+  (<span id="global_state">-</span>)
+</h2>
+  <!-- 🔥 NEW -->
+  <div id="globalStatus"></div>
+
   <div id="mqttData"></div>
 </div>
-
 <div id="versions" class="content">
   <h2>Versions</h2>
   <button onclick="createApp()">Create</button>
@@ -211,12 +223,37 @@ function makeTableFromArray(arr) {
 
 
 function updateRCDisplay() {
-  const el = document.getElementById('rc_state');
-  if (!el) return;
+  const state = (STATE.rc.state || "").trim().toUpperCase();
 
-  el.innerText = STATE.rc.state || "-";
-}
+  // affichage simple
+  const rcEl = document.getElementById('rc_state');
+  if (rcEl) rcEl.innerText = state || "-";
 
+  const globalEl = document.getElementById('global_state');
+  if (!globalEl) return;
+
+  globalEl.innerText = state || "-";
+
+  // 🔥 reset propre
+  globalEl.classList.remove(
+    "state-running",
+    "state-configured",
+    "state-initialised",
+    "state-error"
+  );
+
+  // 🔥 mapping robuste
+  if (state === "RUNNING") {
+    globalEl.classList.add("state-running");
+  } else if (state === "CONFIGURED") {
+    globalEl.classList.add("state-configured");
+  } else if (state === "INITIALISED") {
+    globalEl.classList.add("state-initialised");
+  } else {
+    globalEl.classList.add("state-error");
+  }
+  }
+  
 function updateFSMButtons() {
   const div = document.getElementById('rc_buttons');
   div.innerHTML = '';
@@ -233,17 +270,44 @@ function updateFSMButtons() {
     
 
 
-async function sendTransitionRC(name) {
+
+  async function sendTransitionRC(name) {
   if (!isConfigured()) return;
 
-  const res = await api(
-    `/apps/${STATE.name}/versions/${STATE.version}/transitions`,
-    'POST',
-    { name }
-  );
+      // 1. demander commentaire
+      if (name == "start")
+      {
+	  const r_comment = prompt(`Commentaire pour transition RC : ${name}`);
 
-  console.log("RC transition:", name, res);
+	  if (r_comment === null) return; // cancel popup
+
+	  try {
+	      // 2. envoyer commentaire
+	      await api(
+		  `/apps/${STATE.name}/versions/${STATE.version}/commands`,
+		  'POST',
+		  {
+		      cmd: "set_comment",
+		      params: { "comment":r_comment }
+		  }
+	      );
+	  } catch (e) {
+	      console.error("RC transition error", e);
+	  }
+      }
+	      
+
+    // 3. envoyer transition RC
+    const res = await api(
+      `/apps/${STATE.name}/versions/${STATE.version}/transitions`,
+      'POST',
+      { name }
+    );
+
+    console.log("RC transition OK:", name, res);
+
 }
+  
 
 function renderStatus(app, data) {
   if (!data.status) return '';
@@ -353,7 +417,8 @@ async function configureApp() {
 
 
 function manageAutoStatus() {
-  const activeStates = ["INITIALISED", "CONFIGURED", "RUNNING"];
+    //const activeStates = ["INITIALISED", "CONFIGURED", "RUNNING"];
+    const activeStates = ["RUNNING"];
 
   console.log("RC state:", STATE.rc.state);
 
@@ -383,7 +448,7 @@ function manageAutoStatus() {
       );
 
       console.log("Status OK");
-      renderStatusFromAPI(res);
+      //renderStatusFromAPI(res);
 
     } catch (e) {
       console.error("Status polling error", e);
@@ -392,9 +457,8 @@ function manageAutoStatus() {
   }, 10000);
 }
 
-
 function renderStatusFromAPI(res) {
-  const container = document.getElementById('mqttData');
+  const container = document.getElementById('globalStatus');
 
   if (!res.result) return;
 
