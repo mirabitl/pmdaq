@@ -60,6 +60,9 @@ parser.add_argument('--comment', action='store', type=str,
                     default=None, dest='comment', help='Comment')
 parser.add_argument('--location', action='store', type=str,
                     default=None, dest='location', help='Setup name')
+parser.add_argument('--json', action='store', type=bool,
+                    default=False, dest='json', help='Output in JSON format')
+
 parser.add_argument('--file', action='store', type=str,
                     default=None, dest='file', help='Configuration file')
 parser.add_argument('--number', action='store', type=int,
@@ -163,7 +166,12 @@ if (results.pset):
     exit(0)
 
 if (results.runs):
-    _wdd.runs()
+    if results.location != None:    
+        print("Runs for setup ",results.location)
+        _wdd.runs(experiment=results.location,do_json=results.json)
+    else:
+        print("Runs for all setups")
+        _wdd.runs(do_json=results.json)
     exit(0)
 
 if (results.update_run):
