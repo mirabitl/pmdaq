@@ -60,8 +60,7 @@ parser.add_argument('--comment', action='store', type=str,
                     default=None, dest='comment', help='Comment')
 parser.add_argument('--location', action='store', type=str,
                     default=None, dest='location', help='Setup name')
-parser.add_argument('--json', action='store', type=bool,
-                    default=False, dest='json', help='Output in JSON format')
+parser.add_argument('--json', action='store_true', dest='json', help='Output in JSON format')
 
 parser.add_argument('--file', action='store', type=str,
                     default=None, dest='file', help='Configuration file')
@@ -156,8 +155,13 @@ if (results.download_pset):
         exit(0)
 
 if (results.configurations):
+    
     r_cmd = 'configurations'
-    _wdd.configurations()
+    if results.json:    
+        s=_wdd.configurations(do_json=results.json)
+        print(json.dumps(s))
+    else:
+        _wdd.configurations()
     exit(0)
 
 if (results.pset):
@@ -166,13 +170,14 @@ if (results.pset):
     exit(0)
 
 if (results.runs):
-    if results.location != None:    
+    if results.json != None:    
         print("Runs for setup ",results.location)
         s=_wdd.runs(experiment=results.location,do_json=results.json)
         print(json.dumps(s))
     else:
         print("Runs for all setups")
-        _wdd.runs(do_json=results.json)
+        _wdd.runs(experiment=results.location,do_json=results.json)
+        
     exit(0)
 
 if (results.update_run):
