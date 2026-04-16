@@ -1,6 +1,20 @@
 from typing import Dict
-from models import Session
+from models import Session,DbAccess
 
+class DbService:
+    def __init__(self):
+        self.db=DbAccess()
+    def list_configurations(self):
+        return self.db.configurations()
+    def list_parameters(self):
+        return self.db.parameters_set()
+    def list_setups(self,params: dict):
+         set_name=params.get("name")
+         set_version=params.get("version")
+         if not set_name:
+             raise ValueError("Missing 'name' or 'version' in parameters")
+         return self.db.parameters_set_info(set_name,set_version)
+         
 class AppService:
     def __init__(self):
         self.apps: Dict[str, Dict[str, Session]] = {}

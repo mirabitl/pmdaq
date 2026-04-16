@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from routes import router
+from routes import router as app_router
+from db_routes import router as db_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
@@ -15,4 +16,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router)
+app.include_router(app_router)
+app.include_router(db_router)

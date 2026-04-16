@@ -7,7 +7,17 @@ import logging
 import rc_fast as daq
 
 logging.basicConfig(level=logging.INFO)
-
+class DbAccess:
+    def __init__(self):
+        self._wdj=mg.instance()
+        
+    def configurations(self):
+        return self._wdj.configurations(do_json=True)
+    def parameters_set(self):
+        return self._wdj.parameters(do_json=True)
+    def parameters_set_info(self,name: str,version: int):
+        return self._wdj.parametersInfo(name,version,do_json=True)
+        
 class Session:
     def __init__(self, name: str, version: str):
         self.name = name

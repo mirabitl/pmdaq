@@ -22,3 +22,9 @@ class CreateAppRequest(BaseModel):
 class CommandRequest(BaseModel):
     cmd: str
     params: Dict[str, Any]
+
+
+# -------- Schema --------
+class SetupRequest(BaseModel):
+    name: str
+    version: int
