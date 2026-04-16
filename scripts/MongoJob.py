@@ -185,18 +185,22 @@ class MongoJob:
             if ("comment" in x):
                 cl.append({"name": x["name"], "version": x['version'], "comment": x['comment'],"date": time.ctime(x["time"])})
         return {"configurations": cl}
-    def parameters(self):
+    def parameters(self,do_json=False):
         """!
         List all the parameters stored
         """
         cl=[]
         res=self.db.parameters_set.find({})
+        if not do_json:
+            for x in res:
+                #print(x)
+                if ("comment" in x):
+                    print(time.ctime(x["time"]),x["version"],x["name"],x["comment"])
+                    cl.append((x["name"],x['version'],x['comment']))
+            return cl
         for x in res:
-            #print(x)
-            if ("comment" in x):
-                print(time.ctime(x["time"]),x["version"],x["name"],x["comment"])
-                cl.append((x["name"],x['version'],x['comment']))
-        return cl
+            cl.append({"name": x["name"], "version": x['version'], "comment": x['comment'],"date": time.ctime(x["time"])})
+        return {"parameters_set": cl}        
     def updateRun(self,run,loc,tag,vtag):
         """!
         Update the run entries with an additional or modified tag
@@ -425,7 +429,40 @@ class MongoJob:
             f.write(json.dumps(slc, indent=2, sort_keys=True))
             f.close()
             return slc
-        
+    def parametersInfo(self,cname,version,do_json=False):
+        """!
+        Get info on all setups of a parameter set
+
+        @param cname: Parameters set name
+        @param version: Parameters set version
+        @param do_json: True return a json list
+        """
+        res=self.db.parameters_set.find({'name':cname,'version':version})
+        for x in res:
+            #print(x)
+            
+            if not do_json:
+                print(x["name"],x["version"],x["comment"])
+                #var=raw_input()
+                slc=x["content"]
+                setups=slc["setups"]
+                for s in setups.keys():
+                    for v in setups[s].keys():
+                        print(f"Setup {s} version {v}  {setups[s][v]['comment']}")
+                return {}
+            else:
+                d={}
+                d["name"]=x["name"]
+                d["version"]=x["name"]
+                d["comment"]=x["comment"]
+                slc=x["content"]
+                setups=slc["setups"]
+                d["setups"]=[]
+                for s in setups.keys():
+                    for v in setups[s].keys():
+                        print(f"Setup {s} version {v}  {setups[s][v]['comment']}")
+                        d["setups"].append({"name":s,"version":v,"comment":setups[s][v]["comment"]})
+                return d
     def downloadCalibration(self,cname,version,toFileOnly=False):
         """!
         Download a calibration to /dev/shm/mgjob/ directory

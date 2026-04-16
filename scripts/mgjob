@@ -30,6 +30,9 @@ grp_action.add_argument('--download', action='store_true',
 
 grp_action.add_argument('--download-pset', action='store_true',
                         help='download the parameters set specified in --name=config name --version=version')
+grp_action.add_argument('--pset-info', action='store_true',
+                        help='Info on the setups in the parameters set specified in --name=config name --version=version')
+
 
 grp_action.add_argument('--calib-upload',action='store_true',help=' Upload new calibration with --setup=NAME --number=run --type=type  and optional --comment=xxx')
 grp_action.add_argument('--calib-list', action='store_true',help='List all the available calibrationtions')
@@ -166,8 +169,29 @@ if (results.configurations):
 
 if (results.pset):
     r_cmd = 'pset'
-    _wdd.parameters()
+    if results.json:
+        s=_wdd.parameters(do_json=True)
+        print(json.dumps(s))
+    else:
+        _wdd.parameters()
     exit(0)
+
+if (results.pset_info):
+    r_cmd = 'pset-info'
+    
+    if (results.name != None):
+        if (results.version == None):
+            print('Please specify the version --version=ver')
+            exit(0)
+        if results.json:
+            s=_wdd.parametersInfo(results.name,results.version,do_json=True)
+            print(json.dumps(s))
+        else:
+            _wdd.parametersInfo(results.name,results.version,do_json=False)
+        exit(0)
+    else:
+        print(" Specify  --name for configuration ")
+        exit(0)
 
 if (results.runs):
     if results.json != None:    
