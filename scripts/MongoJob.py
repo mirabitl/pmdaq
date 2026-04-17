@@ -452,9 +452,9 @@ class MongoJob:
                 return {}
             else:
                 d={}
-                d["name"]=x["name"]
-                d["version"]=x["name"]
-                d["comment"]=x["comment"]
+                d["set_name"]=x["name"]
+                d["set_version"]=x["name"]
+                d["set_comment"]=x["comment"]
                 slc=x["content"]
                 setups=slc["setups"]
                 d["setups"]=[]

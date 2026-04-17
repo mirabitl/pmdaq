@@ -60,3 +60,21 @@ pre {
 .state-configured { color: #ff0; }
 .state-initialised { color: #0ff; }
 .state-error { color: #f00; }
+.db-container {
+  display: flex;
+  gap: 20px;
+}
+
+.db-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.db-column h3 {
+  margin-top: 0;
+}
+
+.db-list {
+  height: 300px;
+}

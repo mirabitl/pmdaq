@@ -28,3 +28,7 @@ class CommandRequest(BaseModel):
 class SetupRequest(BaseModel):
     name: str
     version: int
+
+class RunsRequest(BaseModel):
+    experiment: str
+

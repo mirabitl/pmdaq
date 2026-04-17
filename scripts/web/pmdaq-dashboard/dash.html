@@ -46,6 +46,7 @@ pre { background:#000; padding:10px; overflow:auto; }
 </div>
 
 <div class="tabs">
+  <div class="tab" onclick="openTab('database')">Database</div>
   <div class="tab active" onclick="openTab('mqtt')">STATUS</div>
   <div class="tab" onclick="openTab('versions')">Session Managment</div>
   <div class="tab" onclick="openTab('fsm')">FSM & Commands</div>
@@ -82,19 +83,49 @@ pre { background:#000; padding:10px; overflow:auto; }
   <pre id="fsm_output"></pre>
 </div>
 
+
+<div id="database" class="content">
+  <h2>Database</h2>
+
+  <div class="db-container">
+
+    <!-- CONFIGURATIONS -->
+    <div class="db-column">
+      <h3>Configurations</h3>
+      <button onclick="queryConfigurations()">Query configurations</button>
+      <select id="db_configs" class="db-list" size="10" ondblclick="selectConfig()"></select>
+    </div>
+
+    <!-- PARAMETER SET -->
+    <div class="db-column">
+      <h3>Parameter Sets</h3>
+      <button onclick="queryParamSets()">Query parameters set</button>
+      <select id="db_paramsets" class="db-list" size="10" ondblclick="selectParamSet()"></select>
+
+      <h3 id="setup_title">Setups</h3>
+      <select id="db_setups" class="db-list" size="10" ondblclick="selectSetup()"></select>
+    </div>
+    <div class="db-column">
+      <h3>Runs</h3>
+      <button onclick="queryRuns()">Query runs</button>
+      <select id="db_runs" class="db-list" size="10"></select>
+    </div>
+  </div>
+</div>
 <script>
 let STATE = {
-  name: null,
-  version: null,
-  mqttClient: null,
-  data: {},
+    name: null,
+    version: null,
+    mqttClient: null,
+    selectedExperiment: null,
+    data: {},
+    
+    rc: {
+	state: null,
+	allowed: []
+    },
 
-  rc: {
-    state: null,
-    allowed: []
-  },
-
-  statusTimer: null
+    statusTimer: null
 };
 
 function isConfigured() {
@@ -558,6 +589,127 @@ async function restartApp() {
   );
 
   versions_output.textContent = JSON.stringify(res, null, 2);
+}
+
+
+
+async function queryConfigurations() {
+  const res = await api('/db/configurations');
+
+  const select = document.getElementById("db_configs");
+  select.innerHTML = '';
+
+  if (!res.configurations) return;
+
+  res.configurations.slice().reverse().forEach(cfg => {
+    const opt = document.createElement("option");
+    opt.value = JSON.stringify(cfg);
+    opt.text = `${cfg.name} v${cfg.version} - ${cfg.comment}`;
+    select.appendChild(opt);
+  });
+}
+
+
+function selectConfig() {
+  const sel = document.getElementById("db_configs");
+  if (!sel || !sel.value) return;
+
+  const cfg = JSON.parse(sel.value);
+
+  global_name.value = cfg.name;
+  global_version.value = cfg.version;
+}
+  
+async function queryParamSets() {
+  const res = await api('/db/parameters');
+
+  const select = document.getElementById("db_paramsets");
+  select.innerHTML = '';
+
+  if (!res.parameters_set) return;
+
+  res.parameters_set.slice().reverse().forEach(ps => {
+    const opt = document.createElement("option");
+    opt.value = JSON.stringify(ps);
+    opt.text = `${ps.name} v${ps.version} - ${ps.comment}`;
+    select.appendChild(opt);
+  });
+}
+
+async function selectParamSet() {
+  const sel = document.getElementById("db_paramsets");
+  const val = JSON.parse(sel.value);
+
+  const res = await api('/db/setups', 'POST', {
+    name: val.name,
+    version: val.version
+  });
+
+  const select = document.getElementById("db_setups");
+  select.innerHTML = '';
+
+  if (!res.setup_list) return;
+
+  document.getElementById("setup_title").innerText =
+    `Setups available for ${val.name} v${val.version}`;
+
+  res.setup_list.setups.forEach(s => {
+    const opt = document.createElement("option");
+    opt.value = JSON.stringify({
+      set_name: val.name,
+      set_version: val.version,
+      setup_name: s.name,
+      setup_version: s.version
+    });
+    opt.text = `${s.name}:${s.version} - ${s.comment}`;
+    select.appendChild(opt);
+  });
+}
+
+
+
+function selectSetup() {
+  const sel = document.getElementById("db_setups");
+  if (!sel || !sel.value) return;
+
+  const data = JSON.parse(sel.value);
+    STATE.selectedExperiment = data.setup_name;
+  const params = {
+    params_dbname: data.set_name,
+    params_dbversion: parseInt(data.set_version),
+    params_set: `${data.setup_name}:${data.setup_version}`
+  };
+
+  document.getElementById("c_params").value =
+    JSON.stringify(params, null, 2);
+}
+
+async function queryRuns() {
+
+  // 🔴 sécurité obligatoire
+  if (!STATE.selectedExperiment) {
+    alert("Please select a setup first");
+    return;
+  }
+
+  const res = await api('/db/runs', 'POST', {
+    experiment: STATE.selectedExperiment
+  });
+
+  const select = document.getElementById("db_runs");
+  select.innerHTML = '';
+
+  if (!res.run_list || !res.run_list.runs) return;
+
+  res.run_list.runs.slice().reverse().forEach(r => {
+    const opt = document.createElement("option");
+
+    opt.value = JSON.stringify(r);
+
+    opt.text = `Run ${r.run} - ${r.comment} (${r.date})`;
+
+    select.appendChild(opt);
+  });
 }
 </script>
 

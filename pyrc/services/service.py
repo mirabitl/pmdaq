@@ -14,6 +14,11 @@ class DbService:
          if not set_name:
              raise ValueError("Missing 'name' or 'version' in parameters")
          return self.db.parameters_set_info(set_name,set_version)
+    def list_runs(self,params: dict):
+         experiment=params.get("experiment")
+         if not experiment:
+             raise ValueError("Missing 'experiment' in parameters")
+         return self.db.runs(experiment)
          
 class AppService:
     def __init__(self):

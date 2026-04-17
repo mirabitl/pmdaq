@@ -17,6 +17,8 @@ class DbAccess:
         return self._wdj.parameters(do_json=True)
     def parameters_set_info(self,name: str,version: int):
         return self._wdj.parametersInfo(name,version,do_json=True)
+    def runs(self,experiment:str):
+        return self._wdj.runs(experiment=experiment,do_json=True)
         
 class Session:
     def __init__(self, name: str, version: str):
@@ -52,18 +54,24 @@ class Session:
 
     def configure(self, params: dict):
         self.config.update(params)
+        print(f"In COnfigure {params}")
         self._wdj=mg.instance()
+        #os.system(f"rm /dev/shm/mgjob/{self.name}_{self.version}.json")
         try:
             self._wdj.downloadConfig(self.name,self.version,True)
         except:
+            print(f"In COnfigure cannot download")
             return {"status":"failed"}
         self.conf_file=f"/dev/shm/mgjob/{self.name}_{self.version}.json"
+        os.system(f"cat {self.conf_file}")
         self.daq=daq.rc_fast(self.conf_file)
+        print(f"In COnfigure file {self.conf_file}")
         # parameters
         have_parameters=params.get("params_dbname") or params.get("params_file")
         if not have_parameters:
             return {"status": "configured", "file":self.conf_file}
         else:
+            print(f"In COnfigure file call parse_setting")
             rc=self.parse_settings(params)
             return {"status": "configured", "file":self.conf_file,"params":rc}
         

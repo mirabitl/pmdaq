@@ -238,8 +238,9 @@ class rc_fast:
             print(r)
         self.publish_state() 
     # daq
-    def parse_config(self,file_name,debug=False):
+    def parse_config(self,file_name,debug=False):        
         # Charger le JSON
+        print(f"parsing config {file_name}") 
         with open(file_name, "r") as f:
             data = json.load(f)
 
