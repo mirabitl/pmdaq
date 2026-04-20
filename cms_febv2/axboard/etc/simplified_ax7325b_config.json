@@ -1,0 +1,22 @@
+{
+    "daq": {
+		"config": {"mapping":"lemo","buf_size":30000,"resync_delay":5},
+		"db_state": "FEBV330_V48",
+		"db_version": 11,
+		"feb_id": 30,
+		"location": "dome_cms",
+		"logging": "DEBUG",
+		"orbit_fsm": {"s0": 3560,"s1": 106,"s2": 10,"s3": 5,"s4": 5},
+		"disable_force_s2":0,
+		"trigger": {"external": 3500,"n_bc0": 0},
+		"vth_shift": 11,
+		"writer": {
+			"detector_id": 191,
+			"file_directory": "/home/acqilc/data/",
+			"shm_directory": "/dev/shm/feb_data/",
+			"source_id": 10
+		}
+    },
+    "name": "acquisition_shm",
+    "version": 5
+}

@@ -68,9 +68,7 @@ class febv2_light:
             'destroy', ['INITIALISED', 'CONFIGURED'], 'CREATED',after='daq_destroying')
 
         self.storage=None
-        self.last_paccomp=None
-        self.last_delay_reset_trigger=None
-        
+        self.febwriter=None        
         self.params=None
         self.configured=False
         self.dummy=False
