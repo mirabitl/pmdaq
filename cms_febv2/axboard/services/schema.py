@@ -36,6 +36,8 @@ class FebDaqParams(BaseModel):
     trigger: Trigger
     vth_shift: int
     writer: Writer
+    pa_ccomp: Optional[int]=None
+    delay_reset_trigger: Optional[int]=None
 
 class FebAcquisition(BaseModel):
     daq: FebDaqParams

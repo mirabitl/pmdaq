@@ -7,9 +7,7 @@ import time
 import numpy as np
 from schema import Config,OrbitFsm,Trigger,Writer,FebDaqParams,FebAcquisition
 import ax_storage as ps
-
 import cms_irpc_feb_lightdaq as daq # pyright: ignore[reportMissingImports]
-
 import csv_register_access as cra # pyright: ignore[reportMissingImports]
 import os
 import json
@@ -29,11 +27,11 @@ logging.basicConfig(
 def load_from_file(f_config):
     c=json.loads(open(f_config).read())
     print(c)
-    p=febv2_light()
+    p=febv2_physic()
     p.set_configuration(c)
     return p
 
-class febv2_light:
+class febv2_physic:
     """The Light FEBV2 setup interface class.
     It hides access to MINIDAQ driver classes and implements basics function as
     init,configure,start,stop ....
@@ -73,11 +71,12 @@ class febv2_light:
         self.params=None
         self.configured=False
         self.dummy=False
+        self.sdb=cra.instance()
 
-    def set_configuration(self,c):
+    def set_configuration(self,c:str):
         self.conf=c
-        self.params=c["daq"]
-        self.buf_size=self.params["config"]["buf_size"]
+        self.params=FebAcquisition(**c)
+        self.buf_size=self.params.daq.config.buf_size
     def set_db_configuration(self,name,version):
         self.sdb.download_configuration(name,version)
         c=json.loads(open(f"/dev/shm/config/{name}_{version}.json").read())
@@ -98,9 +97,8 @@ class febv2_light:
         try:
             self.ax7325b = daq.AX7325BBoard()
             self.feb0 = daq.FebV2Board(self.ax7325b, febid='FEB0', fpga_fw_ver='4.8')
-            self.ax7325b.init(feb0=True, feb1=False,mapping_mode=self.params["config"]["mapping"])
+            self.ax7325b.init(feb0=True, feb1=False,mapping_mode=self.params.daq.config.mapping)
             ### Test
-            #self.sdb.setup.febs[0].fpga_version='4.8'
             self.feb0.init()
         except NameError as e:
             print(f"Test failed with message: {e}")
@@ -110,55 +108,51 @@ class febv2_light:
         It creates the access to the DB,
         It configures the FEB and prepare the FC7 for a run setting the orbit and trigger definition
         """
-        self.sdb=cra.instance()
-        self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
+        
+        self.sdb.download_setup(self.params.daq.db_state,self.params.daq.db_version)
         self.sdb.setup.febs[0].fpga_version='4.8'
         # Handle possible changes of vth, ccomp or delay reset
-        if "vth_shift" in self.params:
-            self.sdb.setup.febs[0].petiroc.shift_10b_dac(self.params["vth_shift"])
-        if "pa_ccomp" in self.params:
-            self.sdb.setup.febs[0].petiroc.set_parameter("pa_ccomp",self.params["pa_ccomp"]&0XF,asic=None)
-        if "delay_reset_trigger" in self.params:
-            self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",self.params["delay_reset_trigger"]&0XF,asic=None)
+        if self.params.daq.vth_shift:
+            self.sdb.setup.febs[0].petiroc.shift_10b_dac(self.params.daq.vth_shift)
+        if self.params.daq.pa_ccomp:
+            self.sdb.setup.febs[0].petiroc.set_parameter("pa_ccomp",self.params.daq.pa_ccomp&0XF,asic=None)
+        if self.params.daq.delay_reset_trigger:
+            self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",self.params.daq.delay_reset_trigger&0XF,asic=None)
         self.sdb.setup.version=999
         self.sdb.to_csv_files()
         daq.configLogger(logging.WARN)
         
-        self.feb0.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.params["db_state"],999,self.params["feb_id"]))
+        self.feb0.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.params.daq.db_state,999,self.params.daq.feb_id))
         #enableforces2=True
-        if ("disable_force_s2" in self.params):
-            enableforces2=not (self.params["disable_force_s2"]==1)
+        if (self.params.daq.disable_force_s2):
+            enableforces2=not (self.params.daq.disable_force_s2==1)
         for fpga in daq.FPGA_ID:
             self.feb0.fpga[fpga].tdcSetInjectionMode('standard')
             self.feb0.fpga[fpga].tdcEnable(False)       
 
         
         self.ax7325b.fastbitFsmConfigure(
-            s0_duration=self.params["orbit_fsm"]["s0"],
-            s1_duration=self.params["orbit_fsm"]["s1"],
-            s2_duration=self.params["orbit_fsm"]["s2"],
-            s3_duration=self.params["orbit_fsm"]["s3"],
-            s4_duration=self.params["orbit_fsm"]["s4"],
+            s0_duration=self.params.daq.orbit_fsm.s0,
+            s1_duration=self.params.daq.orbit_fsm.s1,
+            s2_duration=self.params.daq.orbit_fsm.s2,
+            s3_duration=self.params.daq.orbit_fsm.s3,
+            s4_duration=self.params.daq.orbit_fsm.s4,
             enable_force_s2=enableforces2)
 
-        self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=False, delay=self.params["config"]["resync_delay"])
+        self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=False, delay=self.params.daq.config.resync_delay)
         #self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=True, delay=100)
     
         self.ax7325b.fastbitResetBc0Id()
         #self.fc7.configure_resync_external(100)
         #self.fc7.reset_bc0_id()
 
-        if ("trigger" in self.params):
-            trg=self.params["trigger"]
-            if "n_bc0" in trg:
-                #self.fc7.configure_nBC0_trigger(trg["n_bc0"])
-                self.ax7325b.triggerBc0Configure(int(trg["n_bc0"]) != 0 , trg["n_bc0"]) 
+        if (self.params.daq.Trigger):
+            trg=self.params.daq.Trigger
+            if trg.n_bc0:
+                self.ax7325b.triggerBc0Configure(int(trg.n_bc0) != 0 , trg.n_bc0) 
+            if trg.external:
+                self.ax7325b.triggerExternalConfigure(int(trg.external) != 0 , trg.external)                
 
-            if "external" in trg:
-                #self.fc7.configure_external_trigger(trg["external"])
-                self.ax7325b.triggerExternalConfigure(int(trg["external"]) != 0 , trg["external"])                
-            #if "periodic" in trg:
-            #    self.fc7.configure_periodic_trigger(trg["periodic"])
         self.storage=None
         self.febwriter=None
         if self.params!=None:
