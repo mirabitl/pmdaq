@@ -11,10 +11,10 @@ import cms_irpc_feb_lightdaq as lightdaq # pyright: ignore[reportMissingImports]
 import csv_register_access as cra # pyright: ignore[reportMissingImports]
 import os
 import json
-
+import inspect
 import threading
 from transitions import Machine, State # pyright: ignore[reportMissingImports]
-
+from transitions.core import InvalidTriggerError,MachineError
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -72,7 +72,7 @@ class febv2_physic:
         self.configured=False
         self.dummy=False
         self.sdb=cra.instance()
-
+        self.methodes = [attr for attr in dir(self) if callable(getattr(self, attr))]
     def transition(self,name):
         """ Execute a transition of the FSM
 
@@ -84,8 +84,36 @@ class febv2_physic:
         if not hasattr(self, name):
             raise ValueError(f"Transition {name} not found")
         transition_method = getattr(self, name)
-        transition_method()
+        if not callable(transition_method):
+            raise ValueError(f"Transition {name} not callable")
+        try:
+            transition_method()
+        except InvalidTriggerError as e:
+            raise ValueError(f"Transition {name} forbidden {e}")
         return self.get_status()
+    def command(self,nom:str,params:dict):
+        # Vérifier si la méthode existe
+        if not hasattr(self, nom):
+            raise AttributeError(f"La méthode '{nom}' n'existe pas.")
+
+        methode = getattr(self, nom)
+
+        # Vérifier que c'est bien une méthode
+        if not callable(methode):
+            raise TypeError(f"'{nom}' n'est pas une méthode.")
+
+        # Récupérer la signature de la méthode
+        signature = inspect.signature(methode)
+        parametres = signature.parameters
+
+        # Vérifier que les clés du dictionnaire correspondent aux paramètres
+        for cle in params.keys():
+            if cle not in parametres:
+                raise ValueError(f"Le paramètre '{cle}' n'existe pas pour la méthode '{nom}'.")
+
+        # Appeler la méthode avec les paramètres
+        return methode(**params)
+            
     def set_configuration(self,c:str):
         self.conf=c
         self.params=FebAcquisition(**c)
@@ -134,13 +162,13 @@ class febv2_physic:
             self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",self.daq_conf.delay_reset_trigger&0XF,asic=None)
         self.sdb.setup.version=999
         self.sdb.to_csv_files()
-        daq.configLogger(logging.WARN)
+        lightdaq.configLogger(logging.WARN)
         
         self.feb0.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.daq_conf.db_state,999,self.daq_conf.feb_id))
         #enableforces2=True
         if (self.daq_conf.disable_force_s2):
             enableforces2=not (self.daq_conf.disable_force_s2==1)
-        for fpga in daq.FPGA_ID:
+        for fpga in lightdaq.FPGA_ID:
             self.feb0.fpga[fpga].tdcSetInjectionMode('standard')
             self.feb0.fpga[fpga].tdcEnable(False)       
 
