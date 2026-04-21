@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status
 from models import febv2_physic 
 from pydantic import BaseModel
 from typing import Dict, Any,Optional
+import inspect
 
 class CreateAcqRequest(BaseModel):
     name: str
@@ -28,6 +29,24 @@ def create_app(req: CreateAcqRequest):
         return {"message": "App created"}
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
+
+@router.get("/methods")
+def list_methods(self):
+    # Lister les méthodes appelables de self
+    methodes = [attr for attr in dir(acq) if callable(getattr(acq, attr))]
+    #print("Méthodes appelables de self :")
+    vm=[]
+    for methode in methodes:
+        signature=inspect.signature(acq.methode)
+        d={}
+        d["method"]=methode
+        d["parameters"]=[]
+    # Afficher les paramètres d'une méthode spécifique
+        for nom, param in signature.parameters.items():
+            annotation = param.annotation if param.annotation != inspect.Parameter.empty else "Non spécifié"
+            d["parameters"].append({"nom":nom,"type":annotation})
+        vm.append(d)
+    return {"methods":vm}
 
 @router.post("/commands")
 def execute_command(req: TransitionAcqRequest):

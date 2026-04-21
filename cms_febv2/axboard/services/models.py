@@ -91,7 +91,7 @@ class febv2_physic:
         except InvalidTriggerError as e:
             raise ValueError(f"Transition {name} forbidden {e}")
         return self.get_status()
-    def command(self,nom:str,params:dict):
+    def execute(self,nom:str,params:dict):
         # Vérifier si la méthode existe
         if not hasattr(self, nom):
             raise AttributeError(f"La méthode '{nom}' n'existe pas.")
