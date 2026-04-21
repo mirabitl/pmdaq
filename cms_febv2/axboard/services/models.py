@@ -76,7 +76,8 @@ class febv2_physic:
     def set_configuration(self,c:str):
         self.conf=c
         self.params=FebAcquisition(**c)
-        self.buf_size=self.params.daq.config.buf_size
+        self.daq_conf=self.params.daq
+        self.buf_size=self.daq_conf.config.buf_size
     def set_db_configuration(self,name,version):
         self.sdb.download_configuration(name,version)
         c=json.loads(open(f"/dev/shm/config/{name}_{version}.json").read())
@@ -97,7 +98,7 @@ class febv2_physic:
         try:
             self.ax7325b = daq.AX7325BBoard()
             self.feb0 = daq.FebV2Board(self.ax7325b, febid='FEB0', fpga_fw_ver='4.8')
-            self.ax7325b.init(feb0=True, feb1=False,mapping_mode=self.params.daq.config.mapping)
+            self.ax7325b.init(feb0=True, feb1=False,mapping_mode=self.daq_conf.config.mapping)
             ### Test
             self.feb0.init()
         except NameError as e:
@@ -109,45 +110,45 @@ class febv2_physic:
         It configures the FEB and prepare the FC7 for a run setting the orbit and trigger definition
         """
         
-        self.sdb.download_setup(self.params.daq.db_state,self.params.daq.db_version)
+        self.sdb.download_setup(self.daq_conf.db_state,self.daq_conf.db_version)
         self.sdb.setup.febs[0].fpga_version='4.8'
         # Handle possible changes of vth, ccomp or delay reset
-        if self.params.daq.vth_shift:
-            self.sdb.setup.febs[0].petiroc.shift_10b_dac(self.params.daq.vth_shift)
-        if self.params.daq.pa_ccomp:
-            self.sdb.setup.febs[0].petiroc.set_parameter("pa_ccomp",self.params.daq.pa_ccomp&0XF,asic=None)
-        if self.params.daq.delay_reset_trigger:
-            self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",self.params.daq.delay_reset_trigger&0XF,asic=None)
+        if self.daq_conf.vth_shift:
+            self.sdb.setup.febs[0].petiroc.shift_10b_dac(self.daq_conf.vth_shift)
+        if self.daq_conf.pa_ccomp:
+            self.sdb.setup.febs[0].petiroc.set_parameter("pa_ccomp",self.daq_conf.pa_ccomp&0XF,asic=None)
+        if self.daq_conf.delay_reset_trigger:
+            self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",self.daq_conf.delay_reset_trigger&0XF,asic=None)
         self.sdb.setup.version=999
         self.sdb.to_csv_files()
         daq.configLogger(logging.WARN)
         
-        self.feb0.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.params.daq.db_state,999,self.params.daq.feb_id))
+        self.feb0.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.daq_conf.db_state,999,self.daq_conf.feb_id))
         #enableforces2=True
-        if (self.params.daq.disable_force_s2):
-            enableforces2=not (self.params.daq.disable_force_s2==1)
+        if (self.daq_conf.disable_force_s2):
+            enableforces2=not (self.daq_conf.disable_force_s2==1)
         for fpga in daq.FPGA_ID:
             self.feb0.fpga[fpga].tdcSetInjectionMode('standard')
             self.feb0.fpga[fpga].tdcEnable(False)       
 
         
         self.ax7325b.fastbitFsmConfigure(
-            s0_duration=self.params.daq.orbit_fsm.s0,
-            s1_duration=self.params.daq.orbit_fsm.s1,
-            s2_duration=self.params.daq.orbit_fsm.s2,
-            s3_duration=self.params.daq.orbit_fsm.s3,
-            s4_duration=self.params.daq.orbit_fsm.s4,
+            s0_duration=self.daq_conf.orbit_fsm.s0,
+            s1_duration=self.daq_conf.orbit_fsm.s1,
+            s2_duration=self.daq_conf.orbit_fsm.s2,
+            s3_duration=self.daq_conf.orbit_fsm.s3,
+            s4_duration=self.daq_conf.orbit_fsm.s4,
             enable_force_s2=enableforces2)
 
-        self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=False, delay=self.params.daq.config.resync_delay)
+        self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=False, delay=self.daq_conf.config.resync_delay)
         #self.ax7325b.fastbitResyncConfigure(external=True, after_bc0=True, delay=100)
     
         self.ax7325b.fastbitResetBc0Id()
         #self.fc7.configure_resync_external(100)
         #self.fc7.reset_bc0_id()
 
-        if (self.params.daq.Trigger):
-            trg=self.params.daq.Trigger
+        if (self.daq_conf.Trigger):
+            trg=self.daq_conf.Trigger
             if trg.n_bc0:
                 self.ax7325b.triggerBc0Configure(int(trg.n_bc0) != 0 , trg.n_bc0) 
             if trg.external:
@@ -156,10 +157,10 @@ class febv2_physic:
         self.storage=None
         self.febwriter=None
         if self.params!=None:
-            if "file_directory" in self.params["writer"]:
-                self.storage=ps.storage_manager(self.params["writer"]["file_directory"])
-            elif "shm_directory" in self.params["writer"]:
-                self.febwriter=ps.PyFebWriter(self.params["writer"]["shm_directory"])
+            if self.daq_conf.writer.file_directory:
+                self.storage=ps.storage_manager(self.daq_conf.writer.file_directory)
+            elif self.daq_conf.writer.shm_directory:
+                self.febwriter=ps.PyFebWriter(self.daq_conf.writer.shm_directory)
         #self.storage.open("unessai")
         self.runid=None
         self.configured=True
@@ -176,18 +177,14 @@ class febv2_physic:
         Args:
             shift (int): Shift to add to VTH_TIME DAC10 bits taken in the DB
         """
-        #self.sdb.setup.febs[0].petiroc.shift_10b_dac(shift)
-        #self.sdb.to_csv_files()
-        self.params["vth_shift"]=shift
+        self.daq_conf.vth_shift=shift
     def change_paccomp(self,value):
         """ Change the PETIROC PACCOMP
             The PETIROC parameters to be used are modified but not load (configure needed)
         Args:
             value (int): PACCOMP to all asics
         """
-        #self.sdb.setup.febs[0].petiroc.set_parameter("pa_ccomp",value&0XF,asic=None)
-        #self.sdb.to_csv_files()
-        self.params["paccomp"]=value
+        self.daq_conf.paccomp=value
 
     def change_delay_reset_trigger(self,value):
         """ Change the PETIROC delay_reset_trigger value
@@ -195,9 +192,7 @@ class febv2_physic:
         Args:
             value (int): DELAY_RESET_TRIGGER VALUE
         """
-        #self.sdb.setup.febs[0].petiroc.set_parameter("delay_reset_trigger",value&0XF,asic=None)
-        #self.sdb.to_csv_files()
-        self.params["delay_reset_trigger"]=value
+        self.daq_conf.delay_reset_trigger=value
     def change_db(self,state_name,version):
         """ Download and store a new DB version
             The FPGA/PETIROC parameters to be used are stored but not load (configure needed)
@@ -205,18 +200,18 @@ class febv2_physic:
             state_name (str): name of the state
             version (int)" version number
         """
-        self.params["db_state"]=state_name
-        self.params["db_version"]=version
+        self.daq_conf.db_state=state_name
+        self.daq_conf.db_version=version
         
-        self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
+        self.sdb.download_setup(self.daq_conf.db_state,self.daq_conf.db_version)
         self.sdb.to_csv_files()
 
     def daq_starting(self,location=None,comment=None,params={"type":"NORMAL"}):
         if self.params!=None and location ==None:
-            location=self.params["location"]
+            location=self.daq_conf.location
             self.logger.info(f"DAQ parameter {self.params}")
             #exit(0)
-            comment=self.params["comment"] if "comment" in self.params else "No comment set"
+            comment=self.daq_conf.comment if "comment" in self.daq_conf else "No comment set"
                          
         runobj = self.sdb.getRun(location,comment)
         self.runid = runobj["run"]
@@ -226,14 +221,14 @@ class febv2_physic:
         self.run_type=1
         if self.storage: 
             # Store results in json
-            self.storage.open(f'{self.params["location"]}_{self.runid}_DB{self.params["db_state"]}_{self.params["db_version"]}_{self.params["feb_id"]}_VTH{self.params["vth_shift"]}')
+            self.storage.open(f'{self.daq_conf.location}_{self.runid}_DB{self.daq_conf.db_state}_{self.daq_conf.db_version}_{self.daq_conf.feb_id}_VTH{self.daq_conf.vth_shift}')
 
             
             if self.params==None:
-                rh=np.array([self.run_type,self.params["vth_shift"]],dtype='int64')
+                rh=np.array([self.run_type,self.daq_conf.vth_shift],dtype='int64')
                 self.storage.writeRunHeader(self.runid,rh)
             else:
-                self.storage.writeRunHeaderDict(self.runid,self.params)
+                self.storage.writeRunHeaderDict(self.runid,self.params.to_dict())
                 self.logger.info("Run header writen")
         print(f"Now we start with \n {params}")
         

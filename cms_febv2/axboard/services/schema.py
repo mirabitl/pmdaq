@@ -43,3 +43,6 @@ class FebAcquisition(BaseModel):
     daq: FebDaqParams
     name: str
     version: int
+    def to_dict(self):
+        """Retourne un dictionnaire représentant l'instance."""
+        return self.dict()
