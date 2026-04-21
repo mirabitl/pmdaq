@@ -93,7 +93,8 @@ def store(detid: int,
     with open(closed_filename, "a"):
         os.utime(closed_filename, None)
 
-
+READOUT_START = 0x28
+READOUT_END = 0x29
 class PyFebWriter:
     def __init__(self,shm_directory="/dev/shm/feb_data/"):
         self._event = 0

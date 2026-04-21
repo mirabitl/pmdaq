@@ -7,7 +7,7 @@ import time
 import numpy as np
 from schema import Config,OrbitFsm,Trigger,Writer,FebDaqParams,FebAcquisition
 import ax_storage as ps
-import cms_irpc_feb_lightdaq as daq # pyright: ignore[reportMissingImports]
+import cms_irpc_feb_lightdaq as lightdaq # pyright: ignore[reportMissingImports]
 import csv_register_access as cra # pyright: ignore[reportMissingImports]
 import os
 import json
@@ -44,7 +44,7 @@ class febv2_physic:
             config: a python object conatining the daq configuration
             verbose (bool): False by default, tune to true for debug printout
         """
-        daq.configLogger(logging.WARN)
+        lightdaq.configLogger(logging.WARN)
 
         self._thread = None
         self._running = threading.Event()
@@ -73,6 +73,19 @@ class febv2_physic:
         self.dummy=False
         self.sdb=cra.instance()
 
+    def transition(self,name):
+        """ Execute a transition of the FSM
+
+        Args:
+            name (str): name of the transition to execute
+        Returns:
+            A dictionnary with the new state and status of the acquisition
+        """
+        if not hasattr(self, name):
+            raise ValueError(f"Transition {name} not found")
+        transition_method = getattr(self, name)
+        transition_method()
+        return self.get_status()
     def set_configuration(self,c:str):
         self.conf=c
         self.params=FebAcquisition(**c)
@@ -96,8 +109,8 @@ class febv2_physic:
 
     def daq_initialising(self):
         try:
-            self.ax7325b = daq.AX7325BBoard()
-            self.feb0 = daq.FebV2Board(self.ax7325b, febid='FEB0', fpga_fw_ver='4.8')
+            self.ax7325b = lightdaq.AX7325BBoard()
+            self.feb0 = lightdaq.FebV2Board(self.ax7325b, febid='FEB0', fpga_fw_ver='4.8')
             self.ax7325b.init(feb0=True, feb1=False,mapping_mode=self.daq_conf.config.mapping)
             ### Test
             self.feb0.init()
@@ -427,4 +440,3 @@ class febv2_physic:
     def get_status(self):
         self.status=self.acq_status()
         return dict(self.status, running=self.running())
-    
