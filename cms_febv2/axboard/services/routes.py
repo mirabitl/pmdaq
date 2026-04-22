@@ -3,6 +3,7 @@ from models import febv2_physic
 from pydantic import BaseModel
 from typing import Dict, Any,Optional
 import inspect
+from typing import get_origin, get_args
 
 class CreateAcqRequest(BaseModel):
     name: str
@@ -10,7 +11,7 @@ class CreateAcqRequest(BaseModel):
 
 class TransitionAcqRequest(BaseModel):
     name: str
-    params: Optional[Dict[Any]]={}
+    params: Optional[Dict[str,Any]]={}
 
 
 router = APIRouter(prefix="/febv2", tags=["febv2"])
@@ -30,23 +31,60 @@ def create_app(req: CreateAcqRequest):
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
 
-@router.get("/methods")
-def list_methods(self):
-    # Lister les méthodes appelables de self
-    methodes = [attr for attr in dir(acq) if callable(getattr(acq, attr))]
-    #print("Méthodes appelables de self :")
-    vm=[]
-    for methode in methodes:
-        signature=inspect.signature(acq.methode)
-        d={}
-        d["method"]=methode
-        d["parameters"]=[]
-    # Afficher les paramètres d'une méthode spécifique
-        for nom, param in signature.parameters.items():
-            annotation = param.annotation if param.annotation != inspect.Parameter.empty else "Non spécifié"
-            d["parameters"].append({"nom":nom,"type":annotation})
-        vm.append(d)
-    return {"methods":vm}
+
+
+def format_type(annotation):
+    if annotation == inspect.Parameter.empty:
+        return None
+
+    origin = get_origin(annotation)
+    args = get_args(annotation)
+
+    if origin:
+        return f"{origin.__name__}[{', '.join(format_type(a) or 'Any' for a in args)}]"
+
+    if hasattr(annotation, "__name__"):
+        return annotation.__name__
+
+    return str(annotation).replace("typing.", "")
+
+
+@router.get("/methods", status_code=200)
+def list_methods():
+    try:
+        methods = []
+        cls = acq.__class__
+
+        for name, member in inspect.getmembers(acq, predicate=callable):
+            # ✅ uniquement public
+            if name.startswith("_"):
+                continue
+
+            # optionnel : uniquement définies dans la classe
+            if not hasattr(cls, name):
+                continue
+
+            sig = inspect.signature(member)
+
+            methods.append({
+                "name": name,
+                "parameters": [
+                    {
+                        "name": p_name,
+                        "type": format_type(p.annotation),
+                        "default": None if p.default == inspect.Parameter.empty else p.default
+                    }
+                    for p_name, p in sig.parameters.items()
+                ]
+                ,
+                "return": format_type(sig.return_annotation)
+            })
+
+        return {"methods": methods}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/commands")
 def execute_command(req: TransitionAcqRequest):

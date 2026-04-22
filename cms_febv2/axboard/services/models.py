@@ -14,7 +14,7 @@ import json
 import inspect
 import threading
 from transitions import Machine, State # pyright: ignore[reportMissingImports]
-from transitions.core import InvalidTriggerError,MachineError
+from transitions.core import MachineError
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -73,7 +73,7 @@ class febv2_physic:
         self.dummy=False
         self.sdb=cra.instance()
         self.methodes = [attr for attr in dir(self) if callable(getattr(self, attr))]
-    def transition(self,name):
+    def transition(self,name:str) -> dict:
         """ Execute a transition of the FSM
 
         Args:
@@ -88,7 +88,7 @@ class febv2_physic:
             raise ValueError(f"Transition {name} not callable")
         try:
             transition_method()
-        except InvalidTriggerError as e:
+        except MachineError as e:
             raise ValueError(f"Transition {name} forbidden {e}")
         return self.get_status()
     def execute(self,nom:str,params:dict):
@@ -114,17 +114,17 @@ class febv2_physic:
         # Appeler la méthode avec les paramètres
         return methode(**params)
             
-    def set_configuration(self,c:str):
+    def set_configuration(self,c:str) -> None:
         self.conf=c
         self.params=FebAcquisition(**c)
         self.daq_conf=self.params.daq
         self.buf_size=self.daq_conf.config.buf_size
-    def set_db_configuration(self,name,version):
+    def set_db_configuration(self,name:str,version:int) -> None:
         self.sdb.download_configuration(name,version)
         c=json.loads(open(f"/dev/shm/config/{name}_{version}.json").read())
         print(c)
         self.set_configuration(c)
-    def store_configuration(self,name,version,comment="Comment is missing"):
+    def store_configuration(self,name:str,version:int,comment="Comment is missing")-> None:
         self.conf["name"]=name
         self.conf["version"]=version
         fname="/tmp/%s_%s.json" % (name,version)
@@ -132,10 +132,10 @@ class febv2_physic:
         f.write(json.dumps(self.conf, indent=2, sort_keys=True))
         f.close()
         self.sdb.upload_configuration(fname,comment)
-    def daq_destroying(self):
+    def daq_destroying(self) -> bool:
         return True
 
-    def daq_initialising(self):
+    def daq_initialising(self) -> None:
         try:
             self.ax7325b = lightdaq.AX7325BBoard()
             self.feb0 = lightdaq.FebV2Board(self.ax7325b, febid='FEB0', fpga_fw_ver='4.8')
@@ -145,7 +145,7 @@ class febv2_physic:
         except NameError as e:
             print(f"Test failed with message: {e}")
 
-    def daq_configuring(self,board_id=0,dbstate=None,dbversion=0):
+    def daq_configuring(self,board_id:int=0,dbstate:str=None,dbversion:int=0):
         """ Now Configure the setup
         It creates the access to the DB,
         It configures the FEB and prepare the FC7 for a run setting the orbit and trigger definition
@@ -206,20 +206,20 @@ class febv2_physic:
         self.runid=None
         self.configured=True
 
-    def isConfigured(self):
+    def isConfigured(self) -> bool:
         """ Check the configuration
         Returns:
             True is configured
         """
         return self.configured
-    def change_vth_shift(self,shift):
+    def change_vth_shift(self,shift:int) -> None:
         """ Change the PETIROC VTH_TIME threshold
             The PETIROC parameters to be used are modified but not load (configure needed)
         Args:
             shift (int): Shift to add to VTH_TIME DAC10 bits taken in the DB
         """
         self.daq_conf.vth_shift=shift
-    def change_paccomp(self,value):
+    def change_paccomp(self,value:int) -> None:
         """ Change the PETIROC PACCOMP
             The PETIROC parameters to be used are modified but not load (configure needed)
         Args:
@@ -227,14 +227,14 @@ class febv2_physic:
         """
         self.daq_conf.paccomp=value
 
-    def change_delay_reset_trigger(self,value):
+    def change_delay_reset_trigger(self,value:int) -> None:
         """ Change the PETIROC delay_reset_trigger value
             The PETIROC parameters to be used are modified but not load (configure needed)
         Args:
             value (int): DELAY_RESET_TRIGGER VALUE
         """
         self.daq_conf.delay_reset_trigger=value
-    def change_db(self,state_name,version):
+    def change_db(self,state_name:str,version:int) -> None:
         """ Download and store a new DB version
             The FPGA/PETIROC parameters to be used are stored but not load (configure needed)
         Args:
@@ -247,7 +247,7 @@ class febv2_physic:
         self.sdb.download_setup(self.daq_conf.db_state,self.daq_conf.db_version)
         self.sdb.to_csv_files()
 
-    def daq_starting(self,location=None,comment=None,params={"type":"NORMAL"}):
+    def daq_starting(self,location=None,comment=None,params={"type":"NORMAL"}) -> None:
         if self.params!=None and location ==None:
             location=self.daq_conf.location
             self.logger.info(f"DAQ parameter {self.params}")
@@ -276,7 +276,7 @@ class febv2_physic:
         self.logger.info("Normal run")
         self.normal_run()
         
-    def normal_run(self,params=None):
+    def normal_run(self,params=None) -> bool:
         if self._thread and self._thread.is_alive():
             self.logger.warning("Acquisition déjà en cours")
             return False
@@ -285,7 +285,7 @@ class febv2_physic:
         self._thread.start()
         return True
     
-    def normal_loop(self, params=None):
+    def normal_loop(self, params=None) -> None:
         self.logger.info("NORMAL Acquisition thread démarré")
         while self._running.is_set():
             # simulate acquisition tick
@@ -302,7 +302,7 @@ class febv2_physic:
         self.logger.info("Acquisition thread arrêté")
 
 
-    def acq_status(self):
+    def acq_status(self) -> dict:
         """ returns the status of the acquisition
         Returns:
             A dictionnary object with status and event number
@@ -322,14 +322,14 @@ class febv2_physic:
             r["state"]=self.state
             r["event"]=-1
         return r
-    def start_acquisition(self):
+    def start_acquisition(self) -> None:
         acq_ctrl =  daq.BitField(self.ax7325b.ipbRead('ACQ_CTRL'))
         acq_ctrl[30] = 1
         acq_ctrl[29] = 1
         acq_ctrl[15,0] = self.buf_size
         self.ax7325b.ipbWrite('ACQ_CTRL', acq_ctrl)
         self.logger.debug(f"start_acquisition")
-    def stop_acquisition(self):
+    def stop_acquisition(self) -> None:
         acq_ctrl =  daq.BitField(self.ax7325b.ipbRead('ACQ_CTRL'))
         acq_ctrl[30] = 0
         acq_ctrl[29] = 1
@@ -337,11 +337,11 @@ class febv2_physic:
         self.ax7325b.ipbWrite('ACQ_CTRL', acq_ctrl)
         self.logger.debug(f"stop_acquisition")
 
-    def hasTrigger(self):
+    def hasTrigger(self) -> bool:
         acq_status = daq.BitField(self.ax7325b.ipbRead('ACQ_STATUS'))
         return (acq_status[31] == 0)
     
-    def getNFrames(self):
+    def getNFrames(self) -> int:
         acq_status = daq.BitField(self.ax7325b.ipbRead('ACQ_STATUS'))
         istat=self.ax7325b.ipbRead('ACQ_STATUS')
         self.logger.debug(f"Status {acq_status:08b} {bin(istat)[2:6]}")
@@ -353,7 +353,7 @@ class febv2_physic:
         n = acq_status[15,0]
         #self.logger.info(f"Reading {n}+3 TDC frames")
         return n
-    def readFrames(self,n):
+    def readFrames(self,n) -> list:
         self.logger.info(f"Reading {n+3} TDC frames")
         try:
             rawdata = self.ax7325b.ipbReadBlock('FEBS_TDC_DATA_WORDS', (n+3)*8) # 3 tdcframes are stuck between ringbuffer and ipbreadout
@@ -362,7 +362,7 @@ class febv2_physic:
 
         return rawdata
 
-    def acquiring_data(self):
+    def acquiring_data(self) -> None:
         """ Acquisition thread
 
         While running, it loops continously and spy data in the FC7 readout fifo
@@ -465,6 +465,6 @@ class febv2_physic:
     def running(self):
         return self._running.is_set()
 
-    def get_status(self):
+    def get_status(self) -> dict:
         self.status=self.acq_status()
         return dict(self.status, running=self.running())
