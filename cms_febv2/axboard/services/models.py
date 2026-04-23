@@ -24,7 +24,7 @@ logging.basicConfig(
     ]
 )
 
-def load_from_file(f_config):
+def load_from_file(f_config:str) -> febv2_physic:
     c=json.loads(open(f_config).read())
     print(c)
     p=febv2_physic()
@@ -147,7 +147,7 @@ class febv2_physic:
         except NameError as e:
             print(f"Test failed with message: {e}")
 
-    def daq_configuring(self,board_id:int=0,dbstate:str=None,dbversion:int=0):
+    def daq_configuring(self,board_id:int=0,dbstate:str=None,dbversion:int=0) -> None:
         """ Now Configure the setup
         It creates the access to the DB,
         It configures the FEB and prepare the FC7 for a run setting the orbit and trigger definition
@@ -310,6 +310,9 @@ class febv2_physic:
             A dictionnary object with status and event number
         """
         r={}
+        r["state"]=self.state
+        if self.params!=None:
+            r["configuration"]=self.daq_conf.dict()
         if (self._running.is_set()):
             if self.storage:
                 r["run"] = self.storage.run
@@ -317,11 +320,10 @@ class febv2_physic:
             elif self.febwriter:
                 r["run"] = self.runid
                 r["event"]=self.febwriter._event
-            r["state"]=self.state
+            
             
         else:
             r["run"] =-1
-            r["state"]=self.state
             r["event"]=-1
         return r
     def start_acquisition(self) -> None:
