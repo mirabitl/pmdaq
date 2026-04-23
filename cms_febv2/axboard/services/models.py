@@ -81,8 +81,10 @@ class febv2_physic:
         Returns:
             A dictionnary with the new state and status of the acquisition
         """
+       
         if not hasattr(self, name):
             raise ValueError(f"Transition {name} not found")
+       
         transition_method = getattr(self, name)
         if not callable(transition_method):
             raise ValueError(f"Transition {name} not callable")
@@ -165,8 +167,8 @@ class febv2_physic:
         lightdaq.configLogger(logging.WARN)
         
         self.feb0.loadConfigFromCsv(folder='/dev/shm/feb_csv', base_name='%s_%d_f_%d_config' % (self.daq_conf.db_state,999,self.daq_conf.feb_id))
-        #enableforces2=True
-        if (self.daq_conf.disable_force_s2):
+        enableforces2=True
+        if (self.daq_conf.disable_force_s2!=None):
             enableforces2=not (self.daq_conf.disable_force_s2==1)
         for fpga in lightdaq.FPGA_ID:
             self.feb0.fpga[fpga].tdcSetInjectionMode('standard')
@@ -188,8 +190,8 @@ class febv2_physic:
         #self.fc7.configure_resync_external(100)
         #self.fc7.reset_bc0_id()
 
-        if (self.daq_conf.Trigger):
-            trg=self.daq_conf.Trigger
+        if (self.daq_conf.trigger):
+            trg=self.daq_conf.trigger
             if trg.n_bc0:
                 self.ax7325b.triggerBc0Configure(int(trg.n_bc0) != 0 , trg.n_bc0) 
             if trg.external:
@@ -323,14 +325,14 @@ class febv2_physic:
             r["event"]=-1
         return r
     def start_acquisition(self) -> None:
-        acq_ctrl =  daq.BitField(self.ax7325b.ipbRead('ACQ_CTRL'))
+        acq_ctrl =  lightdaq.BitField(self.ax7325b.ipbRead('ACQ_CTRL'))
         acq_ctrl[30] = 1
         acq_ctrl[29] = 1
         acq_ctrl[15,0] = self.buf_size
         self.ax7325b.ipbWrite('ACQ_CTRL', acq_ctrl)
         self.logger.debug(f"start_acquisition")
     def stop_acquisition(self) -> None:
-        acq_ctrl =  daq.BitField(self.ax7325b.ipbRead('ACQ_CTRL'))
+        acq_ctrl =  lightdaq.BitField(self.ax7325b.ipbRead('ACQ_CTRL'))
         acq_ctrl[30] = 0
         acq_ctrl[29] = 1
         acq_ctrl[15,0] = 0
@@ -338,11 +340,11 @@ class febv2_physic:
         self.logger.debug(f"stop_acquisition")
 
     def hasTrigger(self) -> bool:
-        acq_status = daq.BitField(self.ax7325b.ipbRead('ACQ_STATUS'))
+        acq_status = lightdaq.BitField(self.ax7325b.ipbRead('ACQ_STATUS'))
         return (acq_status[31] == 0)
     
     def getNFrames(self) -> int:
-        acq_status = daq.BitField(self.ax7325b.ipbRead('ACQ_STATUS'))
+        acq_status = lightdaq.BitField(self.ax7325b.ipbRead('ACQ_STATUS'))
         istat=self.ax7325b.ipbRead('ACQ_STATUS')
         self.logger.debug(f"Status {acq_status:08b} {bin(istat)[2:6]}")
         try:
@@ -372,7 +374,7 @@ class febv2_physic:
         nbt = 0
         self.logger.setLevel(logging.INFO)
         #self.feb.enable_tdc(True)
-        for fpga in daq.FPGA_ID:
+        for fpga in lightdaq.FPGA_ID:
             self.feb0.fpga[fpga].tdcSetInjectionMode('standard')
             self.feb0.fpga[fpga].tdcEnable(True)
             self.feb0.fpga[fpga].tdcEnableChannel()       
@@ -438,7 +440,7 @@ class febv2_physic:
             self.ax7325b.flushDataflow()
             time.sleep(0.005)
             
-        for fpga in daq.FPGA_ID:
+        for fpga in lightdaq.FPGA_ID:
             self.feb0.fpga[fpga].tdcEnable(False) 
         self.stop_acquisition()
         nb_frames = self.getNFrames()
