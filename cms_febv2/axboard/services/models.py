@@ -24,7 +24,7 @@ logging.basicConfig(
     ]
 )
 
-def load_from_file(f_config:str) -> febv2_physic:
+def load_from_file(f_config:str):
     c=json.loads(open(f_config).read())
     print(c)
     p=febv2_physic()
