@@ -180,6 +180,13 @@ class Sy127Access:
         print(f"Setting Ramp down {val} on channel {chname}") 
         self.write_utf8('J')
         self.write_float(val)
+        
+    def toggle(self,chname:str):
+        if not self.modify_channel(chname):
+            return
+        # Set V0
+        print(f"Toggle ON/OFF channel {chname}")
+        self.write_utf8('N')
 
 if __name__ == '__main__':        
     crate=Sy127Access()

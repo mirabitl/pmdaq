@@ -80,6 +80,9 @@ class SY127MQTTBridge:
         elif ctype == "set_rdw":
             self.crate.set_rdw(ch, float(val))
 
+        elif ctype == "toggle":
+            self.crate.toggle(ch)
+
         else:
             print("Unknown command:", ctype)
 
