@@ -95,6 +95,6 @@ class SY127MQTTBridge:
         self.client.loop_forever()
 
 if __name__ == '__main__':
-    crate = Sy127Driver.Sy127Access()
+    crate = Sy127Driver.Sy127Access(mode=0)
     bridge = SY127MQTTBridge(crate, broker="lyoilcdaq01")
     bridge.run()

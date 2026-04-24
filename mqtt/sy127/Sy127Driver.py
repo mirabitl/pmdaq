@@ -70,10 +70,10 @@ class SY127Parser:
         return channels
 
 class Sy127Access:
-    def __init__(self,device:str='/dev/ttyUSB0',baudrate:int=9600,timeout:int=2):
+    def __init__(self,device:str='/dev/ttyUSB0',baudrate:int=9600,timeout:int=2,mode=1):
         self.ser = serial.Serial(device,baudrate, timeout=timeout)
         self.ser.setDTR(False) #needed to keep data coming over serial without timeout     
-        
+        self.mode=mode
         print("Serial Line Open")
         self.parser = SY127Parser()
 
@@ -116,7 +116,10 @@ class Sy127Access:
                     chread=False
                     break
             if chread:
-                self.ser.write("p".encode('utf-8')) #refresh params
+                if self.mode==1:
+                    self.ser.write("p".encode('utf-8')) #refresh params
+                else:
+                    self.ser.write("q".encode('utf-8')) #refresh params
         #print("\n \n",self.channels)
         print("\033[2J\033[H", end="")
         for ch, data in self.channels.items():
