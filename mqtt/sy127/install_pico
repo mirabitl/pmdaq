@@ -1,0 +1,12 @@
+#!/bin/bash
+sudo systemctl disable Sy127Pico 
+sudo service Sy127Pico stop
+mkdir -p ../bin
+g++ -o ../bin/Sy127Pico.exe -DUNIX -I../include ../src/PicoInterface.cc Sy127Interface.cc Sy127Pico.cc -lcpprest  -lpaho-mqtt3a -lpaho-mqttpp3 -lpthread -lcaenhvwrapper  -lserialport -lmosquitto
+
+#sudo mkdir -p /usr/local/paho/bin
+#sudo cp ../bin/Sy127Pico.exe /usr/local/paho/bin/
+  #sudo sed -e 's,SERVICENAME,Sy127Pico,g' ../etc/example.service > Sy127Pico.service
+#sudo cp Sy127Pico.service /lib/systemd/system/
+#sudo systemctl enable Sy127Pico 
+#sudo service Sy127Pico stop
