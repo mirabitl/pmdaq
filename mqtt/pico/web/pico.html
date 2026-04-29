@@ -61,6 +61,8 @@ body {font-family: Arial;}
   <button class="tablinks" onclick="openTab(event, 'Status')">P/T/H Status</button>
   <button class="tablinks" onclick="openTab(event, 'Wiener')">Wiener HV control</button>
   <button class="tablinks" onclick="openTab(event, 'Sy1527')">SY1527 HV control</button>
+  <button class="tablinks" onclick="openTab(event, 'Sy127-dome_lep')">SY127 LEP HV control</button>
+  <button class="tablinks" onclick="openTab(event, 'Sy127-dome_mrpc')">SY127 MRPC HV control</button>
 
 </div>
 
@@ -132,7 +134,14 @@ body {font-family: Arial;}
   <h3>HV Monitoring</h3>
 
 </div>
+<div id="Sy127-dome_lep" class="tabcontent">
+  <h3>HV Monitoring</h3>
 
+</div>
+<div id="Sy127-dome_mrpc" class="tabcontent">
+  <h3>HV Monitoring</h3>
+
+</div>
 <script>
 function openTab(evt, cityName) {
   var i, tabcontent, tablinks;

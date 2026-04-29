@@ -70,7 +70,7 @@ function onMessageArrived(message) {
         id_cpw = jmsg["devices"].findIndex((element) => element === "cpwplus");
         id_wiener = jmsg["devices"].findIndex((element) => element === "wiener");
         id_sy1527 = jmsg["devices"].findIndex((element) => element === "sy1527");
-
+        id_sy127 = jmsg["devices"].findIndex((element) => element === "sy127");
         //alert(id_cpw)
         // Create brooks_head object
         if (id_brooks >= 0) {
@@ -235,6 +235,23 @@ function onMessageArrived(message) {
             client.subscribe(topic_sy1527);
             //createListBrooks();
         }
+        if (id_sy127 >= 0) {
+            var s_sub = jmsg["subsystem"];
+
+            // Query existing gas
+            topic_sy127 = pico_location + "/" + s_sub + "/sy127/#"
+            if (document.getElementById('sy127-' + s_sub) == null) {
+                var iDiv = document.createElement('div');
+                iDiv.id = 'sy127-' + s_sub;
+                iDiv.className = 'sy127-' + s_sub;
+                iDiv.innerHTML = "<H2> Sy127 system " + s_sub + "</H2>"
+                document.getElementById("Sy127-"+s_sub).appendChild(iDiv);
+                addSy127Table(iDiv.className);
+            }
+
+            client.subscribe(topic_sy127);
+            //createListBrooks();
+        }
 
 
         console.log(brooksys)
@@ -313,6 +330,10 @@ function onMessageArrived(message) {
     if (v_t.length == 3)
         if (v_t[2] == "sy1527")
             addSy1527Rows("sy1527-" + v_t[1], jmsg);
+    // SY127
+    if (v_t.length == 3)
+        if (v_t[2] == "sy127")
+            addSy127Rows("sy127-" + v_t[1], jmsg);
 
 }
 
@@ -1537,4 +1558,152 @@ function addSy1527Rows(div_name, g_obj) {
 
     }
 
+}
+function addSy127Table(div_name) {
+
+    var myTableDiv = document.getElementById(div_name);
+    var req_tab = document.getElementById(div_name + "-table-id");
+    if (req_tab != null) return;
+
+    var table = document.createElement('TABLE');
+    table.id = div_name + '-table-id';
+    table.className = div_name + '-table';
+    table.border = '1';
+
+    var headers = ["Name","Channel", "V Set (V)", "I Set (uA)", "Ramp Up", "Ramp Down", 
+                   "V read (V)", "I read (uA)", "Status",
+                   "V Req.", "", "I Req.", "", "Ramp Up Req.", "", "Ramp Down Req.", "",
+                   "ON", "OFF"];
+
+    var tableBody = document.createElement('TBODY');
+    table.appendChild(tableBody);
+
+    var tr = document.createElement('TR');
+    headers.forEach(h => {
+        var td = document.createElement('TD');
+        td.appendChild(document.createTextNode(h));
+        tr.appendChild(td);
+    });
+
+    tableBody.appendChild(tr);
+    myTableDiv.appendChild(table);
+}
+function addSy127Rows(div_name, g_obj) {
+
+    var table = document.getElementById(div_name + '-table-id');
+    if (!table || !g_obj || !g_obj.channels) return;
+
+    for (let rch of g_obj["channels"]) {
+
+        let ch = rch["id"];
+        let ch_name = rch["chname"];
+
+        let row_id = div_name + "-table-" + ch;   // FIX cohérence
+        let req_row = document.getElementById(row_id);
+
+        function val(x, d=0) { return (x !== undefined) ? x : d; }
+
+        // ===== UPDATE =====
+        if (req_row != null) {
+
+            document.getElementById(row_id + "-vset").innerHTML = val(rch["vset"]).toFixed(1);
+            document.getElementById(row_id + "-iset").innerHTML = val(rch["iset"]).toFixed(3);
+            document.getElementById(row_id + "-vout").innerHTML = val(rch["vout"]).toFixed(1);
+            document.getElementById(row_id + "-iout").innerHTML = val(rch["iout"]).toFixed(3);
+            document.getElementById(row_id + "-status").innerHTML = val(rch["status"], "");
+            document.getElementById(row_id + "-name").innerHTML = ch_name;
+            document.getElementById(row_id + "-rampup").innerHTML = val(rch["rampup"]).toFixed(1);
+            document.getElementById(row_id + "-rampdown").innerHTML = val(rch["rampdown"]).toFixed(1);
+
+            continue;
+        }
+
+        // ===== CREATE =====
+        let row = table.insertRow(-1);
+        row.id = row_id;
+
+        function addCell(id, content) {
+            let c = row.insertCell(-1);
+            c.id = row_id + "-" + id;
+            c.innerHTML = content;
+            return c;
+        }
+
+        addCell("name", ch_name);
+        addCell("channel", ch);
+        addCell("vset", val(rch["vset"]).toFixed(1));
+        addCell("iset", val(rch["iset"]).toFixed(3));
+        addCell("rampup", val(rch["rampup"]).toFixed(1));
+        addCell("rampdown", val(rch["rampdown"]).toFixed(1));
+        addCell("vout", val(rch["vout"]).toFixed(1));
+        addCell("iout", val(rch["iout"]).toFixed(3));
+        addCell("status", val(rch["status"], ""));
+
+        let s_mod = div_name.split("-")[0];
+        let s_sub = div_name.split("-")[1];
+
+        function sendCmd(cmd, value=null) {
+            let topic_cmd = pico_location + "/" + s_sub + "/CMD";
+            let j_msg = {
+                device: s_mod,
+                command: cmd,
+                params: { channel: ch_name }
+            };
+            if (value !== null) j_msg.params.value = parseFloat(value);
+
+            console.log(topic_cmd, j_msg);
+            publish_one_message(topic_cmd, JSON.stringify(j_msg));
+        }
+
+        // ==== VSET ====
+        let x_vset = document.createElement("input");
+        x_vset.type = "number";
+        row.insertCell(-1).appendChild(x_vset);
+
+        let b_vset = document.createElement("button");
+        b_vset.innerHTML = "Set V";
+        b_vset.onclick = () => sendCmd("VSET", x_vset.value);
+        row.insertCell(-1).appendChild(b_vset);
+
+        // ==== ISET ====
+        let x_iset = document.createElement("input");
+        x_iset.type = "number";
+        row.insertCell(-1).appendChild(x_iset);
+
+        let b_iset = document.createElement("button");
+        b_iset.innerHTML = "Set I";
+        b_iset.onclick = () => sendCmd("ISET", x_iset.value);
+        row.insertCell(-1).appendChild(b_iset);
+
+        // ==== RAMP UP ====
+        let x_ru = document.createElement("input");
+        x_ru.type = "number";
+        row.insertCell(-1).appendChild(x_ru);
+
+        let b_ru = document.createElement("button");
+        b_ru.innerHTML = "Ramp Up";
+        b_ru.onclick = () => sendCmd("RAMPUP", x_ru.value);
+        row.insertCell(-1).appendChild(b_ru);
+
+        // ==== RAMP DOWN ====
+        let x_rd = document.createElement("input");
+        x_rd.type = "number";
+        row.insertCell(-1).appendChild(x_rd);
+
+        let b_rd = document.createElement("button");
+        b_rd.innerHTML = "Ramp Down";
+        b_rd.onclick = () => sendCmd("RAMPDOWN", x_rd.value);
+        row.insertCell(-1).appendChild(b_rd);
+
+        // ==== ON / OFF ====
+        let b_on = document.createElement("button");
+        b_on.innerHTML = "ON";
+        b_on.onclick = () => sendCmd("ON");
+        row.insertCell(-1).appendChild(b_on);
+
+        let b_off = document.createElement("button");
+        b_off.innerHTML = "OFF";
+        b_off.onclick = () => sendCmd("OFF");
+        row.insertCell(-1).appendChild(b_off);
+    }
 }
