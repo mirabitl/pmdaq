@@ -111,7 +111,34 @@ void Sy127Access::status() {
       write(mode == 1 ? "p" : "q");
   }
 }
-string  Sy127Access::json_status()
+string Sy127Access::json_status()
+{
+  json j;
+  j["channels"] = json::array();
+
+  int id = 0;
+  for (auto& kv : this->channels) {
+    const string& chname = kv.first;
+    const json& data = kv.second;
+
+    json ch;
+    ch["chname"]   = chname;
+    ch["id"]       = id++;
+    ch["iout"]     = data.value("IMON", 0);
+    ch["iset"]     = data.value("I0", 0);
+    ch["rampup"]   = data.value("RUP", 0);
+    ch["rampdown"] = data.value("RDW", 0);
+    ch["trip"]     = data.value("TRIP", 0);
+    ch["status"]   = data.value("STATUS","UNKNOWN");
+    ch["vout"]     = data.value("VMON", 0);
+    ch["vset"]     = data.value("V0", 0);
+
+    j["channels"].push_back(ch);
+  }
+
+  return j.dump();
+}
+/** string  Sy127Access::json_status()
 {
   json j;
   for (auto& kv : this->channels) {
@@ -120,6 +147,7 @@ string  Sy127Access::json_status()
 
   return j.dump();
 }
+*/
 double  Sy127Access::v0(std::string channel)
 {
   auto it=this->channels.find(channel);
