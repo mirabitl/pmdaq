@@ -271,6 +271,22 @@ class picmic_physic:
         self.sdb.download_setup(self.daq_conf.db.state,self.daq_conf.db.version)
         self.sdb.to_csv_files()
 
+    def change_threshold(self,thr:int)->None:
+        self.daq_conf.threshold= thr
+
+    def change_filtering(self,on:int)->None:
+        self.daq_conf.filtering=(on!=0)
+
+    def change_faling(self,on:int)->None:
+        self.daq_conf.falling=(on!=0)
+    def change_val_evt(self,on:int)->None:
+        self.daq_conf.val_evt=on
+
+    def change_dc_pa(self,on:int)->None:
+        self.daq_conf.dc_pa=on
+    def change_polarity(self,on:int)->None:
+        self.daq_conf.pol_neg=on
+        
     def daq_starting(self,location=None,comment=None,params={"type":"NORMAL"}) -> None:
         if self.params!=None and location ==None:
             location=self.daq_config.location
