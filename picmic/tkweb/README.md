@@ -1,19 +1,17 @@
 # PicoMic Web Interface (tkweb)
 
-Interface web moderne pour contrôler le système PicoMic DAQ via l'API REST FastAPI.
+Interface web moderne et complète pour contrôler le système PicoMic DAQ via l'API REST FastAPI.
 
 ## Architecture
-
-Cette interface remplace l'interface TK desktop (répertoire `tk`) en utilisant une architecture client-serveur:
 
 ```
 ┌─────────────────────────────────────────────────┐
 │          Web Browser (tkweb)                     │
 │  ┌────────────────────────────────────────────┐  │
-│  │  HTML + JavaScript + Bootstrap 5           │  │
-│  │  - index.html                              │  │
-│  │  - app.js (API calls)                      │  │
-│  │  - styles.css                              │  │
+│  │  HTML + JavaScript + Bootstrap 5 + Chart.js│  │
+│  │  - index.html (multi-tabs UI)              │  │
+│  │  - app.js (API calls + Charts)             │  │
+│  │  - styles.css (responsive design)          │  │
 │  └────────────────────────────────────────────┘  │
 └──────────────────┬────────────────────────────────┘
                    │ HTTP/REST API
@@ -22,82 +20,334 @@ Cette interface remplace l'interface TK desktop (répertoire `tk`) en utilisant 
 │          FastAPI Server (services)                 │
 │  ┌────────────────────────────────────────────┐  │
 │  │  main.py + picmic_routes.py                │  │
-│  │  - /picmic/                                │  │
-│  │  - /picmic/methods                         │  │
-│  │  - /picmic/commands                        │  │
-│  │  - /picmic/create                          │  │
+│  │  - Status Management                       │  │
+│  │  - Configuration Management                │  │
+│  │  - Calibration Control                     │  │
+│  │  - Advanced Parameters                     │  │
+│  │  - Method Introspection                    │  │
 │  └────────────────────────────────────────────┘  │
 └──────────────────┬────────────────────────────────┘
                    │ Direct calls
                    │
 ┌──────────────────▼────────────────────────────────┐
-│      PicoMic Physical Layer (services)            │
+│      PicoMic Physical Layer (share)              │
 │  ┌────────────────────────────────────────────┐  │
-│  │  picmic_models.py (picmic_physic class)    │  │
-│  │  - Calibration methods                     │  │
-│  │  - S-curve methods                         │  │
-│  │  - DAQ control methods                     │  │
+│  │  picmic_daq.py - Acquisition               │  │
+│  │  picmic_storage.py - Data Storage          │  │
+│  │  picmic_scurve.py - Calibration            │  │
+│  │  Hardware Interface (DAQ, HV, MQTT, etc)   │  │
 │  └────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────┘
 ```
 
-## Installation
+## Installation & Démarrage
 
-### 1. Assurez-vous que le serveur FastAPI est en cours d'exécution
-
-```bash
-cd /opt/pmdaq/picmic/services
-python main.py
-# ou avec uvicorn
-uvicorn main:app --host 0.0.0.0 --port 8000
-```
-
-### 2. Ouvrir l'interface web
-
-- **Localement**: http://localhost:8000/docs (Swagger UI)
-- **Interface personnalisée**: Ouvrez `index.html` dans un navigateur
-
-### 3. (Optionnel) Servir via un serveur web
+### 1. Démarrer le serveur FastAPI
 
 ```bash
-# Avec Python
-cd /opt/pmdaq/picmic/tkweb
-python -m http.server 8080
-
-# Avec Apache/Nginx
-# Configurez un virtualhost pour servir le répertoire tkweb
+cd /opt/pmdaq/picmic
+python services/main.py
+# Ou avec uvicorn:
+# uvicorn services.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-## Fichiers
+### 2. Accéder à l'interface web
 
-- **index.html** - Interface web principale (HTML5 responsive)
-- **app.js** - Logique JavaScript pour appeler l'API REST
-- **styles.css** - Styles CSS personnalisés
-- **README.md** - Cette documentation
+- **Version interactive**: http://localhost:8000/picmic (voir tkweb/index.html)
+- **Documentation API Swagger**: http://localhost:8000/docs
+- **Documentation API ReDoc**: http://localhost:8000/redoc
+
+## Fichiers du Projet
+
+| Fichier | Description |
+|---------|-------------|
+| `index.html` | Interface web principale (multi-tabs, responsive) |
+| `app.js` | Logique JavaScript, API calls, charts |
+| `styles.css` | Styles personnalisés (dark/light, responsive) |
+| `README.md` | Cette documentation |
+| `Dockerfile` | Déploiement Docker |
+| `docker-compose.yml` | Stack Docker complet |
 
 ## Fonctionnalités
 
-### 1. Configuration
+### 📊 Dashboard (Onglet 1)
 
-- **Create Configuration**: Charger une configuration de la base de données
-  - Paramètres: `name`, `version`
-  - Exemple: "LIROC_TEST", version 1
-
-### 2. Status en temps réel
-
-- **Auto-refresh**: Mise à jour automatique du status toutes les 2 secondes
-- Affiche:
+- **Monitoring en temps réel** avec graphique d'événements
+- **Status du système**:
   - État actuel (CREATED, INITIALISED, CONFIGURED, RUNNING)
-  - Numéro de run
-  - Nombre d'événements
-  - État de fonctionnement (IDLE/RUNNING)
+  - Run counter
+  - Event counter
+  - État (IDLE/RUNNING)
+- **Boutons de transition d'état**:
+  - Initialize
+  - Configure
+  - Start
+  - Stop
+- **Logging** avec couleurs par niveau (info, success, warn, error)
 
-### 3. Methods
+### 🔍 Calibration (Onglet 2)
 
-L'interface charge dynamiquement la liste des méthodes disponibles du serveur:
+- **Paramètres de calibration S-curve**:
+  - Threshold Min/Max
+  - Threshold Step
+  - DC_PA
+  - Mode (optionnel)
+- **Graphique S-curve** en temps réel avec Chart.js
+- **Endpoints API**:
+  - `POST /calibration` - Démarrer la calibration
+  - `GET /calibration-data` - Récupérer les données
 
-- **Calibration**:
-  - `align()` - Calibration du seuil
+### ⚙️ Configuration (Onglet 3)
+
+- **Sauvegarder configuration actuelle**:
+  - Nom et description
+  - Stockage en JSON dans `/tmp/picmic_configs/`
+- **Liste des configurations sauvegardées**:
+  - Charger configuration
+  - Supprimer configuration
+  - Voir date de modification
+- **Endpoints API**:
+  - `GET /config/list` - Lister les configs
+  - `POST /config/save` - Sauvegarder
+  - `GET /config/load/{name}` - Charger
+  - `DELETE /config/{name}` - Supprimer
+
+### 🛠️ Paramètres Avancés (Onglet 4)
+
+- **DAQ Parameters**:
+  - Threshold Value (0-4095)
+  - DC_PA Value (0-255)
+  - Enable Filtering (checkbox)
+  - Enable Falling Edge (checkbox)
+  - Force Valid Event (checkbox)
+  - Negative Polarity (checkbox)
+- **Application des paramètres** avec validation
+- **Endpoints API**:
+  - `GET /advanced-params` - Lire paramètres
+  - `POST /advanced-params` - Appliquer paramètres
+
+### 🧪 Methods (Onglet 5)
+
+- **Méthodes dynamiques** chargées du serveur
+- **Introspection automatique**:
+  - Liste complète des méthodes disponibles
+  - Signature et paramètres
+  - Types de retour
+- **Exécution avec modale**:
+  - Génération dynamique de formulaires
+  - Conversion de types automatique
+  - Résultat et logs
+- **Endpoints API**:
+  - `GET /methods` - Lister méthodes
+  - `POST /commands` - Exécuter méthode
+  - `POST /transitions` - Exécuter transition FSM
+
+## API Endpoints
+
+### Status Management
+
+```bash
+GET /picmic/
+GET /picmic/status-history
+POST /picmic/update-status
+```
+
+### Configuration Management
+
+```bash
+GET /picmic/config/list
+GET /picmic/config/load/{config_name}
+POST /picmic/config/save?name=...&description=...
+DELETE /picmic/config/{config_name}
+```
+
+### Calibration
+
+```bash
+POST /picmic/calibration
+GET /picmic/calibration-data
+```
+
+### Advanced Parameters
+
+```bash
+GET /picmic/advanced-params
+POST /picmic/advanced-params
+```
+
+### Methods & Transitions
+
+```bash
+GET /picmic/methods
+POST /picmic/commands
+POST /picmic/transitions
+```
+
+## Exemples d'utilisation
+
+### Via cURL
+
+```bash
+# Charger les méthodes disponibles
+curl http://localhost:8000/picmic/methods
+
+# Exécuter une transition
+curl -X POST http://localhost:8000/picmic/transitions \
+  -H "Content-Type: application/json" \
+  -d '{"name": "initialise", "params": {}}'
+
+# Lister les configurations
+curl http://localhost:8000/picmic/config/list
+
+# Sauvegarder une configuration
+curl -X POST "http://localhost:8000/picmic/config/save?name=TEST&description=Test Config"
+```
+
+### Via Python
+
+```python
+import requests
+
+API_URL = "http://localhost:8000/picmic"
+
+# Charger méthodes
+response = requests.get(f"{API_URL}/methods")
+methods = response.json()
+
+# Exécuter une méthode
+response = requests.post(f"{API_URL}/commands", json={
+    "name": "some_method",
+    "params": {"param1": "value"}
+})
+```
+
+## Déploiement Docker
+
+### Build et Run
+
+```bash
+cd /opt/pmdaq/picmic
+
+# Build l'image
+docker build -t picmic-web:latest -f tkweb/Dockerfile .
+
+# Run avec docker-compose
+docker-compose -f tkweb/docker-compose.yml up -d
+
+# Accéder à http://localhost:8000
+```
+
+### Configuration Nginx
+
+```nginx
+server {
+    listen 80;
+    server_name picmic.example.com;
+
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+## Features & Améliorations
+
+### ✅ Implémentées
+
+- [x] Multi-tab interface responsive
+- [x] Real-time monitoring avec Chart.js
+- [x] Configuration management
+- [x] Advanced parameters
+- [x] Method introspection & execution
+- [x] State machine transitions
+- [x] Logging avec couleurs
+- [x] S-curve visualization
+- [x] CORS support
+- [x] Error handling
+
+### 📋 TODO (Future)
+
+- [ ] WebSockets pour updates temps réel (vs polling)
+- [ ] Authentication/Authorization
+- [ ] Export data (CSV, PDF, JSON)
+- [ ] Multi-user support
+- [ ] Data persistence
+- [ ] Performance optimization
+- [ ] PWA support
+
+## Troubleshooting
+
+### Connexion refusée
+
+```bash
+# Vérifier que le serveur tourne
+ps aux | grep main.py
+
+# Vérifier le port
+netstat -tlnp | grep 8000
+
+# Relancer le serveur
+cd /opt/pmdaq/picmic && python services/main.py
+```
+
+### CORS errors
+
+Le CORS est activé pour tous les origins. Si problème, modifier `services/main.py`:
+
+```python
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://yourdomain.com"],  # Spécifier domaines
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+### Charts ne s'affichent pas
+
+- Vérifier que Chart.js est chargé: `https://cdn.jsdelivr.net/npm/chart.js`
+- Vérifier la console du navigateur (F12) pour les erreurs
+- S'assurer que les éléments `#chartMonitor` et `#chartScurve` existent dans le DOM
+
+## Notes de développement
+
+### Ajouter une nouvelle fonctionnalité
+
+1. **Ajouter endpoint dans `picmic_routes.py`**:
+```python
+@router.get("/my-feature")
+def my_feature():
+    return {"result": "value"}
+```
+
+2. **Ajouter fonction dans `app.js`**:
+```javascript
+async function myFeature() {
+    const response = await apiCall('/my-feature');
+    // Traiter réponse
+}
+```
+
+3. **Ajouter UI dans `index.html`**:
+```html
+<button onclick="myFeature()">My Feature</button>
+```
+
+## Support
+
+Pour les bugs ou améliorations, contacter l'équipe DAQ.
+
+---
+
+**Version**: 1.1  
+**Date**: Mai 2026  
+**Status**: ✅ Production Ready
   - `calib_dac_local()` - Calibration DAC local
   - `calib_iterative_dac_local()` - Calibration itérative
 

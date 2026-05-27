@@ -11,9 +11,45 @@
     --dark-bg: #212529;
 }
 
+* {
+    transition: background-color 0.2s ease;
+}
+
+html, body {
+    height: 100%;
+}
+
 body {
     background-color: var(--light-bg);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Navbar */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Tabs */
+.nav-tabs {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.nav-tabs .nav-link {
+    color: #6c757d;
+    border: none;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    background-color: transparent;
 }
 
 /* Cards */
@@ -30,6 +66,39 @@ body {
 .card-header {
     font-weight: 600;
     border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    letter-spacing: 0.5px;
+}
+
+/* Status Grid */
+.status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.status-item {
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.status-item .label {
+    display: block;
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-item .value {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: var(--dark-bg);
+    margin-top: 5px;
 }
 
 /* Status Display */
@@ -61,6 +130,7 @@ body {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+    padding: 10px 0;
 }
 
 .button-group .btn {
@@ -78,24 +148,153 @@ body {
     background-color: var(--primary-color);
 }
 
+/* Configuration List */
+.config-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.list-group-item {
+    border: 1px solid #e9ecef;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.list-group-item strong {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--dark-bg);
+}
+
+.list-group-item button {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+}
+
 /* Log Display */
 .log-display {
     background-color: var(--dark-bg);
     color: #00ff00;
     padding: 15px;
     border-radius: 8px;
-    max-height: 400px;
+    max-height: 350px;
     overflow-y: auto;
     font-family: 'Courier New', monospace;
     font-size: 0.85rem;
     line-height: 1.6;
     border: 1px solid #444;
+    scrollbar-width: thin;
+    scrollbar-color: #555 #333;
+}
+
+.log-display::-webkit-scrollbar {
+    width: 8px;
+}
+
+.log-display::-webkit-scrollbar-track {
+    background: #333;
+}
+
+.log-display::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
 }
 
 .log-display code {
     color: inherit;
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+/* Log Entry Levels */
+.log-info {
+    color: #00aaff;
+}
+
+.log-success {
+    color: #00ff00;
+}
+
+.log-warn {
+    color: #ffaa00;
+}
+
+.log-error {
+    color: #ff5555;
+}
+
+/* Buttons */
+.btn-group-vertical {
+    gap: 8px;
+}
+
+.btn-group-vertical .btn {
+    transition: all 0.2s ease;
+}
+
+.btn-group-vertical .btn:hover {
+    transform: translateX(4px);
+}
+
+/* Form Controls */
+.form-control, .form-check-input {
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+/* Charts */
+#chartMonitor, #chartScurve {
+    position: relative;
+}
+
+canvas {
+    max-height: 300px;
+}
+
+/* Modal */
+.modal-content {
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+}
+
+/* Badges */
+.badge {
+    padding: 6px 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .status-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+    
+    .log-display {
+        max-height: 250px;
+    }
 }
 
 .log-display .log-info {
