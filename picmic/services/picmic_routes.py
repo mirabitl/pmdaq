@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-from picmic.services.picmic_models import febv2_physic 
+from picmic.services.picmic_models import picmic_physic 
 from pydantic import BaseModel
 from typing import Dict, Any,Optional
 import inspect
@@ -14,9 +14,9 @@ class TransitionAcqRequest(BaseModel):
     params: Optional[Dict[str,Any]]={}
 
 
-router = APIRouter(prefix="/febv2", tags=["febv2"])
+router = APIRouter(prefix="/picmic", tags=["picmic"])
 
-acq = febv2_physic()
+acq = picmic_physic()
 
 
 @router.get("/", status_code=200)
