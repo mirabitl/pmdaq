@@ -327,3 +327,107 @@ def get_advanced_parameters():
         return {}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# MONGODB CONFIGURATION MANAGEMENT
+# ============================================================================
+
+@router.get("/mongo/configs", status_code=200)
+def list_mongo_configurations():
+    """List all configurations from MongoDB"""
+    try:
+        import picmic_register_access as cra
+        sdb = cra.instance()
+        config_list = sdb.configurations()
+        
+        if not config_list:
+            return {"configurations": []}
+        
+        configs = [
+            {
+                "name": config[0],
+                "version": config[1],
+                "label": f"{config[0]}:{config[1]}"
+            }
+            for config in config_list
+        ]
+        
+        return {"configurations": configs}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"MongoDB error: {str(e)}")
+
+
+@router.post("/mongo/config/download", status_code=200)
+def download_mongo_configuration(name: str, version: int):
+    """Download a configuration from MongoDB and set it"""
+    try:
+        import picmic_register_access as cra
+        sdb = cra.instance()
+        
+        # Download from MongoDB
+        sdb.download_configuration(name, version)
+        
+        # Load the JSON file
+        config_file = f"/dev/shm/config/{name}_{version}.json"
+        with open(config_file, 'r') as f:
+            config_data = json.load(f)
+        
+        # Set the configuration in the acquisition object
+        acq.set_configuration(config_data)
+        
+        return {
+            "message": f"Configuration {name}:{version} downloaded and loaded",
+            "config": config_data
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=f"Configuration file not found: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+
+@router.get("/config/current", status_code=200)
+def get_current_config():
+    """Get the current loaded configuration as JSON"""
+    try:
+        if hasattr(acq, 'config_dict') and acq.config_dict:
+            return {"config": acq.config_dict}
+        return {"config": None, "message": "No configuration loaded"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/config/update", status_code=200)
+def update_current_config(config_data: Dict[str, Any]):
+    """Update the current configuration with new data"""
+    try:
+        acq.set_configuration(config_data)
+        return {
+            "message": "Configuration updated",
+            "config": acq.config_dict if hasattr(acq, 'config_dict') else {}
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/mongo/config/save", status_code=201)
+def save_mongo_configuration(name: str, comment: str = ""):
+    """Save current configuration to MongoDB"""
+    try:
+        import picmic_register_access as cra
+        
+        if not hasattr(acq, 'config_dict') or not acq.config_dict:
+            raise HTTPException(status_code=400, detail="No configuration loaded to save")
+        
+        # Save to temporary file
+        temp_file = f"/tmp/{name}_save.json"
+        with open(temp_file, 'w') as f:
+            json.dump(acq.config_dict, f, indent=2)
+        
+        # Upload to MongoDB
+        sdb = cra.instance()
+        sdb.upload_configuration(temp_file, comment=comment)
+        
+        return {"message": f"Configuration {name} saved to MongoDB"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error saving to MongoDB: {str(e)}")

@@ -25,13 +25,13 @@
     <!-- Tab Navigation -->
     <ul class="nav nav-tabs sticky-top bg-light border-bottom" id="mainTabs">
         <li class="nav-item">
-            <a class="nav-link active" id="tab-dashboard" data-bs-toggle="tab" href="#dashboard">📊 Dashboard</a>
+            <a class="nav-link active" id="tab-config" data-bs-toggle="tab" href="#config">⚙️ Configuration</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="tab-dashboard" data-bs-toggle="tab" href="#dashboard">📊 Dashboard</a>
         </li>
         <li class="nav-item">
             <a class="nav-link" id="tab-calibration" data-bs-toggle="tab" href="#calibration">🔍 Calibration</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" id="tab-config" data-bs-toggle="tab" href="#config">⚙️ Configuration</a>
         </li>
         <li class="nav-item">
             <a class="nav-link" id="tab-advanced" data-bs-toggle="tab" href="#advanced">🛠️ Advanced</a>
@@ -43,8 +43,88 @@
 
     <div class="tab-content" id="mainTabContent">
         
+        <!-- CONFIGURATION TAB (NOW FIRST) -->
+        <div class="tab-pane fade show active" id="config">
+            <div class="container-fluid mt-4">
+                <div class="row">
+                    <!-- Left Panel: MongoDB & File Operations -->
+                    <div class="col-lg-3">
+                        <!-- MongoDB Configurations -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0">📦 MongoDB Configurations</h6>
+                            </div>
+                            <div class="card-body">
+                                <button class="btn btn-info btn-sm w-100 mb-2" id="btn-load-mongo-list">
+                                    <i class="bi bi-database"></i> Load List
+                                </button>
+                                
+                                <label class="form-label small mt-3 mb-1">Available Configs:</label>
+                                <select class="form-select form-select-sm" id="mongo-config-select" disabled>
+                                    <option>Loading...</option>
+                                </select>
+                                
+                                <button class="btn btn-success btn-sm w-100 mt-2" id="btn-download-mongo-config">
+                                    <i class="bi bi-download"></i> Download
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Save Configuration -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0">💾 Save Configuration</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <label class="form-label small">Name:</label>
+                                    <input type="text" class="form-control form-control-sm" id="config-save-name" placeholder="Config name">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small">Comment:</label>
+                                    <textarea class="form-control form-control-sm" id="config-save-comment" rows="2" placeholder="Optional"></textarea>
+                                </div>
+                                <button class="btn btn-success btn-sm w-100" id="btn-save-mongo-config">
+                                    <i class="bi bi-cloud-upload"></i> Save to MongoDB
+                                </button>
+                                <button class="btn btn-secondary btn-sm w-100 mt-2" id="btn-save-json-file">
+                                    <i class="bi bi-download"></i> Save JSON
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Apply Configuration -->
+                        <div class="card">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0">🎯 Apply Configuration</h6>
+                            </div>
+                            <div class="card-body">
+                                <button class="btn btn-warning btn-sm w-100 mb-2" id="btn-apply-config">
+                                    <i class="bi bi-check-circle"></i> Apply & Create DAQ
+                                </button>
+                                <small class="text-muted d-block">Creates DAQ object from current config</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Panel: JSON Tree View -->
+                    <div class="col-lg-9">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">📋 Configuration Tree</h6>
+                            </div>
+                            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                                <div id="config-tree" class="config-tree">
+                                    <p class="text-muted">Load a configuration to view the tree</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- DASHBOARD TAB -->
-        <div class="tab-pane fade show active" id="dashboard">
             <div class="container-fluid mt-4">
                 <div class="row">
                     <div class="col-lg-3">
@@ -162,50 +242,6 @@
                             </div>
                             <div class="card-body">
                                 <canvas id="chartScurve" height="100"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- CONFIGURATION TAB -->
-        <div class="tab-pane fade" id="config">
-            <div class="container-fluid mt-4">
-                <div class="row">
-                    <div class="col-lg-6">
-                        <div class="card mb-4">
-                            <div class="card-header bg-primary text-white">
-                                <h6 class="mb-0">💾 Save Configuration</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-label">Configuration Name:</label>
-                                    <input type="text" class="form-control" id="config-save-name" placeholder="e.g. LIROC_TEST">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Description:</label>
-                                    <textarea class="form-control" id="config-save-desc" rows="3" placeholder="Add description..."></textarea>
-                                </div>
-                                <button class="btn btn-primary w-100" id="btn-save-config">
-                                    <i class="bi bi-download"></i> Save Configuration
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-6">
-                        <div class="card mb-4">
-                            <div class="card-header bg-success text-white">
-                                <h6 class="mb-0">📂 Saved Configurations</h6>
-                            </div>
-                            <div class="card-body">
-                                <div id="config-list" class="config-list">
-                                    <p class="text-muted">Loading...</p>
-                                </div>
-                                <button class="btn btn-info btn-sm w-100" id="btn-refresh-configs">
-                                    <i class="bi bi-arrow-clockwise"></i> Refresh
-                                </button>
                             </div>
                         </div>
                     </div>
