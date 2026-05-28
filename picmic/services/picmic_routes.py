@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, UploadFile, File
-from picmic.services.picmic_models import picmic_physic 
+from picmic_models import picmic_physic 
 from pydantic import BaseModel
 from typing import Dict, Any, Optional, List
 import inspect

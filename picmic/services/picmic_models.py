@@ -4,9 +4,9 @@ import threading
 import time
 import logging
 import time
-from turtle import setup
+#from turtle import setup
 import numpy as np
-from picmic.services.picmic_schema import *
+from picmic_schema import *
 import picmic_storage as ps
 import liroc_ptdc_daq as daq
 import picmic_register_access as cra

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from picmic.services.picmic_routes import router as app_router
+from picmic_routes import router as app_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(

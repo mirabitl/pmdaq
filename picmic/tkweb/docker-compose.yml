@@ -1,70 +1,30 @@
-version: '3.8'
-
 services:
-  # FastAPI Backend
-  picmic-api:
-    build:
-      context: .
-      dockerfile: tkweb/Dockerfile
-    container_name: picmic-api
+  apache:
+    image: httpd:2.4
+    container_name: mon_apache
+    ports:
+      - 7070:80
+    volumes:
+      - /usr/local/pmdaq/htdocs:/usr/local/apache2/htdocs/
+    restart: always
+  picmic:
+    build: /opt/pmdaq/picmic/services
+    container_name: tkweb-picmic
+
+    environment:
+      - MGDBLOGIN=acqilc/RPC_2008@lyoilcdaq01:27017@PICMIC
+      - PYTHONPATH=/usr/local/driver:/usr/local/pmdaq/share:/opt/pmdaq/picmic:/opt/pmdaq/picmic/services:/opt/pmdaq/picmic/share:/opt/pmdaq/picmic/db
+
+    volumes:
+      - /home/acqcmsmu/liroc_picotdc_daq/software/:/usr/local/driver
+      - /usr/local/pmdaq/share:/usr/local/pmdaq/share
+      - /usr/local/pmdaq/etc:/usr/local/pmdaq/etc	
+      - /opt/pmdaq/picmic:/opt/pmdaq/picmic
+
+    working_dir: /opt/pmdaq/picmic/services
+
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
     ports:
       - "8000:8000"
-    environment:
-      - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=INFO
-    volumes:
-      - ./services:/opt/pmdaq/picmic/services
-      - ./tkweb:/opt/pmdaq/picmic/tkweb
-      - /tmp/results:/tmp/results
-      - /dev/shm:/dev/shm
-    networks:
-      - picmic-network
-    command: >
-      bash -c "cd /opt/pmdaq/picmic/services && 
-      uvicorn main:app --host 0.0.0.0 --port 8000"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/picmic/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  # Nginx Web Server (optional)
-  # Uncomment to serve the web interface through Nginx
-  # web:
-  #   image: nginx:alpine
-  #   container_name: picmic-web
-  #   ports:
-  #     - "80:80"
-  #   volumes:
-  #     - ./tkweb:/usr/share/nginx/html:ro
-  #     - ./tkweb/nginx.conf.example:/etc/nginx/conf.d/default.conf:ro
-  #   depends_on:
-  #     - picmic-api
-  #   networks:
-  #     - picmic-network
-  #   command: nginx -g "daemon off;"
-
-networks:
-  picmic-network:
-    driver: bridge
-
-# Usage:
-# 
-# Build and start:
-#   docker-compose up --build
-# 
-# Stop:
-#   docker-compose down
-# 
-# View logs:
-#   docker-compose logs -f picmic-api
-# 
-# Access the API:
-#   http://localhost:8000/docs
-# 
-# Access the web interface (open tkweb/index.html in browser):
-#   file:///opt/pmdaq/picmic/tkweb/index.html
-#
-# Or with Nginx enabled:
-#   http://localhost/
+    restart: unless-stopped
