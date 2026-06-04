@@ -236,7 +236,7 @@ class picmic_scurve:
         # ValEvt
         self.sdb.setup.boards[0].picmic.set("Forced_ValEvt",0)
         # Polarity
-        self.sdb.setup.boards[0].picmic.set("Polarity",0)
+        #self.sdb.setup.boards[0].picmic.set("Polarity",0)
         # DC_PA
         for ch in range(64):
             if (dc_pa!=0):

@@ -418,11 +418,16 @@ def save_mongo_configuration(name: str, comment: str = ""):
         
         if not hasattr(acq, 'config_dict') or not acq.config_dict:
             raise HTTPException(status_code=400, detail="No configuration loaded to save")
+
+        config_to_save = dict(acq.config_dict)
+        config_to_save.pop("comment", None)
+        config_to_save.pop("description", None)
+        config_to_save.pop("timestamp", None)
         
         # Save to temporary file
         temp_file = f"/tmp/{name}_save.json"
         with open(temp_file, 'w') as f:
-            json.dump(acq.config_dict, f, indent=2)
+            json.dump(config_to_save, f, indent=2)
         
         # Upload to MongoDB
         sdb = cra.instance()

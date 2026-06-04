@@ -144,8 +144,13 @@ class picmic_physic:
         Args:
             c (Dict[str, object]): a dictionnary with the configuration to set
         """
-        self.config_dict=c
-        self.config=PicConfig.model_validate(c)
+        clean_config = dict(c)
+        clean_config.pop("comment", None)
+        clean_config.pop("description", None)
+        clean_config.pop("timestamp", None)
+
+        self.config_dict = clean_config
+        self.config = PicConfig.model_validate(clean_config)
         self.daq_conf=self.config.configuration_list[self.config.configuration]
     def store_configuration(self,name:str,version:int,comment="Comment is missing")-> None:
         """Store the configuration in the DB

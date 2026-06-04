@@ -48,7 +48,7 @@ def ev_handler(psi):
                 coarse = word[25, 13]
                 fine   = word[12,0]
                 if (ch==0):
-                    #print(ch,coarse,fine,(coarse<<13 | fine)*3.0523E-3)
+                    #print("Channel 0",ch,coarse,fine,(coarse<<13 | fine)*3.0523E-3)
                     ts[ch].append((coarse<<13 | fine)*3.0523E-3)
                     t0=(coarse<<13 | fine)*3.0523E-3
                     newwin=True
@@ -69,8 +69,8 @@ def ev_handler(psi):
         if (lch!=0):
             pch=daq.FebBoard.MAP_LIROC_TO_PTDC_CHAN[lch]
             if (len(ts[pch])>0):
-                psi.logger.debug(f"{psi.event} ch{lch} nbhit={len(ts[pch])}, mean={np.mean(ts[pch]):.8}, std={np.std(ts[pch]):.3}")
-                if (len(ts[pch])==len(ts[0])):
+                psi.logger.info(f"{psi.event} ch{lch} nbhit={len(ts[pch])}, mean={np.mean(ts[pch]):.8}, std={np.std(ts[pch]):.3}")
+                if (len(ts[pch])==len(ts[0]) and (len(ts[pch])>25)):
                     td= np.subtract(ts[pch],ts[0]).tolist()
                     mch=np.mean(td)
                     rch=np.std(td)
@@ -78,7 +78,7 @@ def ev_handler(psi):
                     ts[pch]=td
                     if (psi.new_run_header):
                         if hd[pch] == None:
-                            hd[pch]=R.TH1F(f"chanP{pch}L{lch}",f"chanP{pch}L{lch}",500,mch-20*rch,mch+20*rch)
+                            hd[pch]=R.TH1F(f"chanP{pch}L{lch}",f"chanP{pch}L{lch}",1500,mch-50*rch,mch+50*rch)
                         else:
                             c1.cd()
                             hd[pch].Draw()
@@ -91,8 +91,9 @@ def ev_handler(psi):
                         if hd[pch] !=None:
                             hd[pch].Fill(x)
                 else:
-                     psi.logger.error(f"Wromg length {len(ts[pch])}")
-                    #input()
+                     psi.logger.info(f"Wromg length {len(ts[pch])} {len(ts[0])} {len(ts[pch])*100.0/len(ts[0]):.2} ")
+                     if (psi.new_run_header):
+                         input()
         else:
             psi.logger.debug(f"ch{lch} nbhit={len(ts[lch])}, mean={np.mean(ts[lch]):.8}, std={np.std(ts[lch]):.3}") 
     psi.new_run_header=False

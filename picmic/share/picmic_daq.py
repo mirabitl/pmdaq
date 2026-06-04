@@ -232,14 +232,15 @@ class picmic_normal_run:
         if not "type" in params:
             self.logger.error("Run type should be specified in params")
             return
-                         
+        if params["type"] == "TIMELOOP":
+            comment=comment+f"|{params['rise']}|{params['vmin']}|{params['vmax']}|{params['threshold']}|{params['db']['state']}|{params['db']['version']}|"
         runobj = self.sdb.getRun(location,comment)
         self.runid = runobj["run"]
         if self.runid == None:
             self.runid = int(input("Enter a run number: "))
 
         # Store results in json
-        self.storage.open(f"run_{self.runid}_{self.dbstate}_{self.dbversion}_{self.board_id}_{self.threshold}")
+        self.storage.open(f"{location}_{self.runid}")
 
         self.run_type=1
         if self.conf==None:

@@ -106,10 +106,10 @@ async function downloadMongoConfig() {
     
     try {
         logOutput(`Downloading ${config.label}...`, 'info');
-        const response = await apiCall('/mongo/config/download', 'POST', {
-            name: config.name,
-            version: config.version
-        });
+        const response = await apiCall(
+            `/mongo/config/download?name=${encodeURIComponent(config.name)}&version=${encodeURIComponent(config.version)}`,
+            'POST'
+        );
         
         currentConfig = response.config;
         renderConfigTree(currentConfig);
@@ -179,10 +179,10 @@ async function saveConfigToMongo() {
         logOutput(`Saving configuration "${name}" to MongoDB...`, 'info');
         
         // Save current config to MongoDB
-        const response = await apiCall('/mongo/config/save', 'POST', {
-            name: name,
-            comment: comment
-        });
+        const response = await apiCall(
+            `/mongo/config/save?name=${encodeURIComponent(name)}&comment=${encodeURIComponent(comment)}`,
+            'POST'
+        );
         
         logOutput(`✓ Configuration saved to MongoDB`, 'success');
         document.getElementById('config-save-name').value = '';
@@ -369,7 +369,8 @@ function escapeHtml(text) {
 
 function initializeCharts() {
     // Monitor chart (Events over time)
-    const monitorCtx = document.getElementById('chartMonitor')?.getContext('2d');
+    const monitorEl = document.getElementById('chartMonitor');
+    const monitorCtx = monitorEl ? monitorEl.getContext('2d') : null;
     if (monitorCtx) {
         charts.monitor = new Chart(monitorCtx, {
             type: 'line',
@@ -406,7 +407,8 @@ function initializeCharts() {
     }
 
     // S-Curve chart
-    const scurveCtx = document.getElementById('chartScurve')?.getContext('2d');
+    const scurveEl = document.getElementById('chartScurve');
+    const scurveCtx = scurveEl ? scurveEl.getContext('2d') : null;
     if (scurveCtx) {
         charts.scurve = new Chart(scurveCtx, {
             type: 'scatter',
