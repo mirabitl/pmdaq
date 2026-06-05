@@ -21,6 +21,8 @@ include_directories(
 add_library(rbcore SHARED
     src/rbReader.cc
     src/DCHistogramHandler.cc
+    src/TdcUplinkFrame.cc
+    src/irpcGeometry.cc
 )
 
 target_link_libraries(rbcore
@@ -59,6 +61,21 @@ target_include_directories(picProcessor PRIVATE
 )
 
 target_link_libraries(picProcessor
+    rbcore
+    ${ROOT_LIBRARIES}
+    ${JSONCPP_LIBRARIES}
+)
+
+add_library(FebProcessor SHARED
+    plugins/FebProcessor.cc
+)
+
+target_include_directories(FebProcessor PRIVATE
+    src
+    ${ROOT_INCLUDE_DIRS}
+)
+
+target_link_libraries(FebProcessor
     rbcore
     ${ROOT_LIBRARIES}
     ${JSONCPP_LIBRARIES}
