@@ -22,7 +22,7 @@ def makegraph(x,y,dx,dy,title,xlabel=None,ylabel=None,ymin=None,ymax=None,xmin=N
     gr4.Draw( 'AP' )
     c1.Draw()
     c1.Update()
-    #v=input()
+    v=input()
     return gr4
 
 def plot_mean(fname,ch,vmin,vmax,vstep,rise,threshold):
@@ -57,7 +57,7 @@ def plot_mean(fname,ch,vmin,vmax,vstep,rise,threshold):
 
 import json
 import math
-def plot_summary(nrun):
+def plot_summary(nrun,attn=32):
     xinj=array( 'd' )
     dxinj=array('d')
     xinj0=array( 'd' )
@@ -74,11 +74,16 @@ def plot_summary(nrun):
     vmin=int(sc["vmin"]*1000)
     vmax=int(sc["vmax"]*1000)
     vstep=int((vmax-vmin)/sc["nstep"])
-    for v in range(vmin,vmax,vstep):
+    print(vmin,vmax,sc["nstep"])
+    #for v in range(vmin,vmax,vstep):
+    for sv in s["stat"].keys():
+        v=int(sv)
+        #print(v)
         if not f'{v}' in s["stat"].keys():
             continue
-        xinj0.append(v*11./32)
-        dxinj0.append(11./32);
+        #print(v)
+        xinj0.append(v*11./attn)
+        dxinj0.append(11./attn);
         
         re=s["stat"][f'{v}']
         eff=re["nseen"]/re["ntot"]
@@ -94,9 +99,8 @@ def plot_summary(nrun):
         if not f'{v}' in s["channels"]["CH13"].keys():
             continue
         r=s["channels"]["CH13"][f'{v}']
-        xinj.append(v*11./32)
-        dxinj.append(11./32);
-        dxinj.append(1*11/32)
+        xinj.append(v*11./attn)
+        dxinj.append(1*11/attn)
         x_mean.append(r['mean'])
         dx_mean.append(r['d_mean'])
         x_rms.append(r['rms'])
@@ -105,6 +109,12 @@ def plot_summary(nrun):
         
     threshold=sc["threshold"]
     rise=sc['rise']
+    if (len(xinj)==0):
+        return
+    print(len(xinj))
+    print(len(x_mean))
+    print(len(dxinj))
+    print(len(dx_mean))
     gm= makegraph(xinj,x_mean,dxinj,dx_mean,f"Time walk vs injection {rise} ns DAC {threshold-512}",xlabel="Charge injection (fC)",ylabel="Delay (ns)",ymin=None,ymax=None)
     c1.SaveAs(f"Mean_vs_charge_{nrun}_R{rise}ns_T{threshold-512}.pdf")
     gr= makegraph(xinj,x_rms,dxinj,dx_rms,f"Resolution vs injection {rise} ns DAC {threshold-512}",xlabel="Charge injection (fC)",ylabel="RMS (ps)",ymin=None,ymax=None)
