@@ -1,0 +1,12 @@
+{
+    "plugin":"libFebProcessor.so",
+    "file":"/home/acqilc/data/comet_axtest_1078_DBCOMET_V3_3_10_VTH15.bin",
+    "parameters":{
+	"mapping":"/opt/pmdaq/picmic/reader/etc/FEBV2_R3_1.json",
+	"geometry":"/opt/pmdaq/picmic/reader/etc/RE31_1.json",
+	"geotag":"RE31_LEFT",
+	"geoside":"LEFT",
+	"tmin":-890.0,
+	"tmax":-840.0
+    }
+}

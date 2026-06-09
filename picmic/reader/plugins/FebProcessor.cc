@@ -41,8 +41,13 @@ FebProcessor::~FebProcessor()
 
 void FebProcessor::initializeMapping()
 {
-    initializeMapping("/home/mirabito/bin_reader/etc/FEBV2_R3_1.json"); // No extender merge PCB
-    //initializeMapping("/home/mirabito/bin_reader/etc/extender.json"); //extender PCB
+  if (!_params.isMember("mapping"))
+    {
+      std::cerr << "No mapping file exiting " << _params << "'\n";
+      exit(-1);
+    }
+  initializeMapping(_params["mapping"].asString()); // No extender merge PCB
+    //initializeMapping("../etc/extender.json"); //extender PCB
 
 }
 
@@ -121,17 +126,27 @@ void FebProcessor::init(uint32_t)
 {
     initializeMapping();
 
-    _tmin = -890.;
+    _tmin = -950.;
     _tmax = -840.;
+    if (_params.isMember("tmin")) _tmin=_params["tmin"].asDouble();
+    if (_params.isMember("tmax")) _tmax=_params["tmax"].asDouble();
 
+    std::cout<<_tmin<<" "<<_tmax<<std::endl;
+    getchar();
     //
     // Géométrie
     //
+    if (!_params.isMember("geometry"))
     {
-        std::ifstream geoFile("/home/mirabito/bin_reader/etc/RE31_1.json");
+      std::cerr << "No geometry file exiting " << _params << "'\n";
+      exit(-1);
+    }
+
+    {
+      std::ifstream geoFile(_params["geometry"].asString());
         if (!geoFile)
         {
-            std::cerr << "FebProcessor::init: cannot open geometry file /home/mirabito/bin_reader/etc/RE31_1.json\n";
+	  std::cerr << "FebProcessor::init: cannot open geometry "<<_params["geometry"].asString()<<"\n";
         }
         else
         {
@@ -150,7 +165,7 @@ void FebProcessor::init(uint32_t)
             }
             else
             {
-                _geo.initialize("RE31_LEFT", root["content"]["LEFT"]);
+	      _geo.initialize(_params["geotag"].asString(), root["content"][_params["geoside"].asString()]);
             }
         }
     }
@@ -163,8 +178,9 @@ void FebProcessor::init(uint32_t)
 /// loadParameters
 ////////////////////////////////////////////////////////////////
 
-void FebProcessor::loadParameters(Json::Value)
+void FebProcessor::loadParameters(Json::Value p)
 {
+  _params=p;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -238,6 +254,8 @@ void FebProcessor::processEvent(rbEvent* e)
                     uint32_t tdc,
                     uint32_t bc0)
             {
+	      // Juste middle
+	      //if (fpga!=0) return;
                 if (fpga>2)
                     return;
 
@@ -323,8 +341,8 @@ void FebProcessor::processEvent(rbEvent* e)
     for (const auto& fpga : tdcdata)
     {
         //printf("FPGA: %s with %zu hits\n", fpga.first.c_str(), fpga.second.size());
-        if (fpga.first!="MIDDLE")
-            continue;
+      //if (fpga.first!="MIDDLE")
+      //      continue;
         auto itMap =
             _mapping.find(fpga.first);
 
@@ -353,7 +371,7 @@ void FebProcessor::processEvent(rbEvent* e)
             {
                 const auto& m =
                     itMap->second[chan];
-
+		//printf(" FPGA %s Channel %d Strip %d Side %d \n",fpga.first.c_str(),chan,m.strip,m.side); 
                 channels.push_back(
                 {
                     chan,
@@ -364,28 +382,33 @@ void FebProcessor::processEvent(rbEvent* e)
                     m.strip,
                     m.side
                 });
-                auto _htma = _rh->AccessTH1("/DT/All/channel_" + std::to_string(chan),3000,-30000.,0.);
+                auto _htma = _rh->AccessTH1("/DT/All/"+fpga.first+"/channel_" + std::to_string(chan),3000,-30000.,0.);
                 
                 _htma->Fill(diff);
                 if (diff>_tmin &&
                     diff<_tmax)
                 {
                     found=true;
-                    auto _hch = _rh->AccessTH1("chan", 32, 0, 32);
-                    _hch->Fill(chan);
+                    auto _hch = _rh->AccessTH1("chan", 96, 0, 96);
+		    uint32_t cshift=0;
+		    if (fpga.first=="MIDDLE")
+		      cshift=32;
+		    if (fpga.first=="RIGHT")
+		      cshift=64;
+                    _hch->Fill(chan+cshift);
 
                     if (chan<16)
                         fhigh=true;
                     else
                         flow=true;
-                    auto _htm = _rh->AccessTH1("/DT/channel_" + std::to_string(chan),
+                    auto _htm = _rh->AccessTH1("/DT/"+fpga.first+"/channel_" + std::to_string(chan),
                     150,_tmin-50,_tmax+50 );
                     _htm->Fill(diff);
                 }
             }
         }
     }
-
+    //getchar();
     //----------------------------------------------------------
     // strip pairing
     //----------------------------------------------------------

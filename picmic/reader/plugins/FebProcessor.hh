@@ -33,6 +33,8 @@ public:
     void loadParameters(Json::Value params) override;
 
 private:
+  
+
 
     struct MappingChannel
     {
@@ -83,6 +85,7 @@ private:
 
     irpcGeometry _geo;
     DCHistogramHandler* _rh;
+  Json::Value _params;
 };
 
 }

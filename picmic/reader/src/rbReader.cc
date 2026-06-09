@@ -7,6 +7,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <iostream>
+#include <sstream>
 #include <zstd.h>
 
 #include <json/json.h>
