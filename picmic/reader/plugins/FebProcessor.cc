@@ -131,8 +131,8 @@ void FebProcessor::init(uint32_t)
     if (_params.isMember("tmin")) _tmin=_params["tmin"].asDouble();
     if (_params.isMember("tmax")) _tmax=_params["tmax"].asDouble();
 
-    std::cout<<_tmin<<" "<<_tmax<<std::endl;
-    getchar();
+    //std::cout<<_tmin<<" "<<_tmax<<std::endl;
+    //getchar();
     //
     // Géométrie
     //
