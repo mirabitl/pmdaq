@@ -22,7 +22,7 @@ def makegraph(x,y,dx,dy,title,xlabel=None,ylabel=None,ymin=None,ymax=None,xmin=N
     gr4.Draw( 'AP' )
     c1.Draw()
     c1.Update()
-    v=input()
+    #v=input()
     return gr4
 
 def plot_mean(fname,ch,vmin,vmax,vstep,rise,threshold):
@@ -57,7 +57,7 @@ def plot_mean(fname,ch,vmin,vmax,vstep,rise,threshold):
 
 import json
 import math
-def plot_summary(nrun,attn=32):
+def plot_summary(nrun,attn=32,pedestal=512):
     xinj=array( 'd' )
     dxinj=array('d')
     xinj0=array( 'd' )
@@ -74,18 +74,25 @@ def plot_summary(nrun,attn=32):
     vmin=int(sc["vmin"]*1000)
     vmax=int(sc["vmax"]*1000)
     vstep=int((vmax-vmin)/sc["nstep"])
-    print(vmin,vmax,sc["nstep"])
+    #print(vmin,vmax,sc["nstep"])
     #for v in range(vmin,vmax,vstep):
+    dstat={}
     for sv in s["stat"].keys():
         v=int(sv)
-        #print(v)
         if not f'{v}' in s["stat"].keys():
             continue
+        re=s["stat"][f'{v}']
+        dstat[v]=re
+    for v in sorted(dstat.keys()):
+        #v=int(sv)
+        #print(v)
+        #if not f'{v}' in s["stat"].keys():
+        #    continue
         #print(v)
         xinj0.append(v*11./attn)
         dxinj0.append(11./attn);
         
-        re=s["stat"][f'{v}']
+        re=dstat[v]
         eff=re["nseen"]/re["ntot"]
         if eff<0.999:
             deff=math.sqrt(eff*(1-eff)/re["ntot"])
@@ -111,16 +118,16 @@ def plot_summary(nrun,attn=32):
     rise=sc['rise']
     if (len(xinj)==0):
         return
-    print(len(xinj))
-    print(len(x_mean))
-    print(len(dxinj))
-    print(len(dx_mean))
-    gm= makegraph(xinj,x_mean,dxinj,dx_mean,f"Time walk vs injection {rise} ns DAC {threshold-512}",xlabel="Charge injection (fC)",ylabel="Delay (ns)",ymin=None,ymax=None)
-    c1.SaveAs(f"Mean_vs_charge_{nrun}_R{rise}ns_T{threshold-512}.pdf")
-    gr= makegraph(xinj,x_rms,dxinj,dx_rms,f"Resolution vs injection {rise} ns DAC {threshold-512}",xlabel="Charge injection (fC)",ylabel="RMS (ps)",ymin=None,ymax=None)
-    c1.SaveAs(f"Resolution_vs_charge_{nrun}_R{rise}ns_T{threshold-512}.pdf")
-    ge= makegraph(xinj0,x_eps,dxinj0,dx_eps,f"Efficiency vs injection {rise} ns DAC {threshold-512}",xlabel="Efficiency (%)",ylabel="RMS (ps)",ymin=None,ymax=None,xmin=0,xmax=300)
-    c1.SaveAs(f"Efficiency_vs_charge__{nrun}R{rise}ns_T{threshold-512}.pdf")
+   # print(len(xinj))
+   # print(len(x_mean))
+   # print(len(dxinj))
+   # print(len(dx_mean))
+    gm= makegraph(xinj,x_mean,dxinj,dx_mean,f"Time walk vs injection {rise} ns DAC {threshold-pedestal}",xlabel="Charge injection (fC)",ylabel="Delay (ns)",ymin=None,ymax=None)
+    c1.SaveAs(f"Mean_vs_charge_{nrun}_R{rise}ns_T{threshold-pedestal}.pdf")
+    gr= makegraph(xinj,x_rms,dxinj,dx_rms,f"Resolution vs injection {rise} ns DAC {threshold-pedestal}",xlabel="Charge injection (fC)",ylabel="RMS (ps)",ymin=None,ymax=None)
+    c1.SaveAs(f"Resolution_vs_charge_{nrun}_R{rise}ns_T{threshold-pedestal}.pdf")
+    ge= makegraph(xinj0,x_eps,dxinj0,dx_eps,f"Efficiency vs injection {rise} ns DAC {threshold-pedestal}",xlabel="Charge injection (fC)",ylabel="Efficiency (%)",ymin=None,ymax=None,xmin=0,xmax=300)
+    c1.SaveAs(f"Efficiency_vs_charge__{nrun}R{rise}ns_T{threshold-pedestal}.pdf")
     
     # time walk
     maxtime=-1.
@@ -155,15 +162,19 @@ def plot_summary(nrun,attn=32):
     #eff and thr
     xmin=10000
     xmax=0
+    #print(xinj0)
     for i in range(len(xinj0)):
-        if x_eps[i]>0:
+        #print(i,xinj0[i],x_eps[i])
+        if x_eps[i]>5:
             xmin=xinj0[i]
             break
     for i in range(len(xinj0)-1,0,-1):
-        if x_eps[i]<99:
+        if x_eps[i]<95:
             xmax=xinj0[i]
             break
     thr =(xmax+xmin)/2.
-    #print(f'{xmin:.2f} {xmax:.2f} {(xmax+xmin)/2.:.2f} fC {threshold} DAC {(xmax+xmin)/2./(threshold-512)} fC/DAC ')
+    calib=thr/(threshold-pedestal)
+    #print(f'{xmin:.2f} {xmax:.2f} {(xmax+xmin)/2.:.2f} fC {threshold} DAC {(xmax+xmin)/2./(threshold-pedestal)} fC/DAC ')
     #print(f'{nrun},{threshold:.2f},{thr:.2f},{timewalk:.2f},{xinj[imares]:.2f},{maxres:.2f},{xinj[imires]:.2f},{minres:.2f}')
-    print(f'{nrun},{threshold:.2f},{thr:.2f},{timewalk:.2f},{xinj[imares]:.2f},{maxres:.2f},{xinj[imires]:.2f},{minres:.2f}')
+    
+    print(f'{nrun},{thr:.2f},{threshold:.2f},{calib:.2f},{timewalk:.2f},{xinj[imares]:.2f},{maxres:.2f},{xinj[imires]:.2f},{minres:.2f}')

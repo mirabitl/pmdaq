@@ -146,7 +146,7 @@ class picmic_normal_run:
         #self.sdb.setup.boards[0].picmic.set("EN-pE", 15)
         #self.sdb.setup.boards[0].picmic.set("PA_gain", 15)
         # Polarity
-        self.sdb.setup.boards[0].picmic.set("Polarity", pol_neg)
+        #self.sdb.setup.boards[0].picmic.set("Polarity", pol_neg)
         # DC_PA
         for ch in range(64):
             if dc_pa != 0:
@@ -415,9 +415,9 @@ class picmic_normal_run:
         self.run_type=0x10
         rh=np.array([self.run_type,int(vout*1000),int(rise*1E10),int(delay*1E9)],dtype='int64')
         self.storage.writeRunHeader(self.runid,rh)
-        
+        #time.sleep(2)
 
-    def acquire_and_store(self,n_acq,window_size=400,dead_time=50,n_window=1000):
+    def acquire_and_store(self,n_acq,window_size=100,dead_time=50,n_window=1000):
         for i in range(n_acq):
             words = self.kc705.acqPtdc(window=window_size, deadtime=dead_time, window_number=n_window)
             # File storage
