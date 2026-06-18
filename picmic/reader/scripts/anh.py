@@ -1,5 +1,23 @@
 import ROOT as R
 from array import array
+import os
+import sys
+from contextlib import contextmanager
+
+@contextmanager
+def silent():
+    """Supprime la sortie console temporairement"""
+    save_stdout = sys.stdout
+    save_stderr = sys.stderr
+    sys.stdout = open(os.devnull, 'w')
+    sys.stderr = open(os.devnull, 'w')
+    try:
+        yield
+    finally:
+        sys.stdout.close()
+        sys.stderr.close()
+        sys.stdout = save_stdout
+        sys.stderr = save_stderr
 
 c1=R.TCanvas()
 
@@ -51,12 +69,15 @@ def plot_mean(fname,ch,vmin,vmax,vstep,rise,threshold):
         x_rms.append(hd.GetRMS()*1000)
         dx_rms.append(hd.GetRMSError()*1000)
     gm= makegraph(xinj,x_mean,dxinj,dx_mean,f"Time walk vs injection {rise} ns DAC {threshold-512}",xlabel="Charge injection (fC)",ylabel="Delay (ns)",ymin=None,ymax=None)
-    c1.SaveAs(f"Mean_vs_charge_R{rise}ns_T{threshold-512}.pdf")
+    with silent():
+        c1.SaveAs(f"Mean_vs_charge_R{rise}ns_T{threshold}.pdf")
     gr= makegraph(xinj,x_rms,dxinj,dx_rms,f"Resolution vs injection {rise} ns DAC {threshold-512}",xlabel="Charge injection (fC)",ylabel="RMS (ps)",ymin=None,ymax=None)
-    c1.SaveAs(f"Resolution_vs_charge_R{rise}ns_T{threshold-512}.pdf")
+    with silent():
+        c1.SaveAs(f"Resolution_vs_charge_R{rise}ns_T{threshold}.pdf")
 
 import json
 import math
+import os
 def plot_summary(nrun,attn=32,pedestal=512):
     xinj=array( 'd' )
     dxinj=array('d')
@@ -122,12 +143,16 @@ def plot_summary(nrun,attn=32,pedestal=512):
    # print(len(x_mean))
    # print(len(dxinj))
    # print(len(dx_mean))
+    os.system(f"mkdir -p plots/{nrun}/R{rise}ns/T{threshold}")
     gm= makegraph(xinj,x_mean,dxinj,dx_mean,f"Time walk vs injection {rise} ns DAC {threshold-pedestal}",xlabel="Charge injection (fC)",ylabel="Delay (ns)",ymin=None,ymax=None)
-    c1.SaveAs(f"Mean_vs_charge_{nrun}_R{rise}ns_T{threshold-pedestal}.pdf")
+    with silent():
+        c1.SaveAs(f"plots/{nrun}/R{rise}ns/T{threshold}/Mean_vs_charge.png")
     gr= makegraph(xinj,x_rms,dxinj,dx_rms,f"Resolution vs injection {rise} ns DAC {threshold-pedestal}",xlabel="Charge injection (fC)",ylabel="RMS (ps)",ymin=None,ymax=None)
-    c1.SaveAs(f"Resolution_vs_charge_{nrun}_R{rise}ns_T{threshold-pedestal}.pdf")
+    with silent():
+        c1.SaveAs(f"plots/{nrun}/R{rise}ns/T{threshold}/Resolution_vs_charge.png")
     ge= makegraph(xinj0,x_eps,dxinj0,dx_eps,f"Efficiency vs injection {rise} ns DAC {threshold-pedestal}",xlabel="Charge injection (fC)",ylabel="Efficiency (%)",ymin=None,ymax=None,xmin=0,xmax=300)
-    c1.SaveAs(f"Efficiency_vs_charge__{nrun}R{rise}ns_T{threshold-pedestal}.pdf")
+    with silent():
+        c1.SaveAs(f"plots/{nrun}/R{rise}ns/T{threshold}/Efficiency_vs_charge.png")
     
     # time walk
     maxtime=-1.
