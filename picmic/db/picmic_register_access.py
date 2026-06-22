@@ -632,6 +632,7 @@ class mg_picboard:
         results=[]
         for resa in res:
             results.append(resa)
+        #print(results)
         if (channel==None):
             return results[len(results)-1]
         else:

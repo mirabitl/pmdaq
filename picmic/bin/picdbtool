@@ -62,7 +62,7 @@ def argHandler(res):
         if (res.state==None or res.version==None or res.board==None or res.analysis==None ):
             print("SCurves access :--state --version  --board --analysis ")
         else:
-            sc=_wdd.get_scurve(res.state,res.version,res.board,res.analysis)
+            sc=_wdd.get_scurve(res.state,res.version,res.board,res.analysis,runid=res.nrun)
             sc["_id"]=0
             if (res.out==None):
                 print(json.dumps(sc))
@@ -104,6 +104,7 @@ parser.add_argument('--comment', action='store', type=str,default=None, dest='co
 parser.add_argument('--param', action='store', type=str,default=None, dest='param', help='Parameter name')
 parser.add_argument('--analysis', action='store', type=str,default=None, dest='analysis', help='Analysis name')
 parser.add_argument('--asic', action='store', type=str,default=None, dest='asic', help='Asic name')
+parser.add_argument('--nrun', action='store', type=int,default=None, dest='nrun', help='run number if needed')
 parser.add_argument('--name', action='store', type=str,default=None, dest='name', help='Configuration name')
 parser.add_argument('--out', action='store', type=str,default=None, dest='out', help='Output file name')
 
