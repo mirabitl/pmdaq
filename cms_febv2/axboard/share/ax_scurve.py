@@ -141,37 +141,50 @@ class scurve_processor:
         self.pb.status["target"]=target
         self.pb.status["dac_local"]=[0 for i in range(32)]
         #val=input("Second round ? ")
-        v6_cor=v6
+        v6_cor=v6.copy()
         turn_on_cor=[]
         for idx in range(16):
             if hasattr(self,'_running') and not self._running.is_set():
                 self.logger.info("Alignment was stop before the end")
                 return 0,[]
             petiroc_chan,tdc_ch =used_chan[idx]
-            gc=v6[ petiroc_chan]+round((target-turn_on[idx])/3.9)
-            td=[]
-            for ig in range(5):
-                g=gc-2+ig
-                vc=v6
-                if (g<=1):
-                    g=1
-                if (g>=63):
-                    g=63
-                vc[ petiroc_chan]=int(g)
-                
+            initial_dac=int(max(1, min(63, v6[petiroc_chan] + round((target-turn_on[idx])/3.9))))
+
+            # Coarse scan around the initial estimate
+            best_dac=initial_dac
+            best_to=None
+            best_diff=None
+            for candidate in [initial_dac-10, initial_dac-5, initial_dac, initial_dac+5, initial_dac+10]:
+                candidate=int(max(1, min(63, candidate)))
+                vc=v6.copy()
+                vc[petiroc_chan]=candidate
                 to=self.pb.pedestal_one_channel(asic_name,idx,target-15,target+15,vc,two_steps=False)
-                td.append(to)
-            #print(gc)
-            #print(td)
-            # find best value
-            mindist=1000
-            imin=2
-            for ig in range(5):
-                if (abs(td[ig]-target)<mindist):
-                    mindist=abs(td[ig]-target)
-                    imin=ig
-            turn_on_cor.append(td[imin])
-            newdac=int(gc-2+imin)
+                diff=abs(to-target)
+                if best_diff is None or diff<best_diff:
+                    best_diff=diff
+                    best_to=to
+                    best_dac=candidate
+
+            # Iterative refinement around the best coarse value
+            current_dac=best_dac
+            for _ in range(8):
+                vc=v6.copy()
+                vc[petiroc_chan]=current_dac
+                to=self.pb.pedestal_one_channel(asic_name,idx,target-15,target+15,vc,two_steps=False)
+                diff=abs(to-target)
+                if best_diff is None or diff<best_diff:
+                    best_diff=diff
+                    best_to=to
+                    best_dac=current_dac
+
+                next_dac=int(current_dac + round((target-to)/3.9))
+                next_dac=int(max(1, min(63, next_dac)))
+                if abs(next_dac-current_dac)<1:
+                    break
+                current_dac=next_dac
+
+            turn_on_cor.append(best_to if best_to is not None else target)
+            newdac=int(best_dac)
             if (newdac<1):
                 newdac=1
             if (newdac>63):
