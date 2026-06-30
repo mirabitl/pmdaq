@@ -46,3 +46,39 @@ class FebAcquisition(BaseModel):
     def to_dict(self):
         """Retourne un dictionnaire représentant l'instance."""
         return self.dict()
+
+class CalibDb(BaseModel):
+    board: int
+    state: str
+    version: int
+
+class CalibAcquisition(BaseModel):
+    calibration: str
+    comment: Optional[str] = None
+    db: CalibDb
+    location: str
+    name: str
+    thmax: int
+    thmin: int
+    thstep: int
+    time: Optional[str] = None
+    version: Optional[int] = 1
+
+    def to_dict(self):
+        """Retourne un dictionnaire représentant l'instance."""
+        return self.dict()
+
+class TimingAcquisition(BaseModel):
+    calibration: str
+    comment: Optional[str] = None
+    correct: int
+    db: CalibDb
+    location: str
+    maxevt: int
+    name: str
+    time: Optional[str] = None
+    version: Optional[int] = 1
+
+    def to_dict(self):
+        """Retourne un dictionnaire représentant l'instance."""
+        return self.dict()
