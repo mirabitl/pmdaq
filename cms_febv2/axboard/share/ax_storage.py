@@ -310,16 +310,20 @@ class storage_manager:
                 self.event=number
                 self.logger.debug(f"\t new event {self.event} # blocks {length}")
                 self.words=[ [] for _ in range(length)]
-                
+                error=False
                 for p in range(length):
                     bl_header=self.f_data.read(16)
                     bl_type,bl_event,id_block,comp_size=struct.unpack("<IIII",bl_header)
                     compressed = self.f_data.read(comp_size)
-                    raw_bytes = self.decompressor.decompress(compressed)
+                    try:
+                        raw_bytes = self.decompressor.decompress(compressed)
+                    except:
+                        error=True
+                        break
                     self.words[p] = np.frombuffer(raw_bytes, dtype=np.uint64).copy()
                     self.logger.debug(f"\t \t {p} blocks {id_block} for event {bl_event} # block size {comp_size}")
                 # Call the event handler
-                if self.event_handler != None:
+                if self.event_handler != None and not error:
                     self.event_handler(self)
         if self.end_handler != None:
             self.end_handler()

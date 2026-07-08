@@ -112,6 +112,7 @@ class febv2_light:
         self.sdb=cra.instance()
         self.sdb.download_setup(self.params["db_state"],self.params["db_version"])
         self.sdb.setup.febs[0].fpga_version='4.8'
+        self.sdb.to_csv_files()
         # Handle possible changes of vth, ccomp or delay reset
         if "vth_shift" in self.params:
             self.sdb.setup.febs[0].petiroc.shift_10b_dac(self.params["vth_shift"])
@@ -356,6 +357,7 @@ class febv2_light:
             words=[]
             self.start_acquisition()
             nb_frames=0
+            ntry=0
             while (nb_frames==0 and self._running.is_set()):
                 if not self.hasTrigger():
                     time.sleep(0.005)
@@ -366,6 +368,18 @@ class febv2_light:
                     self.logger.info(f"Cannot read nframes")
                     nb_frames=0  
                 self.logger.info(f"Read  getNFrames {nb_frames}")
+                if nb_frames==0:
+                    ntry+=1
+                if ntry>10:
+                    for fpga in daq.FPGA_ID:
+                        self.feb0.fpga[fpga].tdcEnable(False) 
+                    self.stop_acquisition()
+                    nb_frames = self.getNFrames()
+                    if not nb_frames==0:
+                        self.ax7325b.flushDataflow();
+                    time.sleep(0.005)
+                    self.logger.info("Thread %d: finishing", self.storage.run)
+                    return
             if not self._running.is_set():
                 break
             self.logger.info(f"Found {nb_frames}")

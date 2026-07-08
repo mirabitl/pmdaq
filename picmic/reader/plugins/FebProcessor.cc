@@ -112,7 +112,7 @@ void FebProcessor::initializeMapping(const std::string& fname)
         if (channel >= _mapping[fpgaKey].size())
             _mapping[fpgaKey].resize(channel + 1, MappingChannel());
         //std::cout<<key<<" "<<value[0].asString()<<" "<<value[1].asString()<<" "<<value[2].asString()<<" "<<value[3].asUInt()<<std::endl;   
-        //std::cout << "Mapping: " << key << " -> FPGA " << fpgaKey << " channel " << channel << " strip " << strip << " side " << side << std::endl;
+        std::cout << "Mapping: " << key << " -> FPGA " << fpgaKey << " channel " << channel << " strip " << strip << " side " << side << std::endl;
         _mapping[fpgaKey][channel] = MappingChannel{channel, strip, side, key};
     }
     //getchar();
@@ -340,7 +340,7 @@ void FebProcessor::processEvent(rbEvent* e)
 
     for (const auto& fpga : tdcdata)
     {
-        //printf("FPGA: %s with %zu hits\n", fpga.first.c_str(), fpga.second.size());
+        printf("FPGA: %s with %zu hits\n", fpga.first.c_str(), fpga.second.size());
       //if (fpga.first!="MIDDLE")
       //      continue;
         auto itMap =
@@ -348,7 +348,8 @@ void FebProcessor::processEvent(rbEvent* e)
 
         if (itMap==_mapping.end())
             continue;
-
+	printf("On passe la \n");
+	int nchok=0;
         for (auto const& h : fpga.second)
         {
             uint32_t chan =
@@ -367,11 +368,13 @@ void FebProcessor::processEvent(rbEvent* e)
             double diff =
                 ctime - t0;
 
+	    //printf(" FPGA %s Channel %d  \n",fpga.first.c_str(),chan); 
             if (chan < 32)
             {
                 const auto& m =
                     itMap->second[chan];
-		//printf(" FPGA %s Channel %d Strip %d Side %d \n",fpga.first.c_str(),chan,m.strip,m.side); 
+		//printf(" FPGA %s Channel %d Strip %d Side %d \n",fpga.first.c_str(),chan,m.strip,m.side);
+		nchok++;
                 channels.push_back(
                 {
                     chan,
@@ -407,7 +410,9 @@ void FebProcessor::processEvent(rbEvent* e)
                 }
             }
         }
+	printf("On passe ici %d \n",nchok);
     }
+
     //getchar();
     //----------------------------------------------------------
     // strip pairing
