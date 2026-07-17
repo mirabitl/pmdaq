@@ -77,7 +77,8 @@ private:
 
     uint64_t _nread{0};
     uint64_t _nfound{0};
-
+    uint64_t _nstrip{0};
+  
     std::map<
         std::string,
         std::vector<MappingChannel>

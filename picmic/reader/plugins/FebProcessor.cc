@@ -204,18 +204,18 @@ void FebProcessor::processRunHeader(rbRun* r)
 
 void FebProcessor::processEvent(rbEvent* e)
 {
-    _nread++;
+
     auto _hstat = _rh->AccessTH1("statistic", 20, 0, 20);
     _hstat->Fill(1);
-    if (_nread % 100 == 0)
+    if (_nread % 10 == 0 && _nread>5)
         std::cout
             << "Event "
             << e->eventNumber
             << " timestamp "
             << e->timestamp
             << " read " << _nread << " events, found " << _nfound << " FEB hits"<<" Efficiency: " 
-            << (_nfound * 100.0 / _nread) << "%\n";
-     
+            << (_nfound * 100.0 / _nread) << "%  Multiplicity " << 1.*_nstrip/_nfound <<"\n";
+    _nread++;     
     std::vector<TdcChannel> channels;
     std::vector<StripHit> strips;
 
@@ -340,7 +340,7 @@ void FebProcessor::processEvent(rbEvent* e)
 
     for (const auto& fpga : tdcdata)
     {
-        printf("FPGA: %s with %zu hits\n", fpga.first.c_str(), fpga.second.size());
+      //printf("FPGA: %s with %zu hits\n", fpga.first.c_str(), fpga.second.size());
       //if (fpga.first!="MIDDLE")
       //      continue;
         auto itMap =
@@ -348,7 +348,7 @@ void FebProcessor::processEvent(rbEvent* e)
 
         if (itMap==_mapping.end())
             continue;
-	printf("On passe la \n");
+	//printf("On passe la \n");
 	int nchok=0;
         for (auto const& h : fpga.second)
         {
@@ -410,7 +410,7 @@ void FebProcessor::processEvent(rbEvent* e)
                 }
             }
         }
-	printf("On passe ici %d \n",nchok);
+	//printf("On passe ici %d \n",nchok);
     }
 
     //getchar();
@@ -500,10 +500,13 @@ void FebProcessor::processEvent(rbEvent* e)
         }
     }
     auto _hnstrip = _rh->AccessTH1("nstrip", 40, 0, 20);
+    auto _hns = _rh->AccessTH1("ns", 20, 0.1, 20.1);
     _hnstrip->Fill(strips.size());
 
     if (!strips.empty())
     {
+      if (strips.size()<9)
+	_hns->Fill(strips.size());
         std::sort(
             strips.begin(),
             strips.end(),
@@ -542,6 +545,7 @@ void FebProcessor::processEvent(rbEvent* e)
     if (found && flow && fhigh)
     {
         _nfound++;
+	_nstrip+=strips.size();
         _hstat->Fill(11);
     }
 }
@@ -552,6 +556,8 @@ void FebProcessor::processEvent(rbEvent* e)
 
 void FebProcessor::end(uint32_t)
 {
+  auto _hns = _rh->AccessTH1("ns", 20, 0.1, 20.1);
+  double mul=_hns->GetMean();
     std::string fname =
         "feb_" + std::to_string(_run) + ".root";
 
@@ -566,7 +572,10 @@ void FebProcessor::end(uint32_t)
         << _nread
         << " events  found="
         << _nfound
-        << std::endl;
+	<<" Efficiency: " 
+	<< (_nfound * 100.0 / _nread) << "%  Multiplicity " << 1.*_nstrip/_nfound <<" ns<9 "<<mul<<"\n";
+
+        
 }
 
 ////////////////////////////////////////////////////////////////
