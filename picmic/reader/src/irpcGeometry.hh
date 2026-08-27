@@ -10,6 +10,27 @@
 //#include "lmLogger.hh"
 #include <memory>
 
+typedef struct {
+    double x;
+    double y;
+} StripPoint;
+
+typedef struct {
+    StripPoint PT0;   // StripPoint top gauche
+    StripPoint PT1;   // StripPoint top droit
+    StripPoint PB0;   // StripPoint bottom gauche
+    StripPoint PB1;   // StripPoint bottom droit
+    double VP;   // Vitesse de propagation sur la piste
+    double VR;   // Vitesse de propagation sur les fils
+    double LC;   // Longueur du fil de connexion côté Top
+    double LR;   // Longueur du fil de connexion côté Bottom
+} StripParams;
+
+typedef struct {
+  StripPoint position;  // Position (Xs, Ys)
+  double zs;
+  int valid;       // 1 si valide, 0 si erreur
+} PositionResult;
 
 
 namespace lmana
@@ -49,6 +70,7 @@ namespace lmana
     /// @param xloc calculated x position
     /// @param yloc calculated y position
     void localPosition(uint32_t strip, double t0, double t1, double &zs, double &xloc, double &yloc,double dzs=0);
+    PositionResult getLocalPosition(uint32_t strip, double t0, double t1);
     void fromLocalPosition(double xloc, double yloc,uint32_t &strip,double &zs);
     void fromLocPos1(double xloc, double yloc,uint32_t &strip,double &zs);
     void maxima(uint32_t strip,double &ymi, double &yma);

@@ -10,7 +10,84 @@
 
 using namespace lmana;
 using namespace std;
+#include <math.h>
 
+
+PositionResult calculate_position(double T_top, double T_bottom, const StripParams* params) {
+    PositionResult result;
+    result.valid = 0;
+    
+    // Vérification des paramètres
+    if (params->VP <= 0 || params->VR <= 0) {
+        return result;
+    }
+    
+    // StripPoints médians
+    StripPoint M_T = {
+        (params->PT0.x + params->PT1.x) / 2.0,
+        (params->PT0.y + params->PT1.y) / 2.0
+    };
+    
+    StripPoint M_B = {
+        (params->PB0.x + params->PB1.x) / 2.0,
+        (params->PB0.y + params->PB1.y) / 2.0
+    };
+    
+    // Longueur de la piste
+    double LS = sqrt(pow(M_B.x - M_T.x, 2) + pow(M_B.y - M_T.y, 2));
+    
+    if (LS <= 0) {
+        return result;
+    }
+    
+    // Calcul du paramètre t (0 à 1)
+    double t = (params->VP * (T_top - T_bottom) - 
+                params->VP * (params->LC - params->LR) / params->VR + 
+                LS) / (2.0 * LS);
+
+    
+    // Vérification que t est dans [0, 1] (avec une petite tolérance)
+    double tolerance = 6e-2;
+    if (t < -tolerance || t > 1.0 + tolerance) {
+      //std::cout<<T_top<<" "<<T_bottom<<" "<<t<<std::endl;
+      result.position.x=-9999999.;
+      result.position.y=-9999999.;
+        return result;  // Position hors de la piste
+    }
+    
+    // Clamp t dans [0, 1]
+    //if (t < 0) t = 0;
+    // if (t > 1) t = 1;
+    
+    // Calcul de la position
+    result.position.x = (1.0 - t) * M_T.x + t * M_B.x;
+    result.position.y = (1.0 - t) * M_T.y + t * M_B.y;
+    result.zs = sqrt(pow(result.position.x - M_T.x, 2) + pow(result.position.y - M_T.y, 2));
+    result.valid = 1;
+    return result;
+}
+//double vp=17.148,vr=14.090;
+
+
+// Exemple d'utilisation
+/*
+int main() {
+    
+    double T_top = 30.5;      // Temps mesuré côté top (ns)
+    double T_bottom = 35.2;   // Temps mesuré côté bottom (ns)
+    
+    PositionResult result = calculate_position(T_top, T_bottom, &params);
+    
+    if (result.valid) {
+        printf("Position: Xs = %.3f, Ys = %.3f\n", 
+               result.position.x, result.position.y);
+    } else {
+        printf("Erreur: position invalide\n");
+    }
+    
+    return 0;
+}
+*/
 
 lmana::irpcGeometry::irpcGeometry()
 {
@@ -206,8 +283,26 @@ void lmana::irpcGeometry::initialize(std::string name, Json::Value jv)
   else
     _side = 1;
   std::cout<<"#Parsing of "<<name<<std::endl;
+  _side=0;
 }
 #undef ONESPEED
+PositionResult lmana::irpcGeometry::getLocalPosition(uint32_t k, double t0, double t1)
+{
+  StripParams t_params;
+  t_params.VR = 17.148,            // Vitesse piste (ex: m/ns)
+  t_params.VP = 14.09,            // Vitesse fil (ex: m/ns)
+  t_params.LC=_clc[k]/10;
+  t_params.LR=_clr[k]/10;
+  t_params.PT0.x=_XT0[k]/10;
+  t_params.PT1.x=_XT1[k]/10;
+  t_params.PB0.x=_XB0[k]/10;
+  t_params.PB1.x=_XB1[k]/10;
+  t_params.PT0.y=_YT0[k]/10;
+  t_params.PT1.y=_YT1[k]/10;
+  t_params.PB0.y=_YB0[k]/10;
+  t_params.PB1.y=_YB1[k]/10;
+  return calculate_position(t1,t0, &t_params);
+}
 void lmana::irpcGeometry::localPosition(uint32_t strip, double t0, double t1, double &zs, double &xloc, double &yloc,double dzs)
 {
   //fprintf(stderr,"%d %f %f Side %d \n",strip,t0,t1,_side);
@@ -271,6 +366,8 @@ PT1     PT0
   // Essai
   xloc = (_xtop[strip_nb]) + zs * _cost[strip_nb];
   yloc = _ytop[strip_nb] + zs * _sint[strip_nb];
+
+
 }
 void lmana::irpcGeometry::delays_extrema(double dti[], double dta[])
 {

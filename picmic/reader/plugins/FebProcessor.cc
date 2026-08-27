@@ -14,7 +14,7 @@ using namespace lmana;
 
 namespace
 {
-    constexpr double ORB_LEN = 92175.0;
+  constexpr double ORB_LEN = 92175.0;
 
     static const std::string FPGA_NAME[3] =
     {
@@ -147,6 +147,7 @@ void FebProcessor::init(uint32_t)
         if (!geoFile)
         {
 	  std::cerr << "FebProcessor::init: cannot open geometry "<<_params["geometry"].asString()<<"\n";
+	  getchar();
         }
         else
         {
@@ -158,10 +159,12 @@ void FebProcessor::init(uint32_t)
             if (!Json::parseFromStream(builder, geoFile, &root, &errors))
             {
                 std::cerr << "FebProcessor::init: JSON parse error in etc/RE31_1.json: " << errors << '\n';
+		getchar();
             }
             else if (!root.isObject() || !root["content"].isObject() || !root["content"]["LEFT"].isObject())
             {
                 std::cerr << "FebProcessor::init: invalid geometry JSON format in etc/RE31_1.json\n";
+		getchar();
             }
             else
             {
@@ -205,16 +208,19 @@ void FebProcessor::processRunHeader(rbRun* r)
 void FebProcessor::processEvent(rbEvent* e)
 {
 
-    auto _hstat = _rh->AccessTH1("statistic", 20, 0, 20);
+    auto _hstat = _rh->AccessTH1("statistic", 40, 0, 40);
     _hstat->Fill(1);
     if (_nread % 10 == 0 && _nread>5)
+      {
+	auto neff=3560.*_nread/(3560+126);
         std::cout
             << "Event "
             << e->eventNumber
             << " timestamp "
             << e->timestamp
             << " read " << _nread << " events, found " << _nfound << " FEB hits"<<" Efficiency: " 
-            << (_nfound * 100.0 / _nread) << "%  Multiplicity " << 1.*_nstrip/_nfound <<"\n";
+            << (_nfound * 100.0 / neff) << "%  Multiplicity " << 1.*_nstrip/_nfound <<"\n";
+      }
     _nread++;     
     std::vector<TdcChannel> channels;
     std::vector<StripHit> strips;
@@ -335,6 +341,7 @@ void FebProcessor::processEvent(rbEvent* e)
     //----------------------------------------------------------
 
     bool found=false;
+    bool strip_found=false;
     bool flow=false;
     bool fhigh=false;
 
@@ -460,43 +467,43 @@ void FebProcessor::processEvent(rbEvent* e)
             double zs;
             double x;
             double y;
+	    auto res=_geo.getLocalPosition(47-lo.strip,hi.diff,lo.diff);
+	    if (!res.valid) continue;
 
-            _geo.localPosition(
-                lo.strip,
-                hi.diff,
-                lo.diff,
-                zs,
-                x,
-                y);
+            //_geo.localPosition(
+	    // lo.strip,
+	    // hi.diff,
+	    // lo.diff,
+	    // zs,
+	    // x,
+	    // y);
 
             strips.push_back(
             {
                 lo.strip,
                 hi.diff,
                 lo.diff,
-                zs,
-                x,
-                y
+                res.zs,
+                res.position.x,
+                res.position.y
             });
             auto _hdiff = _rh->AccessTH1("hdiff",200,-50.,150.);
             auto _hstrip = _rh->AccessTH1("strip", 50, 0, 50);
             auto _hzs = _rh->AccessTH1("zs", 200, -50, 150);
-            auto _hxy = _rh->AccessTH2("xy", 100,0.,50.,50,0.,200.100);
-            auto _hpos = _rh->AccessTH2("pos", 50,0.,50.,200,0.,200.);
+            auto _hxy = _rh->AccessTH2("xy", 80,0.,160.,30,0.,60.);
+            auto _hpos = _rh->AccessTH2("pos", 80,0.,160.,50,0.,50.);
             _hdiff->Fill(
                 hi.diff-lo.diff);
 
             _hstrip->Fill(
                 lo.strip);
 
-            _hzs->Fill(zs);
+            _hzs->Fill(res.zs);
 
-            _hxy->Fill(x,y);
+            _hxy->Fill(res.position.y,res.position.x);
 
-            _hpos->Fill(
-                lo.strip,
-                zs);
-                
+            _hpos->Fill(res.zs,lo.strip);
+
         }
     }
     auto _hnstrip = _rh->AccessTH1("nstrip", 40, 0, 20);
@@ -523,12 +530,12 @@ void FebProcessor::processEvent(rbEvent* e)
             strips.front();
         
         auto _hczs = _rh->AccessTH1("czs", 200, -50, 150);
-        auto _hcxy = _rh->AccessTH2("cxy", 100,0.,50.,50,0.,200.100);
-        auto _hcpos = _rh->AccessTH2("cpos", 50,0.,50.,200,0.,200.);
+        auto _hcxy = _rh->AccessTH2("cxy", 80,0.,160.,30,0.,60.);
+        auto _hcpos = _rh->AccessTH2("cpos", 80,0.,160.,60,0.,60.);
         auto _hcstrip = _rh->AccessTH1("cstrip", 50, 0, 50);
         _hcxy->Fill(
-            s.xloc,
-            s.yloc);
+            s.yloc,
+            s.xloc);
 
         _hcstrip->Fill(
             s.strip);
@@ -536,10 +543,7 @@ void FebProcessor::processEvent(rbEvent* e)
         _hczs->Fill(
             s.zs);
 
-        _hcpos->Fill(
-            s.strip,
-            s.zs);
-            
+        _hcpos->Fill(s.zs,s.strip);
     }
 
     if (found && flow && fhigh)
@@ -547,6 +551,7 @@ void FebProcessor::processEvent(rbEvent* e)
         _nfound++;
 	_nstrip+=strips.size();
         _hstat->Fill(11);
+	if (strips.size()>0)  _hstat->Fill(21);
     }
 }
 
@@ -566,14 +571,14 @@ void FebProcessor::end(uint32_t)
         << _run
         << std::endl;
     _rh->writeHistograms(fname);
-   
+    auto neff=3560.*_nread/(3560+126);
     std::cout
         << "Processed "
         << _nread
         << " events  found="
         << _nfound
 	<<" Efficiency: " 
-	<< (_nfound * 100.0 / _nread) << "%  Multiplicity " << 1.*_nstrip/_nfound <<" ns<9 "<<mul<<"\n";
+	<< (_nfound * 100.0 / neff) << "%  Multiplicity " << 1.*_nstrip/_nfound <<" ns<9 "<<mul<<"\n";
 
         
 }
