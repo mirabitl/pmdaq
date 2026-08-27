@@ -289,8 +289,8 @@ void lmana::irpcGeometry::initialize(std::string name, Json::Value jv)
 PositionResult lmana::irpcGeometry::getLocalPosition(uint32_t k, double t0, double t1)
 {
   StripParams t_params;
-  t_params.VR = 17.148,            // Vitesse piste (ex: m/ns)
-  t_params.VP = 14.09,            // Vitesse fil (ex: m/ns)
+  t_params.VR = 14.09;//17.148,            // Vitesse piste (ex: m/ns)
+  t_params.VP = 17.148;// 14.09,            // Vitesse fil (ex: m/ns)
   t_params.LC=_clc[k]/10;
   t_params.LR=_clr[k]/10;
   t_params.PT0.x=_XT0[k]/10;

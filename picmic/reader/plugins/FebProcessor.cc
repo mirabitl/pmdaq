@@ -207,10 +207,10 @@ void FebProcessor::processRunHeader(rbRun* r)
 
 void FebProcessor::processEvent(rbEvent* e)
 {
-
+  _clusters.clear();
     auto _hstat = _rh->AccessTH1("statistic", 40, 0, 40);
     _hstat->Fill(1);
-    if (_nread % 10 == 0 && _nread>5)
+    if (_nread % 1 == 0 && _nread>5)
       {
 	auto neff=3560.*_nread/(3560+126);
         std::cout
@@ -223,7 +223,7 @@ void FebProcessor::processEvent(rbEvent* e)
       }
     _nread++;     
     std::vector<TdcChannel> channels;
-    std::vector<StripHit> strips;
+    std::vector<std::shared_ptr<StripHit>> strips;
 
     //----------------------------------------------------------
     // tdcdata[fpga]
@@ -477,16 +477,16 @@ void FebProcessor::processEvent(rbEvent* e)
 	    // zs,
 	    // x,
 	    // y);
-
-            strips.push_back(
-            {
-                lo.strip,
-                hi.diff,
-                lo.diff,
-                res.zs,
-                res.position.x,
-                res.position.y
-            });
+	    StripHit hit{
+	      lo.strip,
+	      hi.diff,
+	      lo.diff,
+	      res.zs,
+	      res.position.x,
+	      res.position.y
+	    };
+	    auto st=std::make_shared<StripHit>(hit);
+            strips.push_back(st);
             auto _hdiff = _rh->AccessTH1("hdiff",200,-50.,150.);
             auto _hstrip = _rh->AccessTH1("strip", 50, 0, 50);
             auto _hzs = _rh->AccessTH1("zs", 200, -50, 150);
@@ -517,13 +517,13 @@ void FebProcessor::processEvent(rbEvent* e)
         std::sort(
             strips.begin(),
             strips.end(),
-            [](const StripHit& a,
-               const StripHit& b)
+            [](const std::shared_ptr<StripHit> &a,
+               const std::shared_ptr<StripHit>& b)
             {
-                if (a.thr!=b.thr)
-                    return a.thr<b.thr;
+                if (a->thr!=b->thr)
+                    return a->thr<b->thr;
 
-                return a.strip<b.strip;
+                return a->strip<b->strip;
             });
 
         auto const& s =
@@ -534,16 +534,16 @@ void FebProcessor::processEvent(rbEvent* e)
         auto _hcpos = _rh->AccessTH2("cpos", 80,0.,160.,60,0.,60.);
         auto _hcstrip = _rh->AccessTH1("cstrip", 50, 0, 50);
         _hcxy->Fill(
-            s.yloc,
-            s.xloc);
+            s->yloc,
+            s->xloc);
 
         _hcstrip->Fill(
-            s.strip);
+            s->strip);
 
         _hczs->Fill(
-            s.zs);
+            s->zs);
 
-        _hcpos->Fill(s.zs,s.strip);
+        _hcpos->Fill(s->zs,s->strip);
     }
 
     if (found && flow && fhigh)
@@ -553,6 +553,58 @@ void FebProcessor::processEvent(rbEvent* e)
         _hstat->Fill(11);
 	if (strips.size()>0)  _hstat->Fill(21);
     }
+    auto vclusters=this->clusteriserHits(strips);
+    for (size_t i = 0; i < vclusters.size(); ++i) {
+      
+
+      std::sort(vclusters[i].begin(), vclusters[i].end(),
+		[](std::shared_ptr<StripHit> a, std::shared_ptr<StripHit> b) { return a->thr < b->thr; });
+      auto c=std::make_shared<FebCluster>(vclusters[i]);
+      _clusters.push_back(c);
+      /*
+      std::cout << "Cluster " << i + 1 << " : Tmin " << c->t()<<" strips ";
+      for (auto p : c->hits()) {
+	std::cout << p->strip << " ";
+      }
+        
+      std::cout << std::endl;
+      std::cout<<c->x()<<" "<<c->y()<<" "<<c->zs()<<std::endl;
+      */
+      
+    }
+    std::sort(_clusters.begin(), _clusters.end(),
+	      [](std::shared_ptr<FebCluster> a, std::shared_ptr<FebCluster> b) { return a->t() < b->t(); });
+
+    auto _hncl = _rh->AccessTH1("ncl", 20, 0., 20);
+    _hncl->Fill(_clusters.size());
+    if (_clusters.size())
+      {
+	auto c= _clusters[0];
+	auto _h1thr = _rh->AccessTH1("h1thr",2000,-2000.,0.);
+	auto _hc1zs = _rh->AccessTH1("c1zs", 200, -50, 150);
+        auto _hc1xy = _rh->AccessTH2("c1xy", 80,0.,160.,30,0.,60.);
+        auto _hc1pos = _rh->AccessTH2("c1pos", 80,0.,160.,60,0.,60.);
+        auto _hc1strip = _rh->AccessTH1("c1strip", 50, 0, 50);
+	_hc1zs->Fill(c->zs());
+	_hc1xy->Fill(c->y(),c->x());
+	_hc1pos->Fill(c->zs(),c->strip());
+	_hc1strip->Fill(c->strip());
+	_h1thr->Fill(c->t());
+	
+      }
+    /*
+    for (size_t i = 0; i < _clusters.size(); ++i) {
+      auto c= _clusters[i];
+      std::cout << "Cluster " << i + 1 << " : Tmin " << c->t()<<" strips ";
+      for (auto p : c->hits()) {
+	std::cout << p->strip << " ";
+      }
+        
+      std::cout << std::endl;
+      std::cout<<c->x()<<" "<<c->y()<<" "<<c->zs()<<std::endl;
+    }
+    getchar();
+    */
 }
 
 ////////////////////////////////////////////////////////////////
@@ -583,6 +635,40 @@ void FebProcessor::end(uint32_t)
         
 }
 
+
+
+#include <vector>
+#include <algorithm>
+
+
+std::vector<std::vector<std::shared_ptr<StripHit>> > FebProcessor::clusteriserHits(const std::vector<std::shared_ptr<StripHit>>& hits) {
+    // Trier par numéro de strip
+    std::vector<std::shared_ptr<StripHit>> sortedHits = hits;
+    std::sort(sortedHits.begin(), sortedHits.end(),
+              [](std::shared_ptr<StripHit> a, std::shared_ptr<StripHit> b) { return a->strip < b->strip; });
+    
+    std::vector<std::vector<std::shared_ptr<StripHit>>> clusters;
+    
+    if (sortedHits.empty()) return clusters;
+    
+    std::vector<std::shared_ptr<StripHit>> clusterCourant;
+    clusterCourant.push_back(sortedHits[0]);
+    
+    for (size_t i = 1; i < sortedHits.size(); ++i) {
+        int ecart = sortedHits[i]->strip - sortedHits[i-1]->strip;
+        
+        if (ecart <= 2) {
+            clusterCourant.push_back(sortedHits[i]);
+        } else {
+            clusters.push_back(clusterCourant);
+            clusterCourant.clear();
+            clusterCourant.push_back(sortedHits[i]);
+        }
+    }
+    
+    clusters.push_back(clusterCourant);
+    return clusters;
+}
 ////////////////////////////////////////////////////////////////
 /// plugin factory
 ////////////////////////////////////////////////////////////////
