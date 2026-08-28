@@ -41,11 +41,19 @@ PositionResult calculate_position(double T_top, double T_bottom, const StripPara
     }
     
     // Calcul du paramètre t (0 à 1)
-    double t = (params->VP * (T_top - T_bottom) - 
+    // Ma version
+    double tl = (params->VP * (T_top - T_bottom) - 
+                params->VP * (params->LC - params->LR) / params->VR + 
+                LS) / (2.0 * LS);
+    // Version CERN
+    double tc = (-params->VP * (T_top - T_bottom) + 
                 params->VP * (params->LC - params->LR) / params->VR + 
                 LS) / (2.0 * LS);
 
-    
+    //std::cout<<tl<<" "<<tc<<" "<<tl+tc<<std::endl;
+    //getchar();
+    double t=tl;
+    // Vers
     // Vérification que t est dans [0, 1] (avec une petite tolérance)
     double tolerance = 6e-2;
     if (t < -tolerance || t > 1.0 + tolerance) {

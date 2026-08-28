@@ -210,7 +210,7 @@ void FebProcessor::processEvent(rbEvent* e)
   _clusters.clear();
     auto _hstat = _rh->AccessTH1("statistic", 40, 0, 40);
     _hstat->Fill(1);
-    if (_nread % 1 == 0 && _nread>5)
+    if (_nread % 20 == 0 && _nread>5)
       {
 	auto neff=3560.*_nread/(3560+126);
         std::cout
@@ -490,8 +490,8 @@ void FebProcessor::processEvent(rbEvent* e)
             auto _hdiff = _rh->AccessTH1("hdiff",200,-50.,150.);
             auto _hstrip = _rh->AccessTH1("strip", 50, 0, 50);
             auto _hzs = _rh->AccessTH1("zs", 200, -50, 150);
-            auto _hxy = _rh->AccessTH2("xy", 80,0.,160.,30,0.,60.);
-            auto _hpos = _rh->AccessTH2("pos", 80,0.,160.,50,0.,50.);
+            auto _hxy = _rh->AccessTH2("xy", 90,-20.,160.,30,0.,60.);
+            auto _hpos = _rh->AccessTH2("pos", 90,-20.,160.,50,0.,50.);
             _hdiff->Fill(
                 hi.diff-lo.diff);
 
