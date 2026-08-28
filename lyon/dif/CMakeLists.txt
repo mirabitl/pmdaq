@@ -34,9 +34,9 @@ add_library(lyon_dif SHARED ${SRCS} ${HEADERS})
 
 
 #target_link_libraries(lyon_mdcc PUBLIC ${ZUP_LIB})
-if (APPLE)
+if (APPLE OR (DISTRO_ID STREQUAL "almalinux") )
 target_link_libraries(lyon_dif PRIVATE  pmdaq zmq evb lyon_db ftdi1 pthread ${PMDAQ_LIBS})
-target_include_directories(lyon_dif PRIVATE /usr/local/include/libftdi1)
+target_include_directories(lyon_dif PRIVATE /usr/include/libftdi1)
 else()
   target_link_libraries(lyon_dif PRIVATE pmdaq zmq evb lyon_db ftdi pthread ${PMDAQ_LIBS})
   target_include_directories(lyon_dif PRIVATE /usr/include/libftdi1)

@@ -44,12 +44,14 @@ include(../../CMake.defs)
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
 #find_package(log4cxx CONFIG REQUIRED)
 #target_link_libraries(lyon_liboard PRIVATE log4cxx)
-if (NOT APPLE)
-target_link_libraries(lyon_liboard PRIVATE netLink ftdi lyon_db evb)
-else()
+if (APPLE OR (DISTRO_ID STREQUAL "almalinux") )
+
 target_link_libraries(lyon_liboard PRIVATE netLink ftdi1 lyon_db evb)
 target_include_directories(lyon_liboard PRIVATE /usr/local/include/libftdi1)
+else()
+target_link_libraries(lyon_liboard PRIVATE netLink ftdi lyon_db evb)
 endif()
+  
 
 target_include_directories(lyon_liboard PRIVATE ../../include  ../db ../../evb/include )
 

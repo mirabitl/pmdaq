@@ -27,3 +27,23 @@ find_package(cpprestsdk CONFIG REQUIRED)
 set(PMDAQ_LIBS cpprest log4cxx boost_system crypto ssl z)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
+
+# Lire le fichier os-release pour obtenir les informations de la distribution
+file(STRINGS /etc/os-release os_release_content)
+
+# Extraire l'ID de la distribution (ex: "almalinux", "ubuntu")
+string(REGEX MATCH "ID=\"?([^\n\"]+)\"?" matched_id "${os_release_content}")
+set(DISTRO_ID "${CMAKE_MATCH_1}")
+
+# Extraire la version de la distribution (ex: "9", "20.04")
+string(REGEX MATCH "VERSION_ID=\"?([^\n\"]+)\"?" matched_version "${os_release_content}")
+set(DISTRO_VERSION "${CMAKE_MATCH_1}")
+
+# Afficher les informations pour vérification
+message(STATUS "Distribution détectée : ${DISTRO_ID} ${DISTRO_VERSION}")
+
+# Exemple d'utilisation pour une condition spécifique à AlmaLinux 9
+if(DISTRO_ID STREQUAL "almalinux" AND DISTRO_VERSION STREQUAL "9")
+    message(STATUS "Configuration spécifique pour AlmaLinux 9")
+    # Ajoutez ici vos commandes spécifiques à AlmaLinux 9
+endif()
