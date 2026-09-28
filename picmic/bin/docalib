@@ -91,11 +91,12 @@ if __name__ == '__main__':
         par["comment"]=results.upload
     if results.resmode!=None:
         par["mode"]=results.resmode
-
+    
     par["calibration"]="ALIGN"
     if results.one:
         par["calibration"]="SCURVE_1"
     if results.allchan:
         par["calibration"]="SCURVE_A"
-    
+
+    print(par)
     main(par)

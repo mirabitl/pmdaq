@@ -24,6 +24,8 @@ class scurve_processor:
         resmode=None
         if "mode" in params:
             resmode=params["mode"]
+        print(resmode)
+        #v=input()
         self.pb=picmic_scurve(params["db"]["board"],
                               params["db"]["state"],
                               params["db"]["version"],

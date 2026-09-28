@@ -107,6 +107,7 @@ class picmic_normal_run:
             board_id=self.run_params["db"]["board"]
             dbstate=self.run_params["db"]["state"]
             dbversion=self.run_params["db"]["version"]
+            dc_pa=self.run_params["dc_pa"]
             if "mode" in self.run_params:
                 mode=self.run_params["mode"]
         # Down load DB state and patch it
@@ -150,7 +151,7 @@ class picmic_normal_run:
         # DC_PA
         for ch in range(64):
             if dc_pa != 0:
-                self.setup.boards[0].picmic.set("DC_PA_ch", dc_pa, ch)
+                self.sdb.setup.boards[0].picmic.set("DC_PA_ch", dc_pa, ch)
         self.sdb.setup.version = 888
         self.sdb.to_csv_files()
 
@@ -273,7 +274,8 @@ class picmic_normal_run:
             with self._lock:
                 self.status["run"] = self.storage.run
                 self.status["event"] = self.storage.event
-                self.acquire_and_store(N_ACQ)
+                #self.acquire_and_store(N_ACQ,window_size=100000,dead_time=50,n_window=1)
+                self.acquire_and_store(1,window_size=3560,dead_time=5,n_window=1)
             if self.storage.event%100 == 0: 
                 self.logger.info(f"Acquisition {self.storage.run} {self.storage.event}")
             time.sleep(0.001)

@@ -3,8 +3,8 @@
 
 import json
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
-import ttkbootstrap as tb
+from tkinter import filedialog, messagebox
+import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -513,7 +513,7 @@ class daq_widget:
         
     def initialise_ui(self):
         # ----------------- UI ----------------- #
-        self.root = tb.Window()#themename="cyborg")
+        self.root = ttk.Window()#themename="cyborg")
         self.root.title("DAQ LIROC-PICOTDC 🧩")
         self.root.geometry("800x650")
 
@@ -602,9 +602,15 @@ class daq_widget:
         self.root.after(500, self.update_daq_info)
         
     def log(self,msg):
+        #self.log_text.insert(tk.END, msg + "\n")
+        #self.log_text.see(tk.END)
+        print("LOG 1", flush=True)
         self.log_text.insert(tk.END, msg + "\n")
-        self.log_text.see(tk.END)
+        print("LOG 2 - INSERT OK", flush=True)
+        self.log_text.yview_moveto(1.0)
+        #self.log_text.tk.call(self.log_text._w, "see", "end")
 
+        print("LOG 3 - SEE OK", flush=True)
     def charger_config_mongo(self):
 
         self.config_list = self.sdb.configurations()

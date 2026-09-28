@@ -46,7 +46,16 @@ private:
 
 namespace lmana
 {
-
+    struct picoChannel
+    {
+      uint32_t channel;
+      uint32_t bxcount;
+      uint32_t coarsecount;
+      uint32_t coarse;
+      uint32_t fine;
+      double t;
+    };
+  
 class picProcessor : public rbProcessor
 {
 public:
@@ -165,6 +174,7 @@ public:
 
     void processEvent(rbEvent* e) override
     {
+      _vc.clear();
         std::array<std::vector<double>,64> ts;
         std::array<bool,64> first;
         first.fill(true);
@@ -193,13 +203,14 @@ public:
                     uint32_t coarsecount =
                         word.range(14,2);
 
+		    //std::cout<<" ------->"<<bxcount<<" "<<coarsecount<<std::endl;
                     (void)bxcount;
                     (void)coarsecount;
 
                     continue;
                 }
 
-                int ch =
+                uint32_t ch =
                     word.range(30,27)
                     + 16*p;
 
@@ -211,17 +222,24 @@ public:
                     first[ch]=false;
                     continue;
                 }
+		uint32_t bxcount = word.range(27,15);
+		uint32_t coarsecount = word.range(14,2);
+                uint32_t coarse = word.range(25,13);
 
-                uint32_t coarse =
-                    word.range(25,13);
+                uint32_t fine = word.range(12,0);
 
-                uint32_t fine =
-                    word.range(12,0);
+                double t = ((coarse<<13)|fine)*3.0523e-3;
 
-                double t =
-                    ((coarse<<13)|fine)
-                    *3.0523e-3;
-
+		_vc.push_back(
+                {
+                    ch,
+                    bxcount,
+                    coarsecount,
+                    coarse,
+                    fine,
+                    t
+                });
+		//std::cout<<"Event "<<_nevt<<" "<<ch<<" "<<coarse<<" "<<fine<<" "<<t<<" "<<std::endl;
                 if(ch==0)
                 {
                     ts[0].push_back(t);
@@ -251,6 +269,26 @@ public:
             }
         }
 
+	std::cout<<_nevt<<" "<<_vc.size()<<std::endl;
+	if (_vc.size()<2)  return;
+	bool found=false;
+	for (int i=0;i<_vc.size();i++)
+	  {
+	    if (found) break;
+	    if (_vc[i].channel!=22) continue;
+	  for (int j=0;j<_vc.size();j++)
+	    {
+	      if (_vc[j].channel!=31) continue;
+	      if (_vc[i].channel == _vc[j].channel) continue;
+	      double dt = (_vc[i].t -  _vc[j].t);
+	      if (abs(dt)>5) continue;
+	       auto hdt=_rh->AccessTH1("DT",500,-5.,5);
+	       hdt->Fill(dt);
+	       found=true;
+	      printf("  %d %7.2f %d %7.2f -> %5.3f  \n",_vc[i].channel,_vc[i].t,_vc[j].channel,_vc[j].t,dt);
+	    }
+	  }
+	return;
         for(auto const& m : _liroc2ptdc)
         {
             int lch = m.first;
@@ -339,6 +377,7 @@ private:
   uint32_t _vin,_run,_nevt;
   static const std::map<int,int> _liroc2ptdc;
   DCHistogramHandler* _rh;
+  std::vector<picoChannel> _vc;
 };
 
 const std::map<int,int>
