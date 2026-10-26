@@ -275,10 +275,11 @@ class picmic_normal_run:
                 self.status["run"] = self.storage.run
                 self.status["event"] = self.storage.event
                 #self.acquire_and_store(N_ACQ,window_size=100000,dead_time=50,n_window=1)
-                self.acquire_and_store(1,window_size=3560,dead_time=5,n_window=1)
+                #self.acquire_and_store(1,window_size=3560,dead_time=5,n_window=1)
+                self.acquire_and_store(1,window_size=7800,dead_time=5,n_window=40)
             if self.storage.event%100 == 0: 
                 self.logger.info(f"Acquisition {self.storage.run} {self.storage.event}")
-            time.sleep(0.001)
+            #time.sleep(0.001)
         self.logger.info("Acquisition thread arrêté")
 
         

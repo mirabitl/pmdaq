@@ -284,7 +284,7 @@ class picmic_scurve:
         for dac10b_val in range(start,stop,step):
             self.feb.liroc.set10bDac(dac10b_val)
             self.feb.liroc.stopScClock()
-            counters=self.kc705.acqPtdcCounters(window=5, deadtime=500, window_number=1000)
+            counters=self.kc705.acqPtdcCounters(window=5000, deadtime=500, window_number=100)
             for ch, counter in enumerate(counters):
                 scurves[ch].append(counter)
         return scurves

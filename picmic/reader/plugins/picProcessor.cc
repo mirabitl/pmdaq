@@ -66,6 +66,7 @@ public:
 	_rh=DCHistogramHandler::instance();
 	_nevt=0;
 	_counts.fill(0);
+	_count.fill(0);
     }
 
     virtual ~picProcessor() = default;
@@ -184,6 +185,8 @@ public:
 	uint32_t nwin=0;
 	std::array<uint32_t,64> nfound;
 	nfound.fill(0);
+	auto hcount=_rh->AccessTH1("Count",100,0.1,100.1);
+	hcount->Fill(1);
         for(size_t p=0;
             p<e->blocks.size();
             p++)
@@ -217,11 +220,12 @@ public:
                 if(ch<0 || ch>=64)
                     continue;
 
-                if(first[ch])
+                /*if(first[ch])
                 {
                     first[ch]=false;
                     continue;
                 }
+		*/
 		uint32_t bxcount = word.range(27,15);
 		uint32_t coarsecount = word.range(14,2);
                 uint32_t coarse = word.range(25,13);
@@ -269,24 +273,75 @@ public:
             }
         }
 
-	std::cout<<_nevt<<" "<<_vc.size()<<std::endl;
-	if (_vc.size()<2)  return;
-	bool found=false;
+
 	for (int i=0;i<_vc.size();i++)
 	  {
-	    if (found) break;
+	  _count[_vc[i].channel]++;
+	  hcount->Fill(_vc[i].channel+10);
+	  }
+	for (int i=0;i<_vc.size();i++)
+	  {
+	    auto hti=_rh->AccessTH1("TCH",5000,0.,200000.);
+	    auto htdig=_rh->AccessTH1("TDIG",5000,0.,200000.);
+	    if (_vc[i].t>10)
+	      hti->Fill(_vc[i].t);
+	    if (_vc[i].channel==2)
+	      htdig->Fill(_vc[i].t);
+	  }
+	if (_vc.size()<2)  return;
+
+	if (_nevt%50 ==0)
+	  {
+	    std::cout<<_nevt<<" "<<_vc.size()<<" "<<_nevt*7800*25E-9<<std::endl;
+	    for (int i=0;i<64;i++)
+	      if (_count[i]!=0)
+		printf("\t -> %d %d \n",i,_count[i]);
+	  }
+	 std::sort(
+        _vc.begin(),
+        _vc.end(),
+        [](const picoChannel& a,
+           const picoChannel& b)
+        {
+
+            return a.t<b.t;
+        });
+	bool found=false;
+	double tint=0;
+	int idi=0;
+	for (int i=0;i<_vc.size();i++)
+	  { 
+	    //std::cout<<_vc[i].channel<<" "<<_vc[i].t<<std::endl;
+	    //if (found) break;
+	    //if (_vc[i].channel!=24 &&_vc[i].channel!=23  ) getchar();
 	    if (_vc[i].channel!=22) continue;
 	  for (int j=0;j<_vc.size();j++)
 	    {
-	      if (_vc[j].channel!=31) continue;
+	      if (_vc[j].channel!=24) continue;
 	      if (_vc[i].channel == _vc[j].channel) continue;
 	      double dt = (_vc[i].t -  _vc[j].t);
-	      if (abs(dt)>5) continue;
-	       auto hdt=_rh->AccessTH1("DT",500,-5.,5);
-	       hdt->Fill(dt);
-	       found=true;
-	      printf("  %d %7.2f %d %7.2f -> %5.3f  \n",_vc[i].channel,_vc[i].t,_vc[j].channel,_vc[j].t,dt);
+	      if (abs(dt)>500) continue;
+	      auto hdt=_rh->AccessTH1("DT",5000,-5.,5.);
+	      hdt->Fill(dt);
+	      if (!found)
+		tint=_vc[i].t;
+	      found=true;
+	      // printf("  %d %7.2f %d %7.2f -> %5.3f  \n",_vc[i].channel,_vc[i].t,_vc[j].channel,_vc[j].t,dt);
+	      //tint=_vc[i].t;
+	      idi=i;
+	      auto hti1=_rh->AccessTH1("TCH22",5000,0.,200000.);
+	      hti1->Fill(_vc[i].t-tint);
+
+	      break;
 	    }
+	  }
+	for (int i=0;i<_vc.size();i++)
+	  {
+	    //auto hti=_rh->AccessTH1("TCH",5000,0.,200000.);
+	    //hti->Fill(_vc[i].t);
+	    
+	    if (abs(_vc[i].t-tint)<5) printf(" \t ====  %d %7.2f %d %7.2f -> %5.3f  \n",_vc[i].channel,_vc[i].t,idi,tint,abs(_vc[i].t-tint));
+	      
 	  }
 	return;
         for(auto const& m : _liroc2ptdc)
@@ -378,6 +433,8 @@ private:
   static const std::map<int,int> _liroc2ptdc;
   DCHistogramHandler* _rh;
   std::vector<picoChannel> _vc;
+  std::array<uint32_t,64> _count;
+
 };
 
 const std::map<int,int>
