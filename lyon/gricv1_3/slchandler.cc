@@ -1,0 +1,75 @@
+#include "Gricv1Interface.hh"
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sys/dir.h>  
+#include <sys/param.h>  
+#include <stdio.h>  
+#include <stdlib.h>  
+#include <unistd.h>  
+#include <string.h>
+#include <stdint.h>
+#include <fcntl.h>
+#include <iostream>
+#include <sstream>
+#include <map>
+#include <bitset>
+#include <boost/format.hpp>
+#include <arpa/inet.h>
+
+
+
+
+gricv1_3::slcHandler::slcHandler(std::string ip,mpi2::MpiMessageHandler* transport) : socketHandler(ip,gricv1_3::Interface::PORT::SLC,transport)
+{
+  _msg=new gricv1_3::Message();
+}
+
+void gricv1_3::slcHandler::sendSlowControl(uint8_t* slc,uint16_t lenbytes)
+{
+  uint16_t hrlen=lenbytes;
+  uint16_t cpl32bit=4-hrlen%4;
+  uint16_t len=hrlen+cpl32bit+gricv1_3::Message::Fmt::PAYLOAD+1;
+  // Hardcode dasn le firmware
+  hrlen=109;
+  len=118;
+  _msg->setAddress(id());
+  _msg->setLength(len);
+  uint16_t* sp=(uint16_t*) &(_msg->ptr()[gricv1_3::Message::Fmt::LEN]);
+  _msg->ptr()[gricv1_3::Message::Fmt::HEADER]='(';
+  sp[0]=htons(len);
+  _msg->ptr()[gricv1_3::Message::Fmt::CMD]=gricv1_3::Message::command::SLC;
+  memcpy(&(_msg->ptr()[gricv1_3::Message::Fmt::PAYLOAD]),slc,hrlen);
+  _msg->ptr()[len-1]=')';
+  uint32_t tr=this->sendMessage(_msg);
+}
+
+
+bool gricv1_3::slcHandler::processPacket()
+{
+  uint16_t* _sBuf= (uint16_t*) &_buf[gricv1_3::Message::Fmt::LEN];
+  uint16_t length=ntohs(_sBuf[0]); // Header
+  uint8_t transaction=_buf[gricv1_3::Message::Fmt::TRANS];
+
+  
+  PM_INFO(_logGricv1,this->sourceid()<<"SLC data answer="<<transaction<<" length="<<length);
+#define DEBUGSLCPACKET
+#ifdef DEBUGSLCPACKET
+  fprintf(stderr,"\nSLC RC ==> ");
+  for (int i=0;i<_idx;i++)
+    {
+      fprintf(stderr,"%.2x ",(_buf[i]));
+      
+      if (i%16==15)
+	{
+	  fprintf(stderr,"\n==> ");
+	}
+    }
+  fprintf(stderr,"\n");
+#endif
+  return true;
+}
