@@ -257,7 +257,7 @@ class rc_fast:
                 print(x.host,x.port,x.instance,x.name,x.params)
             print(self.config.model_dump(mode='json'))
         if self.mqtt==None:
-            logging.warn("The broker is {self.broker}")
+            logging.warning(f"The broker is {self.broker}")
             self.mqtt=mqtt_interface.MQTTInterface(host=self.broker,root_topic=f"pmdaq/{self.config.session}/#")
             self.mqtt.start(self.config)
 

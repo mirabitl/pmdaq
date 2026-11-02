@@ -20,18 +20,27 @@
 #include <bitset>
 #include <boost/format.hpp>
 #include <arpa/inet.h>
+#include <cstring>
 
 
 
 
-gricv1_2::registerHandler::registerHandler(std::string ip,mpi2::MpiMessageHandler* transport) : socketHandler(ip,gricv1_2::Interface::PORT::REGISTER,transport),_noTransReply(false)
-
+gricv1_2::registerHandler::registerHandler(std::string ip)
+    : socketHandler(ip, gricv1_2::Interface::PORT::REGISTER),
+      _slcStatus(0),
+      _msg(new gricv1_2::Message())
 {
-  _msg= new gricv1_2::Message();
+}
+
+gricv1_2::registerHandler::~registerHandler()
+{
+  disconnect();
+  delete _msg;
 }
 
 void gricv1_2::registerHandler::writeRegister(uint16_t address,uint32_t value)
 {
+  const std::lock_guard<std::mutex> requestLock(_requestMutex);
   uint16_t len=16;
   _msg->setAddress(this->id());
   _msg->setLength(len);
@@ -44,14 +53,18 @@ void gricv1_2::registerHandler::writeRegister(uint16_t address,uint32_t value)
   memcpy(&(_msg->ptr()[gricv1_2::Message::Fmt::PAYLOAD+2]),&rval,4);
   
   _msg->ptr()[len-1]=')';    
-  uint32_t tr=this->sendMessage(_msg);
-  if (tr==UINT32_MAX)
+  const uint32_t transaction = sendMessage(_msg, true);
+  if (transaction == UINT32_MAX)
     return;
-  if (_noTransReply) tr=0;
-  this->processReply(tr);
+  std::vector<uint8_t> reply;
+  if (!waitForReply(static_cast<uint8_t>(transaction),
+                    std::chrono::milliseconds(400), reply))
+    PM_ERROR(_logGricv1, "No write-register reply after 400 ms for "
+                             << "transaction " << transaction);
 }
 uint32_t gricv1_2::registerHandler::readRegister(uint16_t address)
 {
+  const std::lock_guard<std::mutex> requestLock(_requestMutex);
   uint16_t len=16;
   _msg->setAddress(this->id());
   _msg->setLength(len);
@@ -63,92 +76,42 @@ uint32_t gricv1_2::registerHandler::readRegister(uint16_t address)
   memcpy(&(_msg->ptr()[gricv1_2::Message::Fmt::PAYLOAD]),&radr,2);
   _msg->ptr()[len-1]=')';
 
-  // // For the moment the reply is in transaction 0
-  // // Clear it first, to be suppressed asap Xtof return the transaction #
-  // uint8_t* repa=this->answer(0);
-  // memset(repa,0,0x4000);  
-  uint32_t tr=this->sendMessage(_msg);
-  if (tr==UINT32_MAX)
+  const uint32_t transaction = sendMessage(_msg, true);
+  if (transaction == UINT32_MAX)
     return 0;
-  uint32_t rep=0;
-  PM_DEBUG(_logGricv1,"Waiting PROCESSREPLY");
- if (_noTransReply) tr=0;
-  this->processReply(tr,&rep);
-  return ntohl(rep);
-}
-
-#define REPLY_MAX_RETRY 400
-void gricv1_2::registerHandler::processReply(uint32_t tr,uint32_t* reply)
-{
-  uint8_t b[0x4000];
-  
-  uint8_t* rep=this->answer(tr%255);
-  if (rep==NULL)
-    {
-      PM_ERROR(_logGricv1," NULL ptr for answ "<<tr);
-
-    }
-  int cnt=0;
-  while (rep[gricv1_2::Message::Fmt::CMD]!=gricv1_2::Message::ACKNOWLEDGE )
-    {
-      usleep(1000);
-      cnt++;
-      if (cnt>REPLY_MAX_RETRY)
-	{
-	  PM_ERROR(_logGricv1," no return after "<<cnt);
-	  break;
-	}
-    }
-
-  // Dump returned buffer
-  memcpy(b,rep,0x4000);
-  uint16_t* _sBuf= (uint16_t*) &b[gricv1_2::Message::Fmt::LEN];
-  uint16_t length=ntohs(_sBuf[0]); // Header
-  uint8_t trame=b[gricv1_2::Message::Fmt::TRANS];
-  uint8_t command=b[gricv1_2::Message::Fmt::CMD];
-  PM_DEBUG(_logGricv1," REPLY command ="<<(int) command<<" length="<<length<<" trame id="<<(int) trame);
-  fflush(stdout);
-  /*
-  fprintf(stderr,">>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-  
-  for (int i=gricv1_2::Message::Fmt::PAYLOAD;i<length-1;i++)
-    {
-      fprintf(stderr,"%.2x ",(b[i]));
-      
-      if ((i-4)%16==15)
-	{
-	  fprintf(stderr,"\n");
-	}
-    }
-  fprintf(stderr,"\n<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
-  */
-  if (reply!=0) //special case for read register
-    {
-      memcpy(reply,&rep[gricv1_2::Message::Fmt::PAYLOAD+2],sizeof(uint32_t));
-      return;
-    }
-
+  std::vector<uint8_t> reply;
+  if (!waitForReply(static_cast<uint8_t>(transaction),
+                    std::chrono::milliseconds(400), reply))
+  {
+    PM_ERROR(_logGricv1, "No read-register reply after 400 ms for "
+                             << "transaction " << transaction);
+    return 0;
+  }
+  constexpr size_t valueOffset =
+      gricv1_2::Message::Fmt::PAYLOAD + sizeof(uint16_t);
+  if (reply.size() < valueOffset + sizeof(uint32_t))
+  {
+    PM_ERROR(_logGricv1, "Read-register reply is too short: "
+                             << reply.size() << " bytes");
+    return 0;
+  }
+  uint32_t value = 0;
+  std::memcpy(&value, reply.data() + valueOffset, sizeof(value));
+  return ntohl(value);
 }
 
 bool gricv1_2::registerHandler::processPacket()
 {
-  uint16_t* _sBuf= (uint16_t*) &_buf[gricv1_2::Message::Fmt::LEN];
-  uint16_t length=ntohs(_sBuf[0]); // Header
-  uint8_t transaction=_buf[gricv1_2::Message::Fmt::TRANS];
-  _sBuf=(uint16_t*) &_buf[gricv1_2::Message::Fmt::PAYLOAD];
-  uint16_t address=ntohs(_sBuf[0]);
-  uint32_t* lBuf=(uint32_t*) &_sBuf[1];
-  PM_DEBUG(_logGricv1,sourceid()<<" Command answer="<<
-               std::hex<<(int) address<<":"<<(int) ntohl(lBuf[0])<<std::dec
-               <<" length="<<length<<" trame id="<<(int) transaction<<" buffer length "<<_idx<<std::hex<<" address of transaction "<<answer(transaction%255)<<std::dec);
-  uint8_t* rep=this->answer(transaction%255);
-  if (rep==NULL)
-    {
-      PM_ERROR(_logGricv1," NULL ptr for answ "<<transaction);
-      
-    }
-  else
-    memcpy(rep,_buf,length);
+  if (_idx < gricv1_2::Message::Fmt::PAYLOAD ||
+      _buf[gricv1_2::Message::Fmt::CMD] !=
+          gricv1_2::Message::command::ACKNOWLEDGE)
+    return true;
+
+  const uint8_t transaction = _buf[gricv1_2::Message::Fmt::TRANS];
+  PM_DEBUG(_logGricv1, sourceid() << " Register acknowledgement transaction "
+                                  << static_cast<unsigned>(transaction)
+                                  << " length " << _idx);
+  completeReply(transaction, _buf, _idx);
 
 #define DUMPREGREPN
 #ifdef DUMPREGREP

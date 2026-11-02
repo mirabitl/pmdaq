@@ -1,7 +1,8 @@
 # gricv1_3
 
 Variante de `gricv1_2` qui garde les formats de trames et le traitement métier,
-mais partage un même décodeur TCP entre les handlers register, SLC et data.
+avec un client TCP géré par le composant partagé `lyon/code_libhv` pour chaque
+handler register, SLC et data, sans dépendance à `lyon_mpi2`.
 Le décodeur accepte les trames fragmentées ou regroupées dans une lecture,
 rejette les longueurs et terminateurs invalides et se resynchronise sur le
 prochain début de trame.
@@ -12,5 +13,7 @@ demandeur. Les réponses sont bornées à 400 ms et les requêtes vers un même
 handler register sont sérialisées.
 
 Pour compiler ce module, installer `libhv` puis configurer PMDAQ avec
-`-DPMDAQ_BUILD_MPI2=ON`. Cette option active `lyon_mpi2` et `lyon_gricv1_3` ;
-elle est désactivée par défaut pour conserver les builds existants.
+`-DPMDAQ_BUILD_LIBHV_DRIVERS=ON`. Cette option active `lyon_gricv1_2`,
+`lyon_gricv1_3` et `lyon_mbmdcc_2`. Elle est indépendante de
+`PMDAQ_BUILD_MPI2` ; ces modules réutilisent `lyon/code_libhv` pour le
+transport TCP.

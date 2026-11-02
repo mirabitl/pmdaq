@@ -407,7 +407,6 @@ void Gricv1_3Manager::fsm_initialise(http_request m)
   _mpi->initialise();
 
   web::json::value jC4I = params()["gricv1"];
-  //_msh =new MpiMessageHandler("/dev/shm");
   if (!utils::isMember(jC4I, "network"))
   {
     PMF_ERROR(_logGricv1, " No gricv1:network tag found ");

@@ -57,10 +57,13 @@ class fsmw : public handlerPlugin
     void info(http_request message);
     void getparams(http_request message);
     void setparams(http_request message);
+    void cmdinfo(http_request message);
 
 
     // FSMW commands and transitions managment
     void addCommand(std::string s,CMDFunctor f);
+    void addCommand(std::string s, CMDFunctor f, std::string description,
+            web::json::value parameters = web::json::value::array());
         /**
        \brief Register a new state
        
@@ -113,6 +116,7 @@ class fsmw : public handlerPlugin
     void mqtt_publish(std::string topic,const json::value &body_data,bool retain=false);
   private:
     std::map<std::string,CMDFunctor> _commands;
+    std::map<std::string,web::json::value> _commandInfo;
     std::vector<std::string> _states;
     std::string _state;
     std::map<std::string,std::vector<fsmTransition> > _transitions;

@@ -24,9 +24,15 @@
 
 
 
-gricv1_3::slcHandler::slcHandler(std::string ip,mpi2::MpiMessageHandler* transport) : socketHandler(ip,gricv1_3::Interface::PORT::SLC,transport)
+gricv1_3::slcHandler::slcHandler(std::string ip) : socketHandler(ip,gricv1_3::Interface::PORT::SLC)
 {
   _msg=new gricv1_3::Message();
+}
+
+gricv1_3::slcHandler::~slcHandler()
+{
+  disconnect();
+  delete _msg;
 }
 
 void gricv1_3::slcHandler::sendSlowControl(uint8_t* slc,uint16_t lenbytes)

@@ -26,10 +26,16 @@
 
 
 
-gricv1_3::registerHandler::registerHandler(std::string ip,mpi2::MpiMessageHandler* transport) : socketHandler(ip,gricv1_3::Interface::PORT::REGISTER,transport)
+gricv1_3::registerHandler::registerHandler(std::string ip) : socketHandler(ip,gricv1_3::Interface::PORT::REGISTER)
 
 {
   _msg= new gricv1_3::Message();
+}
+
+gricv1_3::registerHandler::~registerHandler()
+{
+  disconnect();
+  delete _msg;
 }
 
 void gricv1_3::registerHandler::writeRegister(uint16_t address,uint32_t value)

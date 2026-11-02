@@ -22,10 +22,16 @@
 #include <arpa/inet.h>
 
 
-gricv1_3::dataHandler::dataHandler(std::string ip,mpi2::MpiMessageHandler* transport) : socketHandler(ip,gricv1_3::Interface::PORT::DATA,transport),_ntrg(0),_dsData(NULL),_triggerId(0),_detId(160)
+gricv1_3::dataHandler::dataHandler(std::string ip) : socketHandler(ip,gricv1_3::Interface::PORT::DATA),_ntrg(0),_dsData(NULL),_triggerId(0),_detId(160)
 {
   
 }
+gricv1_3::dataHandler::~dataHandler()
+{
+  disconnect();
+  delete _dsData;
+}
+
 void gricv1_3::dataHandler::connect(zmq::context_t* c,std::string dest)
 {
   if (_dsData!=NULL)
@@ -35,6 +41,7 @@ void gricv1_3::dataHandler::connect(zmq::context_t* c,std::string dest)
 }
 void gricv1_3::dataHandler::clear()
 {
+  socketHandler::clear();
   _nProcessed=0;
   _lastGTC=0;
   _lastABCID=0;

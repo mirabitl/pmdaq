@@ -1,6 +1,7 @@
 #pragma once
 
-#include "MpiMessageHandler.hh"
+#include "SocketHandler.hh"
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -69,57 +70,16 @@ namespace gricv1_3
       void close();
     private:
       std::map<std::string,gricv1_3::board*> _boards;
-      mpi2::MpiMessageHandler _transport;
       bool _running;
     };
 
-    // Gere chaque socket
-    // processPacket est virtuel
-    class socketHandler
-    {
-    public:
-      socketHandler(std::string,uint32_t port,mpi2::MpiMessageHandler* transport);
-      uint32_t sendMessage(gricv1_3::Message* wmsg,bool expectReply=false);
-      virtual void processBuffer(uint64_t id, uint16_t l,char* b);
-      void purgeBuffer();
-      virtual bool processPacket()=0;
-      bool waitForReply(uint8_t transaction,std::chrono::milliseconds timeout,
-                        std::vector<uint8_t>& reply);
-      uint64_t id() {return _id;}
-      uint32_t ipid() {return (_id>>32)&0xFFFFFFFF;}
-      uint32_t sourceid() {return (ipid()>>16)&0XFFFF;}
-      //uint32_t sourceid() {return ipid();}
-      uint32_t transaction() {return _transaction;}
-
-      void clear();
-    protected:
-      uint32_t _idx;
-      uint8_t _buf[MBSIZE];
-    private:
-      struct PendingReply
-      {
-        bool ready=false;
-        std::vector<uint8_t> data;
-      };
-
-      uint64_t _id;
-      mpi2::MpiMessageHandler* _transport;
-      uint32_t _transaction;
-      std::vector<uint8_t> _receiveBuffer;
-      std::mutex _replyMutex;
-      std::mutex _sendMutex;
-      std::condition_variable _replyReady;
-      std::map<uint8_t,PendingReply> _pendingReplies;
-
-    protected:
-      void completeReply(uint8_t transaction,const uint8_t* data,size_t length);
-
-    };
+    using socketHandler = code_libhv::SocketHandler;
     // Gere la socket registre
     class registerHandler : public socketHandler
     {
     public:
-      registerHandler(std::string,mpi2::MpiMessageHandler* transport);
+      explicit registerHandler(std::string ip);
+      ~registerHandler() override;
       virtual bool processPacket();
       void writeRegister(uint16_t address,uint32_t value);
       uint32_t readRegister(uint16_t address);
@@ -135,7 +95,8 @@ namespace gricv1_3
     class slcHandler : public socketHandler
     {
     public:
-      slcHandler(std::string,mpi2::MpiMessageHandler* transport);
+      explicit slcHandler(std::string ip);
+      ~slcHandler() override;
       virtual bool processPacket();
       void sendSlowControl(uint8_t* slc,uint16_t len_bytes=109);
     private:
@@ -146,7 +107,8 @@ namespace gricv1_3
     class dataHandler : public socketHandler
     {
     public:
-      dataHandler(std::string ip,mpi2::MpiMessageHandler* transport);
+      explicit dataHandler(std::string ip);
+      ~dataHandler() override;
       virtual bool processPacket();
       inline void setTriggerId(uint8_t i) {_triggerId=i;}
 
@@ -175,7 +137,7 @@ namespace gricv1_3
     class board
     {
     public:
-      board(std::string ip,mpi2::MpiMessageHandler* transport);
+      explicit board(std::string ip);
       ~board();
       inline gricv1_3::registerHandler* reg(){return _regh;}
       inline gricv1_3::slcHandler* slc(){return _slch;}

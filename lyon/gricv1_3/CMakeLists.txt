@@ -12,7 +12,6 @@ set(SRCS
   datahandler.cc
   interface.cc
   registerhandler.cc
-  sockethandler.cc
   slchandler.cc
   Gricv1_3Manager.cc
   )
@@ -47,9 +46,10 @@ include(../../CMake.defs)
 #SET(log4cxx_DIR /usr/lib/x86_64-linux-gnu/cmake)
 #find_package(log4cxx CONFIG REQUIRED)
 #target_link_libraries(lyon_gricv1_3 PRIVATE log4cxx)
-target_link_libraries(lyon_gricv1_3 PRIVATE lyon_mpi2 lyon_db evb)
+target_link_libraries(lyon_gricv1_3 PRIVATE lyon_code_libhv lyon_db evb)
+target_compile_features(lyon_gricv1_3 PRIVATE cxx_std_11)
 
-target_include_directories(lyon_gricv1_3 PRIVATE ../../include ../mpi2 ../db ../../evb/include )
+target_include_directories(lyon_gricv1_3 PRIVATE ../../include ../db ../../evb/include )
 
 
 # Créé des variables avec les fichiers à compiler

@@ -22,10 +22,16 @@
 #include <arpa/inet.h>
 
 
-gricv1_2::dataHandler::dataHandler(std::string ip,mpi2::MpiMessageHandler* transport) : socketHandler(ip,gricv1_2::Interface::PORT::DATA,transport),_ntrg(0),_dsData(NULL),_triggerId(0),_detId(160)
+gricv1_2::dataHandler::dataHandler(std::string ip) : socketHandler(ip,gricv1_2::Interface::PORT::DATA),_ntrg(0),_dsData(NULL),_triggerId(0),_detId(160)
 {
   
 }
+gricv1_2::dataHandler::~dataHandler()
+{
+  disconnect();
+  delete _dsData;
+}
+
 void gricv1_2::dataHandler::connect(zmq::context_t* c,std::string dest)
 {
   if (_dsData!=NULL)
@@ -35,15 +41,12 @@ void gricv1_2::dataHandler::connect(zmq::context_t* c,std::string dest)
 }
 void gricv1_2::dataHandler::clear()
 {
+  socketHandler::clear();
   _nProcessed=0;
   _lastGTC=0;
   _lastABCID=0;
   _lastBCID=0;
   _event=0;
-  for (int i=0;i<255;i++)
-    {
-      memset(this->answer(i),0,MAX_BUFFER_LEN);
-    }
 }
 
 
@@ -63,6 +66,11 @@ bool gricv1_2::dataHandler::processPacket()
 {
   uint16_t* _sBuf= (uint16_t*) &_buf[gricv1_2::Message::Fmt::LEN];
   uint16_t length=ntohs(_sBuf[0]); // Header
+  if (length < 22 || length > _idx)
+    {
+      PM_WARN(_logGricv1," Invalid data frame length "<<length<<" received "<<_idx);
+      return false;
+    }
   uint16_t trame=_buf[gricv1_2::Message::Fmt::TRANS];
   uint16_t command=_buf[gricv1_2::Message::Fmt::CMD];
 
@@ -116,42 +124,50 @@ bool gricv1_2::dataHandler::processPacket()
 }
 void gricv1_2::dataHandler::processBuffer(uint64_t id, uint16_t l,char* bb)
 {
+  if (l == 0)
+    return;
+
   PM_DEBUG(_logGricv1," procesBuffer  "<<std::hex<<id<<std::dec<<" received "<<l<<" stored "<<_idx);
-  if ((_idx+l)>MBSIZE)
+  if (_idx + l > BufferSize)
     {
       PM_WARN(_logGricv1," Resetting the buffer ");
       _idx=0;
     }
-  
-      
-  uint8_t temp[0x100000];
+
   memcpy(&_buf[_idx],bb,l);
   _idx+=l;
  processFullBuffer:
+  if (_idx == 0)
+    return;
+
   // Bad start of buffer
   if (_buf[0]!='(')
     {
       PM_WARN(_logGricv1," Invalid start of buffer "<<std::hex<<_buf[0]<<std::dec);
       _idx=0;memset(_buf,0,MBSIZE);return;
     }
+
+  if (_idx < 3)
+    return;
   
   uint16_t* _sBuf= (uint16_t*) &_buf[gricv1_2::Message::Fmt::LEN];
   uint16_t length=ntohs(_sBuf[0]); // Header
 
   // Invalid length
-  if (length>MBSIZE)
+  if (length < 7 || length > BufferSize)
     {
       PM_WARN(_logGricv1," procesBuffer Size too large "<<std::hex<<id<<std::dec<<" Length "<<length);
-      memset(_buf,0,MBSIZE);
       _idx=0;
       return;
     }
-  //  Data corrupted
-  if (_idx>length  && _buf[length-1]!=')')
+  if (_idx < length)
+    return;
+
+  if (_buf[length-1]!=')')
     {
       PM_WARN(_logGricv1,"Corrupted buffer "<<std::hex<<id<<std::dec<<" Length "<<length);
       //Bad buffer found next a0 00 00 00 00 00 00 29 28
-      for (int i=0;i<_idx-9;i++)
+      for (uint32_t i=0;i+8<_idx;i++)
 	{
 	  if (_buf[i]==0xa0 &&
 	      _buf[i+1]==0x00 &&
@@ -163,30 +179,32 @@ void gricv1_2::dataHandler::processBuffer(uint64_t id, uint16_t l,char* bb)
 	      _buf[i+7]==0x29 &&
 	      _buf[i+8]==0x28)
 	    {
-	      memcpy(temp,&_buf[i+8],_idx-(i+8));
-	      memcpy(_buf,temp,_idx-(i+8));
+	      memmove(_buf,&_buf[i+8],_idx-(i+8));
 	      _idx=_idx-(i+8);
 	      goto processFullBuffer;
 	    }
 	}
-	
+      if (_idx > 8)
+	{
+	  memmove(_buf,&_buf[_idx-8],8);
+	  _idx=8;
+	}
+      return;
     }
   // End of buffer
   if (_buf[length-1]==')')
     {
       bool ok=processPacket();
-      int32_t nlen=_idx-length;
+      uint32_t nlen=_idx-length;
       PM_DEBUG(_logGricv1,"Packet processed  "<<std::hex<<id<<std::dec<<" remaining Length "<<_idx<<" "<<length);
       if (nlen>0)
 	{
-	  memcpy(temp,&_buf[length],nlen);
+	  memmove(_buf,&_buf[length],nlen);
 	  _idx=nlen;
-	  memset(_buf,0,MBSIZE);
-	  memcpy(&_buf[0],temp,nlen);
 	  goto processFullBuffer;
 	}
       else	
-	{_idx=0;memset(_buf,0,MBSIZE);}
+	{_idx=0;}
     }
    
   

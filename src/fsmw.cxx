@@ -135,6 +135,15 @@ std::vector<std::string> fsmw::getPaths(std::string query)
   this->addCommand("INFO", std::bind(&fsmw::info, this, std::placeholders::_1));
   this->addCommand("PARAMS", std::bind(&fsmw::getparams, this, std::placeholders::_1));
   this->addCommand("SETPARAMS", std::bind(&fsmw::setparams, this, std::placeholders::_1));
+  auto cmdInfoParameters = json::value::array();
+  auto commandName = json::value::object();
+  commandName["name"] = json::value::string(U("name"));
+  commandName["type"] = json::value::string(U("string"));
+  commandName["required"] = json::value::boolean(true);
+  commandName["description"] = json::value::string(U("Name of the command to describe"));
+  cmdInfoParameters[0] = commandName;
+  this->addCommand("CMDINFO", std::bind(&fsmw::cmdinfo, this, std::placeholders::_1),
+                   "Return the description and parameters of a command", cmdInfoParameters);
   // Construct list of commands
   std::vector<std::string> v;
   for (auto it = _commands.begin(); it != _commands.end(); it++)
@@ -214,12 +223,22 @@ void fsmw::processRequest(http_request &message)
 }
 void fsmw::addCommand(std::string s, CMDFunctor f)
 {
+  addCommand(s, f, "", json::value::array());
+}
+
+void fsmw::addCommand(std::string s, CMDFunctor f, std::string description, json::value parameters)
+{
   std::string cmd = _basePath + s;
   auto itf = _commands.find(cmd);
   if (itf == _commands.end())
   {
     std::pair<std::string, CMDFunctor> p(cmd, f);
     _commands.insert(p);
+    auto info = json::value::object();
+    info["name"] = json::value::string(U(s));
+    info["description"] = json::value::string(U(description));
+    info["parameters"] = parameters;
+    _commandInfo[cmd] = info;
   }
 }
 void fsmw::initialise()
@@ -270,6 +289,45 @@ void fsmw::setparams(http_request message)
     }
   this->mqtt_publish("params",_params,true);
   message.reply(status_codes::OK, _params);
+}
+
+void fsmw::cmdinfo(http_request message)
+{
+  try
+  {
+    auto request = message.extract_json().get();
+    if (!request.is_object() || !request.has_field(U("name")) || !request[U("name")].is_string())
+    {
+      auto error = json::value::object();
+      error["status"] = json::value::string(U("FAILED"));
+      error["comment"] = json::value::string(U("Expected a JSON object with a string 'name' field"));
+      Reply(status_codes::BadRequest, error);
+      return;
+    }
+
+    auto name = utility::conversions::to_utf8string(request[U("name")].as_string());
+    auto it = _commandInfo.find(name);
+    if (it == _commandInfo.end())
+      it = _commandInfo.find(_basePath + name);
+
+    if (it == _commandInfo.end())
+    {
+      auto error = json::value::object();
+      error["status"] = json::value::string(U("FAILED"));
+      error["comment"] = json::value::string(U("Command not found: " + name));
+      Reply(status_codes::NotFound, error);
+      return;
+    }
+
+    Reply(status_codes::OK, it->second);
+  }
+  catch (const std::exception &)
+  {
+    auto error = json::value::object();
+    error["status"] = json::value::string(U("FAILED"));
+    error["comment"] = json::value::string(U("Invalid JSON request"));
+    Reply(status_codes::BadRequest, error);
+  }
 }
 
 void fsmw::addState(std::string statename)
