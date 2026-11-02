@@ -11,7 +11,7 @@
 namespace
 {
 constexpr size_t kFrameHeaderLength = 3;
-constexpr size_t kMinimumFrameLength = 7;
+constexpr size_t kMinimumFrameLength = 6;
 constexpr size_t kMaximumFrameLength = 0xFFFF;
 constexpr size_t kTransactionOffset = 3;
 }
