@@ -320,9 +320,11 @@ public:
 	      if (_vc[j].channel!=24) continue;
 	      if (_vc[i].channel == _vc[j].channel) continue;
 	      double dt = (_vc[i].t -  _vc[j].t);
-	      if (abs(dt)>500) continue;
+	      if (abs(dt)>5) continue;
 	      auto hdt=_rh->AccessTH1("DT",5000,-5.,5.);
-	      hdt->Fill(dt);
+	      double dnoise=0.0712538633262596;
+	      dnoise=0;
+	      hdt->Fill(dt+dnoise);
 	      if (!found)
 		tint=_vc[i].t;
 	      found=true;
@@ -336,11 +338,41 @@ public:
 	    }
 	  }
 	for (int i=0;i<_vc.size();i++)
+	  { 
+	    //std::cout<<_vc[i].channel<<" "<<_vc[i].t<<std::endl;
+	    //if (found) break;
+	    //if (_vc[i].channel!=24 &&_vc[i].channel!=23  ) getchar();
+	    if (_vc[i].channel!=13) continue;
+	  for (int j=0;j<_vc.size();j++)
+	    {
+	      if (_vc[j].channel!=23) continue;
+	      if (_vc[i].channel == _vc[j].channel) continue;
+	      double dt = (_vc[i].t -  _vc[j].t);
+	      if (abs(dt)>5) continue;
+	      auto hdt1=_rh->AccessTH1("DT1",5000,-5.,5.);
+	      double dnoise=0.0712538633262596;
+	      dnoise=0;
+	      hdt1->Fill(dt+dnoise);
+	      if (!found)
+		tint=_vc[i].t;
+	      found=true;
+	      // printf("  %d %7.2f %d %7.2f -> %5.3f  \n",_vc[i].channel,_vc[i].t,_vc[j].channel,_vc[j].t,dt);
+	      //tint=_vc[i].t;
+	      idi=i;
+	      auto hti2=_rh->AccessTH1("TCH13",5000,0.,200000.);
+	      hti2->Fill(_vc[i].t-tint);
+
+	      //break;
+	    }
+	  }
+
+	if (false)
+	for (int i=0;i<_vc.size();i++)
 	  {
 	    //auto hti=_rh->AccessTH1("TCH",5000,0.,200000.);
 	    //hti->Fill(_vc[i].t);
 	    
-	    if (abs(_vc[i].t-tint)<5) printf(" \t ====  %d %7.2f %d %7.2f -> %5.3f  \n",_vc[i].channel,_vc[i].t,idi,tint,abs(_vc[i].t-tint));
+	    if (abs(_vc[i].t-tint)<5) printf(" \t ====  %d %7.2f %d %7.2f -> %5.3f  \n",_vc[i].channel,_vc[i].t,idi,tint,(_vc[i].t-tint));
 	      
 	  }
 	return;

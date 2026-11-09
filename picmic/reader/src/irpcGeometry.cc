@@ -55,7 +55,7 @@ PositionResult calculate_position(double T_top, double T_bottom, const StripPara
     double t=tl;
     // Vers
     // Vérification que t est dans [0, 1] (avec une petite tolérance)
-    double tolerance = 6e-2;
+    double tolerance = 1e-2;
     if (t < -tolerance || t > 1.0 + tolerance) {
       //std::cout<<T_top<<" "<<T_bottom<<" "<<t<<std::endl;
       result.position.x=-9999999.;
