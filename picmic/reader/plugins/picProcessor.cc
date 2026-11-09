@@ -17,6 +17,7 @@
 #include <array>
 #include <vector>
 #include <cmath>
+#include <string>
 
 static TCanvas* c1;
 namespace
@@ -309,62 +310,31 @@ public:
 	bool found=false;
 	double tint=0;
 	int idi=0;
-	for (int i=0;i<_vc.size();i++)
-	  { 
-	    //std::cout<<_vc[i].channel<<" "<<_vc[i].t<<std::endl;
-	    //if (found) break;
-	    //if (_vc[i].channel!=24 &&_vc[i].channel!=23  ) getchar();
-	    if (_vc[i].channel!=22) continue;
-	  for (int j=0;j<_vc.size();j++)
+	const std::array<uint32_t,4> channels={13,22,23,24};
+	for (size_t first=0;first<channels.size();first++)
+	  for (size_t second=first+1;second<channels.size();second++)
 	    {
-	      if (_vc[j].channel!=24) continue;
-	      if (_vc[i].channel == _vc[j].channel) continue;
-	      double dt = (_vc[i].t -  _vc[j].t);
-	      if (abs(dt)>5) continue;
-	      auto hdt=_rh->AccessTH1("DT",5000,-5.,5.);
-	      double dnoise=0.0712538633262596;
-	      dnoise=0;
-	      hdt->Fill(dt+dnoise);
-	      if (!found)
-		tint=_vc[i].t;
-	      found=true;
-	      // printf("  %d %7.2f %d %7.2f -> %5.3f  \n",_vc[i].channel,_vc[i].t,_vc[j].channel,_vc[j].t,dt);
-	      //tint=_vc[i].t;
-	      idi=i;
-	      auto hti1=_rh->AccessTH1("TCH22",5000,0.,200000.);
-	      hti1->Fill(_vc[i].t-tint);
-
-	      break;
+	      const auto pairName=std::to_string(channels[first])+"-"+
+		std::to_string(channels[second]);
+	      for (size_t i=0;i<_vc.size();i++)
+		{
+		  if (_vc[i].channel!=channels[first]) continue;
+		  for (size_t j=0;j<_vc.size();j++)
+		    {
+		      if (_vc[j].channel!=channels[second]) continue;
+		      const double dt=_vc[i].t-_vc[j].t;
+		      if (std::abs(dt)>5) continue;
+		      auto hdt=_rh->AccessTH1("DT"+pairName,5000,-5.,5.);
+		      hdt->Fill(dt);
+		      if (!found)
+			tint=_vc[i].t;
+		      found=true;
+		      idi=i;
+		      auto hti=_rh->AccessTH1("TCH"+pairName,5000,0.,200000.);
+		      hti->Fill(_vc[i].t-tint);
+		    }
+		}
 	    }
-	  }
-	for (int i=0;i<_vc.size();i++)
-	  { 
-	    //std::cout<<_vc[i].channel<<" "<<_vc[i].t<<std::endl;
-	    //if (found) break;
-	    //if (_vc[i].channel!=24 &&_vc[i].channel!=23  ) getchar();
-	    if (_vc[i].channel!=13) continue;
-	  for (int j=0;j<_vc.size();j++)
-	    {
-	      if (_vc[j].channel!=23) continue;
-	      if (_vc[i].channel == _vc[j].channel) continue;
-	      double dt = (_vc[i].t -  _vc[j].t);
-	      if (abs(dt)>5) continue;
-	      auto hdt1=_rh->AccessTH1("DT1",5000,-5.,5.);
-	      double dnoise=0.0712538633262596;
-	      dnoise=0;
-	      hdt1->Fill(dt+dnoise);
-	      if (!found)
-		tint=_vc[i].t;
-	      found=true;
-	      // printf("  %d %7.2f %d %7.2f -> %5.3f  \n",_vc[i].channel,_vc[i].t,_vc[j].channel,_vc[j].t,dt);
-	      //tint=_vc[i].t;
-	      idi=i;
-	      auto hti2=_rh->AccessTH1("TCH13",5000,0.,200000.);
-	      hti2->Fill(_vc[i].t-tint);
-
-	      //break;
-	    }
-	  }
 
 	if (false)
 	for (int i=0;i<_vc.size();i++)
